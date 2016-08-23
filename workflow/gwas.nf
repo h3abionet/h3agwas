@@ -101,9 +101,20 @@ if ( params.sexinfo_available == "false" ) {
   println "Sexinfo available command"
 }
 
-bed = params.plink_inputpath+params.plink_fname+".bed"
-bim = params.plink_inputpath+params.plink_fname+".bim"
-fam = params.plink_inputpath+params.plink_fname+".fam"
+import java.nio.file.Paths
+
+println params.plink_inputpath
+
+bed = Paths.get(params.plink_inputpath,"${params.plink_fname}.bed").toString()
+bim = Paths.get(params.plink_inputpath,"${params.plink_fname}.bim").toString()
+fam = Paths.get(params.plink_inputpath,"${params.plink_fname}.fam").toString()
+
+
+def script = { 
+   fn ->
+         Paths.get(params.script_path,fn).toString()
+}
+
 
 def checker = { fn -> 
    if (fn.exists()) 
@@ -135,8 +146,9 @@ process getDuplicateMarkers {
   set file("duplicates.snps") into remove_ch
 
   script:
+  dup_find = script("dups.py")
   """
-    dups.py raw.bim duplicates.snps
+    $dup_find raw.bim duplicates.snps
   """
 }
 
@@ -203,6 +215,7 @@ process identifyIndivDiscSexinfo {
         fi
 
   else
+       touch 0010.sexcheck
        echo "No sex information available to check"  > failed.sex
   fi
   """
@@ -257,8 +270,8 @@ process generateMissHetPlot {
     file('fail_miss_het_qcplink.txt') into failed_miss_het
 
   script:
-    plotscript = "miss_het_plot_qcplink.R"
-    selectscript = "select_miss_het_qcplink.pl"
+    plotscript = script("miss_het_plot_qcplink.R")
+    selectscript = script("select_miss_het_qcplink.pl")
   println plotscript
   """
   $plotscript qcplink.imiss qcplink.het pairs.imiss-vs-het.pdf meanhet_plot.pdf
@@ -313,7 +326,7 @@ process filterRelatedIndiv {
      file 'fail_IBD_qcplink.txt'
 
   script:
-    ibdscript = "run_IBD_QC_qcplink.pl"
+    ibdscript = script("run_IBD_QC_qcplink.pl")
   """
     $ibdscript $missing $ibd_genome fail_IBD_qcplink.txt
   """
@@ -365,7 +378,7 @@ process generateMafPlot {
   file 'maf_plot.pdf'
 
   script:
-    plotscript = "maf_plot_qcplink.R"
+    plotscript = script("maf_plot_qcplink.R")
   """
     $plotscript clean00.frq maf_plot.pdf
   """
@@ -397,7 +410,7 @@ process generateSnpMissingnessPlot {
   file 'snpmiss_plot.pdf'
 
   script:
-    plotscript = "snpmiss_plot_qcplink.R"
+    plotscript = script("snpmiss_plot_qcplink.R")
   """
     $plotscript clean00.lmiss snpmiss_plot.pdf
   """
@@ -428,7 +441,7 @@ process generateDifferentialMissingnessPlot {
       file 'snpmiss_plot.pdf' into snpmiss_plot_ch
 
     script:
-    plotscript = "diffmiss_plot_qcplink.R"
+    plotscript = script("diffmiss_plot_qcplink.R")
      """
       $plotscript clean00.missing snpmiss_plot.pdf
      """
@@ -443,7 +456,7 @@ process findSnpExtremeDifferentialMissingness {
      file 'failed_diffmiss.snps' into bad_snps_ch
   script:
     cut_diff_miss=params.cut_diff_miss
-    diffscript = "select_diffmiss_qcplink.pl"
+    diffscript = script("select_diffmiss_qcplink.pl")
     """ 
      $diffscript $cut_diff_miss clean00.missing failed_diffmiss.snps
     """
@@ -470,7 +483,7 @@ process generateHwePlot {
     file 'hwe_plot.pdf'
 
   script:
-    plotscript = "hwe_plot_qcplink.R"
+    plotscript = script("hwe_plot_qcplink.R")
     """
      $plotscript unaff.hwe hwe_plot.pdf
     """
