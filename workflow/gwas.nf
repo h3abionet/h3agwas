@@ -320,15 +320,14 @@ else
 // Get which SNPs should be pruned for IBD
 process pruneForIBD {
 	// multi-threaded plink -- probably 2 core optimal, maybe 3
-  echo true
   input:
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from ibd_prune_ch
     file ldreg    from ldreg_ch
   output:
-    set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') into ibd
-    file('ibd_min_thresh.genome') into ibd_min_genome
+  //set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') into ibd
+    file 'ibd_min_thresh.genome' into sort_ibd_ch1,sort_ibd_ch2
   script:
-    if (params.high_ld_regions_fname == "true")
+    if (params.high_ld_regions_fname != "")
       range = "--range --exclude $ldreg"
     else
       range =""
@@ -341,8 +340,8 @@ process pruneForIBD {
 
 }
 
-(sort_ibd_ch1,sort_ibd_ch2) = [Channel.create(),Channel.create()]
-ibd_min_genome.into(sort_ibd_ch1,sort_ibd_ch2)
+//(sort_ibd_ch1,sort_ibd_ch2) = [Channel.create(),Channel.create()]
+//ibd_min_genome.into(sort_ibd_ch1,sort_ibd_ch2)
 
     // HUH?
 process sortByPiHat {
@@ -383,7 +382,8 @@ process removeQCIndivs {
     file related_indivs
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from remove_inds_ch
   output:
-     set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") into clean00_ch
+     set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") into \
+         (clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
 
   script:
   """
@@ -392,8 +392,7 @@ process removeQCIndivs {
   """
 }
 
-(clean00_ch1, clean00_ch2, clean00_ch3, clean00_ch4)  = [1,2,3,4].collect {Channel.create()}
-clean00_ch.into(clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
+
 
 process calculateMaf {
   input:
