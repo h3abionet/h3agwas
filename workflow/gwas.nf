@@ -223,8 +223,9 @@ process calculateSampleMissing {
 }
 
 plot1_ch_miss = Channel.create()
+missing2_ch   = Channel.create()
 
-calc_missing_ch.into(plot1_ch_miss,missing_ch) 
+calc_missing_ch.into(plot1_ch_miss,missing2_ch) 
 
 process calculateSampleHetrozygosity {
    input:
@@ -305,7 +306,7 @@ process filterRelatedIndiv {
   errorStrategy 'ignore'
 
   input:
-     file missing from missing_ch
+     file missing from missing2_ch
      file ibd_genome from sort_ibd_ch2
 
   output:
