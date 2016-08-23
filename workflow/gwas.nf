@@ -203,7 +203,7 @@ process identifyIndivDiscSexinfo {
         fi
 
   else
-       echo "No sex information available to check"  > 0010.sexcheck
+       echo "No sex information available to check"  > failed.sex
   fi
   """
 }
