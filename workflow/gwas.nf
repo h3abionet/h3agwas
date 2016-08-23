@@ -32,7 +32,7 @@ params.publish          = "/$HOME/witsGWAS/output"
  *
  * NOTE: This must be a ralative path, from where the pipeline is run.
  */
-/* example /*
+
 params.script_path      = 'scripts'
 
 /* Defines the names of the plink binary files in the plink directory 
