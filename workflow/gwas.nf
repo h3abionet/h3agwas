@@ -1,39 +1,37 @@
 #!/usr/bin/env nextflow
 
 /*
- * Author       : Rob Clucas
+ * Authors       : 
+ *
+ *	Rob Clucas
+ *      Lerato Magosi
+ *      
+ *
+ *  *TODO*
+ *
  * Description  : Nextflow pipeline for Wits GWAS.
- * Modified by Scott Hazelhurst
+ * 
  */
 
 //---- General definitions --------------------------------------------------//
 
 
-/* Defines the name of the mountpoint of the data directories in the docker
- * container. This is so that any scripts which run in the container and 
- * might need this info can run succesfully, and the user can specify the 
- * directory to each of the scripts.
- *
- * NOTE: The mountpoint is mounted in the container from the root directory,
- *       so specifying 'util' as the mount point mounts the data at '/util' in
- *       the container.
- */
-params.dock_mpoint      = 'util'
 
 /* Defines the directory where the plink 2 input binary files are. 
  *
  * NOTE: This must be a relative path, from where the pipeline is run.
  * and should end with a slash
  */
-params.plink_inputpath  = "/$HOME/witsGWAS/gwasdata/"  
-params.publish          = "/$HOME/witsGWAS/output"
+import java.nio.file.Paths
+
+params.dir        = "$HOME/h3agwas"
+params.input_dir  = "${params.dir}/input"  
+params.output_dir = "${params.dir}/output"
 
 /* Defines the path where any scripts to be executed can be found.
- *
- * NOTE: This must be a ralative path, from where the pipeline is run.
  */
 
-params.script_path      = 'scripts'
+params.scripts   = "${params.dir}/scripts"
 
 /* Defines the names of the plink binary files in the plink directory 
  * (.fam, .bed, .bed).
@@ -41,14 +39,12 @@ params.script_path      = 'scripts'
  * NOTE: This must be without the extension (so if A.fam, A.bed, ... 
  *       then use 'A').
  */
-params.plink_fname      = 'raw-GWA-data'
+params.data_name  = 'raw-GWA-data'
 
-/* Defines the name of the file with high LD region information.
- * 
- * NOTE: This can have/cannot have the extension, but should be in the 
- *       plink_inputpath specified above.
- */
-params.high_ld_regions_fname = 'high_LD_regions.txt'
+/* When computing IBD do we want to exclude high-lD regions from computation */
+/* empty string if not */
+
+params.high_ld_regions_fname = ""
 
 /* Defines if sexinfo is available or not, options are:
  *  - "true"  : sexinfo is available
@@ -84,15 +80,16 @@ params.cut_geno     = 0.01
 params.cut_hwe        = 0.008
 
 
+    /* cut-off for relatedness */
+
+params.pi_hat = 0.04
+pi_hat=params.pi_hat
 
 
 //---- Modification of variables for pipeline -------------------------------//
 
 /* Define the command to add for plink depending on whether sexinfo is
- * available or not. Command is:
- * 
- * - No sexinfo availabele  : "--allow-no-sexinfo"   
- * - Sexinfo available      : ""
+ * available or not.
  */
 if ( params.sexinfo_available == "false" ) {
   sexinfo = "--allow-no-sex"
@@ -102,21 +99,21 @@ if ( params.sexinfo_available == "false" ) {
   println "Sexinfo available command"
 }
 
-import java.nio.file.Paths
+// From the input base file, we get the bed, bim and fam files -- absolute path and add suffix 
 
-println params.plink_inputpath
-
-bed = Paths.get(params.plink_inputpath,"${params.plink_fname}.bed").toString()
+// TODO  : fix as nice Groovy
 bim = Paths.get(params.plink_inputpath,"${params.plink_fname}.bim").toString()
-fam = Paths.get(params.plink_inputpath,"${params.plink_fname}.fam").toString()
 
 
-def script = { 
+
+// Prepends scripts directory path to the argument given
+def path = { 
    fn ->
-         Paths.get(params.script_path,fn).toString()
+     Paths.get(params.scripts,fn).toString()
 }
 
 
+// Checks if the file exists
 def checker = { fn -> 
    if (fn.exists()) 
        return fn;
@@ -125,32 +122,43 @@ def checker = { fn ->
   }
 
 
+//------------
 
+// Creating two channels with the file names and at the same time
+// checking file existence
+
+
+
+bed = Paths.get(params.plink_inputpath,"${params.data_name}.bed").toString()
+println "Asking for $bed"
+bim = Paths.get(params.plink_inputpath,"${params.data_name}.bim").toString()
+fam = Paths.get(params.plink_inputpath,"${params.data_name}.fam").toString()
 bim_ch = Channel.fromPath(bim).map checker
-raw_ch = Channel.from(file(bed),file(bim),file(fam)).buffer(size:3).map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
-
+Channel
+    .from(file(bed),file(bim),file(fam))
+    .buffer(size:3)
+    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
+    .set { raw_ch }
 
 
 //---- Start Pipeline -------------------------------------------------------//
 
-/* Process to check for duplicates. * 
+/* Process to find duplicates. * 
  * Inputs:
  * - bim: the bim file
  * Outputs:
- * - duplicats.snps    : A possibly empty file with a list of SNPs
+ * - duplicates.snps    : A possibly empty file with a list of SNPs
  */
 process getDuplicateMarkers { 
   input:
-  set file("raw.bim") from bim_ch
-
+    set file("raw.bim") from bim_ch
   output:
-  set file("duplicates.snps") into remove_ch
-
+    set file("duplicates.snps") into remove_ch
   script:
-  dup_find = script("dups.py")
-  """
-    $dup_find raw.bim duplicates.snps
-  """
+    dup_find = path("dups.py")
+    """
+      $dup_find raw.bim duplicates.snps
+    """
 }
 
 
@@ -162,67 +170,61 @@ process getDuplicateMarkers {
  *   nodups.{bed,bim,fam} (PLINK file without duplicates) and 
  *   qc.log log file
  */
-process removeDuplicateMarkers {
+process removeDuplicateSNPs {
   input:
     set file(bed), file(bim), file(fam) from raw_ch
     set file('duplicates.snps') from remove_ch
 
-  publishDir params.publish, pattern: "nodups.log", overwrite:true, mode:'move'
+  publishDir params.publish, pattern: "0002-dups.log", overwrite:true, mode:'copy'
 
   output:
     set  file('nodups.bed'),file('nodups.bim'),file('nodups.fam') into ready_ch
-    file ('0002.log')
+    file ('0002-dups.log')
   script:
    base=bed.baseName
    """
     plink --bfile ${base} $sexinfo --exclude duplicates.snps --make-bed --out nodups >> qc.log
-    mv nodups.log 0002.log
+    mv nodups.log 0002-dups.log
    """
 }
 
 
 // Now make copies of  the ready_ch so work can happen in parallel
 
-sex_check_ch  = Channel.create()
-missing_ch    = Channel.create()
-het_ch        = Channel.create()
-ibd_prune_ch  = Channel.create()
-remove_indivs_ch = Channel.create()
-ready_ch.into(sex_check_ch, missing_ch, het_ch, ibd_prune_ch, remove_indivs_ch) 
+(sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch) = [1,2,3,4,5].collect {Channel.create()}
+ready_ch.into(sex_check_ch,missing_ch,het_ch,remove_inds_ch,ibd_prune_ch) 
 
 
 
 /* Process to identify individual discordant sex information.
  * results are put in the output directory
  */
-/*Check this process*/
 process identifyIndivDiscSexinfo {
   input:
      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from sex_check_ch
   
-  publishDir params.publish, overwrite:true, mode:'move'
+  publishDir params.publish, overwrite:true, mode:'copy'
 
   output:
-     file("0010.sexcheck") 
-     file 'failed.sex' into failed_sex_check
+     file '0010-failed.sexcheck' into failed_sex_check
   script:
+  if (params.sexinfo_available == "true")
   """
-  if [[ ${params.sexinfo_available} == 'true' ]]; then 
-       plink --bfile nodups --check-sex  --out 0010 
-       if grep -Rn 'PROBLEM' 0010.sexcheck > failed.sex; then
+       plink --bfile nodups --check-sex  --out nodups
+       if grep -Rn 'PROBLEM' nodups.sexcheck > 0010-failed.sexcheck; then
          echo 'Discordant sex info found'
        else                                                      
          echo 'No discordant sex info found'
-        fi
+       fi
 
-  else
-       touch 0010.sexcheck
-       echo "No sex information available to check"  > failed.sex
-  fi
   """
+  else
+    "echo 'No sex information available to check'  > 0010-failed.sexcheck"
+
 }
 
 
+// Find missingness statistics for the plink file
 process calculateSampleMissing {
   input:
      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from missing_ch
@@ -236,10 +238,18 @@ process calculateSampleMissing {
   """
 }
 
+
+// Will use the missingness statictis twice -- once for a report
+// once for removing data
 plot1_ch_miss = Channel.create()
+miss_het_ch   = Channel.create()
 missing2_ch   = Channel.create()
 
-calc_missing_ch.into(plot1_ch_miss,missing2_ch) 
+calc_missing_ch.into(plot1_ch_miss,missing2_ch,miss_het_ch)
+
+
+
+    // But for the  moment let's deal with heterozygosity
 
 process calculateSampleHetrozygosity {
    input:
@@ -248,14 +258,15 @@ process calculateSampleHetrozygosity {
    publishDir params.publish, overwrite:true, mode:'copy'
 
    output:
-      file("0030.het") into plot1_ch_het
-
+      file("0030.het") into sample_hetero_result
    script:
    """ 
      plink --bfile nodups $sexinfo --het  --out 0030
    """
 }
 
+channels = (hetero_check_ch, plot1_ch_het)= [1,2,3,4].collect {Channel.create()}
+sample_hetero_result.into(hetero_check_ch,plot1_ch_het)
 
 process generateMissHetPlot {
   errorStrategy 'ignore'
@@ -268,55 +279,86 @@ process generateMissHetPlot {
 
   output:
     file('*.pdf')   into pictures_ch
-    file('fail_miss_het_qcplink.txt') into failed_miss_het
 
   script:
-    plotscript = script("miss_het_plot_qcplink.R")
-    selectscript = script("select_miss_het_qcplink.pl")
-  println plotscript
-  """
-  $plotscript qcplink.imiss qcplink.het pairs.imiss-vs-het.pdf meanhet_plot.pdf
-  $selectscript $params.cut_het_high $params.cut_het_low $params.cut_miss \
-                     qcplink.imiss qcplink.het fail_miss_het_qcplink.txt
-  """
+    plotscript = path("miss_het_plot_qcplink.R")
+    """
+     $plotscript qcplink.imiss qcplink.het pairs.imiss-vs-het.pdf meanhet_plot.pdf
+    """
 }
 
 
+// Find those who have too high missingness, or bad heterozygosity
+process getBadIndivs_Missing_Het {
+  errorStrategy 'ignore'
 
+  input:
+  file 'qcplink.imiss' from miss_het_ch
+  file 'qcplink.het'   from hetero_check_ch
 
-ldreg_ch=Channel.fromPath(params.plink_inputpath+params.high_ld_regions_fname)
+  output:
+    file('fail_miss_het_qcplink.txt') into failed_miss_het
+
+  script:
+    selectscript = path("select_miss_het_qcplink.pl")
+    """
+     $selectscript $params.cut_het_high $params.cut_het_low $params.cut_miss \
+                     qcplink.imiss qcplink.het fail_miss_het_qcplink.txt
+    """
+}
+
+/* We are going to check for related individuals and remove them */
+
+// first, in computing relatedness do we ignore high LD regions? 
+
+if (params.high_ld_regions_fname != "")
+   ldreg_ch=Channel.fromPath(params.plink_inputpath+params.high_ld_regions_fname)
+else 
+   ldreg_ch=Channel.value("dummy") //If not, create dummy channel
+
 
 // Get which SNPs should be pruned for IBD
 process pruneForIBD {
+	// multi-threaded plink -- probably 2 core optimal, maybe 3
+  echo true
   input:
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from ibd_prune_ch
     file ldreg    from ldreg_ch
   output:
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') into ibd
-    file('ibd_min_0_04.genome') into ibd_min_0_04_genome
+    file('ibd_min_thresh.genome') into ibd_min_genome
   script:
+    if (params.high_ld_regions_fname == "true")
+      range = "--range --exclude $ldreg"
+    else
+      range =""
     """
-      plink --bfile nodups --autosome $sexinfo --exclude $ldreg --range --indep-pairwise 50 5 0.2 --out ibd
+      plink --bfile nodups --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
       plink --bfile nodups --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
-      plink --bfile nodups --autosome $sexinfo --extract ibd.prune.in --genome --min 0.04 --out ibd_min_0_04
+      plink --bfile nodups --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out ibd_min_thresh
+      echo DONE
      """
+
 }
 
 (sort_ibd_ch1,sort_ibd_ch2) = [Channel.create(),Channel.create()]
-ibd_min_0_04_genome.into(sort_ibd_ch1,sort_ibd_ch2)
+ibd_min_genome.into(sort_ibd_ch1,sort_ibd_ch2)
 
+    // HUH?
 process sortByPiHat {
   input:
-     file('ibd_min_0_04.genome') from sort_ibd_ch1
+     file(ibd_min_genome) from sort_ibd_ch1
   output:
-     file 'qcplink_ibd_min_0_04_sorted_pihat.txt'
+     file 'qcplink_ibd_min_thresh_sorted_pihat.txt'
 
   """
-  sort -k10n ibd_min_0_04.genome > qcplink_ibd_min_0_04_sorted_pihat.txt
+  sort -k10n ${ibd_min_genome} > qcplink_ibd_min_thresh_sorted_pihat.txt
   """
 }
 
-process filterRelatedIndiv {
+// run script to find related individuals
+//  Future - perhaps replaced with Primus
+process findRelatedIndiv {
   errorStrategy 'ignore'
 
   input:
@@ -324,10 +366,10 @@ process filterRelatedIndiv {
      file ibd_genome from sort_ibd_ch2
 
   output:
-     file 'fail_IBD_qcplink.txt'
+     file 'fail_IBD_qcplink.txt' into related_indivs
 
   script:
-    ibdscript = script("run_IBD_QC_qcplink.pl")
+    ibdscript = path("run_IBD_QC_qcplink.pl")
   """
     $ibdscript $missing $ibd_genome fail_IBD_qcplink.txt
   """
@@ -338,14 +380,14 @@ process removeQCIndivs {
   input:
     file failed_miss_het
     file failed_sexcheck_f from failed_sex_check 
-    set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from remove_indivs_ch
+    file related_indivs
+    set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from remove_inds_ch
   output:
      set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") into clean00_ch
 
   script:
   """
-  ls > allfiles
-  cat $failed_sexcheck_f $failed_miss_het | sort -k1 | uniq > qcplink_failed_inds
+  cat $failed_sexcheck_f $related_indivs $failed_miss_het | sort -k1 | uniq > qcplink_failed_inds
   plink --bfile nodups $sexinfo --remove qcplink_failed_inds --make-bed --out clean00
   """
 }
@@ -355,12 +397,12 @@ clean00_ch.into(clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
 
 process calculateMaf {
   input:
-     set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") from clean00_ch1
+    set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") from clean00_ch1
 
-  publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.frq"
 
   output:
-  file 'clean00.frq' into maf_plot_ch
+    file 'clean00.frq' into maf_plot_ch
 
   script:
   """
@@ -376,17 +418,18 @@ process generateMafPlot {
   publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-  file 'maf_plot.pdf'
+    file 'maf_plot.pdf'
 
   script:
-    plotscript = script("maf_plot_qcplink.R")
-  """
-    $plotscript clean00.frq maf_plot.pdf
-  """
+    plotscript = path("maf_plot_qcplink.R")
+    """
+      $plotscript clean00.frq maf_plot.pdf
+    """
 }
 
 
 
+// Repeat computation of missingness on QCd data
 process calculateSnpMissigness {
   input:
    set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch2
@@ -403,71 +446,72 @@ process calculateSnpMissigness {
 
 process generateSnpMissingnessPlot {
   input:
-  file 'clean00.lmiss' from clean_miss_plot_ch
+    file 'clean00.lmiss' from clean_miss_plot_ch
 
   publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-  file 'snpmiss_plot.pdf'
+    file 'snpmiss_plot.pdf'
 
   script:
-    plotscript = script("snpmiss_plot_qcplink.R")
-  """
-    $plotscript clean00.lmiss snpmiss_plot.pdf
-  """
+    plotscript = path("snpmiss_plot_qcplink.R")
+    """
+      $plotscript clean00.lmiss snpmiss_plot.pdf
+    """
 }
 
-// Find differential missingness and HWE scores
+// Find differential missingness between cases and controls; also compute HWE scores
 process calculateSnpSkewStatus {
   input:
-   set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch3
+    set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch3
   output:
-   file 'clean00.missing' into src_clean_diff_miss_plot_ch
-   file 'clean00.hwe' into hwe_scores_ch
+    file 'clean00.missing' into src_clean_diff_miss_ch
+    file 'clean00.hwe' into hwe_scores_ch
   script:
-  """
+   """
     plink --bfile clean00 $sexinfo --test-missing --hardy --out clean00
-  """
+   """
 }  
 
-(clean_diff_miss_plot_ch1,clean_diff_miss_plot_ch2)=[1,2].collect{Channel.create()}
-src_clean_diff_miss_plot_ch.into(clean_diff_miss_plot_ch1,clean_diff_miss_plot_ch2)
+(clean_diff_miss_plot_ch1,clean_diff_miss_ch2)=[1,2].collect{Channel.create()}
+src_clean_diff_miss_ch.into(clean_diff_miss_plot_ch1,clean_diff_miss_ch2)
 
 process generateDifferentialMissingnessPlot {
    input:
      file "clean00.missing" from clean_diff_miss_plot_ch1
 
-    publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
-    output:
+   publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
+   output:
       file 'snpmiss_plot.pdf' into snpmiss_plot_ch
 
-    script:
-    plotscript = script("diffmiss_plot_qcplink.R")
-     """
+   script:
+   plotscript = path("diffmiss_plot_qcplink.R")
+   """
       $plotscript clean00.missing snpmiss_plot.pdf
-     """
+   """
  }
 
 
-
+// Find those SNPs that have diff missingness in cases & controls
 process findSnpExtremeDifferentialMissingness {
   input:
-    file "clean00.missing" from clean_diff_miss_plot_ch2
+    file "clean00.missing" from clean_diff_miss_ch2
   output:
      file 'failed_diffmiss.snps' into bad_snps_ch
   script:
     cut_diff_miss=params.cut_diff_miss
-    diffscript = script("select_diffmiss_qcplink.pl")
+    diffscript = path("select_diffmiss_qcplink.pl")
     """ 
      $diffscript $cut_diff_miss clean00.missing failed_diffmiss.snps
     """
 }
 
-process findSnpsExtremeHweDeviations {
+// Find HWE scores of each SNP
+process findHWEofSNPs {
   input:
      file 'clean00.hwe' from hwe_scores_ch
   output:
-     file 'unaff.hwe'   into unaff
+     file 'unaff.hwe'   into unaff_hwe
 
   script:
   """
@@ -478,13 +522,13 @@ process findSnpsExtremeHweDeviations {
 
 process generateHwePlot {
   input:
-    file 'unaff.hwe' from unaff
+    file 'unaff.hwe' from unaff_hwe
   publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     file 'hwe_plot.pdf'
 
   script:
-    plotscript = script("hwe_plot_qcplink.R")
+    plotscript = path("hwe_plot_qcplink.R")
     """
      $plotscript unaff.hwe hwe_plot.pdf
     """
@@ -495,11 +539,11 @@ process generateHwePlot {
 process removeQCPhase1 {
 
   input:
-   set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch4
-   file 'failed_diffmiss.snps' from bad_snps_ch
+    set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch4
+    file 'failed_diffmiss.snps' from bad_snps_ch
   publishDir params.publish, overwrite:true, mode:'copy'
-output:
-   set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  into clean01_ch
+  output:
+    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  into clean01_ch
 
   script:
   """
@@ -515,11 +559,11 @@ output:
 process computePhase0 {
 
   input:
-   set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  from clean01_ch
+    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  from clean01_ch
 
   publishDir params.publish, overwrite:true, mode:'copy'
   output:
-   set file('cleaned.*')  into comp_phase1_ch
+    set file('cleaned.*')  into comp_phase1_ch
 
   script:
   """
