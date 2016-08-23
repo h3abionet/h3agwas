@@ -182,6 +182,7 @@ ready_ch.into(sex_check_ch, missing_ch, het_ch, ibd_prune_ch, remove_indivs_ch)
 /* Process to identify individual discordant sex information.
  * results are put in the output directory
  */
+/*Check this process*/
 process identifyIndivDiscSexinfo {
   input:
      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from sex_check_ch
@@ -190,11 +191,17 @@ process identifyIndivDiscSexinfo {
 
   output:
      file("0010.sexcheck") 
-
+     file 'failed.sex' into failed_sex_check
   script:
   """
-  if [[ $sexinfo == 'true' ]]; then 
+  if [[ ${params.sexinfo_available} == 'true' ]]; then 
        plink --bfile nodups --check-sex  --out 0010 
+       if grep -Rn 'PROBLEM' 0010.sexcheck > failed.sex; then
+         echo 'Discordant sex info found'
+       else                                                      
+         echo 'No discordant sex info found'
+        fi
+
   else
        echo "No sex information available to check"  > 0010.sexcheck
   fi
@@ -210,19 +217,12 @@ process calculateSampleMissing {
 
   output:
      file("0020.imiss") into calc_missing_ch
-     file 'failed.sex' into failed_sex_check
   """
     plink --bfile nodups $sexinfo --missing --out 0020
-    if grep -Rn 'PROBLEM' sexstat.sexcheck > failed.sex; then
-       echo 'Discordant sex info found'
-    else                                                      
-       echo 'No discordant sex info found'
-    fi
   """
 }
 
 plot1_ch_miss = Channel.create()
-missing_ch    = Channel.create()
 
 calc_missing_ch.into(plot1_ch_miss,missing_ch) 
 
