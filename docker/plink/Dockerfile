@@ -15,4 +15,8 @@ RUN wget https://www.cog-genomics.org/static/bin/plink160816/plink_linux_x86_64.
 
 RUN rm -rf plink_linux_x86_64.zip
 
-USER plink
+#RUN mkdir /home/plink
+
+#WORKDIR /home/plink
+
+#USER plink
