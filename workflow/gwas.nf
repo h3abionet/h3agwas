@@ -3,11 +3,18 @@
 /*
  * Authors       : 
  *
- *	Rob Clucas
+ *      
+ *      Shaun Aron
+ *   	Rob Clucas
+ *      Eugene de Beste
+ *      Scott Hazelhurst
+ *      Abayomi Mosaku
+ *      Anmol Kiran
  *      Lerato Magosi
  *      
- *
- *  *TODO*
+ *  On behalf of the H3ABionet Consortium
+ *  2015-2016
+ * 
  *
  * Description  : Nextflow pipeline for Wits GWAS.
  * 
@@ -24,9 +31,18 @@
  */
 import java.nio.file.Paths
 
+def helps = [ 'help' : 'help' ]
+
+
+def params_help = new LinkedHashMap(helps)
+
+
 params.dir        = "$HOME/h3agwas"
+params_help.put('dir',  "Default input directory for all files")
 params.input_dir  = "${params.dir}/input"  
 params.output_dir = "${params.dir}/output"
+
+
 
 /* Defines the path where any scripts to be executed can be found.
  */
@@ -79,12 +95,25 @@ params.cut_geno     = 0.01
  */
 params.cut_hwe        = 0.008
 
-
+params.help = false
     /* cut-off for relatedness */
 
 params.pi_hat = 0.04
 pi_hat=params.pi_hat
 
+if (params.help) {
+    params.each {
+    entry ->
+      print "Parameter: <$entry.key>    \t Default: $entry.value"
+      if (entry.key != 'help') {
+        help = params_help.get(entry.key)
+        if (help) 
+          print "\n    $help"
+        println ""
+      }
+  }
+  System.exit(-1)
+}
 
 //---- Modification of variables for pipeline -------------------------------//
 
@@ -102,7 +131,7 @@ if ( params.sexinfo_available == "false" ) {
 // From the input base file, we get the bed, bim and fam files -- absolute path and add suffix 
 
 // TODO  : fix as nice Groovy
-bim = Paths.get(params.plink_inputpath,"${params.plink_fname}.bim").toString()
+bim = Paths.get(params.input_path,"${params.plink_fname}.bim").toString()
 
 
 
@@ -129,10 +158,10 @@ def checker = { fn ->
 
 
 
-bed = Paths.get(params.plink_inputpath,"${params.data_name}.bed").toString()
+bed = Paths.get(params.input_path,"${params.data_name}.bed").toString()
 println "Asking for $bed"
-bim = Paths.get(params.plink_inputpath,"${params.data_name}.bim").toString()
-fam = Paths.get(params.plink_inputpath,"${params.data_name}.fam").toString()
+bim = Paths.get(params.input_path,"${params.data_name}.bim").toString()
+fam = Paths.get(params.input_path,"${params.data_name}.fam").toString()
 bim_ch = Channel.fromPath(bim).map checker
 Channel
     .from(file(bed),file(bim),file(fam))
