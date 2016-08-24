@@ -24,12 +24,7 @@
 
 
 
-/* Defines the directory where the plink 2 input binary files are.
- *
- * NOTE: This must be a relative path, from where the pipeline is run.
- * and should end with a slash
- */
-import java.nio.file.Paths
+
 
 def helps = [ 'help' : 'help' ]
 
@@ -207,7 +202,7 @@ process getDuplicateMarkers {
   script:
 
     """
-      $dup_find_script raw.bim duplicates.snps
+      ./$dup_find_script raw.bim duplicates.snps
     """
 }
 
@@ -323,7 +318,7 @@ process generateMissHetPlot {
   script:
 
     """
-     $plotscript qcplink.imiss qcplink.het pairs.imiss-vs-het.pdf meanhet_plot.pdf
+     ./$plotscript qcplink.imiss qcplink.het pairs.imiss-vs-het.pdf meanhet_plot.pdf
     """
 }
 
@@ -342,7 +337,7 @@ process getBadIndivs_Missing_Het {
   script:
 
     """
-     $selectscript $params.cut_het_high $params.cut_het_low $params.cut_miss \
+     ./$selectscript $params.cut_het_high $params.cut_het_low $params.cut_miss \
                      qcplink.imiss qcplink.het fail_miss_het_qcplink.txt
     """
 }
@@ -411,7 +406,7 @@ process findRelatedIndiv {
 
   script:
   """
-    $ibdscript $missing $ibd_genome fail_IBD_qcplink.txt
+    ./$ibdscript $missing $ibd_genome fail_IBD_qcplink.txt
   """
 }
 
@@ -466,7 +461,7 @@ process generateMafPlot {
 
   script:
     """
-      $plotscript clean00.frq maf_plot.pdf
+      ./$plotscript clean00.frq maf_plot.pdf
     """
 }
 
@@ -500,7 +495,7 @@ process generateSnpMissingnessPlot {
 
   script:
     """
-      $plotscript clean00.lmiss snpmiss_plot.pdf
+      ./$plotscript clean00.lmiss snpmiss_plot.pdf
     """
 }
 
@@ -531,7 +526,7 @@ process generateDifferentialMissingnessPlot {
 
    script:
    """
-      $plotscript clean00.missing snpmiss_plot.pdf
+      ./$plotscript clean00.missing snpmiss_plot.pdf
    """
  }
 
@@ -547,7 +542,7 @@ process findSnpExtremeDifferentialMissingness {
   script:
     cut_diff_miss=params.cut_diff_miss
     """
-     $diffscript $cut_diff_miss clean00.missing failed_diffmiss.snps
+     ./$diffscript $cut_diff_miss clean00.missing failed_diffmiss.snps
     """
 }
 
@@ -577,7 +572,7 @@ process generateHwePlot {
 
   script:
     """
-     $plotscript unaff.hwe hwe_plot.pdf
+     ./$plotscript unaff.hwe hwe_plot.pdf
     """
 
 }
