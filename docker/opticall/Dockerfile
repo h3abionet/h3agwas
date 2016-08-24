@@ -16,5 +16,3 @@ RUN tar -zxf tip.tar.gz && \
     rm -rf /comp
 
 WORKDIR /
-
-ENTRYPOINT ["opticall"]
