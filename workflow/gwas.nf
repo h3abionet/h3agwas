@@ -37,17 +37,16 @@ def helps = [ 'help' : 'help' ]
 def params_help = new LinkedHashMap(helps)
 
 
-params.dir        = "$HOME/h3agwas"
-params_help.put('dir',  "Default input directory for all files")
-params.input_dir  = "${params.dir}/input"  
-params.output_dir = "${params.dir}/output"
+params.work_dir        = "$HOME/h3agwas"
+params.input_dir  = "${params.work_dir}/input"  
+params.output_dir = "${params.work_dir}/output"
 
 
 
 /* Defines the path where any scripts to be executed can be found.
  */
 
-params.scripts   = "${params.dir}/scripts"
+params.scripts   = "${params.work_dir}/scripts"
 
 /* Defines the names of the plink binary files in the plink directory 
  * (.fam, .bed, .bed).
@@ -105,6 +104,8 @@ if (params.help) {
     params.each {
     entry ->
       print "Parameter: <$entry.key>    \t Default: $entry.value"
+      if (entry.key == 'help')
+          println ""
       if (entry.key != 'help') {
         help = params_help.get(entry.key)
         if (help) 
