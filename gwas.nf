@@ -147,12 +147,12 @@ def path = {
 }
 
 // Checks if the file exists
-def checker = { fn ->
+checker = { fn ->
    if (fn.exists())
        return fn;
     else
        error("\n\n-----------------\nFile $fn does not exist\n\n---\n")
-  }
+}
 
 
 //------------
@@ -160,9 +160,28 @@ def checker = { fn ->
 // Creating two channels with the file names and at the same time
 // checking file existence
 
+
+
 bed = Paths.get(params.input_dir,"${params.data_name}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.data_name}.bim").toString()
 fam = Paths.get(params.input_dir,"${params.data_name}.fam").toString()
+
+all_scripts = ["diffmiss_plot_qcplink.R","dups.py","hwe_plot_qcplink.R","maf_plot_qcplink.R","miss_het_plot_qcplink.R","run_IBD_QC_qcplink.pl","select_diffmiss_qcplink.pl","select_miss_het_qcplink.pl","snpmiss_plot_qcplink.R"]
+
+
+all_scripts.each  { checker(file(path(it))) }
+
+script_ch = [ 'dummy' : Channel.empty()]
+
+all_scripts.each { 
+   name-> 
+     script_ch.put(name, Channel.fromPath(path(name)))
+}
+
+
+
+
+
 bim_ch = Channel.fromPath(bim).map checker
 Channel
     .from(file(bed),file(bim),file(fam))
@@ -182,12 +201,13 @@ process getDuplicateMarkers {
   memory other_mem_req
   input:
     set file("raw.bim") from bim_ch
+    file dup_find_script from script_ch["dups.py"]
   output:
     set file("duplicates.snps") into remove_ch
   script:
-    dup_find = path("dups.py")
+
     """
-      $dup_find raw.bim duplicates.snps
+      $dup_find_script raw.bim duplicates.snps
     """
 }
 
@@ -294,14 +314,14 @@ process generateMissHetPlot {
   input:
     file 'qcplink.imiss' from plot1_ch_miss
     file 'qcplink.het'   from plot1_ch_het
-
+    file  plotscript     from script_ch["miss_het_plot_qcplink.R"]
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
     file('*.pdf')   into pictures_ch
 
   script:
-    plotscript = path("miss_het_plot_qcplink.R")
+
     """
      $plotscript qcplink.imiss qcplink.het pairs.imiss-vs-het.pdf meanhet_plot.pdf
     """
@@ -313,14 +333,14 @@ process getBadIndivs_Missing_Het {
   errorStrategy 'ignore'
   memory other_mem_req
   input:
-  file 'qcplink.imiss' from miss_het_ch
-  file 'qcplink.het'   from hetero_check_ch
-
+   file 'qcplink.imiss' from miss_het_ch
+   file 'qcplink.het'   from hetero_check_ch
+   file selectscript    from script_ch["select_miss_het_qcplink.pl"]
   output:
     file('fail_miss_het_qcplink.txt') into failed_miss_het
 
   script:
-    selectscript = path("select_miss_het_qcplink.pl")
+
     """
      $selectscript $params.cut_het_high $params.cut_het_low $params.cut_miss \
                      qcplink.imiss qcplink.het fail_miss_het_qcplink.txt
@@ -383,14 +403,13 @@ process findRelatedIndiv {
   errorStrategy 'ignore'
   memory other_mem_req
   input:
-     file missing from missing2_ch
+     file missing    from missing2_ch
      file ibd_genome from sort_ibd_ch2
-
+     file ibdscript  from script_ch["run_IBD_QC_qcplink.pl"]
   output:
      file 'fail_IBD_qcplink.txt' into related_indivs
 
   script:
-    ibdscript = path("run_IBD_QC_qcplink.pl")
   """
     $ibdscript $missing $ibd_genome fail_IBD_qcplink.txt
   """
@@ -437,7 +456,8 @@ process calculateMaf {
 process generateMafPlot {
   memory other_mem_req
   input:
-  file 'clean00.frq' from maf_plot_ch
+    file 'clean00.frq' from maf_plot_ch
+    file plotscript    from script_ch["maf_plot_qcplink.R"]
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
@@ -445,7 +465,6 @@ process generateMafPlot {
     file 'maf_plot.pdf'
 
   script:
-    plotscript = path("maf_plot_qcplink.R")
     """
       $plotscript clean00.frq maf_plot.pdf
     """
@@ -472,6 +491,7 @@ process generateSnpMissingnessPlot {
   memory other_mem_req
   input:
     file 'clean00.lmiss' from clean_miss_plot_ch
+    file  plotscript from script_ch["snpmiss_plot_qcplink.R"]
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
@@ -479,7 +499,6 @@ process generateSnpMissingnessPlot {
     file 'snpmiss_plot.pdf'
 
   script:
-    plotscript = path("snpmiss_plot_qcplink.R")
     """
       $plotscript clean00.lmiss snpmiss_plot.pdf
     """
@@ -504,13 +523,13 @@ process generateDifferentialMissingnessPlot {
    memory other_mem_req
    input:
      file "clean00.missing" from clean_diff_miss_plot_ch1
+     file plotscript from script_ch["diffmiss_plot_qcplink.R"]
 
    publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
    output:
       file 'snpmiss_plot.pdf' into snpmiss_plot_ch
 
    script:
-   plotscript = path("diffmiss_plot_qcplink.R")
    """
       $plotscript clean00.missing snpmiss_plot.pdf
    """
@@ -522,11 +541,11 @@ process findSnpExtremeDifferentialMissingness {
   memory other_mem_req
   input:
     file "clean00.missing" from clean_diff_miss_ch2
+    file diffscript from script_ch["select_diffmiss_qcplink.pl"]
   output:
      file 'failed_diffmiss.snps' into bad_snps_ch
   script:
     cut_diff_miss=params.cut_diff_miss
-    diffscript = path("select_diffmiss_qcplink.pl")
     """
      $diffscript $cut_diff_miss clean00.missing failed_diffmiss.snps
     """
@@ -551,12 +570,12 @@ process generateHwePlot {
   memory other_mem_req
   input:
     file 'unaff.hwe' from unaff_hwe
+    file plotscript from  script_ch["hwe_plot_qcplink.R"]
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     file 'hwe_plot.pdf'
 
   script:
-    plotscript = path("hwe_plot_qcplink.R")
     """
      $plotscript unaff.hwe hwe_plot.pdf
     """
