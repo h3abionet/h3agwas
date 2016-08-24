@@ -96,7 +96,7 @@ params.cut_hwe        = 0.008
 
 params.help = false
 
-* cut-off for relatedness */
+/* cut-off for relatedness */
 params.pi_hat = 0.04
 pi_hat=params.pi_hat
 
