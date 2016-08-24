@@ -363,8 +363,6 @@ process pruneForIBD {
 
 }
 
-//(sort_ibd_ch1,sort_ibd_ch2) = [Channel.create(),Channel.create()]
-//ibd_min_genome.into(sort_ibd_ch1,sort_ibd_ch2)
 
     // HUH?
 process sortByPiHat {
@@ -573,7 +571,8 @@ process removeQCPhase1 {
     file 'failed_diffmiss.snps' from bad_snps_ch
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  into clean01_ch
+    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  into \
+       clean01_ch
 
   script:
   """
