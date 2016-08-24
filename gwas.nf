@@ -93,6 +93,12 @@ params.cut_geno     = 0.01
  */
 params.cut_hwe        = 0.008
 
+params.plink_process_memory = '4GB' // how much plink needs for this
+params.other_process_memory = '2GB' // how much other processed need
+
+plink_mem_req = params.plink_process_memory
+other_mem_req = params.other_process_memory
+
 params.help = false
 
 /* cut-off for relatedness */
@@ -173,6 +179,7 @@ Channel
  * - duplicates.snps    : A possibly empty file with a list of SNPs
  */
 process getDuplicateMarkers {
+  memory other_mem_req
   input:
     set file("raw.bim") from bim_ch
   output:
@@ -194,6 +201,7 @@ process getDuplicateMarkers {
  *   qc.log log file
  */
 process removeDuplicateSNPs {
+  memory plink_mem_req
   input:
     set file(bed), file(bim), file(fam) from raw_ch
     set file('duplicates.snps') from remove_ch
@@ -201,7 +209,8 @@ process removeDuplicateSNPs {
   publishDir params.output_dir, pattern: "0002-dups.log", overwrite:true, mode:'copy'
 
   output:
-    set  file('nodups.bed'),file('nodups.bim'),file('nodups.fam') into ready_ch
+    set  file('nodups.bed'),file('nodups.bim'),file('nodups.fam') \
+         into (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch)
     file ('0002-dups.log')
   script:
    base=bed.baseName
@@ -212,16 +221,13 @@ process removeDuplicateSNPs {
 }
 
 
-// Now make copies of  the ready_ch so work can happen in parallel
-
-(sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch) = [1,2,3,4,5].collect {Channel.create()}
-ready_ch.into(sex_check_ch,missing_ch,het_ch,remove_inds_ch,ibd_prune_ch)
 
 
 /* Process to identify individual discordant sex information.
  * results are put in the output directory
  */
 process identifyIndivDiscSexinfo {
+  memory other_mem_req
   input:
      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from sex_check_ch
 
@@ -248,52 +254,46 @@ process identifyIndivDiscSexinfo {
 
 // Find missingness statistics for the plink file
 process calculateSampleMissing {
+  memory plink_mem_req
   input:
      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from missing_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     file("0020.imiss") into calc_missing_ch
+     file("0020.imiss") into (plot1_ch_miss,missing2_ch,miss_het_ch)
   """
     plink --bfile nodups $sexinfo --missing --out 0020
   """
 }
 
 
-// Will use the missingness statictis twice -- once for a report
-// once for removing data
-plot1_ch_miss = Channel.create()
-miss_het_ch   = Channel.create()
-missing2_ch   = Channel.create()
-
-calc_missing_ch.into(plot1_ch_miss,missing2_ch,miss_het_ch)
 
 // But for the  moment let's deal with heterozygosity
 
 process calculateSampleHetrozygosity {
+   memory plink_mem_req
    input:
       set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from het_ch
 
    publishDir params.output_dir, overwrite:true, mode:'copy'
 
    output:
-      file("0030.het") into sample_hetero_result
+      file("0030.het") into (hetero_check_ch, plot1_ch_het)
    script:
    """
      plink --bfile nodups $sexinfo --het  --out 0030
    """
 }
 
-channels = (hetero_check_ch, plot1_ch_het)= [1,2,3,4].collect {Channel.create()}
-sample_hetero_result.into(hetero_check_ch,plot1_ch_het)
 
 process generateMissHetPlot {
+  memory other_mem_req
   errorStrategy 'ignore'
 
   input:
-  file 'qcplink.imiss' from plot1_ch_miss
-  file 'qcplink.het'   from plot1_ch_het
+    file 'qcplink.imiss' from plot1_ch_miss
+    file 'qcplink.het'   from plot1_ch_het
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
@@ -311,7 +311,7 @@ process generateMissHetPlot {
 // Find those who have too high missingness, or bad heterozygosity
 process getBadIndivs_Missing_Het {
   errorStrategy 'ignore'
-
+  memory other_mem_req
   input:
   file 'qcplink.imiss' from miss_het_ch
   file 'qcplink.het'   from hetero_check_ch
@@ -337,9 +337,12 @@ else
    ldreg_ch=Channel.value("dummy") //If not, create dummy channel
 
 
+
 // Get which SNPs should be pruned for IBD
 process pruneForIBD {
 	// multi-threaded plink -- probably 2 core optimal, maybe 3
+  cpus '4'
+  memory plink_mem_req
   input:
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from ibd_prune_ch
     file ldreg    from ldreg_ch
@@ -352,9 +355,9 @@ process pruneForIBD {
     else
       range =""
     """
-      plink --bfile nodups --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
-      plink --bfile nodups --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
-      plink --bfile nodups --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out ibd_min_thresh
+      plink --bfile nodups --threads 4 --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
+      plink --bfile nodups --threads 4 --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
+      plink --bfile nodups --threads 4 --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out ibd_min_thresh
       echo DONE
      """
 
@@ -365,6 +368,7 @@ process pruneForIBD {
 
     // HUH?
 process sortByPiHat {
+  memory other_mem_req
   input:
      file(ibd_min_genome) from sort_ibd_ch1
   output:
@@ -379,7 +383,7 @@ process sortByPiHat {
 //  Future - perhaps replaced with Primus
 process findRelatedIndiv {
   errorStrategy 'ignore'
-
+  memory other_mem_req
   input:
      file missing from missing2_ch
      file ibd_genome from sort_ibd_ch2
@@ -396,6 +400,7 @@ process findRelatedIndiv {
 
 
 process removeQCIndivs {
+  memory plink_mem_req
   input:
     file failed_miss_het
     file failed_sexcheck_f from failed_sex_check
@@ -415,6 +420,7 @@ process removeQCIndivs {
 
 
 process calculateMaf {
+  memory plink_mem_req
   input:
     set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") from clean00_ch1
 
@@ -431,6 +437,7 @@ process calculateMaf {
 
 
 process generateMafPlot {
+  memory other_mem_req
   input:
   file 'clean00.frq' from maf_plot_ch
 
@@ -449,6 +456,7 @@ process generateMafPlot {
 
 // Repeat computation of missingness on QCd data
 process calculateSnpMissigness {
+  memory plink_mem_req
   input:
    set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch2
 
@@ -463,6 +471,7 @@ process calculateSnpMissigness {
 
 
 process generateSnpMissingnessPlot {
+  memory other_mem_req
   input:
     file 'clean00.lmiss' from clean_miss_plot_ch
 
@@ -480,10 +489,11 @@ process generateSnpMissingnessPlot {
 
 // Find differential missingness between cases and controls; also compute HWE scores
 process calculateSnpSkewStatus {
+  memory plink_mem_req
   input:
     set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch3
   output:
-    file 'clean00.missing' into src_clean_diff_miss_ch
+    file 'clean00.missing' into (clean_diff_miss_plot_ch1,clean_diff_miss_ch2)
     file 'clean00.hwe' into hwe_scores_ch
   script:
    """
@@ -491,10 +501,9 @@ process calculateSnpSkewStatus {
    """
 }
 
-(clean_diff_miss_plot_ch1,clean_diff_miss_ch2)=[1,2].collect{Channel.create()}
-src_clean_diff_miss_ch.into(clean_diff_miss_plot_ch1,clean_diff_miss_ch2)
 
 process generateDifferentialMissingnessPlot {
+   memory other_mem_req
    input:
      file "clean00.missing" from clean_diff_miss_plot_ch1
 
@@ -512,6 +521,7 @@ process generateDifferentialMissingnessPlot {
 
 // Find those SNPs that have diff missingness in cases & controls
 process findSnpExtremeDifferentialMissingness {
+  memory other_mem_req
   input:
     file "clean00.missing" from clean_diff_miss_ch2
   output:
@@ -526,6 +536,7 @@ process findSnpExtremeDifferentialMissingness {
 
 // Find HWE scores of each SNP
 process findHWEofSNPs {
+  memory other_mem_req
   input:
      file 'clean00.hwe' from hwe_scores_ch
   output:
@@ -539,6 +550,7 @@ process findHWEofSNPs {
 }
 
 process generateHwePlot {
+  memory other_mem_req
   input:
     file 'unaff.hwe' from unaff_hwe
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
@@ -555,7 +567,7 @@ process generateHwePlot {
 
 
 process removeQCPhase1 {
-
+  memory plink_mem_req
   input:
     set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch4
     file 'failed_diffmiss.snps' from bad_snps_ch
@@ -574,8 +586,13 @@ process removeQCPhase1 {
   """
 }
 
-process computePhase0 {
 
+
+
+
+process computePhase0 {
+  cpus '4'
+  memory plink_mem_req
   input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  from clean01_ch
 
@@ -585,7 +602,7 @@ process computePhase0 {
 
   script:
   """
-     plink --bfile cleaned --pca --assoc --adjust --out cleaned
+     plink --threads 4 --bfile cleaned --pca --assoc --adjust --out cleaned
   """
 }
 
