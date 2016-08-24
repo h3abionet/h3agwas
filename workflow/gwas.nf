@@ -37,7 +37,7 @@ def helps = [ 'help' : 'help' ]
 def params_help = new LinkedHashMap(helps)
 
 
-params.work_dir        = "$HOME/h3agwas"
+params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"  
 params.output_dir = "${params.work_dir}/output"
 
@@ -106,7 +106,7 @@ if (params.help) {
       print "Parameter: <$entry.key>    \t Default: $entry.value"
       if (entry.key == 'help')
           println ""
-      if (entry.key != 'help') {
+      else {
         help = params_help.get(entry.key)
         if (help) 
           print "\n    $help"
