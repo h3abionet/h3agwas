@@ -42,7 +42,6 @@ params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
 
 
-
 /* Defines the path where any scripts to be executed can be found.
  */
 
@@ -131,7 +130,9 @@ if ( params.sexinfo_available == "false" ) {
 
 // From the input base file, we get the bed, bim and fam files -- absolute path and add suffix
 
-bim = Paths.get(params.input_path,"${params.plink_fname}.bim").toString()
+bim = Paths.get(params.input_dir,"${params.plink_fname}.bim").toString()
+//println(bim)
+//println(input_dir)
 
 // Prepends scripts directory path to the argument given
 def path = {
@@ -153,9 +154,9 @@ def checker = { fn ->
 // Creating two channels with the file names and at the same time
 // checking file existence
 
-bed = Paths.get(params.input_path,"${params.data_name}.bed").toString()
-bim = Paths.get(params.input_path,"${params.data_name}.bim").toString()
-fam = Paths.get(params.input_path,"${params.data_name}.fam").toString()
+bed = Paths.get(params.input_dir,"${params.data_name}.bed").toString()
+bim = Paths.get(params.input_dir,"${params.data_name}.bim").toString()
+fam = Paths.get(params.input_dir,"${params.data_name}.fam").toString()
 bim_ch = Channel.fromPath(bim).map checker
 Channel
     .from(file(bed),file(bim),file(fam))
@@ -197,7 +198,7 @@ process removeDuplicateSNPs {
     set file(bed), file(bim), file(fam) from raw_ch
     set file('duplicates.snps') from remove_ch
 
-  publishDir params.publish, pattern: "0002-dups.log", overwrite:true, mode:'copy'
+  publishDir params.output_dir, pattern: "0002-dups.log", overwrite:true, mode:'copy'
 
   output:
     set  file('nodups.bed'),file('nodups.bim'),file('nodups.fam') into ready_ch
@@ -224,7 +225,7 @@ process identifyIndivDiscSexinfo {
   input:
      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from sex_check_ch
 
-  publishDir params.publish, overwrite:true, mode:'copy'
+  publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
      file '0010-failed.sexcheck' into failed_sex_check
@@ -250,7 +251,7 @@ process calculateSampleMissing {
   input:
      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from missing_ch
 
-  publishDir params.publish, overwrite:true, mode:'copy'
+  publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
      file("0020.imiss") into calc_missing_ch
@@ -274,7 +275,7 @@ process calculateSampleHetrozygosity {
    input:
       set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from het_ch
 
-   publishDir params.publish, overwrite:true, mode:'copy'
+   publishDir params.output_dir, overwrite:true, mode:'copy'
 
    output:
       file("0030.het") into sample_hetero_result
@@ -294,7 +295,7 @@ process generateMissHetPlot {
   file 'qcplink.imiss' from plot1_ch_miss
   file 'qcplink.het'   from plot1_ch_het
 
-  publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
     file('*.pdf')   into pictures_ch
@@ -417,7 +418,7 @@ process calculateMaf {
   input:
     set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") from clean00_ch1
 
-  publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.frq"
+  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.frq"
 
   output:
     file 'clean00.frq' into maf_plot_ch
@@ -433,7 +434,7 @@ process generateMafPlot {
   input:
   file 'clean00.frq' from maf_plot_ch
 
-  publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
     file 'maf_plot.pdf'
@@ -465,7 +466,7 @@ process generateSnpMissingnessPlot {
   input:
     file 'clean00.lmiss' from clean_miss_plot_ch
 
-  publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
     file 'snpmiss_plot.pdf'
@@ -497,7 +498,7 @@ process generateDifferentialMissingnessPlot {
    input:
      file "clean00.missing" from clean_diff_miss_plot_ch1
 
-   publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
+   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
    output:
       file 'snpmiss_plot.pdf' into snpmiss_plot_ch
 
@@ -540,7 +541,7 @@ process findHWEofSNPs {
 process generateHwePlot {
   input:
     file 'unaff.hwe' from unaff_hwe
-  publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     file 'hwe_plot.pdf'
 
@@ -558,7 +559,7 @@ process removeQCPhase1 {
   input:
     set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch4
     file 'failed_diffmiss.snps' from bad_snps_ch
-  publishDir params.publish, overwrite:true, mode:'copy'
+  publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  into clean01_ch
 
@@ -578,7 +579,7 @@ process computePhase0 {
   input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  from clean01_ch
 
-  publishDir params.publish, overwrite:true, mode:'copy'
+  publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     set file('cleaned.*')  into comp_phase1_ch
 
