@@ -22,7 +22,7 @@
 
 //---- General definitions --------------------------------------------------//
 
-
+import java.nio.Paths
 
 
 
@@ -152,14 +152,8 @@ checker = { fn ->
 
 //------------
 
-// Creating two channels with the file names and at the same time
-// checking file existence
+/* Deal with scripts -- we check if the scripts exist and if they do */
 
-
-
-bed = Paths.get(params.input_dir,"${params.data_name}.bed").toString()
-bim = Paths.get(params.input_dir,"${params.data_name}.bim").toString()
-fam = Paths.get(params.input_dir,"${params.data_name}.fam").toString()
 
 all_scripts = ["diffmiss_plot_qcplink.R","dups.py","hwe_plot_qcplink.R","maf_plot_qcplink.R","miss_het_plot_qcplink.R","run_IBD_QC_qcplink.pl","select_diffmiss_qcplink.pl","select_miss_het_qcplink.pl","snpmiss_plot_qcplink.R"]
 
@@ -173,6 +167,19 @@ all_scripts.each {
      script_ch.put(name, Channel.fromPath(path(name)))
 }
 
+
+
+
+// Creating two channels with the file names and at the same time
+// checking file existence
+
+
+
+
+
+bed = Paths.get(params.input_dir,"${params.data_name}.bed").toString()
+bim = Paths.get(params.input_dir,"${params.data_name}.bim").toString()
+fam = Paths.get(params.input_dir,"${params.data_name}.fam").toString()
 
 
 
