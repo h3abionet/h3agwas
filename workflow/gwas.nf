@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 
 /*
- * Authors       : 
+ * Authors       :
  *
- *      
+ *
  *      Shaun Aron
  *   	Rob Clucas
  *      Eugene de Beste
@@ -11,20 +11,20 @@
  *      Abayomi Mosaku
  *      Anmol Kiran
  *      Lerato Magosi
- *      
+ *
  *  On behalf of the H3ABionet Consortium
  *  2015-2016
- * 
+ *
  *
  * Description  : Nextflow pipeline for Wits GWAS.
- * 
+ *
  */
 
 //---- General definitions --------------------------------------------------//
 
 
 
-/* Defines the directory where the plink 2 input binary files are. 
+/* Defines the directory where the plink 2 input binary files are.
  *
  * NOTE: This must be a relative path, from where the pipeline is run.
  * and should end with a slash
@@ -38,7 +38,7 @@ def params_help = new LinkedHashMap(helps)
 
 
 params.work_dir   = "$HOME/h3agwas"
-params.input_dir  = "${params.work_dir}/input"  
+params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
 
 
@@ -48,10 +48,10 @@ params.output_dir = "${params.work_dir}/output"
 
 params.scripts   = "${params.work_dir}/scripts"
 
-/* Defines the names of the plink binary files in the plink directory 
+/* Defines the names of the plink binary files in the plink directory
  * (.fam, .bed, .bed).
  *
- * NOTE: This must be without the extension (so if A.fam, A.bed, ... 
+ * NOTE: This must be without the extension (so if A.fam, A.bed, ...
  *       then use 'A').
  */
 params.data_name  = 'raw-GWA-data'
@@ -69,7 +69,7 @@ params.sexinfo_available = "false"
 
 //---- Cutoff definitions ---------------------------------------------------//
 
-/* Defines the cutoffs for the heterozygosity. Standard cutoff +- 3sd from 
+/* Defines the cutoffs for the heterozygosity. Standard cutoff +- 3sd from
  * mean)
  */
 params.cut_het_high = 0.343
@@ -95,8 +95,8 @@ params.cut_geno     = 0.01
 params.cut_hwe        = 0.008
 
 params.help = false
-    /* cut-off for relatedness */
 
+* cut-off for relatedness */
 params.pi_hat = 0.04
 pi_hat=params.pi_hat
 
@@ -108,7 +108,7 @@ if (params.help) {
           println ""
       else {
         help = params_help.get(entry.key)
-        if (help) 
+        if (help)
           print "\n    $help"
         println ""
       }
@@ -129,23 +129,19 @@ if ( params.sexinfo_available == "false" ) {
   println "Sexinfo available command"
 }
 
-// From the input base file, we get the bed, bim and fam files -- absolute path and add suffix 
+// From the input base file, we get the bed, bim and fam files -- absolute path and add suffix
 
-// TODO  : fix as nice Groovy
 bim = Paths.get(params.input_path,"${params.plink_fname}.bim").toString()
 
-
-
 // Prepends scripts directory path to the argument given
-def path = { 
+def path = {
    fn ->
      Paths.get(params.scripts,fn).toString()
 }
 
-
 // Checks if the file exists
-def checker = { fn -> 
-   if (fn.exists()) 
+def checker = { fn ->
+   if (fn.exists())
        return fn;
     else
        error("\n\n-----------------\nFile $fn does not exist\n\n---\n")
@@ -157,10 +153,7 @@ def checker = { fn ->
 // Creating two channels with the file names and at the same time
 // checking file existence
 
-
-
 bed = Paths.get(params.input_path,"${params.data_name}.bed").toString()
-println "Asking for $bed"
 bim = Paths.get(params.input_path,"${params.data_name}.bim").toString()
 fam = Paths.get(params.input_path,"${params.data_name}.fam").toString()
 bim_ch = Channel.fromPath(bim).map checker
@@ -170,16 +163,15 @@ Channel
     .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
     .set { raw_ch }
 
-
 //---- Start Pipeline -------------------------------------------------------//
 
-/* Process to find duplicates. * 
+/* Process to find duplicates. *
  * Inputs:
  * - bim: the bim file
  * Outputs:
  * - duplicates.snps    : A possibly empty file with a list of SNPs
  */
-process getDuplicateMarkers { 
+process getDuplicateMarkers {
   input:
     set file("raw.bim") from bim_ch
   output:
@@ -192,12 +184,12 @@ process getDuplicateMarkers {
 }
 
 
-/*  Process to remove duplicate SNPs. 
+/*  Process to remove duplicate SNPs.
  * Inputs
  *   -  raw files from from user-specified data
  *   -  list of duplicates comes from getDuplicateMarkers
- * Outputs: 
- *   nodups.{bed,bim,fam} (PLINK file without duplicates) and 
+ * Outputs:
+ *   nodups.{bed,bim,fam} (PLINK file without duplicates) and
  *   qc.log log file
  */
 process removeDuplicateSNPs {
@@ -222,8 +214,7 @@ process removeDuplicateSNPs {
 // Now make copies of  the ready_ch so work can happen in parallel
 
 (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch) = [1,2,3,4,5].collect {Channel.create()}
-ready_ch.into(sex_check_ch,missing_ch,het_ch,remove_inds_ch,ibd_prune_ch) 
-
+ready_ch.into(sex_check_ch,missing_ch,het_ch,remove_inds_ch,ibd_prune_ch)
 
 
 /* Process to identify individual discordant sex information.
@@ -232,7 +223,7 @@ ready_ch.into(sex_check_ch,missing_ch,het_ch,remove_inds_ch,ibd_prune_ch)
 process identifyIndivDiscSexinfo {
   input:
      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from sex_check_ch
-  
+
   publishDir params.publish, overwrite:true, mode:'copy'
 
   output:
@@ -243,7 +234,7 @@ process identifyIndivDiscSexinfo {
        plink --bfile nodups --check-sex  --out nodups
        if grep -Rn 'PROBLEM' nodups.sexcheck > 0010-failed.sexcheck; then
          echo 'Discordant sex info found'
-       else                                                      
+       else
          echo 'No discordant sex info found'
        fi
 
@@ -277,9 +268,7 @@ missing2_ch   = Channel.create()
 
 calc_missing_ch.into(plot1_ch_miss,missing2_ch,miss_het_ch)
 
-
-
-    // But for the  moment let's deal with heterozygosity
+// But for the  moment let's deal with heterozygosity
 
 process calculateSampleHetrozygosity {
    input:
@@ -290,7 +279,7 @@ process calculateSampleHetrozygosity {
    output:
       file("0030.het") into sample_hetero_result
    script:
-   """ 
+   """
      plink --bfile nodups $sexinfo --het  --out 0030
    """
 }
@@ -303,7 +292,7 @@ process generateMissHetPlot {
 
   input:
   file 'qcplink.imiss' from plot1_ch_miss
-  file 'qcplink.het'   from plot1_ch_het   
+  file 'qcplink.het'   from plot1_ch_het
 
   publishDir params.publish, overwrite:true, mode:'copy', pattern: "*.pdf"
 
@@ -339,11 +328,11 @@ process getBadIndivs_Missing_Het {
 
 /* We are going to check for related individuals and remove them */
 
-// first, in computing relatedness do we ignore high LD regions? 
+// first, in computing relatedness do we ignore high LD regions?
 
 if (params.high_ld_regions_fname != "")
    ldreg_ch=Channel.fromPath(params.plink_inputpath+params.high_ld_regions_fname)
-else 
+else
    ldreg_ch=Channel.value("dummy") //If not, create dummy channel
 
 
@@ -408,7 +397,7 @@ process findRelatedIndiv {
 process removeQCIndivs {
   input:
     file failed_miss_het
-    file failed_sexcheck_f from failed_sex_check 
+    file failed_sexcheck_f from failed_sex_check
     file related_indivs
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from remove_inds_ch
   output:
@@ -457,7 +446,6 @@ process generateMafPlot {
 }
 
 
-
 // Repeat computation of missingness on QCd data
 process calculateSnpMissigness {
   input:
@@ -500,7 +488,7 @@ process calculateSnpSkewStatus {
    """
     plink --bfile clean00 $sexinfo --test-missing --hardy --out clean00
    """
-}  
+}
 
 (clean_diff_miss_plot_ch1,clean_diff_miss_ch2)=[1,2].collect{Channel.create()}
 src_clean_diff_miss_ch.into(clean_diff_miss_plot_ch1,clean_diff_miss_ch2)
@@ -530,7 +518,7 @@ process findSnpExtremeDifferentialMissingness {
   script:
     cut_diff_miss=params.cut_diff_miss
     diffscript = path("select_diffmiss_qcplink.pl")
-    """ 
+    """
      $diffscript $cut_diff_miss clean00.missing failed_diffmiss.snps
     """
 }
@@ -603,7 +591,3 @@ process computePhase0 {
 
 pictures_ch.subscribe { println "Drawn $it" }
 comp_phase1_ch.subscribe { println "Done!!!" }
-
-
-
-
