@@ -62,8 +62,7 @@ params.sexinfo_available = "false"
 
 //---- Cutoff definitions ---------------------------------------------------//
 
-/* Defines the cutoffs for the heterozygosity. Standard cutoff +- 3sd from
- * mean)
+/* Defines the cutoffs for the heterozygosity. Standard cutoff +- 3sd from mean
  */
 params.cut_het_high = 0.343
 params.cut_het_low  = 0.254
