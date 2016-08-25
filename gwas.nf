@@ -361,7 +361,7 @@ else
 // Get which SNPs should be pruned for IBD
 process pruneForIBD {
 	// multi-threaded plink -- probably 2 core optimal, maybe 3
-  cpus '4'
+  cpus '1'
   memory plink_mem_req
   input:
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from ibd_prune_ch
@@ -609,7 +609,7 @@ process removeQCPhase1 {
 
 
 process computePhase0 {
-  cpus '4'
+  cpus '1'
   memory plink_mem_req
   input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  from clean01_ch
