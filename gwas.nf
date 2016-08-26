@@ -8,9 +8,9 @@
  *   	Rob Clucas
  *      Eugene de Beste
  *      Scott Hazelhurst
- *      Abayomi Mosaku
  *      Anmol Kiran
  *      Lerato Magosi
+ *      Abayomi Mosaku
  *
  *  On behalf of the H3ABionet Consortium
  *  2015-2016
@@ -89,7 +89,7 @@ params.cut_hwe        = 0.008
 params.plink_process_memory = '750MB' // how much plink needs for this
 params.other_process_memory = '750MB' // how much other processed need
 
-max_plink_cpus = params.max_plink_cpus = 1
+max_plink_cores = params.max_plink_cores = 1
 
 plink_mem_req = params.plink_process_memory
 other_mem_req = params.other_process_memory
@@ -363,7 +363,7 @@ else
 // Get which SNPs should be pruned for IBD
 process pruneForIBD {
 	// multi-threaded plink -- probably 2 core optimal, maybe 3
-  cpus max_plink_cpus
+  cpus max_plink_cores
   memory plink_mem_req
   input:
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from ibd_prune_ch
@@ -377,9 +377,9 @@ process pruneForIBD {
     else
       range =""
     """
-      plink --bfile nodups --threads $max_plink_cpus --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
-      plink --bfile nodups --threads $max_plink_cpus --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
-      plink --bfile nodups --threads $max_plink_cpus --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out ibd_min_thresh
+      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
+      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
+      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out ibd_min_thresh
       echo DONE
      """
 
@@ -611,7 +611,7 @@ process removeQCPhase1 {
 
 
 process computePhase0 {
-  cpus max_plink_cpus
+  cpus max_plink_cores
   memory plink_mem_req
   input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  from clean01_ch
@@ -622,7 +622,7 @@ process computePhase0 {
 
   script:
   """
-     plink --threads $max_plink_cpus --bfile cleaned --pca --assoc --adjust --out cleaned
+     plink --threads $max_plink_cores --bfile cleaned --pca --assoc --adjust --out cleaned
   """
 }
 
