@@ -593,7 +593,7 @@ process removeQCPhase1 {
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  into \
-       clean01_ch
+       (assoc_ch, pca_in_ch)
 
   script:
   """
@@ -608,6 +608,21 @@ process removeQCPhase1 {
 
 
 
+process computePCA {
+  cpus max_plink_cores
+  memory plink_mem_req
+  input:
+    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from pca_in_ch
+
+  publishDir params.output_dir, overwrite:true, mode:'copy'
+  output:
+    set file('cleaned.eigenval'), file('cleaned.eigenvec')  into pca_out_ch
+
+  script:
+  """
+     plink --threads $max_plink_cores --bfile cleaned --pca --out cleaned
+  """
+}
 
 
 process computePhase0 {
@@ -625,6 +640,7 @@ process computePhase0 {
      plink --threads $max_plink_cores --bfile cleaned --pca --assoc --adjust --out cleaned
   """
 }
+
 
 
 pictures_ch.subscribe { println "Drawn $it" }
