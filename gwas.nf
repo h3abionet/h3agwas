@@ -8,9 +8,9 @@
  *   	Rob Clucas
  *      Eugene de Beste
  *      Scott Hazelhurst
- *      Abayomi Mosaku
  *      Anmol Kiran
  *      Lerato Magosi
+ *      Abayomi Mosaku
  *
  *  On behalf of the H3ABionet Consortium
  *  2015-2016
@@ -23,7 +23,6 @@
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
-
 
 
 def helps = [ 'help' : 'help' ]
@@ -41,6 +40,24 @@ params.output_dir = "${params.work_dir}/output"
  */
 
 params.scripts   = "${params.work_dir}/scripts"
+
+
+       /* What association tests should be done
+	*/
+
+
+
+
+/* Do permutation testing -- 0 for none, otherwise give number */
+params.mperm = 1000
+
+/* Adjust for multiple correcttion */
+params.adjust = true
+
+supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
+params.assoc = ["chi2","fisher","model","cmh","linear","logistic"]
+
+
 
 /* Defines the names of the plink binary files in the plink directory
  * (.fam, .bed, .bed).
@@ -61,10 +78,9 @@ params.high_ld_regions_fname = ""
  */
 params.sexinfo_available = "false"
 
-//---- Cutoff definitions ---------------------------------------------------//
+//---- Cutoff de§finitions ---------------------------------------------------//
 
-/* Defines the cutoffs for the heterozygosity. Standard cutoff +- 3sd from
- * mean)
+/* Defines the cutoffs for the heterozygosity. Standard cutoff +- 3sd from mean
  */
 params.cut_het_high = 0.343
 params.cut_het_low  = 0.254
@@ -88,8 +104,10 @@ params.cut_geno     = 0.01
  */
 params.cut_hwe        = 0.008
 
-params.plink_process_memory = '4GB' // how much plink needs for this
-params.other_process_memory = '2GB' // how much other processed need
+params.plink_process_memory = '750MB' // how much plink needs for this
+params.other_process_memory = '750MB' // how much other processed need
+
+max_plink_cores = params.max_plink_cores = 4
 
 plink_mem_req = params.plink_process_memory
 other_mem_req = params.other_process_memory
@@ -363,8 +381,7 @@ else
 // Get which SNPs should be pruned for IBD
 process pruneForIBD {
 	// multi-threaded plink -- probably 2 core optimal, maybe 3
-  cpus '1'
-  echo true
+  cpus max_plink_cores
   memory plink_mem_req
   input:
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from ibd_prune_ch
@@ -378,28 +395,15 @@ process pruneForIBD {
     else
       range =""
     """
-      hostname
-      plink --bfile nodups --threads 4 --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
-      plink --bfile nodups --threads 4 --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
-      plink --bfile nodups --threads 4 --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out ibd_min_thresh
+      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
+      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
+      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out ibd_min_thresh
       echo DONE
      """
 
 }
 
 
-    // HUH?
-process sortByPiHat {
-  memory other_mem_req
-  input:
-     file(ibd_min_genome) from sort_ibd_ch1
-  output:
-     file 'qcplink_ibd_min_thresh_sorted_pihat.txt'
-
-  """
-  sort -k10n ${ibd_min_genome} > qcplink_ibd_min_thresh_sorted_pihat.txt
-  """
-}
 
 // run script to find related individuals
 //  Future - perhaps replaced with Primus
@@ -595,7 +599,7 @@ process removeQCPhase1 {
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  into \
-       clean01_ch
+       (assoc_ch, pca_in_ch)
 
   script:
   """
@@ -610,24 +614,46 @@ process removeQCPhase1 {
 
 
 
-
-
-process computePhase0 {
-  cpus '1'
+process computePCA {
+  cpus max_plink_cores
   memory plink_mem_req
   input:
-    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  from clean01_ch
+    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from pca_in_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    set file('cleaned.*')  into comp_phase1_ch
+    set file('cleaned.eigenval'), file('cleaned.eigenvec')  into pca_out_ch
 
   script:
   """
-     plink --threads 4 --bfile cleaned --pca --assoc --adjust --out cleaned
+     plink --threads $max_plink_cores --bfile cleaned --pca --out cleaned
   """
 }
 
 
+
+num_assoc_cores = params.mperm == 0 ? 1 : max_plink_cores
+
+process computeTest {
+   echo true
+   cpus num_assoc_cores
+   input:
+    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
+   each test from params.assoc
+   publishDir params.output_dir, overwrite:true, mode:'copy'
+   output:
+      set file("cleaned.*") into out_ch
+   script:
+    base = "cleaned"
+    perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
+    adjust = (params.adjust ? "--adjust" : "")
+    if (test == "chi2")
+      template "chi2.sh"
+    else if (test == "fisher") 
+      template "fisher.sh"
+}
+
+
+
 pictures_ch.subscribe { println "Drawn $it" }
-comp_phase1_ch.subscribe { println "Done!!!" }
+/*comp_phase1_ch.subscribe { println "Done!!!" }*/
