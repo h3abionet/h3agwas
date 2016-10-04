@@ -41,6 +41,24 @@ params.output_dir = "${params.work_dir}/output"
 
 params.scripts   = "${params.work_dir}/scripts"
 
+
+       /* What association tests should be done
+	*/
+
+
+
+
+/* Do permutation testing -- 0 for none, otherwise give number */
+params.mperm = 1000
+
+/* Adjust for multiple correcttion */
+params.adjust = true
+
+supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
+params.assoc = ["chi2","fisher","model","cmh","linear","logistic"]
+
+
+
 /* Defines the names of the plink binary files in the plink directory
  * (.fam, .bed, .bed).
  *
@@ -60,7 +78,7 @@ params.high_ld_regions_fname = ""
  */
 params.sexinfo_available = "false"
 
-//---- Cutoff definitions ---------------------------------------------------//
+//---- Cutoff de§finitions ---------------------------------------------------//
 
 /* Defines the cutoffs for the heterozygosity. Standard cutoff +- 3sd from mean
  */
@@ -89,7 +107,7 @@ params.cut_hwe        = 0.008
 params.plink_process_memory = '750MB' // how much plink needs for this
 params.other_process_memory = '750MB' // how much other processed need
 
-max_plink_cores = params.max_plink_cores = 1
+max_plink_cores = params.max_plink_cores = 4
 
 plink_mem_req = params.plink_process_memory
 other_mem_req = params.other_process_memory
@@ -386,18 +404,6 @@ process pruneForIBD {
 }
 
 
-    // HUH?
-process sortByPiHat {
-  memory other_mem_req
-  input:
-     file(ibd_min_genome) from sort_ibd_ch1
-  output:
-     file 'qcplink_ibd_min_thresh_sorted_pihat.txt'
-
-  """
-  sort -k10n ${ibd_min_genome} > qcplink_ibd_min_thresh_sorted_pihat.txt
-  """
-}
 
 // run script to find related individuals
 //  Future - perhaps replaced with Primus
@@ -625,23 +631,29 @@ process computePCA {
 }
 
 
-process computePhase0 {
-  cpus max_plink_cores
-  memory plink_mem_req
-  input:
-    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  from clean01_ch
 
-  publishDir params.output_dir, overwrite:true, mode:'copy'
-  output:
-    set file('cleaned.*')  into comp_phase1_ch
+num_assoc_cores = params.mperm == 0 ? 1 : max_plink_cores
 
-  script:
-  """
-     plink --threads $max_plink_cores --bfile cleaned --pca --assoc --adjust --out cleaned
-  """
+process computeTest {
+   echo true
+   cpus num_assoc_cores
+   input:
+    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
+   each test from params.assoc
+   publishDir params.output_dir, overwrite:true, mode:'copy'
+   output:
+      set file("cleaned.*") into out_ch
+   script:
+    base = "cleaned"
+    perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
+    adjust = (params.adjust ? "--adjust" : "")
+    if (test == "chi2")
+      template "chi2.sh"
+    else if (test == "fisher") 
+      template "fisher.sh"
 }
 
 
 
 pictures_ch.subscribe { println "Drawn $it" }
-comp_phase1_ch.subscribe { println "Done!!!" }
+/*comp_phase1_ch.subscribe { println "Done!!!" }*/
