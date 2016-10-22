@@ -515,6 +515,7 @@ process generateSnpMissingnessPlot {
 // Find differential missingness between cases and controls; also compute HWE scores
 process calculateSnpSkewStatus {
   memory plink_mem_req
+  cpus max_plink_cores
   input:
     set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch3
   output:
@@ -522,7 +523,7 @@ process calculateSnpSkewStatus {
     file 'clean00.hwe' into hwe_scores_ch
   script:
    """
-    plink --bfile clean00 $sexinfo --test-missing --hardy --out clean00
+    plink --threads=${max_plink_cores} --bfile clean00 $sexinfo --test-missing mperm=20000 --hardy --out clean00
    """
 }
 
