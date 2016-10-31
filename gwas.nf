@@ -51,12 +51,26 @@ params.scripts   = "${params.work_dir}/scripts"
 /* Do permutation testing -- 0 for none, otherwise give number */
 params.mperm = 1000
 
+/* User Fisher's exact test */
+params.fisher = false
+
+
+
 /* Adjust for multiple correcttion */
 params.adjust = true
 
-supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
-params.assoc = ["chi2","fisher","model","cmh","linear","logistic"]
+supported_tests = ["chi2","model","cmh","linear","logistic"]
+params.assoc = ["chi2","model","cmh","logistic"]
 
+
+/* if the plink model option is chosen, say which options you want -- space separated
+  e.g. "dom rec gen trend" or  "trend" or "rec trend" or ""  */
+params.modeloptions = "rec"
+
+
+/* ditto for regression options */
+/* "genotypic hethom dominant recessive no-snp" */
+params.regressionoptions= "dominant"
 
 
 /* Defines the names of the plink binary files in the plink directory
@@ -387,7 +401,6 @@ process pruneForIBD {
     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from ibd_prune_ch
     file ldreg    from ldreg_ch
   output:
-  //set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') into ibd
     file 'ibd_min_thresh.genome' into sort_ibd_ch1,sort_ibd_ch2
   script:
     if (params.high_ld_regions_fname != "")
@@ -633,9 +646,12 @@ process computePCA {
 
 
 num_assoc_cores = params.mperm == 0 ? 1 : max_plink_cores
+fisher          = params.fisher ? "" : "fisher"
+
+
+
 
 process computeTest {
-   echo true
    cpus num_assoc_cores
    input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
@@ -644,13 +660,11 @@ process computeTest {
    output:
       set file("cleaned.*") into out_ch
    script:
-    base = "cleaned"
-    perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
-    adjust = (params.adjust ? "--adjust" : "")
-    if (test == "chi2")
-      template "chi2.sh"
-    else if (test == "fisher") 
-      template "fisher.sh"
+      base = "cleaned"
+      perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
+      adjust = (params.adjust ? "--adjust" : "")
+      scriptfile = "${test}.sh"
+      template scriptfile
 }
 
 
