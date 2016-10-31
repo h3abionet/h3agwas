@@ -523,7 +523,7 @@ process calculateSnpSkewStatus {
     file 'clean00.hwe' into hwe_scores_ch
   script:
    """
-    plink --threads=${max_plink_cores} --bfile clean00 $sexinfo --test-missing mperm=20000 --hardy --out clean00
+    plink --threads ${max_plink_cores} --bfile clean00 $sexinfo --test-missing mperm=20000 --hardy --out clean00
    """
 }
 
@@ -617,5 +617,5 @@ process removeQCPhase1 {
 }
 
 
-result_ch.subscribe { print "Completed and produced ${it.baseName} }
+result_ch.subscribe { print "Completed and produced ${it.baseName}" }
 
