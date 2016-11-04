@@ -34,48 +34,35 @@ def params_help = new LinkedHashMap(helps)
 params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
+params.output_testing = "cleaned"
+outfname = params.output_testing
 
 
 /* Defines the path where any scripts to be executed can be found.
  */
-
-params.scripts   = "${params.work_dir}/scripts"
-
-
-       /* What association tests should be done
-	*/
-
-
 
 
 /* Do permutation testing -- 0 for none, otherwise give number */
 params.mperm = 1000
 
 /* Adjust for multiple correcttion */
-params.adjust = true
+params.adjust = 0
 
 supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
-params.assoc = ["chi2","fisher","model","cmh","linear","logistic"]
 
 
+params.chi2     = 1
+params.fisher   = 1
+params.model    = 0
+params.linear   = 0
+params.logistic = 1
+params.gemma    = 0
+params.gemma_relopt = 1
+params.gemma_lmmopt = 4
 
-/* Defines the names of the plink binary files in the plink directory
- * (.fam, .bed, .bed).
- *
- * NOTE: This must be without the extension (so if A.fam, A.bed, ...
- *       then use 'A').
- */
-params.data_name  = 'raw-GWA-data'
 
-/* When computing IBD do we want to exclude high-lD regions from computation */
-/* empty string if not */
+params.input_testing  = 'raw-GWA-data'
 
-params.high_ld_regions_fname = ""
-
-/* Defines if sexinfo is available or not, options are:
- *  - "true"  : sexinfo is available
- *  - "false" : sexinfo is not avalable
- */
 params.sexinfo_available = "false"
 
 
@@ -119,17 +106,7 @@ if ( params.sexinfo_available == "false" ) {
   println "Sexinfo available command"
 }
 
-// From the input base file, we get the bed, bim and fam files -- absolute path and add suffix
 
-bim = Paths.get(params.input_dir,"${params.plink_fname}.bim").toString()
-//println(bim)
-//println(input_dir)
-
-// Prepends scripts directory path to the argument given
-def path = {
-   fn ->
-     Paths.get(params.scripts,fn).toString()
-}
 
 // Checks if the file exists
 checker = { fn ->
@@ -140,45 +117,23 @@ checker = { fn ->
 }
 
 
-//------------
-
-/* Deal with scripts -- we check if the scripts exist and if they do */
 
 
-
-
-all_scripts.each  { checker(file(path(it))) }
-
-script_ch = [ 'dummy' : Channel.empty()]
-
-all_scripts.each { 
-   name-> 
-     script_ch.put(name, Channel.fromPath(path(name)))
-}
+bed = Paths.get(params.input_dir,"${params.input_testing}.bed").toString()
+bim = Paths.get(params.input_dir,"${params.input_testing}.bim").toString()
+fam = Paths.get(params.input_dir,"${params.input_testing}.fam").toString()
 
 
 
 
-// Creating two channels with the file names and at the same time
-// checking file existence
-
-
-
-
-
-bed = Paths.get(params.input_dir,"${params.data_name}.bed").toString()
-bim = Paths.get(params.input_dir,"${params.data_name}.bim").toString()
-fam = Paths.get(params.input_dir,"${params.data_name}.fam").toString()
-
-
-
-
-bim_ch = Channel.fromPath(bim).map checker
+pca_in_ch = Channel.create()
+assoc_ch = Channel.create()
 Channel
     .from(file(bed),file(bim),file(fam))
     .buffer(size:3)
     .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
     .separate( pca_in_ch, assoc_ch ) { a -> [a,a] }
+
 
 
 
@@ -191,38 +146,41 @@ process computePCA {
 
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    set file('cleaned.eigenval'), file('cleaned.eigenvec')  into pca_out_ch
+    set file("${outfname}.eigenval"), file("${outfname}.eigenvec")  \
+         into pca_out_ch
 
   script:
   """
-     plink --threads $max_plink_cores --bfile cleaned --pca --out cleaned
+     plink --threads $max_plink_cores --bfile cleaned --pca --out ${outfname}
   """
 }
 
 
 
+
 num_assoc_cores = params.mperm == 0 ? 1 : max_plink_cores
+
+supported_tests = ["chi2","fisher","model","cmh","linear","logistic","gemma"]
+
+requested_tests = supported_tests.findAll { entry -> params.get(entry)==1 }
 
 process computeTest {
    echo true
    cpus num_assoc_cores
    input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
-   each test from params.assoc
+   each test from requested_tests
    publishDir params.output_dir, overwrite:true, mode:'copy'
    output:
-      set file("cleaned.*") into out_ch
+      set file("${outfname}.*") into out_ch
    script:
     base = "cleaned"
     perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
     adjust = (params.adjust ? "--adjust" : "")
-    if (test == "chi2")
-      template "chi2.sh"
-    else if (test == "fisher") 
-      template "fisher.sh"
+    template "${test}.sh"
 }
 
 
 
-pictures_ch.subscribe { println "Drawn $it" }
+pca_out_ch.subscribe { println "Drawn $it" }
 /*comp_phase1_ch.subscribe { println "Done!!!" }*/

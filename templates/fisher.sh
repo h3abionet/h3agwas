@@ -1,5 +1,5 @@
 #!/bin/bash
 
 
-plink --bfile $base --assoc fisher --out $base
+plink --bfile $base --assoc fisher $adjust --out $base
 

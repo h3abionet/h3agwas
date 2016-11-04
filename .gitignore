@@ -5,3 +5,6 @@ work/
 input/*
 output/*
 
+/config-gen/nbproject/private/
+/config-gen/dist/
+/config-gen/build/
