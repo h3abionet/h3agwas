@@ -22,8 +22,8 @@
 
 //---- General definitions --------------------------------------------------//
 
-import java.nio.file.Paths
-
+import java.nio.file.Paths;
+import sun.nio.fs.UnixPath;
 
 def helps = [ 'help' : 'help' ]
 
@@ -31,72 +31,11 @@ def helps = [ 'help' : 'help' ]
 def params_help = new LinkedHashMap(helps)
 
 
-params.work_dir   = "$HOME/h3agwas"
-params.input_dir  = "${params.work_dir}/input"
-params.output_dir = "${params.work_dir}/output"
-params.output  = "cleaned"  // Name of file
 
-
-
-
-
-/* Defines the names of the plink binary files in the plink directory
- * (.fam, .bed, .bed).
- *
- * NOTE: This must be without the extension (so if A.fam, A.bed, ...
- *       then use 'A').
- */
-params.data_name  = 'raw-GWA-data'
-
-/* When computing IBD do we want to exclude high-lD regions from computation */
-/* empty string if not */
-
-params.high_ld_regions_fname = ""
-
-/* Defines if sexinfo is available or not, options are:
- *  - "true"  : sexinfo is available
- *  - "false" : sexinfo is not avalable
- */
-params.sexinfo_available = "false"
-
-//---- Cutoff de§finitions ---------------------------------------------------//
-
-/* Defines the cutoffs for the heterozygosity. Standard cutoff +- 3sd from mean
- */
-params.cut_het_high = 0.343
-params.cut_het_low  = 0.254
-
-/* Defines the cutoff for missingness. Using standard cutoff -- 3 - 7%.
- */
-params.cut_miss      = 0.05
-params.cut_diff_miss = 0.05;
-
-
-/* Defines the cutoff for the SNP minor allele frequency.
- */
-params.cut_maf        = 0.01
-
-/* Defines the cutoff for SNP missingness.
- */
-params.cut_mind     = 0.01
-params.cut_geno     = 0.01
-
-/* Defines the cutoff for the SNP Hardy Weinburg deviation.
- */
-params.cut_hwe        = 0.008
-
-params.plink_process_memory = '750MB' // how much plink needs for this
-params.other_process_memory = '750MB' // how much other processed need
-
-max_plink_cores = params.max_plink_cores = 4
+max_plink_cores = params.max_plink_cores 
 
 plink_mem_req = params.plink_process_memory
 other_mem_req = params.other_process_memory
-
-params.help = false
-
-/* cut-off for relatedness */
-params.pi_hat = 0.04
 pi_hat=params.pi_hat
 
 if (params.help) {
@@ -128,10 +67,6 @@ if ( params.sexinfo_available == "false" ) {
   println "Sexinfo available command"
 }
 
-// From the input base file, we get the bed, bim and fam files -- absolute path and add suffix
-
-bim = Paths.get(params.input_dir,"${params.plink_fname}.bim").toString()
-
 
 // Checks if the file exists
 checker = { fn ->
@@ -145,20 +80,23 @@ checker = { fn ->
 //------------
 
 
+raw_ch = Channel.create()
+bim_ch = Channel.create()
 
-bed = Paths.get(params.input_dir,"${params.data_name}.bed").toString()
-bim = Paths.get(params.input_dir,"${params.data_name}.bim").toString()
-fam = Paths.get(params.input_dir,"${params.data_name}.fam").toString()
+/* Get the input files -- could be a glob
+ * We match the bed, bim, fam file -- order determined lexicographically
+ * not by order given, we check that they exist and then 
+ * send the all the files to raw_ch and just the bim file to bim_ch */
 
 
 
-
-bim_ch = Channel.fromPath(bim).map checker
 Channel
-    .from(file(bed),file(bim),file(fam))
-    .buffer(size:3)
-    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
-    .set { raw_ch }
+   .fromFilePairs("${params.input_dir}/*.{bed,bim,fam}",size:3, flat : true)\
+   .ifEmpty { error "No matching plink files" }\
+   .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
+   .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
+
+
 
 //---- Start Pipeline -------------------------------------------------------//
 
@@ -171,14 +109,24 @@ Channel
 process getDuplicateMarkers {
   memory other_mem_req
   input:
-    set file("raw.bim") from bim_ch
+    set file(inpfname) from bim_ch
   output:
-    set file("duplicates.snps") into remove_ch
+    set  file("${base}.dups") into duplicates_ch
   script:
-     inpfname = "raw.bim"
-     outfname = "duplicates.snps"
+     print inpfname
+     base = inpfname.baseName
+     outfname = "${base}.dups"
      template "dups.py"
 }
+
+
+public String getBase(fn) {
+   x = file("tmp")
+   if (fn.getClass() == x.getClass())
+      return fn.getBaseName();
+   else
+      return fn[0].getBaseName();
+}	
 
 
 /*  Process to remove duplicate SNPs.
@@ -189,25 +137,29 @@ process getDuplicateMarkers {
  *   nodups.{bed,bim,fam} (PLINK file without duplicates) and
  *   qc.log log file
  */
+
 process removeDuplicateSNPs {
   memory plink_mem_req
   input:
-    set file(bed), file(bim), file(fam) from raw_ch
-    set file('duplicates.snps') from remove_ch
+    set file(plinks), file(duplicates)	\
+    from raw_ch.phase(duplicates_ch){getBase(it) }
 
-  publishDir params.output_dir, pattern: "0002-dups.log", overwrite:true, mode:'copy'
+  publishDir params.output_dir, pattern: "0002-dups.log", \
+             overwrite:true, mode:'copy'
 
   output:
-    set  file('nodups.bed'),file('nodups.bim'),file('nodups.fam') \
+    set  file('${base}-nd.bed'),file('${base}-nd.bim'),file('${base}-nd.fam') \
          into (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch)
-    file ('0002-dups.log')
+    file ('${base}-0002-dups.log')
   script:
+   bed = plinks[0].baseN
    base=bed.baseName
    """
     plink --bfile ${base} $sexinfo --exclude duplicates.snps --make-bed --out nodups >> qc.log
-    mv nodups.log 0002-dups.log
+    mv nodups.log ${base}-0002-dups.log
    """
 }
+
 
 
 
