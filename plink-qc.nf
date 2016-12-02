@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 
 def helps = [ 'help' : 'help' ]
+params.help = false
 
 
 def params_help = new LinkedHashMap(helps)
@@ -141,22 +142,24 @@ public String getBase(fn) {
 process removeDuplicateSNPs {
   memory plink_mem_req
   input:
-    set file(plinks), file(duplicates)	\
-    from raw_ch.phase(duplicates_ch){getBase(it) }
+    file(plinks)	\
+      from raw_ch.phase(duplicates_ch){getBase(it) }.map {it.flatten()}
 
-  publishDir params.output_dir, pattern: "0002-dups.log", \
+  publishDir params.output_dir, pattern: "$logfile", \
              overwrite:true, mode:'copy'
 
   output:
-    set  file('${base}-nd.bed'),file('${base}-nd.bim'),file('${base}-nd.fam') \
+    set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
          into (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch)
-    file ('${base}-0002-dups.log')
+    file (logfile)
   script:
-   bed = plinks[0].baseN
-   base=bed.baseName
+   base    = plinks[0].baseName
+   dups    = plinks[3]
+   nodup   = "${base}-nd"
+   logfile = "${base}-0002-dups.log"
    """
-    plink --bfile ${base} $sexinfo --exclude duplicates.snps --make-bed --out nodups >> qc.log
-    mv nodups.log ${base}-0002-dups.log
+    plink --bfile $base $sexinfo --exclude $dups --make-bed --out $nodup
+    mv ${nodup}.log $logfile
    """
 }
 
@@ -170,25 +173,27 @@ process removeDuplicateSNPs {
 process identifyIndivDiscSexinfo {
   memory other_mem_req
   input:
-     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from sex_check_ch
+     file(plinks) from sex_check_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     file '0010-failed.sexcheck' into failed_sex_check
+     file(logfile) into failed_sex_check
   script:
-  if (params.sexinfo_available == "true")
-  """
-       plink --bfile nodups --check-sex  --out nodups
-       if grep -Rn 'PROBLEM' nodups.sexcheck > 0010-failed.sexcheck; then
+    base = plinks[0].baseName
+    logfile= "${base}-failed.sexcheck"
+    if (params.sexinfo_available == "true")
+    """
+       plink --bfile $base --check-sex  --out $base
+       if grep -Rn 'PROBLEM' ${base}.sexcheck > $logfile; then
          echo 'Discordant sex info found'
        else
          echo 'No discordant sex info found'
        fi
 
-  """
-  else
-    "echo 'No sex information available to check'  > 0010-failed.sexcheck"
+    """
+    else
+     "echo 'No sex information available to check'  > $logfile"
 
 }
 
@@ -197,15 +202,19 @@ process identifyIndivDiscSexinfo {
 process calculateSampleMissing {
   memory plink_mem_req
   input:
-     set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from missing_ch
+     file(plinks) from missing_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     file("0020.imiss") into (plot1_ch_miss,missing2_ch,miss_het_ch)
-  """
-    plink --bfile nodups $sexinfo --missing --out 0020
-  """
+     set file("${imiss}.imiss") into\
+         (plot1_ch_miss,missing2_ch,miss_het_ch)
+  script:
+     base = plinks[0].baseName
+     imiss= "${base}"
+     """
+       plink --bfile $base $sexinfo --missing --out $imiss
+     """
 }
 
 
@@ -215,15 +224,17 @@ process calculateSampleMissing {
 process calculateSampleHetrozygosity {
    memory plink_mem_req
    input:
-      set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from het_ch
+      file(nodups) from het_ch
 
    publishDir params.output_dir, overwrite:true, mode:'copy'
 
    output:
-      file("0030.het") into (hetero_check_ch, plot1_ch_het)
+      file("${hetf}.het") into (hetero_check_ch, plot1_ch_het)
    script:
+      base = nodups[0].baseName
+      hetf = "${base}"
    """
-     plink --bfile nodups $sexinfo --het  --out 0030
+     plink --bfile $base $sexinfo --het  --out $hetf
    """
 }
 
@@ -234,18 +245,17 @@ process generateMissHetPlot {
   errorStrategy 'ignore'
 
   input:
-    file 'qcplink.imiss' from plot1_ch_miss
-    file 'qcplink.het'   from plot1_ch_het
+    set file(imiss), file(het) from \
+        plot1_ch_miss.phase(plot1_ch_het) { getBase(it) }
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
     file('*.pdf')   into pictures_ch
 
   script:
-    imiss   = "qcplink.imiss"
-    het     = "qcplink.het"
-    pairs   = "pairs.imiss-vs-het.pdf"
-    meanhet = "meanhet_plot.pdf"
+    base = imiss.baseName
+    pairs   = "${base}-pairs.imiss-vs-het.pdf"
+    meanhet = "${base}-meanhet_plot.pdf"
     template "miss_het_plot_qcplink.R"
 }
 
@@ -256,13 +266,14 @@ process getBadIndivs_Missing_Het {
   errorStrategy 'ignore'
   memory other_mem_req
   input:
-   file 'qcplink.imiss' from miss_het_ch
-   file 'qcplink.het'   from hetero_check_ch
+   set file(imiss), file(het) from \
+       miss_het_ch.phase(hetero_check_ch) { getBase(it) }
   output:
-    file('fail_miss_het_qcplink.txt') into failed_miss_het
+    file outfname into failed_miss_het
 
   script:
-    outfname = "fail_miss_het_qcplink.txt"
+    base = imiss.baseName
+    outfname = "${base}-fail_miss_het_qcplink.txt"
     template "select_miss_het_qcplink.pl"
 
 }
@@ -284,20 +295,21 @@ process pruneForIBD {
   cpus max_plink_cores
   memory plink_mem_req
   input:
-    set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from ibd_prune_ch
-    file ldreg    from ldreg_ch
+    file plinks from ldreg_ch.cross(ibd_prune_ch) {true} .map { it.flatten() }
   output:
-  //set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') into ibd
-    file 'ibd_min_thresh.genome' into sort_ibd_ch1,sort_ibd_ch2
+    file "${outf}.genome" into sort_ibd_ch1,sort_ibd_ch2
   script:
+    nodups = plinks[1].baseName
+    ldreg  = plinks[0]
+    outf   = "${nodups}"
     if (params.high_ld_regions_fname != "")
       range = "--range --exclude $ldreg"
     else
       range =""
     """
-      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
-      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
-      plink --bfile nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out ibd_min_thresh
+      plink --bfile $nodups --threads $max_plink_cores --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
+      plink --bfile $nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
+      plink --bfile $nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
       echo DONE
      """
 
@@ -311,14 +323,14 @@ process findRelatedIndiv {
   errorStrategy 'ignore'
   memory other_mem_req
   input:
-     file missing    from missing2_ch
-     file ibd_genome from sort_ibd_ch2
-
+     set file (missing), file (ibd_genome) from \
+         missing2_ch.phase(sort_ibd_ch2) { getBase(it) }
   output:
-     file 'fail_IBD_qcplink.txt' into related_indivs
+     file outfname into related_indivs
 
   script:
-     outfname = "fail_IBD_qcplink.txt"
+     base = missing.baseName
+     outfname = "${base}-fail_IBD_qcplink.txt"
      template "run_IBD_QC_qcplink.pl"
 
 
@@ -328,18 +340,24 @@ process findRelatedIndiv {
 process removeQCIndivs {
   memory plink_mem_req
   input:
-    file failed_miss_het
-    file failed_sexcheck_f from failed_sex_check
-    file related_indivs
-    set file('nodups.bed'),file('nodups.bim'),file('nodups.fam') from remove_inds_ch
+    file(inps) from \
+      failed_miss_het.phase(related_indivs).map { it.flatten() }\
+ x.phase(failed_sex_check).map { it.flatten() }.subscribe { println "Failed sex check $it"  }    
+       failed_miss_het.phase(failed_sex_check) {getBase(it)}\
+                      .phase(related_indivs)  {getBase(it)}\
+                      .phase(remove_inds_ch)  {getBase(it)}.map { it.flatten () }
   output:
      set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") into \
          (clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
 
   script:
+   failed_miss_hetf  =inps[0]
+   failed_sex_check_f=inps[1]
+   related_indivs    =inps[2]
+   base = inps[3].baseName
   """
   cat $failed_sexcheck_f $related_indivs $failed_miss_het | sort -k1 | uniq > qcplink_failed_inds
-  plink --bfile nodups $sexinfo --remove qcplink_failed_inds --make-bed --out clean00
+  plink --bfile $base $sexinfo --remove qcplink_failed_inds --make-bed --out clean00
   """
 }
 
@@ -505,7 +523,7 @@ process removeQCPhase1 {
   plink --bfile temp2  $sexinfo \
         --autosome \
         --maf $params.cut_maf --mind $params.cut_mind --geno $params.cut_geno --hwe $params.cut_hwe \
-         --make-bed --out ${params.output}
+         --make-bed --out ${params.output }
   """
 }
 

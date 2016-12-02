@@ -7,8 +7,8 @@
 \$cut_het_low="${params.cut_het_low}";
 \$cut_miss="${params.cut_miss}";
 
-open(MISSFILE,"qcplink.imiss");
-open(HETFILE,"qcplink.het");
+open(MISSFILE,"$imiss");
+open(HETFILE,"$het");
 @all=<HETFILE>;
 chomp(@all);
 open(OUT,">$outfname");
