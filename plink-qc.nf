@@ -126,7 +126,10 @@ public String getBase(fn) {
    if (fn.getClass() == x.getClass())
       return fn.getBaseName();
    else
-      return fn[0].getBaseName();
+      if (fn[0].getClass() == x.getClass())
+      	 return fn[0].getBaseName();
+      else
+         return fn[0];
 }	
 
 
@@ -178,7 +181,7 @@ process identifyIndivDiscSexinfo {
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     file(logfile) into failed_sex_check
+     set val(base), file(logfile) into failed_sex_check
   script:
     base = plinks[0].baseName
     logfile= "${base}-failed.sexcheck"
@@ -269,10 +272,10 @@ process getBadIndivs_Missing_Het {
    set file(imiss), file(het) from \
        miss_het_ch.phase(hetero_check_ch) { getBase(it) }
   output:
-    file outfname into failed_miss_het
+    set val(base), file(outfname) into failed_miss_het
 
   script:
-    base = imiss.baseName
+    base = het.baseName
     outfname = "${base}-fail_miss_het_qcplink.txt"
     template "select_miss_het_qcplink.pl"
 
@@ -326,7 +329,7 @@ process findRelatedIndiv {
      set file (missing), file (ibd_genome) from \
          missing2_ch.phase(sort_ibd_ch2) { getBase(it) }
   output:
-     file outfname into related_indivs
+     set val(base), file(outfname) into related_indivs
 
   script:
      base = missing.baseName
@@ -337,61 +340,70 @@ process findRelatedIndiv {
 }
 
 
+def phasemerge = {
+     x,y -> x+y[1..-1]
+}
+
+
+
 process removeQCIndivs {
   memory plink_mem_req
   input:
-    file(inps) from \
-      failed_miss_het.phase(related_indivs).map { it.flatten() }\
- x.phase(failed_sex_check).map { it.flatten() }.subscribe { println "Failed sex check $it"  }    
-       failed_miss_het.phase(failed_sex_check) {getBase(it)}\
-                      .phase(related_indivs)  {getBase(it)}\
-                      .phase(remove_inds_ch)  {getBase(it)}.map { it.flatten () }
+    file(inps) from\
+      failed_miss_het.phase(related_indivs).map { x,y-> phasemerge(x,y)}\
+                     .phase(failed_sex_check).map { x,y-> phasemerge(x,y)}
+                     .phase(remove_inds_ch) {getBase(it)}
+		     .map {it.flatten()[1..-1]}
+  script:
   output:
-     set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") into \
+     file("${out}.{bed,bim,fam}") into\
          (clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
 
   script:
-   failed_miss_hetf  =inps[0]
-   failed_sex_check_f=inps[1]
-   related_indivs    =inps[2]
+   f_miss_het   =inps[0]
+   rel_indivs   =inps[1]
+   f_sex_check_f=inps[2]
    base = inps[3].baseName
-  """
-  cat $failed_sexcheck_f $related_indivs $failed_miss_het | sort -k1 | uniq > qcplink_failed_inds
-  plink --bfile $base $sexinfo --remove qcplink_failed_inds --make-bed --out clean00
+   out  = "${base}-c"
+    """
+     cat $f_sex_check_f $rel_indivs $f_miss_het | sort -k1 | uniq > failed_inds
+     plink --bfile $base $sexinfo --remove failed_inds --make-bed --out $out
   """
 }
+
 
 
 
 process calculateMaf {
   memory plink_mem_req
   input:
-    set file("clean00.bed"),file("clean00.bim"),file("clean00.fam") from clean00_ch1
+    file(plinks) from clean00_ch1
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.frq"
 
   output:
-    file 'clean00.frq' into maf_plot_ch
+    file "${base}.frq" into maf_plot_ch
 
   script:
-  """
-    plink --bfile clean00 $sexinfo  --freq --out clean00
-  """
+    base = plinks[0].baseName
+    """
+      plink --bfile $base $sexinfo  --freq --out $base
+    """
 }
 
 
 process generateMafPlot {
   memory other_mem_req
   input:
-    file 'clean00.frq' from maf_plot_ch
+    file frqfile from maf_plot_ch
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file 'maf_plot.pdf'
+    file ofname
 
   script:
-    frqfile = "clean00.frq"
-    ofname  = "maf_plot.pdf"
+    base    = frqfile.baseName
+    ofname  = "${base}-maf_plot.pdf"
     template "maf_plot_qcplink.R"
 }
 
@@ -400,31 +412,33 @@ process generateMafPlot {
 process calculateSnpMissigness {
   memory plink_mem_req
   input:
-   set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch2
+   file (plinks)  from clean00_ch2
 
   output:
-   file 'clean00.lmiss' into clean_miss_plot_ch
+   file "${base}.lmiss" into clean_miss_plot_ch
 
   script:
-  """
-   plink --bfile clean00 $sexinfo --missing --out clean00
-  """
+   base=plinks[0].baseName
+   """
+     plink --bfile $base $sexinfo --missing --out $base
+   """
 }
 
 
 process generateSnpMissingnessPlot {
   memory other_mem_req
   input:
-    file 'clean00.lmiss' from clean_miss_plot_ch
+    file lmissf from clean_miss_plot_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file 'snpmiss_plot.pdf'
+    file output
 
   script:
-    input  = "clean00.lmiss"
-    output = "snpmiss_plot.pdf"
+    input  = lmissf
+    base   = lmissf.baseName
+    output = "${base}-snpmiss_plot.pdf"
     template "snpmiss_plot_qcplink.R"
 }
 
@@ -433,13 +447,14 @@ process calculateSnpSkewStatus {
   memory plink_mem_req
   cpus max_plink_cores
   input:
-    set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch3
+    file(plinks)  from clean00_ch3
   output:
-    file 'clean00.missing' into (clean_diff_miss_plot_ch1,clean_diff_miss_ch2)
-    file 'clean00.hwe' into hwe_scores_ch
+    file "${base}.missing" into (clean_diff_miss_plot_ch1,clean_diff_miss_ch2)
+    file "${base}.hwe" into hwe_scores_ch
   script:
+   base = plinks[0].baseName
    """
-    plink --threads ${max_plink_cores} --bfile clean00 $sexinfo --test-missing mperm=20000 --hardy --out clean00
+    plink --threads ${max_plink_cores} --bfile $base $sexinfo --test-missing mperm=20000 --hardy --out $base
    """
 }
 
@@ -447,13 +462,14 @@ process calculateSnpSkewStatus {
 process generateDifferentialMissingnessPlot {
    memory other_mem_req
    input:
-     file "clean00.missing" from clean_diff_miss_plot_ch1
+     file clean_missing from clean_diff_miss_plot_ch1
    publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
    output:
-      file 'snpmiss_plot.pdf' into snpmiss_plot_ch
+      file output into snpmiss_plot_ch
    script:
-       input = "clean00.missing"
-       output= "snpmiss_plot.pdf"
+       input = clean_missing
+       base  = clean_missing.baseName
+       output= "${base}-snpmiss_plot.pdf"
        template "diffmiss_splot_qcplink.R"
 
  }
@@ -463,13 +479,14 @@ process generateDifferentialMissingnessPlot {
 process findSnpExtremeDifferentialMissingness {
   memory other_mem_req
   input:
-    file "clean00.missing" from clean_diff_miss_ch2
+    file clean_missing from clean_diff_miss_ch2
   output:
-     file 'failed_diffmiss.snps' into bad_snps_ch
+     set val(base), file(failed) into bad_snps_ch
   script:
     cut_diff_miss=params.cut_diff_miss
-    missing = "clean00.missing"
-    failed  = "failed_diffmiss.snps"
+    missing = clean_missing
+    base    = missing.baseName
+    failed  = "${base}-failed_diffmiss.snps"
     template "select_diffmiss_qcplink.pl"
 }
 
@@ -477,28 +494,31 @@ process findSnpExtremeDifferentialMissingness {
 process findHWEofSNPs {
   memory other_mem_req
   input:
-     file 'clean00.hwe' from hwe_scores_ch
+     file hwe from hwe_scores_ch
   output:
-     file 'unaff.hwe'   into unaff_hwe
+     file output  into unaff_hwe
 
   script:
-  """
-   head -1 clean00.hwe > unaff.hwe
-   grep 'UNAFF' clean00.hwe >> unaff.hwe
-  """
+    base   = hwe.baseName
+    output = "${base}-unaff.hwe"
+    """
+      head -1 $hwe > $output
+      grep 'UNAFF' $hwe >> $output
+    """
 }
 
 process generateHwePlot {
   memory other_mem_req
   input:
-    file 'unaff.hwe' from unaff_hwe
+    file unaff from unaff_hwe
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-    file 'hwe_plot.pdf'
+    file output into devnull1
 
   script:
-    input  = "unaff.hwe"
-    output = "hwe_plot.pdf"
+    input  = unaff
+    base   = unaff.baseName
+    output = "${base}-hwe_plot.pdf"
     template "hwe_plot_qcplink.R"
 }
 
@@ -506,23 +526,28 @@ process generateHwePlot {
 process removeQCPhase1 {
   memory plink_mem_req
   input:
-    set file('clean00.bed'),file('clean00.bim'),file('clean00.fam')  from clean00_ch4
-    file 'failed_diffmiss.snps' from bad_snps_ch
+    file inputs  from \
+         clean00_ch4\
+           .phase(bad_snps_ch) { getBase(it) }\
+           .map { x,y -> phasemerge (x,y) }
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')  into \
-       result_ch;
+    file("$output.{bed,bim,fam}") into result_ch;
 
   script:
-  """
-  # remove really realy bad SNPs and really bad individuals
-  plink --bfile clean00 $sexinfo --exclude failed_diffmiss.snps --mind 0.2 --make-bed --out temp1
-  # remove bad SNPs
-  plink --bfile temp1 $sexinfo --geno 0.2 --make-bed --out temp2
-  # Now do final QC
-  plink --bfile temp2  $sexinfo \
-        --autosome \
-        --maf $params.cut_maf --mind $params.cut_mind --geno $params.cut_geno --hwe $params.cut_hwe \
+     base=inputs[0].baseName
+     bad =inputs[3]
+     output = params.output
+     """
+     # remove really realy bad SNPs and really bad individuals
+     plink --bfile $base $sexinfo --exclude $bad --mind 0.2 --make-bed --out temp1
+     # remove bad SNPs
+     plink --bfile temp1 $sexinfo --geno 0.2 --make-bed --out temp2
+     # Now do final QC
+     plink --bfile temp2  $sexinfo \
+         --autosome \
+         --maf $params.cut_maf --mind $params.cut_mind\
+          --geno $params.cut_geno --hwe $params.cut_hwe \
          --make-bed --out ${params.output }
   """
 }
