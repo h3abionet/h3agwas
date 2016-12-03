@@ -1,5 +1,10 @@
 #!/usr/bin/env nextflow
 
+
+
+
+
+
 /*
  * Authors       :
  *
@@ -57,6 +62,8 @@ if (params.help) {
 
 //---- Modification of variables for pipeline -------------------------------//
 
+
+
 /* Define the command to add for plink depending on whether sexinfo is
  * available or not.
  */
@@ -69,6 +76,7 @@ if ( params.sexinfo_available == "false" ) {
 }
 
 
+
 // Checks if the file exists
 checker = { fn ->
    if (fn.exists())
@@ -78,7 +86,71 @@ checker = { fn ->
 }
 
 
-//------------
+
+// Helper routines for phasing
+
+/* phase takes a closure which returns the key that is used for phasing
+ * gBase returns
+ *       if the parameter is a singleton
+ *           the baseName if it's a file otherwise the thing itself
+ *       if the paramter is a list we recursively call gBase on the first element
+ */
+public String gBase(fn) {
+   ft = file("tmp").getClass()
+   lt = [].getClass()
+   if (fn.getClass() == lt) {
+      res = gBase(fn[0])
+   } else {
+      if (fn.getClass() == ft)
+      	 res = fn.baseName;
+      else
+         res = fn
+   }  
+   return res
+}	
+
+
+/* combineElts is used to flatten two phased lists intelligently
+ *    sometimes when we phase we have a tag value as the zeroth element
+ *    of a tuple to act as a key. In this case we don't want to duplicate the key
+ */
+
+def combineElts = { u, v ->
+     ut=u.getClass()
+     vt=v.getClass()
+     ft = file("tmp").getClass()
+     lt = [].getClass()
+     st = "tmp".getClass()
+     inty = 1.getClass()
+     // if the two arguments are singletons return the list
+     if  ( (ut in [st,inty,ft]) && vt in [st,inty,ft])
+     	 return [u,v]
+     else
+	 if (ut != lt) u = [u]
+	 if (vt == lt) 
+	    if (v[0].getClass() == ft)
+	        return u+v;
+	    else
+	      // The zeroth element of v is a key and we don't want to repeat
+	      return u+v[1..-1]
+	 else
+   	      return u+v;
+
+}
+
+
+// Take a list of channels and phase them
+def phaseAllLists = { channels ->
+     start = channels[0]
+     for (c in channels[1..-1]){
+         start = start.phase(c) { gBase(it) } .map(combineElts)
+     }
+     return start;
+}
+
+
+
+//---------------------------------------------------------------------
 
 
 raw_ch = Channel.create()
@@ -96,6 +168,8 @@ Channel
    .ifEmpty { error "No matching plink files" }\
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
    .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
+
+
 
 
 
@@ -121,16 +195,7 @@ process getDuplicateMarkers {
 }
 
 
-public String getBase(fn) {
-   x = file("tmp")
-   if (fn.getClass() == x.getClass())
-      return fn.getBaseName();
-   else
-      if (fn[0].getClass() == x.getClass())
-      	 return fn[0].getBaseName();
-      else
-         return fn[0];
-}	
+
 
 
 /*  Process to remove duplicate SNPs.
@@ -146,7 +211,7 @@ process removeDuplicateSNPs {
   memory plink_mem_req
   input:
     file(plinks)	\
-      from raw_ch.phase(duplicates_ch){getBase(it) }.map {it.flatten()}
+      from raw_ch.phase(duplicates_ch){gBase(it) }.map {it.flatten()}
 
   publishDir params.output_dir, pattern: "$logfile", \
              overwrite:true, mode:'copy'
@@ -249,7 +314,7 @@ process generateMissHetPlot {
 
   input:
     set file(imiss), file(het) from \
-        plot1_ch_miss.phase(plot1_ch_het) { getBase(it) }
+        plot1_ch_miss.phase(plot1_ch_het) { gBase(it) }
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
@@ -270,13 +335,13 @@ process getBadIndivs_Missing_Het {
   memory other_mem_req
   input:
    set file(imiss), file(het) from \
-       miss_het_ch.phase(hetero_check_ch) { getBase(it) }
+       miss_het_ch.phase(hetero_check_ch) { gBase(it) }
   output:
     set val(base), file(outfname) into failed_miss_het
 
   script:
     base = het.baseName
-    outfname = "${base}-fail_miss_het_qcplink.txt"
+    outfname = "${base}-fail_miss_het.txt"
     template "select_miss_het_qcplink.pl"
 
 }
@@ -327,21 +392,16 @@ process findRelatedIndiv {
   memory other_mem_req
   input:
      set file (missing), file (ibd_genome) from \
-         missing2_ch.phase(sort_ibd_ch2) { getBase(it) }
+         missing2_ch.phase(sort_ibd_ch2) { gBase(it) }
   output:
      set val(base), file(outfname) into related_indivs
 
   script:
      base = missing.baseName
-     outfname = "${base}-fail_IBD_qcplink.txt"
+     outfname = "${base}-fail_IBD.txt"
      template "run_IBD_QC_qcplink.pl"
 
 
-}
-
-
-def phasemerge = {
-     x,y -> x+y[1..-1]
 }
 
 
@@ -349,21 +409,16 @@ def phasemerge = {
 process removeQCIndivs {
   memory plink_mem_req
   input:
-    file(inps) from\
-      failed_miss_het.phase(related_indivs).map { x,y-> phasemerge(x,y)}\
-                     .phase(failed_sex_check).map { x,y-> phasemerge(x,y)}
-                     .phase(remove_inds_ch) {getBase(it)}
-		     .map {it.flatten()[1..-1]}
+    set val(label), file(f_miss_het), file (rel_indivs), file (f_sex_check_f),\
+        file(bed), file(bim), file(fam) from\
+       phaseAllLists([failed_miss_het,related_indivs,failed_sex_check,remove_inds_ch])
   script:
   output:
      file("${out}.{bed,bim,fam}") into\
          (clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
 
   script:
-   f_miss_het   =inps[0]
-   rel_indivs   =inps[1]
-   f_sex_check_f=inps[2]
-   base = inps[3].baseName
+   base = bed.baseName
    out  = "${base}-c"
     """
      cat $f_sex_check_f $rel_indivs $f_miss_het | sort -k1 | uniq > failed_inds
@@ -528,8 +583,8 @@ process removeQCPhase1 {
   input:
     file inputs  from \
          clean00_ch4\
-           .phase(bad_snps_ch) { getBase(it) }\
-           .map { x,y -> phasemerge (x,y) }
+           .phase(bad_snps_ch) { gBase(it) }\
+           .map (combineElts)
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("$output.{bed,bim,fam}") into result_ch;
@@ -537,7 +592,7 @@ process removeQCPhase1 {
   script:
      base=inputs[0].baseName
      bad =inputs[3]
-     output = params.output
+     output = "${base}-clean"
      """
      # remove really realy bad SNPs and really bad individuals
      plink --bfile $base $sexinfo --exclude $bad --mind 0.2 --make-bed --out temp1
@@ -548,10 +603,10 @@ process removeQCPhase1 {
          --autosome \
          --maf $params.cut_maf --mind $params.cut_mind\
           --geno $params.cut_geno --hwe $params.cut_hwe \
-         --make-bed --out ${params.output }
+         --make-bed --out $output 
   """
 }
 
 
-result_ch.subscribe { print "Completed and produced ${it.baseName}" }
+result_ch.subscribe { println "Completed and produced ${it[0].baseName}" }
 
