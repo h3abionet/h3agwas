@@ -1,16 +1,11 @@
 #!/usr/bin/env nextflow
 
-
-
-
-
-
 /*
  * Authors       :
  *
  *
  *      Shaun Aron
- *   	Rob Clucas
+ *      Rob Clucas
  *      Eugene de Beste
  *      Scott Hazelhurst
  *      Anmol Kiran
@@ -63,7 +58,6 @@ if (params.help) {
 //---- Modification of variables for pipeline -------------------------------//
 
 
-
 /* Define the command to add for plink depending on whether sexinfo is
  * available or not.
  */
@@ -74,7 +68,6 @@ if ( params.sexinfo_available == "false" ) {
   sexinfo = ""
   println "Sexinfo available command"
 }
-
 
 
 // Checks if the file exists
@@ -90,7 +83,7 @@ checker = { fn ->
 // Helper routines for phasing
 
 /* phase takes a closure which returns the key that is used for phasing
- * gBase returns
+ *  gBase returns
  *       if the parameter is a singleton
  *           the baseName if it's a file otherwise the thing itself
  *       if the paramter is a list we recursively call gBase on the first element
@@ -113,6 +106,10 @@ public String gBase(fn) {
 /* combineElts is used to flatten two phased lists intelligently
  *    sometimes when we phase we have a tag value as the zeroth element
  *    of a tuple to act as a key. In this case we don't want to duplicate the key
+ *    combining u and v depends on whether they are singleton values or not
+ *    and if lists what the type of the zeroth element of the list is
+ *    the general rule is that we remove the zeroth element of v if v is list 
+ *    and the zeroth element of v is a singleton value
  */
 
 def combineElts = { u, v ->
@@ -162,10 +159,12 @@ bim_ch = Channel.create()
  * send the all the files to raw_ch and just the bim file to bim_ch */
 
 
+inpat = "${params.input_dir}/${params.input_pat}"
+
 
 Channel
-   .fromFilePairs("${params.input_dir}/*.{bed,bim,fam}",size:3, flat : true)\
-   .ifEmpty { error "No matching plink files" }\
+.fromFilePairs("${inpat}",size:3, flat : true){ file -> file.baseName }  \
+   .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
    .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
 
@@ -184,9 +183,9 @@ Channel
 process getDuplicateMarkers {
   memory other_mem_req
   input:
-    set file(inpfname) from bim_ch
+    file(inpfname) from bim_ch
   output:
-    set  file("${base}.dups") into duplicates_ch
+    file("${base}.dups") into duplicates_ch
   script:
      print inpfname
      base = inpfname.baseName
@@ -275,7 +274,7 @@ process calculateSampleMissing {
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     set file("${imiss}.imiss") into\
+     file("${imiss}.imiss") into\
          (plot1_ch_miss,missing2_ch,miss_het_ch)
   script:
      base = plinks[0].baseName
