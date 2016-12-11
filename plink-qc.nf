@@ -98,9 +98,11 @@ public String gBase(fn) {
       	 res = fn.baseName;
       else
          res = fn
-   }  
+   }
+   res=res.replaceAll(/-nd.*/,"")
    return res
 }	
+
 
 
 /* combineElts is used to flatten two phased lists intelligently
@@ -151,6 +153,7 @@ def phaseAllLists = { channels ->
 
 
 raw_ch = Channel.create()
+raw_ch1 = Channel.create()
 bim_ch = Channel.create()
 
 /* Get the input files -- could be a glob
@@ -161,12 +164,13 @@ bim_ch = Channel.create()
 
 inpat = "${params.input_dir}/${params.input_pat}"
 
+println(inpat)
 
 Channel
 .fromFilePairs("${inpat}",size:3, flat : true){ file -> file.baseName }  \
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-   .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
+   .separate(raw_ch, raw_ch1, bim_ch) { a -> [a,a,a[1]] }
 
 
 
@@ -218,7 +222,7 @@ process removeDuplicateSNPs {
   output:
     set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
          into (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch)
-    file (logfile)
+    set file(dups), file (logfile) into dup_log_ch
   script:
    base    = plinks[0].baseName
    dups    = plinks[3]
@@ -245,7 +249,7 @@ process identifyIndivDiscSexinfo {
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     set val(base), file(logfile) into failed_sex_check
+     set val(base), file(logfile) into (failed_sex_check,failed_sex_log)
   script:
     base = plinks[0].baseName
     logfile= "${base}-failed.sexcheck"
@@ -317,11 +321,11 @@ process generateMissHetPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file('*.pdf')   into pictures_ch
+    set val(base), file('*.pdf')   into pictures_ch
 
   script:
     base = imiss.baseName
-    pairs   = "${base}-pairs.imiss-vs-het.pdf"
+    pairs   = "${base}-pairs-imiss-vs-het.pdf"
     meanhet = "${base}-meanhet_plot.pdf"
     template "miss_het_plot_qcplink.R"
 }
@@ -453,7 +457,7 @@ process generateMafPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file ofname
+    set val(base) , file(ofname)  into maf_fig_ch
 
   script:
     base    = frqfile.baseName
@@ -463,14 +467,14 @@ process generateMafPlot {
 
 
 // Repeat computation of missingness on QCd data
-process calculateSnpMissigness {
+process calculateSnpMissingness {
   memory plink_mem_req
   input:
    file (plinks)  from clean00_ch2
 
   output:
-   file "${base}.lmiss" into clean_miss_plot_ch
-
+   file ("${base}.lmiss") into clean_lmiss_plot_ch
+   file ("${base}.imiss") into clean_imiss_plot_ch
   script:
    base=plinks[0].baseName
    """
@@ -482,7 +486,7 @@ process calculateSnpMissigness {
 process generateSnpMissingnessPlot {
   memory other_mem_req
   input:
-    file lmissf from clean_miss_plot_ch
+      file(lmissf) from clean_lmiss_plot_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
@@ -495,6 +499,26 @@ process generateSnpMissingnessPlot {
     output = "${base}-snpmiss_plot.pdf"
     template "snpmiss_plot_qcplink.R"
 }
+
+
+process generateIndivMissingnessPlot {
+  memory other_mem_req
+  input:
+      file(imissf) from clean_imiss_plot_ch
+
+  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
+
+  output:
+    file ioutput
+
+  script:
+    input  = imissf
+    base   = imissf.baseName
+    ioutput = "${base}-indmiss_plot.pdf"
+    template "imiss_splot.R"
+}
+
+
 
 // Find differential missingness between cases and controls; also compute HWE scores
 process calculateSnpSkewStatus {
@@ -523,7 +547,7 @@ process generateDifferentialMissingnessPlot {
    script:
        input = clean_missing
        base  = clean_missing.baseName
-       output= "${base}-snpmiss_plot.pdf"
+       output= "${base}-diff-snpmiss_plot.pdf"
        template "diffmiss_splot_qcplink.R"
 
  }
@@ -586,7 +610,7 @@ process removeQCPhase1 {
            .map (combineElts)
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    file("$output.{bed,bim,fam}") into result_ch;
+    file("$output.{bed,bim,fam}") into report_ch;
 
   script:
      base=inputs[0].baseName
@@ -607,5 +631,44 @@ process removeQCPhase1 {
 }
 
 
-result_ch.subscribe { println "Completed and produced ${it[0].baseName}" }
+
+public static int countLines(File aFile) throws IOException {
+    LineNumberReader reader = null;
+    System.out.println(aFile);
+    try {
+      System.out.println("Here")
+        reader = new LineNumberReader(new FileReader(aFile));
+      System.out.println("Here2")	
+        while ((reader.readLine()) != null);
+        return reader.getLineNumber();
+    } catch (Exception ex) {
+        return -1;
+    } finally { 
+        if(reader != null) 
+            reader.close();
+    }
+}
+
+
+process produceReports {
+  input:
+  file results from  phaseAllLists ([raw_ch1,report_ch,pictures_ch,maf_fig_ch,dup_log_ch,failed_sex_log]) 
+  echo true
+  publishDir params.output_dir, overwrite:true, mode:'copy'
+  output:
+    file("${base}.pdf")
+  script:
+     base = results[0].baseName
+     rbim = results[1]
+     rfam = results[2]
+     missingvhetpdf = results[6]
+     mafpdf = results[7]
+     duplog = results[9]
+     dupf    = results[8]
+     fsex     = results[10]
+  echo true
+  script:
+     print results
+     template "qcreport.py"
+}
 
