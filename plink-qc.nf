@@ -33,6 +33,11 @@ def params_help = new LinkedHashMap(helps)
 
 
 
+reps = ['raw','cleaned','misshetpdf','mafpdf','duplog','failedsex','reportsnp']
+report = new LinkedHashMap()
+reps.each { rname -> report[rname]=Channel.create() }
+
+
 max_plink_cores = params.max_plink_cores 
 
 plink_mem_req = params.plink_process_memory
@@ -115,27 +120,35 @@ public String gBase(fn) {
  */
 
 def combineElts = { u, v ->
-     ut=u.getClass()
-     vt=v.getClass()
-     ft = file("tmp").getClass()
-     lt = [].getClass()
-     st = "tmp".getClass()
-     inty = 1.getClass()
-     // if the two arguments are singletons return the list
-     if  ( (ut in [st,inty,ft]) && vt in [st,inty,ft])
-     	 return [u,v]
-     else
-	 if (ut != lt) u = [u]
-	 if (vt == lt) 
-	    if (v[0].getClass() == ft)
-	        return u+v;
-	    else
-	      // The zeroth element of v is a key and we don't want to repeat
-	      return u+v[1..-1]
-	 else
-   	      return u+v;
-
+  ut=u.getClass()
+  vt=v.getClass()
+  ft = file("tmp").getClass()
+  lt = [].getClass()
+  st = "tmp".getClass()
+  inty = 1.getClass()
+  println "$v of type $vt"
+  // if the two arguments are singletons return the list
+  if  ( (ut in [st,inty,ft]) && vt in [st,inty,ft]) {
+    return [u,v]
+  }
+  else
+    if (ut != lt)   u = [i]
+    if (vt == lt) 
+       if (v[0].getClass() == ft) 
+         return u+v;
+       else 
+         // The zeroth element of v is a key and we don't want to repeat
+         return u+v[1..-1]
+    else 
+    return u+[v];
+ 
 }
+
+
+def combineMap = { umap, v ->
+        upmap[c]=v
+}
+
 
 
 // Take a list of channels and phase them
@@ -147,13 +160,20 @@ def phaseAllLists = { channels ->
      return start;
 }
 
+def phaseAllMap = { ids ->
+     start = [(ids[0]) :   report[ids[0]] ]
+     for (c in ids[1..-1]) {
+       start = start.phase(report[ids[c]]) { gBase(it) } .map(combineMap)
+     }
+     return start;
+}
 
 
 //---------------------------------------------------------------------
 
 
 raw_ch = Channel.create()
-raw_ch1 = Channel.create()
+
 bim_ch = Channel.create()
 
 /* Get the input files -- could be a glob
@@ -170,7 +190,7 @@ Channel
 .fromFilePairs("${inpat}",size:3, flat : true){ file -> file.baseName }  \
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-   .separate(raw_ch, raw_ch1, bim_ch) { a -> [a,a,a[1]] }
+   .separate(raw_ch, report["raw"], bim_ch) { a -> [a,a,a[1]] }
 
 
 
@@ -222,7 +242,7 @@ process removeDuplicateSNPs {
   output:
     set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
          into (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch)
-    set file(dups), file (logfile) into dup_log_ch
+    set file(dups), file (logfile) into report['duplog']
   script:
    base    = plinks[0].baseName
    dups    = plinks[3]
@@ -233,7 +253,6 @@ process removeDuplicateSNPs {
     mv ${nodup}.log $logfile
    """
 }
-
 
 
 
@@ -249,7 +268,7 @@ process identifyIndivDiscSexinfo {
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     set val(base), file(logfile) into (failed_sex_check,failed_sex_log)
+     set val(base), file(logfile) into (failed_sex_check,report['failedsex'])
   script:
     base = plinks[0].baseName
     logfile= "${base}-failed.sexcheck"
@@ -284,7 +303,7 @@ process calculateSampleMissing {
      base = plinks[0].baseName
      imiss= "${base}"
      """
-       plink --bfile $base $sexinfo --missing --out $imiss
+       plink --bfile $base $sexinfo --geno 0.1 --missing --out $imiss
      """
 }
 
@@ -305,7 +324,8 @@ process calculateSampleHetrozygosity {
       base = nodups[0].baseName
       hetf = "${base}"
    """
-     plink --bfile $base $sexinfo --het  --out $hetf
+     plink --bfile $base $sexinfo --geno 0.1 --make-bed --out temp
+     plink --bfile temp  $sexinfo --het  --out $hetf
    """
 }
 
@@ -321,11 +341,11 @@ process generateMissHetPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    set val(base), file('*.pdf')   into pictures_ch
+    set val(base), file('*.pdf')   into report['misshetpdf']
 
   script:
     base = imiss.baseName
-    pairs   = "${base}-pairs-imiss-vs-het.pdf"
+    pairs   = "${base}-imiss-vs-het.pdf"
     meanhet = "${base}-meanhet_plot.pdf"
     template "miss_het_plot_qcplink.R"
 }
@@ -341,7 +361,6 @@ process getBadIndivs_Missing_Het {
        miss_het_ch.phase(hetero_check_ch) { gBase(it) }
   output:
     set val(base), file(outfname) into failed_miss_het
-
   script:
     base = het.baseName
     outfname = "${base}-fail_miss_het.txt"
@@ -457,7 +476,7 @@ process generateMafPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    set val(base) , file(ofname)  into maf_fig_ch
+    set val(base) , file(ofname)  into report['mafpdf']
 
   script:
     base    = frqfile.baseName
@@ -491,12 +510,14 @@ process generateSnpMissingnessPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file output
+      file(output) into report['snpmiss']
 
+  echo true
   script:
     input  = lmissf
     base   = lmissf.baseName
     output = "${base}-snpmiss_plot.pdf"
+    println "Output is <$output>"
     template "snpmiss_plot_qcplink.R"
 }
 
@@ -509,12 +530,12 @@ process generateIndivMissingnessPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file ioutput
+    file output into  report_indmiss_ch
 
   script:
     input  = imissf
     base   = imissf.baseName
-    ioutput = "${base}-indmiss_plot.pdf"
+    output = "${base}-indmiss_plot.pdf"
     template "imiss_splot.R"
 }
 
@@ -610,7 +631,7 @@ process removeQCPhase1 {
            .map (combineElts)
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    file("$output.{bed,bim,fam}") into report_ch;
+    file("$output.{bed,bim,fam}") into report["cleaned"];
 
   script:
      base=inputs[0].baseName
@@ -632,43 +653,15 @@ process removeQCPhase1 {
 
 
 
-public static int countLines(File aFile) throws IOException {
-    LineNumberReader reader = null;
-    System.out.println(aFile);
-    try {
-      System.out.println("Here")
-        reader = new LineNumberReader(new FileReader(aFile));
-      System.out.println("Here2")	
-        while ((reader.readLine()) != null);
-        return reader.getLineNumber();
-    } catch (Exception ex) {
-        return -1;
-    } finally { 
-        if(reader != null) 
-            reader.close();
-    }
-}
-
 
 process produceReports {
   input:
-  file results from  phaseAllLists ([raw_ch1,report_ch,pictures_ch,maf_fig_ch,dup_log_ch,failed_sex_log]) 
+  file results from  phaseAllMap(reps)
   echo true
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    file("${base}.pdf")
-  script:
-     base = results[0].baseName
-     rbim = results[1]
-     rfam = results[2]
-     missingvhetpdf = results[6]
-     mafpdf = results[7]
-     duplog = results[9]
-     dupf    = results[8]
-     fsex     = results[10]
-  echo true
-  script:
-     print results
-     template "qcreport.py"
+    file("x.pdf")
+   script:
+    "touch x.pdf" 
 }
 
