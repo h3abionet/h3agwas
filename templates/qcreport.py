@@ -24,23 +24,21 @@ import os
 # NB: only for a Nextflow template -- you could also directly call from a Nextflow
 # script if this script is on the path -- in which case the parameters should be passed
 if len(sys.argv)==1:
-    sys.argv = [sys.argv[0],"$base","$rbim","$rfam","$cbim","$cfam","$missingvhetpdf","$mafpdf","$duplog","$dupf","$fsex","$indmiss","$snpmiss"]
+   sys.argv = [sys.argv[0],"$orig","$base","$cbim","$cfam","$missingvhetpdf","$mafpdf","$dupf","$fsex","$indmisspdf","$snpmisspdf"]
 
 
 def parseArguments():
     parser=argparse.ArgumentParser()
-    parser.add_argument('base', metavar='BASE', type=str)
-    parser.add_argument('rbim', metavar='RBIM', type=str,help='raw bim'),
-    parser.add_argument('rfam', metavar='RFAM', type=str,help='raw fam'),
+    parser.add_argument('orig', type=str),
+    parser.add_argument('base', type=str),
     parser.add_argument('cbim', metavar='CBIM', type=str,help='clean bim'),
     parser.add_argument('cfam', metavar='CFAM', type=str,help='cleanfam'),
     parser.add_argument('missingvhetpdf', type=str),
     parser.add_argument('mafpdf', type=str),
-    parser.add_argument('duplog', type=str),
     parser.add_argument('dupf', type=str),
     parser.add_argument('fsex', type=str),
-    parser.add_argument('indmiss', type=str),
-    parser.add_argument('snpmiss', type=str),        
+    parser.add_argument('indmisspdf', type=str),
+    parser.add_argument('snpmisspdf', type=str),        
     args = parser.parse_args()
     return args
 
@@ -52,6 +50,7 @@ template='''
 
 *-usepackage{a4wide}
 *-usepackage{graphicx}
+*-usepackage{url}
 
 *-title{Quality control report for %(base)s}
 
@@ -107,8 +106,9 @@ apply your mind to the data. Missingness should be low.
 
 *-ourfig{fig:missvhet}{Missingness versus heterozygosity}{*-detokenize{%(missingvhetpdf)s}}
 
-*-noindent
-Individuals with out of range heterozygosity were removed. For this phase, SNPs with a genotyping failure rate of over 10 per cent were removed, and then heterozysgosity checked. Any indviduals with heterozygosity:
+Individuals out of range heterozygosity were removed: first
+SNPs with a genotyping failure rate of over 10 per cent were removed,
+and then heterozysgosity checked. Any indviduals with heterozygosity:
 
 *-begin{itemize}
 *-item less than ${params.cut_het_low} are removed. This may indicate inbreeding.
@@ -116,7 +116,7 @@ Individuals with out of range heterozygosity were removed. For this phase, SNPs 
 *-end{itemize}
  
 *-noindent
-Overall %(numhetrem)s individuals were removed. These individuals, if any, can be found in the file *-emph{%(hetrem)s}.
+Overall %(numhetrem)s individuals were removed. These individuals, if any, can be found in the file *-url{$misshetremf}.
 
 
 
@@ -128,23 +128,39 @@ Overall %(numhetrem)s individuals were removed. These individuals, if any, can b
 *-noindent
 Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas *-ref{fig:indmiss} show the spread of missingness per individual across the sample these should be compared.
 
-*-ourfig{fig:snpmiss}{SNP missingness}{*-detokenize{%(snpmiss)s}}
+*-ourfig{fig:snpmiss}{SNP missingness}{*-detokenize{%(snpmisspdf)s}}
 
-*-ourfig{fig:indmiss}{Missingness per indvididual}{*-detokenize{%(indmiss)s}}
-
-
+*-ourfig{fig:indmiss}{Missingness per indvididual}{*-detokenize{%(indmisspdf)s}}
 
 
 
 
 
-*-subsection{Minor Allele Frequency Spread}
+
+
+*-section{Minor Allele Frequency Spread}
 
 Figure~*-ref{fig:maf} shows the cumulative distribution of minor
-allele frequency in the data.
+allele frequency in the data. The MAF cut-off should be chosen high enough that you are sure that the variants you are seeing are real (so this would depend on the size of the sample). You have chosen a cut off of ${params.cut_maf}.
 
 
 *-ourfig{fig:maf}{Minor allele frequency distribution}{*-detokenize{%(mafpdf)s}}
+
+
+*-section{Differences between cases and controls}
+
+We do not expect there to be large, observable macro-scale differences between cases and controls. Great caution needs to be taken in this case. 
+
+We compute for each SNP the missingness in the cases, and the
+missingness in the controls, and the corresponding p-value
+describing the difference in missingness. We expect very few SNPs to
+have highly significant differences. Where many SNPs with very highly significant p-values are 
+found, great care should be taken. Figure~*-ref{fig:diffP} plots the differences between cases and controls.
+
+*-ourfig{fig:diffP}{The plot shows for each (log) level of significance, the number of SNPs with that p-value}{*-detokenize{$diffmisspdf}}
+
+
+
 
 *-end{document}'''
 
@@ -158,14 +174,17 @@ def countLines(fn):
     return count
 
 
+f=open(args.orig)
+pdict['numrsnps'] = f.readline().rstrip()
+pdict['numrfam']  = f.readline().rstrip()
+f.close()
 
 
-pdict['numrsnps'] =  countLines(args.rbim)
-pdict['numrfam']  =  countLines(args.rfam)
-pdict['numdups']  =  countLines(args.dupf)
+
+pdict['numhetrem'] =  countLines("$misshetremf")
 pdict['numcsnps'] =  countLines(args.cbim)
 pdict['numcfam']  =  countLines(args.cfam)
-
+pdict['numdups']  =  countLines(args.dupf)
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:
@@ -177,6 +196,6 @@ pdict['numfailedsex']=num_fs
 out=open("%s.tex"%args.base,"w")
 out.write (template%pdict)
 out.close()
-os.system("pdflatex %s"%args.base)
+os.system("pdflatex %s >& /dev/null"%args.base)
 os.system("pdflatex %s"%args.base)
   

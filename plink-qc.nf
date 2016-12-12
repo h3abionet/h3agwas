@@ -33,10 +33,12 @@ def params_help = new LinkedHashMap(helps)
 
 
 
-reps = ['raw','cleaned','misshetpdf','mafpdf','duplog','failedsex','reportsnp']
-report = new LinkedHashMap()
-reps.each { rname -> report[rname]=Channel.create() }
 
+report = new LinkedHashMap()
+repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP"]
+
+
+repnames.each { report[it] = Channel.create() }
 
 max_plink_cores = params.max_plink_cores 
 
@@ -126,13 +128,12 @@ def combineElts = { u, v ->
   lt = [].getClass()
   st = "tmp".getClass()
   inty = 1.getClass()
-  println "$v of type $vt"
   // if the two arguments are singletons return the list
   if  ( (ut in [st,inty,ft]) && vt in [st,inty,ft]) {
     return [u,v]
   }
   else
-    if (ut != lt)   u = [i]
+    if (ut != lt)   u = [u]
     if (vt == lt) 
        if (v[0].getClass() == ft) 
          return u+v;
@@ -145,9 +146,7 @@ def combineElts = { u, v ->
 }
 
 
-def combineMap = { umap, v ->
-        upmap[c]=v
-}
+
 
 
 
@@ -160,10 +159,11 @@ def phaseAllLists = { channels ->
      return start;
 }
 
-def phaseAllMap = { ids ->
-     start = [(ids[0]) :   report[ids[0]] ]
-     for (c in ids[1..-1]) {
-       start = start.phase(report[ids[c]]) { gBase(it) } .map(combineMap)
+// Take a list of channels and phase them
+def phaseAllMap = { chanmap ->
+     start = chanmap[repnames[0]]
+     for (c in repnames[1..-1]){
+         start = start.phase(chanmap[c]) { gBase(it) } .map(combineElts)
      }
      return start;
 }
@@ -184,14 +184,12 @@ bim_ch = Channel.create()
 
 inpat = "${params.input_dir}/${params.input_pat}"
 
-println(inpat)
 
 Channel
 .fromFilePairs("${inpat}",size:3, flat : true){ file -> file.baseName }  \
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-   .separate(raw_ch, report["raw"], bim_ch) { a -> [a,a,a[1]] }
-
+   .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
 
 
 
@@ -206,6 +204,8 @@ Channel
  */
 process getDuplicateMarkers {
   memory other_mem_req
+  publishDir params.output_dir, pattern: "*dups", \
+             overwrite:true, mode:'copy'
   input:
     file(inpfname) from bim_ch
   output:
@@ -216,8 +216,6 @@ process getDuplicateMarkers {
      outfname = "${base}.dups"
      template "dups.py"
 }
-
-
 
 
 
@@ -242,7 +240,7 @@ process removeDuplicateSNPs {
   output:
     set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
          into (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch)
-    set file(dups), file (logfile) into report['duplog']
+    set file("${base}.orig"), file(dups) into report["dups"]
   script:
    base    = plinks[0].baseName
    dups    = plinks[3]
@@ -250,6 +248,8 @@ process removeDuplicateSNPs {
    logfile = "${base}-0002-dups.log"
    """
     plink --bfile $base $sexinfo --exclude $dups --make-bed --out $nodup
+    wc -l ${base}.bim > ${base}.orig
+    wc -l ${base}.fam >> ${base}.orig
     mv ${nodup}.log $logfile
    """
 }
@@ -268,7 +268,8 @@ process identifyIndivDiscSexinfo {
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     set val(base), file(logfile) into (failed_sex_check,report['failedsex'])
+     set val(base), file(logfile) into failed_sex_check
+     file("${base}*.sexcheck") into report["failedsex"]
   script:
     base = plinks[0].baseName
     logfile= "${base}-failed.sexcheck"
@@ -341,7 +342,7 @@ process generateMissHetPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    set val(base), file('*.pdf')   into report['misshetpdf']
+    file(pairs) into report["misshet"]
 
   script:
     base = imiss.baseName
@@ -361,6 +362,7 @@ process getBadIndivs_Missing_Het {
        miss_het_ch.phase(hetero_check_ch) { gBase(it) }
   output:
     set val(base), file(outfname) into failed_miss_het
+    file(outfname) into report["misshetremf"]
   script:
     base = het.baseName
     outfname = "${base}-fail_miss_het.txt"
@@ -476,7 +478,7 @@ process generateMafPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    set val(base) , file(ofname)  into report['mafpdf']
+    file(ofname) into report["mafpdf"]
 
   script:
     base    = frqfile.baseName
@@ -510,14 +512,13 @@ process generateSnpMissingnessPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-      file(output) into report['snpmiss']
+     file(output) into report['snpmiss']
 
   echo true
   script:
     input  = lmissf
     base   = lmissf.baseName
     output = "${base}-snpmiss_plot.pdf"
-    println "Output is <$output>"
     template "snpmiss_plot_qcplink.R"
 }
 
@@ -530,7 +531,7 @@ process generateIndivMissingnessPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file output into  report_indmiss_ch
+    file(output) into report["indmiss"]
 
   script:
     input  = imissf
@@ -564,7 +565,7 @@ process generateDifferentialMissingnessPlot {
      file clean_missing from clean_diff_miss_plot_ch1
    publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
    output:
-      file output into snpmiss_plot_ch
+      file output into report["diffmissP"]
    script:
        input = clean_missing
        base  = clean_missing.baseName
@@ -631,7 +632,7 @@ process removeQCPhase1 {
            .map (combineElts)
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    file("$output.{bed,bim,fam}") into report["cleaned"];
+    file("${output}*") into report["cleaned"]
 
   script:
      base=inputs[0].baseName
@@ -656,12 +657,28 @@ process removeQCPhase1 {
 
 process produceReports {
   input:
-  file results from  phaseAllMap(reps)
+  file results from  phaseAllMap(report)
   echo true
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    file("x.pdf")
+    file("${base}.pdf")
    script:
-    "touch x.pdf" 
+     println results
+     orig = results[0]
+     dupf = results[1]
+     base = orig.baseName
+     cbed = results[2]
+     cbim = results[3]
+     cfam = results[4]
+     irem = results[5]
+     ilog = results[6]
+     missingvhetpdf = results[7]
+     mafpdf   = results[8]
+     snpmisspdf = results[9]
+     indmisspdf = results[10]
+     fsex        = results[11]
+     misshetremf  = results[12]
+     diffmisspdf  = results[13]
+     template "qcreport.py"
 }
 
