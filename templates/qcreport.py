@@ -159,6 +159,14 @@ found, great care should be taken. Figure~*-ref{fig:diffP} plots the differences
 
 *-ourfig{fig:diffP}{The plot shows for each (log) level of significance, the number of SNPs with that p-value}{*-detokenize{$diffmisspdf}}
 
+Figure~*-ref{fig:pca} shows a principal component analysis of the
+data, identifying the cases and controls. Should the cases and
+controls cluster differ signficantly, something is likely wrong.
+Moreover should there be any significant clusters or outliers, association
+testing should take into account stratification. Statistical testing could also
+be done.
+
+*-ourfig{fig:pca}{The plot shows for each (log) level of significance, the number of SNPs with that p-value}{*-detokenize{$pcapdf}}
 
 
 

@@ -35,7 +35,7 @@ def params_help = new LinkedHashMap(helps)
 
 
 report = new LinkedHashMap()
-repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP"]
+repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP","pca"]
 
 
 repnames.each { report[it] = Channel.create() }
@@ -633,7 +633,7 @@ process removeQCPhase1 {
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${output}*") into report["cleaned"]
-
+    file("${output}*") into pca_ch
   script:
      base=inputs[0].baseName
      bad =inputs[3]
@@ -653,7 +653,33 @@ process removeQCPhase1 {
 }
 
 
+process compPCA {
+   cpus max_plink_cores
+   input:
+      file plinks from pca_ch
+   output:
+    set file ("${prune}.eigenval"), file("${prune}.eigenvec") into pcares
+   script:
+      base = plinks[0].baseName
+      prune= "${base}-prune"
+     """
+     plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
+     plink --bfile ${base} --extract check.prune.in --make-bed --out $prune
+     plink --bfile ${prune} --pca --out $prune 
+     """
+}
 
+process drawPCA {
+    input:
+      set file(EIGVALS), file(EIGVECS) from pcares
+    output:
+      file (OUTPUT) into report["pca"]
+    publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
+    script:
+      base=EIGVALS.baseName
+      OUTPUT="${base}-pca.pdf"
+      template "drawPCA.R"
+}
 
 process produceReports {
   input:
@@ -679,6 +705,7 @@ process produceReports {
      fsex        = results[11]
      misshetremf  = results[12]
      diffmisspdf  = results[13]
+     pcapdf       = results[14]
      template "qcreport.py"
 }
 
