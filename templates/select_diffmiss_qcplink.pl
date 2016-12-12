@@ -8,7 +8,8 @@ while(<IN>){
 	s/^\\s+//;
 	my @fields = split /\\s+/, \$_;
 	unless(\$fields[0] eq 'CHR'){
-		if(\$fields[4] < "$cut_diff_miss") {
+	    if(\$fields[$probcol] < "$cut_diff_miss") {
+		print "\$fields[1] \$fields[4]\n";
 			print OUT "\$fields[1]\n";
 		}
 	}

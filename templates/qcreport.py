@@ -118,13 +118,6 @@ and then heterozysgosity checked. Any indviduals with heterozygosity:
 *-noindent
 Overall %(numhetrem)s individuals were removed. These individuals, if any, can be found in the file *-url{$misshetremf}.
 
-
-
-
-
-
-
-
 *-noindent
 Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas *-ref{fig:indmiss} show the spread of missingness per individual across the sample these should be compared.
 
@@ -152,12 +145,21 @@ allele frequency in the data. The MAF cut-off should be chosen high enough that 
 We do not expect there to be large, observable macro-scale differences between cases and controls. Great caution needs to be taken in this case. 
 
 We compute for each SNP the missingness in the cases, and the
-missingness in the controls, and the corresponding p-value
-describing the difference in missingness. We expect very few SNPs to
-have highly significant differences. Where many SNPs with very highly significant p-values are 
-found, great care should be taken. Figure~*-ref{fig:diffP} plots the differences between cases and controls.
+missingness in the controls, and the corresponding p-value describing
+the difference in missingness. 
+
+We expect very few SNPs to have highly significant differences. Where
+many SNPs with very highly significant p-values are found, great care
+should be taken. Figure~*-ref{fig:diffP} plots the differences between
+cases and controls, showing the SNP-wise p-value, unadjusted for multiple testing
 
 *-ourfig{fig:diffP}{The plot shows for each (log) level of significance, the number of SNPs with that p-value}{*-detokenize{$diffmisspdf}}
+
+For removal of SNPs, we compute the p-value adjusted for multiple testing, by performing permutation testing (1000 rounds) using the PLINK mperm maxT option.
+SNPs are removed from the data set if their adjusted (EMP2) differential missingness p-value is less than ${params.cut_diff_miss}. The SNPs that are removed can be
+found in the file *-url{$diffmiss}
+
+
 
 Figure~*-ref{fig:pca} shows a principal component analysis of the
 data, identifying the cases and controls. Should the cases and
@@ -166,9 +168,55 @@ Moreover should there be any significant clusters or outliers, association
 testing should take into account stratification. Statistical testing could also
 be done.
 
-*-ourfig{fig:pca}{The plot shows for each (log) level of significance, the number of SNPs with that p-value}{*-detokenize{$pcapdf}}
+*-ourfig{fig:pca}{Principal Component Analysis of Cases Versus Controls}{*-detokenize{$pcapdf}}
+
+*-section{Hardy-Weinberg Equilibrium}
+
+Deviation for Hardy-Weinberg Equilibrium (HWE) may indicate sample contamination. However, this need not apply to cases, nor in a situation where there is admixture. For each SNP, we compute  the probability of the null hypothesis (that  the deviation from HWE is by chance alone).  Figure~*-ref{fig:hwe} shows a plot of the corresponding p-value versus the frequency of occurrence.
+
+*-ourfig{fig:hwe}{The plot shows for each level of significance, the number of SNPs with H
+WE p-value}{*-detokenize{$hwepdf}}
 
 
+*-section{Final filtering}
+
+The details of the final filtering can be found in the Nextflow script. Note that the exact ordering or removal will affect the final results. However, we take a conservative approach.
+
+
+*-begin{enumerate}
+*-item SNPs that failed differential missingness,  and individuals that have been very poorly genotyped (missingness exceeding 20 per cent) are removed.
+*-item Then, SNPs that have been very poorly genotyped (missingness exceeding 20 per cent) are removed.
+*-item Finally we select only autosomal SNPs and filter out SNPs  with
+*-begin{itemize}
+*-item minor allele frequence less than ${params.cut_maf};
+*-item individual missingness greater than ${params.cut_mind};
+*-item SNP missingness greater than ${params.cut_geno}; and 
+*-item HWE p-value less than ${params.cut_hwe}
+*-end{itemize}
+*-end{enumerate}
+
+*-section{Technical details}
+
+The analysis and report was produced by the h3aGWAS pipeline (*-url{http://github.com/h3abionet/h3agwas}) produced by the Pan-African Bioinformatics Network for H3Africa (*-url{http://www.h3abionet.org}).
+
+The following tools were used:
+
+*-begin{itemize}
+*-item PLINK version $plinkversion  [Chang et al 2015]
+*-item R version $rversion [R Core Team, 2016]
+*-item Nextflow version  $nextflowversion [Di Tommaso et al]
+
+*-end{itemize}
+
+*-section{References}
+
+*-begin{itemize}
+*-item Chang, C. C., Chow, C. C., Tellier, L. C., Vattikuti, S., Purcell, S. M., and Lee, J. J. (2015). Second-generation PLINK: rising to the challenge of larger and richer datasets. *-emph{GigaScience}, 4(1), 1-16. *-url{http://doi.org/10.1186/s13742-015-0047-8}
+*-item R Core Team (2016). *-emph{R: A language and environment for statistical
+  computing}. R Foundation for Statistical Computing, Vienna, Austria.
+  *-url{https://www.R-project.org/}
+*- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Baraja, Cedric Notredame. A novel tool for highly scalable computational pipelines. *-url{http://dx.doi.org/10.6084/m9.figshare.1254958}. Nextflow can be downloaded from *url{https://www.nextflow.io/}
+*-end{itemize}
 
 *-end{document}'''
 
@@ -193,6 +241,7 @@ pdict['numhetrem'] =  countLines("$misshetremf")
 pdict['numcsnps'] =  countLines(args.cbim)
 pdict['numcfam']  =  countLines(args.cfam)
 pdict['numdups']  =  countLines(args.dupf)
+pdict['numdiffmiss'] = countLines("$diffmiss")
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:

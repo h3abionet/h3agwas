@@ -32,10 +32,24 @@ params.help = false
 def params_help = new LinkedHashMap(helps)
 
 
+def getres(x) {
+  def  command1 = "$x"
+  def  command2 = "head -n 1"
+  def proc1 = command1.execute()
+  def proc2 = command2.execute()
+  def proc = proc1 | proc2
+  proc.waitFor()              
+  res ="${proc.in.text}"
+  return res.trim()
+}
 
+nextflowversion =getres("nextflow -v")
+plinkversion      =getres("plink --version")
+rversion            =getres("R --version")
+println "${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
 
 report = new LinkedHashMap()
-repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP","pca"]
+repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf"]
 
 
 repnames.each { report[it] = Channel.create() }
@@ -549,7 +563,8 @@ process calculateSnpSkewStatus {
   input:
     file(plinks)  from clean00_ch3
   output:
-    file "${base}.missing" into (clean_diff_miss_plot_ch1,clean_diff_miss_ch2)
+    file "${base}.missing" into clean_diff_miss_plot_ch1
+    file "${base}.missing.mperm" into clean_diff_miss_ch2
     file "${base}.hwe" into hwe_scores_ch
   script:
    base = plinks[0].baseName
@@ -580,13 +595,16 @@ process findSnpExtremeDifferentialMissingness {
   memory other_mem_req
   input:
     file clean_missing from clean_diff_miss_ch2
+  echo true
   output:
      set val(base), file(failed) into bad_snps_ch
+     file(failed) into report["diffmiss"]
   script:
     cut_diff_miss=params.cut_diff_miss
     missing = clean_missing
-    base    = missing.baseName
-    failed  = "${base}-failed_diffmiss.snps"
+    base     = missing.baseName
+    probcol = '3'  // 4 if using the non mperm
+    failed   = "${base}-failed_diffmiss.snps"
     template "select_diffmiss_qcplink.pl"
 }
 
@@ -613,7 +631,7 @@ process generateHwePlot {
     file unaff from unaff_hwe
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-    file output into devnull1
+    file output into report["hwepdf"]
 
   script:
     input  = unaff
@@ -705,7 +723,9 @@ process produceReports {
      fsex        = results[11]
      misshetremf  = results[12]
      diffmisspdf  = results[13]
-     pcapdf       = results[14]
+     diffmiss       = results[14]
+     pcapdf         = results[15]
+     hwepdf        = results[16]
      template "qcreport.py"
 }
 
