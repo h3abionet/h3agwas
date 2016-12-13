@@ -58,7 +58,6 @@ repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex",
 repnames.each { report[it] = Channel.create() }
 
 max_plink_cores = params.max_plink_cores 
-
 plink_mem_req = params.plink_process_memory
 other_mem_req = params.other_process_memory
 pi_hat=params.pi_hat
@@ -190,15 +189,13 @@ def phaseAllMap = { chanmap ->
 
 
 raw_ch = Channel.create()
-
 bim_ch = Channel.create()
+
 
 /* Get the input files -- could be a glob
  * We match the bed, bim, fam file -- order determined lexicographically
  * not by order given, we check that they exist and then 
  * send the all the files to raw_ch and just the bim file to bim_ch */
-
-
 inpat = "${params.input_dir}/${params.input_pat}"
 
 
@@ -207,7 +204,6 @@ Channel
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
    .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
-
 
 
 
@@ -270,6 +266,7 @@ process removeDuplicateSNPs {
     mv ${nodup}.log $logfile
    """
 }
+
 
 
 
