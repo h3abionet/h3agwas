@@ -44,13 +44,12 @@ def getres(x) {
 }
 
 nextflowversion =getres("nextflow -v")
-plinkversion      =getres("plink --version")
-rversion            =getres("R --version")
+
 
 if (workflow.repository)
-  workflow="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
+  wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
 else
-  workflow="A local copy of the workflow was used"
+  wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
 repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related"]
@@ -439,7 +438,7 @@ process findRelatedIndiv {
          missing2_ch.phase(sort_ibd_ch) { gBase(it) }
   output:
      set val(base), file(outfname) into related_indivs
-     set file(outfname) into report["related"]
+     file(outfname) into report["related"]
   script:
      base = missing.baseName
      outfname = "${base}-fail_IBD.txt"
@@ -645,6 +644,7 @@ process generateHwePlot {
 }
 
 
+
 process removeQCPhase1 {
   memory plink_mem_req
   input:
@@ -696,16 +696,19 @@ process drawPCA {
       set file(EIGVALS), file(EIGVECS) from pcares
     output:
       file (OUTPUT) into report["pca"]
+      file "rversion" into rversion
     publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
     script:
       base=EIGVALS.baseName
       OUTPUT="${base}-pca.pdf"
       template "drawPCA.R"
+
 }
 
 process produceReports {
   input:
-  file results from  phaseAllMap(report)
+     file results from  phaseAllMap(report)
+     file rversion
   echo true
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
@@ -731,6 +734,7 @@ process produceReports {
      pcapdf         = results[15]
      hwepdf        = results[16]
      relf              = results[17]
+     nextflowconfig= file("nextflow.config")
      template "qcreport.py"
 }
 

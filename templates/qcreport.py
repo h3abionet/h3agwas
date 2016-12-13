@@ -212,7 +212,7 @@ The final, cleaned result contains:
 *-item %(numcfam)s  participants
 *-end{itemize}
 
-@-noindent
+*-noindent
 The final output files are 
 *-begin{itemize}
 *-item *-url{$cbed}, 
@@ -221,6 +221,7 @@ The final output files are
 *-end{itemize}
 
 
+*-pagebreak[4]
 
 *-section{Technical details}
 
@@ -229,10 +230,13 @@ The analysis and report was produced by the h3aGWAS pipeline (*-url{http://githu
 The following tools were used:
 
 *-begin{itemize}
-*-item PLINK version $plinkversion  [Chang et al 2015]
-*-item R version $rversion [R Core Team, 2016]
-*-item Nextflow version  $nextflowversion [Di Tommaso et al]
-
+*-item %(plinkversion)s  [Chang et al 2015]
+*-item R version %(rversion)s [R Core Team, 2016]
+*-item $nextflowversion [Di Tommaso et al]
+*-item $wflowversion
+*-item The command line ${workflow.commandLine} was called
+*-item The profile ${workflow.profile} was used%(dockerimages)s.
+*-item The full configuration can be found in the appendix.
 *-end{itemize}
 
 *-pagebreak[4]
@@ -246,6 +250,17 @@ The following tools were used:
 *- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Baraja, Cedric Notredame. A novel tool for highly scalable computational pipelines. *-url{http://dx.doi.org/10.6084/m9.figshare.1254958}. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
 *-end{itemize}
 
+*-pagebreak[4]
+*-appendix
+*-section{nextflow.config}
+
+{*-footnotesize
+
+*-begin{verbatim}
+%(configuration)s
+*-end{verbatim}
+
+}
 *-end{document}'''
 
 # gymnastics to get backslash and dollar
@@ -260,11 +275,17 @@ def countLines(fn):
 
 
 f=open(args.orig)
-pdict['numrsnps'] = f.readline().rstrip()
-pdict['numrfam']  = f.readline().rstrip()
+pdict['numrsnps'] = f.readline().split()[0]
+pdict['numrfam']  = f.readline().split()[0]
 f.close()
 
+f=open("$ilog")
+pdict['plinkversion']=f.readline()
+f.close()
 
+f=open("rversion")
+pdict['rversion']=f.readline()
+f.close()
 
 pdict['numhetrem'] =  countLines("$misshetremf")
 pdict['numcsnps'] =  countLines(args.cbim)
@@ -273,16 +294,31 @@ pdict['numdups']  =  countLines(args.dupf)
 pdict['numdiffmiss'] = countLines("$diffmiss")
 pdict['numrels']       = countLines("$relf")
 
+f=open("$nextflowconfig")
+conf=""
+for line in f: conf=conf+line
+f.close()
+pdict['configuration']=conf
+
+if "${workflow.container}"=="[:]":
+   pdict["dockerimages"] = ": locally installed binaries used"
+else:
+   pdict["dockerimages"] = ": used docker images %s."%"${workflow.container}"
+
+
+
 num_fs = countLines(args.fsex)
 if num_fs == 1:
     head=open(args.fsex).readline()
     if "No sex" in head: num_fs=0
 
 pdict['numfailedsex']=num_fs
+
     
 out=open("%s.tex"%args.base,"w")
 out.write (template%pdict)
 out.close()
+
 os.system("pdflatex %s >& /dev/null"%args.base)
 os.system("pdflatex %s"%args.base)
   

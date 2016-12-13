@@ -1,5 +1,4 @@
 #!/usr/bin/env Rscript
-#!/usr/bin/env Rscript
 eigval     <- read.table("$EIGVALS")
 eigvec1.pc <- round(eigval[1,1]/sum(eigval)*100,digits=2)
 eigvec2.pc <- round(eigval[2,1]/sum(eigval)*100,digits=2)
@@ -13,3 +12,5 @@ plot(eigvec[,3], eigvec[,4],
 
 legend(0.05,0, pch=c(1,15), col=c("blue","hotpink"), legend = c("Case","Control"), cex=1.5)
 par(mar=c(5, 4, 4, 2) + 0.1)
+write(format(getRversion()),file="rversion")
+
