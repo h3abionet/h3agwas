@@ -42,9 +42,14 @@ public class H3agwasConfig {
                 + "manifest {\n"
                 + "    homePage = 'http://github.com/h3abionet/h3agwas'\n"
                 + "    description = 'GWAS Pipeline for H3Africa'\n"
-                + "    mainScript = 'gwas.nf'\n"
+                + "    mainScript = 'plink-qc.nf'\n"
                 + "}\n"
                 + "\n"
+                + "aws {\n"
+                + "    accessKey ='"+harg.get("accessKey")+"'\n"
+                + "    secretKey ='"+harg.get("secretKey")+"'\n"
+                + "    region    ='"+harg.get("region")+"'\n"
+                + "}\n\n"
                 + "params {\n"
                 + "\n"
                 + "    // Directories\n"
@@ -58,7 +63,7 @@ public class H3agwasConfig {
                            "cut_het_high","cut_het_low","cut_miss","cut_diff_miss",
                            "cut_maf","cut_mind","cut_geno","cut_hwe","pi_hat",
                            "plink_process_memory","other_process_memory",
-                           "max_plink_cores"};
+                           "max_plink_cores","accessKey","secretKey","region","AMI","instanceType","bootStorageSize","maxInstances"};
         for (String arg : parms)
            template = template + showArg(arg);
         template = template
@@ -201,6 +206,21 @@ public class H3agwasConfig {
                 + "        docker.engineOptions = \"-H :$swarmPort\"\n"
                 + "    }\n"
                 + "\n"
+                + "    cloud {\n" +
+                "\n" +
+                "            imageId = \""+harg.get("AMI")+"\"      // specify your AMI id here\n" +
+                "            instanceType = \""+harg.get("instanceType")+"\"\n" +
+                "            subnetId = \""+harg.get("subnetid")+"\"\n" +
+                "            bootStorageSize = \""+harg.get("bootStorageSize")+"\"     // Size of disk for images spawned\n" +
+                "//          instanceSotrageMount = \"\"   // Set a common mount point for images\n" +
+                "//          instanceStorageDevice = \"\"  // Set a common block device for images\n" +
+                "            autoscale {\n" +
+                "               enabled = true\n" +
+                "               maxInstances = "+harg.get("maxInstances")+"\n" +
+                "               terminateWhenIdle = true\n" +
+                "             }\n" +
+                "\n" +
+                "    }"
                 + "\n"
                 + "\n"
                 + "}\n"
