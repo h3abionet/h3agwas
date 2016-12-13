@@ -46,10 +46,14 @@ def getres(x) {
 nextflowversion =getres("nextflow -v")
 plinkversion      =getres("plink --version")
 rversion            =getres("R --version")
-println "${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
+
+if (workflow.repository)
+  workflow="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
+else
+  workflow="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf"]
+repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related"]
 
 
 repnames.each { report[it] = Channel.create() }
@@ -403,19 +407,19 @@ process pruneForIBD {
   input:
     file plinks from ldreg_ch.cross(ibd_prune_ch) {true} .map { it.flatten() }
   output:
-    file "${outf}.genome" into sort_ibd_ch1,sort_ibd_ch2
+    file "${outf}.genome" into sort_ibd_ch
   script:
-    nodups = plinks[1].baseName
+    base   = plinks[1].baseName
     ldreg  = plinks[0]
-    outf   = "${nodups}"
+    outf   =  base
     if (params.high_ld_regions_fname != "")
       range = "--range --exclude $ldreg"
     else
       range =""
     """
-      plink --bfile $nodups --threads $max_plink_cores --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
-      plink --bfile $nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
-      plink --bfile $nodups --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
+      plink --bfile $base --threads $max_plink_cores --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
+      plink --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
+      plink --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
       echo DONE
      """
 
@@ -425,21 +429,21 @@ process pruneForIBD {
 
 // run script to find related individuals
 //  Future - perhaps replaced with Primus
+//  Currently we remove one element from each pair -- choose
+//  the one with the greater missingness
 process findRelatedIndiv {
   errorStrategy 'ignore'
   memory other_mem_req
   input:
      set file (missing), file (ibd_genome) from \
-         missing2_ch.phase(sort_ibd_ch2) { gBase(it) }
+         missing2_ch.phase(sort_ibd_ch) { gBase(it) }
   output:
      set val(base), file(outfname) into related_indivs
-
+     set file(outfname) into report["related"]
   script:
      base = missing.baseName
      outfname = "${base}-fail_IBD.txt"
      template "run_IBD_QC_qcplink.pl"
-
-
 }
 
 
@@ -726,6 +730,7 @@ process produceReports {
      diffmiss       = results[14]
      pcapdf         = results[15]
      hwepdf        = results[16]
+     relf              = results[17]
      template "qcreport.py"
 }
 

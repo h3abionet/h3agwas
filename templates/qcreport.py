@@ -51,7 +51,12 @@ template='''
 *-usepackage{a4wide}
 *-usepackage{graphicx}
 *-usepackage{url}
-
+*-usepackage{fancyhdr}
+*-usepackage[yyyymmdd,hhmmss]{datetime}
+*-pagestyle{fancy}
+*-rfoot{Completed on *-today*- at *-currenttime}
+*-cfoot{}
+*-lfoot{Page *-thepage}
 *-title{Quality control report for %(base)s}
 
 *-author{H3Agwas QC Pipeline}
@@ -67,13 +72,6 @@ The input file for this analysis was *-emph{%(base)s}. This data includes:
 *-begin{itemize}
 *-item %(numrsnps)s SNPs
 *-item %(numrfam)s  participants
-*-end{itemize}
-
-*-noindent
-The final, cleaned result contains:
-*-begin{itemize}
-*-item %(numcsnps)s SNPs
-*-item %(numcfam)s  participants
 *-end{itemize}
 
 
@@ -118,7 +116,7 @@ and then heterozysgosity checked. Any indviduals with heterozygosity:
 *-noindent
 Overall %(numhetrem)s individuals were removed. These individuals, if any, can be found in the file *-url{$misshetremf}.
 
-*-noindent
+
 Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas *-ref{fig:indmiss} show the spread of missingness per individual across the sample these should be compared.
 
 *-ourfig{fig:snpmiss}{SNP missingness}{*-detokenize{%(snpmisspdf)s}}
@@ -130,7 +128,7 @@ Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sam
 
 
 
-
+*-pagebreak[3]
 *-section{Minor Allele Frequency Spread}
 
 Figure~*-ref{fig:maf} shows the cumulative distribution of minor
@@ -139,6 +137,12 @@ allele frequency in the data. The MAF cut-off should be chosen high enough that 
 
 *-ourfig{fig:maf}{Minor allele frequency distribution}{*-detokenize{%(mafpdf)s}}
 
+
+*-section{Relatedness}
+
+Using PLINK, relatedness is computed using IBD and ##{*-widehat{*-pi}}## as a proxy. All pairs of individuals with a ##{*-widehat{*-pi} *-geq ${pi_hat} }## are examined -- that individual with the greater missingness is removed. The ##*-widehat{*-pi}## of ${pi_hat} is a parameter of the pipeline. 
+
+%(numrels)s individuals were removed because of relatedness. The list of all individuals can be found in the *-url{$relf} file. 
 
 *-section{Differences between cases and controls}
 
@@ -177,9 +181,12 @@ Deviation for Hardy-Weinberg Equilibrium (HWE) may indicate sample contamination
 *-ourfig{fig:hwe}{The plot shows for each level of significance, the number of SNPs with H
 WE p-value}{*-detokenize{$hwepdf}}
 
+The description of how SNPs were filtered based on HWE are discussed in Section~*-ref{sec:final}
+
 
 *-section{Final filtering}
 
+*-label{sec:final}
 The details of the final filtering can be found in the Nextflow script. Note that the exact ordering or removal will affect the final results. However, we take a conservative approach.
 
 
@@ -195,6 +202,26 @@ The details of the final filtering can be found in the Nextflow script. Note tha
 *-end{itemize}
 *-end{enumerate}
 
+*-section{Final results}
+
+*-noindent
+The quality control procedures as described below were applied to the data. 
+The final, cleaned result contains:
+*-begin{itemize}
+*-item %(numcsnps)s SNPs
+*-item %(numcfam)s  participants
+*-end{itemize}
+
+@-noindent
+The final output files are 
+*-begin{itemize}
+*-item *-url{$cbed}, 
+*-item *-url{$cbim}, and 
+*-item *-url{$cfam}.
+*-end{itemize}
+
+
+
 *-section{Technical details}
 
 The analysis and report was produced by the h3aGWAS pipeline (*-url{http://github.com/h3abionet/h3agwas}) produced by the Pan-African Bioinformatics Network for H3Africa (*-url{http://www.h3abionet.org}).
@@ -208,6 +235,7 @@ The following tools were used:
 
 *-end{itemize}
 
+*-pagebreak[4]
 *-section{References}
 
 *-begin{itemize}
@@ -215,12 +243,13 @@ The following tools were used:
 *-item R Core Team (2016). *-emph{R: A language and environment for statistical
   computing}. R Foundation for Statistical Computing, Vienna, Austria.
   *-url{https://www.R-project.org/}
-*- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Baraja, Cedric Notredame. A novel tool for highly scalable computational pipelines. *-url{http://dx.doi.org/10.6084/m9.figshare.1254958}. Nextflow can be downloaded from *url{https://www.nextflow.io/}
+*- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Baraja, Cedric Notredame. A novel tool for highly scalable computational pipelines. *-url{http://dx.doi.org/10.6084/m9.figshare.1254958}. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
 *-end{itemize}
 
 *-end{document}'''
 
-template=template.replace("*-",unichr(92))
+# gymnastics to get backslash and dollar
+template=template.replace("*-",unichr(92)).replace("##",unichr(36))
 
 def countLines(fn):
     count=0
@@ -242,6 +271,7 @@ pdict['numcsnps'] =  countLines(args.cbim)
 pdict['numcfam']  =  countLines(args.cfam)
 pdict['numdups']  =  countLines(args.dupf)
 pdict['numdiffmiss'] = countLines("$diffmiss")
+pdict['numrels']       = countLines("$relf")
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:
