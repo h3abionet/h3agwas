@@ -169,7 +169,7 @@ mintsquealer <- function(path2projdir, path2idats, filename_samplesheet, cdf_nam
 
    # ----------------------------------------------------------------------------
     
-    if (show_advanced_params) {
+    if (show_advanced_params == TRUE) {
 
 	base::writeLines("Advanced parameter values for current mintsquealer run: ")
 	base::writeLines("")
