@@ -30,6 +30,7 @@ MINTSQUEALER_RUN="advanced"
 # run demo analysis
 RUN_DEMO_IN=TRUE
 
+#Tip: make sure the samplesheet is in the same directory as the .idat files
 
 # set basic params
 PATH2PROJDIR_IN="/Users/lmagosi/Downloads/crlmm_tutorials/"
