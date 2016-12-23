@@ -28,14 +28,14 @@ echo *******************************************
 MINTSQUEALER_RUN="basic"
 
 # run demo analysis
-RUN_DEMO_IN=TRUE
+RUN_DEMO_IN=FALSE
 
 
 # set basic params
 PATH2PROJDIR_IN="/Users/lmagosi/Downloads/crlmm_tutorials/"
 LOG_FILEPATH_IN="/Users/lmagosi/Downloads/crlmm_tutorials/"
 LOG_FILE_IN="mintsquealer_log"
-PATH2IDATS_IN="base::system.file('idatFiles', package = 'hapmap370k')"
+PATH2IDATS_IN="/Library/Frameworks/R.framework/Versions/3.1/Resources/library/hapmap370k/idatFiles"
 FILENAME_SAMPLESHEET_IN="samples370k.csv"
 CDF_NAME_IN="human370v1c"  
 RUN_QUIETLY_IN=FALSE 
