@@ -45,6 +45,8 @@ def parseArguments():
 args = parseArguments()
 pdict = vars(args)
 
+
+
 template='''
 *-documentclass[11pt]{article}
 
@@ -202,6 +204,8 @@ The details of the final filtering can be found in the Nextflow script. Note tha
 *-end{itemize}
 *-end{enumerate}
 
+The individuals removed in this phase, if any, can be found in the file *-url{%(irem)s}-"
+
 *-section{Final results}
 
 *-noindent
@@ -234,7 +238,7 @@ The following tools were used:
 *-item R version %(rversion)s [R Core Team, 2016]
 *-item $nextflowversion [Di Tommaso et al]
 *-item $wflowversion
-*-item The command line ${workflow.commandLine} was called
+*-item The command line *-verbatim:${workflow.commandLine}: was called
 *-item The profile ${workflow.profile} was used%(dockerimages)s.
 *-item The full configuration can be found in the appendix.
 *-end{itemize}
@@ -293,6 +297,7 @@ pdict['numcfam']  =  countLines(args.cfam)
 pdict['numdups']  =  countLines(args.dupf)
 pdict['numdiffmiss'] = countLines("$diffmiss")
 pdict['numrels']       = countLines("$relf")
+pdict['irem']       = countLines("$irem")
 
 f=open("$nextflowconfig")
 conf=""

@@ -25,6 +25,9 @@
 import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 
+
+latex_styles = Channel.fromPath(workflow.projectDir+"/scripts/*.sty")
+
 def helps = [ 'help' : 'help' ]
 params.help = false
 
@@ -52,7 +55,7 @@ else
   wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related"]
+repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related"]
 
 
 repnames.each { report[it] = Channel.create() }
@@ -169,7 +172,9 @@ def combineElts = { u, v ->
 // Take a list of channels and phase them
 def phaseAllLists = { channels ->
      start = channels[0]
+     println("phaseAllists $start")
      for (c in channels[1..-1]){
+         println("phaseAllists $c")
          start = start.phase(c) { gBase(it) } .map(combineElts)
      }
      return start;
@@ -454,13 +459,13 @@ process removeQCIndivs {
   output:
      file("${out}.{bed,bim,fam}") into\
          (clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
-
   script:
    base = bed.baseName
    out  = "${base}-c"
     """
      cat $f_sex_check_f $rel_indivs $f_miss_het | sort -k1 | uniq > failed_inds
      plink --bfile $base $sexinfo --remove failed_inds --make-bed --out $out
+     mv failed_inds ${out}.irem
   """
 }
 
@@ -545,7 +550,7 @@ process generateIndivMissingnessPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file(output) into report["indmiss"]
+    file(output) into report["indmisspdf"]
 
   script:
     input  = imissf
@@ -651,7 +656,7 @@ process removeQCPhase1 {
            .map (combineElts)
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    file("${output}*") into report["cleaned"]
+    file("${output}*.{bed,bim,fam,irem,log}") into report["cleaned"]
     file("${output}*") into pca_ch
   script:
      base=inputs[0].baseName
@@ -659,6 +664,7 @@ process removeQCPhase1 {
      output = "${base}-clean"
      """
      # remove really realy bad SNPs and really bad individuals
+     touch temp1.irem
      plink --bfile $base $sexinfo --exclude $bad --mind 0.2 --make-bed --out temp1
      # remove bad SNPs
      plink --bfile temp1 $sexinfo --geno 0.2 --make-bed --out temp2
@@ -668,6 +674,8 @@ process removeQCPhase1 {
          --maf $params.cut_maf --mind $params.cut_mind\
           --geno $params.cut_geno --hwe $params.cut_hwe \
          --make-bed --out $output 
+     touch ${output}.irem
+     cat temp1.irem >> ${output}.irem
   """
 }
 
@@ -706,6 +714,7 @@ process produceReports {
   input:
      file results from  phaseAllMap(report)
      file rversion
+     file styles from latex_styles.toList()
   echo true
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
@@ -727,10 +736,10 @@ process produceReports {
      fsex        = results[11]
      misshetremf  = results[12]
      diffmisspdf  = results[13]
-     diffmiss       = results[14]
-     pcapdf         = results[15]
-     hwepdf        = results[16]
-     relf              = results[17]
+     diffmiss     = results[14]
+     pcapdf       = results[15]
+     hwepdf       = results[16]
+     relf         = results[17]
      nextflowconfig= file("nextflow.config")
      template "qcreport.py"
 }
