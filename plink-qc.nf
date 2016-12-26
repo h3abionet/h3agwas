@@ -200,7 +200,7 @@ inpat = "${params.input_dir}/${params.input_pat}"
 
 
 Channel
-.fromFilePairs("${inpat}",size:3, flat : true){ file -> file.baseName }  \
+.fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
    .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
