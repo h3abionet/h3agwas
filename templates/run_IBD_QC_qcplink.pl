@@ -23,7 +23,7 @@ open OUT, ">$outfname";
 while(<GENOME>){
     s/^\\s+//;
     my @fields = split /\\s+/, \$_;
-    if(\$fields[9] > 0.185){
+    if(\$fields[9] > ${pi_hat}){
 	if(\$imiss{\$fields[0]}{\$fields[1]}>\$imiss{\$fields[2]}{\$fields[3]}){
 	    unless(\$removed{\$fields[0]}{\$fields[1]}){
 		print OUT "\$fields[0] \$fields[1]\n";

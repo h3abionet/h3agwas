@@ -42,23 +42,28 @@ public class H3agwasConfig {
                 + "manifest {\n"
                 + "    homePage = 'http://github.com/h3abionet/h3agwas'\n"
                 + "    description = 'GWAS Pipeline for H3Africa'\n"
-                + "    mainScript = 'gwas.nf'\n"
+                + "    mainScript = 'plink-qc.nf'\n"
                 + "}\n"
                 + "\n"
+                + "aws {\n"
+                + "    accessKey ='"+harg.get("accessKey")+"'\n"
+                + "    secretKey ='"+harg.get("secretKey")+"'\n"
+                + "    region    ='"+harg.get("region")+"'\n"
+                + "}\n\n"
                 + "params {\n"
                 + "\n"
                 + "    // Directories\n"
                 + "    work_dir                = \""+harg.get("work_dir")+"\"\n"
-                + "    input_dir               = \"${params.work_dir}/"+harg.get("input_dir")+"\"\n"
-                + "    output_dir              = \"${params.work_dir}/"+harg.get("output_dir")+"\"\n"
-                + "    scripts                 = \"${params.work_dir}/"+harg.get("scripts")+"\"\n"
+                + "    input_dir               = \""+harg.get("input_dir")+"\"\n"
+                + "    output_dir              = \""+harg.get("output_dir")+"\"\n"
+                + "    scripts                 = \""+harg.get("scripts")+"\"\n"
                 + "\n"
                 + "    // Data\n";
-        String parms [] = {"data_name","high_ld_regions_fname","sexinfo_available",
+        String parms [] = {"input_pat","high_ld_regions_fname","sexinfo_available",
                            "cut_het_high","cut_het_low","cut_miss","cut_diff_miss",
                            "cut_maf","cut_mind","cut_geno","cut_hwe","pi_hat",
                            "plink_process_memory","other_process_memory",
-                           "max_plink_cores"};
+                           "max_plink_cores","accessKey","secretKey","region","AMI","instanceType","bootStorageSize","maxInstances"};
         for (String arg : parms)
            template = template + showArg(arg);
         template = template
@@ -81,7 +86,7 @@ public class H3agwasConfig {
                 + "    pbsDocker {\n"
                 + "\n"
                 + "        process.executor = 'pbs'\n"
-                + "        process.queue = 'long'\n"
+                + "        process.queue = '"+harg.get("queue")+"'\n"
                 + "        process.memory= '10GB'\n"
                 + "\n"
                 + "        process.$removeDuplicateSNPs.container = \"$plinkImage\"\n"
@@ -142,28 +147,31 @@ public class H3agwasConfig {
                 + "\n"
                 + "    dockerpbs {\n"
                 + "        process.executor = 'pbs'\n"
-                + "        process.queue = 'WitsLong'\n"
-                + "        process.$removeDuplicateSNPs.container = 'plink'\n"
-                + "        process.$identifyIndivDiscSexinfo.container = 'plink'\n"
-                + "        process.$calculateSampleMissing.container = 'plink'\n"
-                + "        process.$calculateSampleHetrozygosity.container = 'plink'\n"
-                + "        process.$pruneForIBD.container = 'plink'\n"
-                + "        process.$removeQCIndivs.container = 'plink'\n"
-                + "        process.$calculateMaf.container = 'plink'\n"
-                + "        process.$calculateSnpMissigness.container = 'plink'\n"
-                + "        process.$calculateSnpSkewStatus.container = 'plink'\n"
-                + "        process.$removeQCPhase1.container = 'plink'\n"
-                + "        process.$computePhase0.container = 'plink'\n"
+               + "        process.$removeDuplicateSNPs.container = \"$plinkImage\"\n"
+                + "        process.$identifyIndivDiscSexinfo.container = \"$plinkImage\"\n"
+                + "        process.$calculateSampleMissing.container = \"$plinkImage\"\n"
+                + "        process.$calculateSampleHetrozygosity.container = \"$plinkImage\"\n"
+                + "        process.$pruneForIBD.container = \"$plinkImage\"\n"
+                + "        process.$removeQCIndivs.container = \"$plinkImage\"\n"
+                + "        process.$calculateMaf.container = \"$plinkImage\"\n"
+                + "        process.$calculateSnpMissigness.container = \"$plinkImage\"\n"
+                + "        process.$calculateSnpSkewStatus.container = \"$plinkImage\"\n"
+                + "        process.$removeQCPhase1.container = \"$plinkImage\"\n"
+                + "        process.$computePhase0.container = \"$plinkImage\"\n"
                 + "\n"
-                + "        process.$generateMissHetPlot.container = 'r'\n"
-                + "        process.$generateMafPlot.container = 'r'\n"
-                + "        process.$generateSnpMissingnessPlot.container = 'r'\n"
-                + "        process.$generateDifferentialMissingnessPlot.container = 'r'\n"
-                + "        process.$generateHwePlot.container = 'r'\n"
+                + "        process.$generateMissHetPlot.container = \"$rEngineImage\"\n"
+                + "        process.$generateMafPlot.container = \"$rEngineImage\"\n"
+                + "        process.$generateSnpMissingnessPlot.container = \"$rEngineImage\"\n"
+                + "        process.$generateDifferentialMissingnessPlot.container = \"$rEngineImage\"\n"
+                + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
                 + "\n"
+                + "        docker.remove = true\n"
+                + "        docker.runOptions = '--rm'\n"
+                + "\t      docker.registry = 'quay.io'\n"
                 + "        docker.enabled = true\n"
-                + "        temp = 'auto'\n"
-                + "        fixOwnership = true\n"
+                + "        docker.temp = 'auto'\n"
+                + "        docker.process.executor = 'local'\n"
+                + "        docker.fixOwnership = true\n"
                 + "    }\n"
                 + "\n"
                 + "\n"
@@ -198,6 +206,21 @@ public class H3agwasConfig {
                 + "        docker.engineOptions = \"-H :$swarmPort\"\n"
                 + "    }\n"
                 + "\n"
+                + "    cloud {\n" +
+                "\n" +
+                "            imageId = \""+harg.get("AMI")+"\"      // specify your AMI id here\n" +
+                "            instanceType = \""+harg.get("instanceType")+"\"\n" +
+                "            subnetId = \""+harg.get("subnetid")+"\"\n" +
+                "            bootStorageSize = \""+harg.get("bootStorageSize")+"\"     // Size of disk for images spawned\n" +
+                "//          instanceSotrageMount = \"\"   // Set a common mount point for images\n" +
+                "//          instanceStorageDevice = \"\"  // Set a common block device for images\n" +
+                "            autoscale {\n" +
+                "               enabled = true\n" +
+                "               maxInstances = "+harg.get("maxInstances")+"\n" +
+                "               terminateWhenIdle = true\n" +
+                "             }\n" +
+                "\n" +
+                "    }"
                 + "\n"
                 + "\n"
                 + "}\n"
