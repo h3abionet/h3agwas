@@ -30,6 +30,8 @@ Sample QC tasks checking:
 
 SNP QC tasks checking:
 
+ * remove duplicates
+ * discordant sex information
  * minor allele frequencies
  * SNP missingness
  * differential missingness
@@ -43,6 +45,11 @@ SNP QC tasks checking:
  * logistic regression
  * emmax association testing
 
+
+
+** Running the pipeline **
+
+The pipeline is controlled through the nextflow.config file. All parameters including input files, and parameters.  This can be edited manually 
 
 
 ### Authors
