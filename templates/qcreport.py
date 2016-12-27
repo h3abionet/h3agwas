@@ -15,7 +15,36 @@ from __future__ import print_function
 import argparse
 import sys
 import os
+import re
+from  subprocess import check_output
 
+
+# Check we have pdflatex and up to date style file
+pdflatex=check_output("which pdflatex",shell=True)
+if len(pdflatex)<2:
+   check_output("echo no pdflatex > report.pdf",shell=True)
+   print("No PDFLATEX")
+   sys.exit(0)
+
+fancy="""
+*-usepackage{fancyhdr}
+*-usepackage[yyyymmdd,hhmmss]{datetime}
+*-pagestyle{fancy}
+*-rfoot{Completed on *-today*- at *-currenttime}
+*-cfoot{}
+*-lfoot{Page *-thepage}
+"""
+
+kpsewhich=check_output("which kpsewhich",shell=True)
+dateheader=""
+if len(kpsewhich)>1:
+   dfmt = check_output("kpsewhich datetime.sty",shell=True).rstrip()
+   if os.access(dfmt,os.R_OK):
+      with open(dfmt) as f:
+         for line in f:
+            m=re.search("ProvidesPackage.datetime..(..../../..)",line)
+            if m and m.group(1) >= "2015/03/20":
+               dateheader=fancy
 
 
 # check if we are being called from the command line or as a template
@@ -53,14 +82,8 @@ template='''
 *-usepackage{a4wide}
 *-usepackage{graphicx}
 *-usepackage{url}
-*-usepackage{fancyhdr}
-*-usepackage[yyyymmdd,hhmmss]{datetime}
-*-pagestyle{fancy}
-*-rfoot{Completed on *-today*- at *-currenttime}
-*-cfoot{}
-*-lfoot{Page *-thepage}
 *-title{Quality control report for %(base)s}
-
+'''+dateheader+'''
 *-author{H3Agwas QC Pipeline}
 
 *-newcommand{*-ourfig}[3]{*-begin{figure}[ht]*-begin{center}*-includegraphics[scale=0.6]{#3} *-end{center} *-caption{#2 [File is #3]}  *-label{#1}*-end{figure}}
@@ -70,12 +93,16 @@ template='''
 
 *-section{Introduction}
 
-The input file for this analysis was *-emph{%(base)s}. This data includes:
+The input file for this analysis was *-url{%(base)s.{bed,bim,fam}}. This data includes:
 *-begin{itemize}
 *-item %(numrsnps)s SNPs
 *-item %(numrfam)s  participants
 *-end{itemize}
 
+*-noindent The input files and md5 sums were
+*-begin{verbatim}
+%(inpmd5)s
+*-end{verbatim}
 
 *-subsection*{Approach}
 
@@ -204,7 +231,7 @@ The details of the final filtering can be found in the Nextflow script. Note tha
 *-end{itemize}
 *-end{enumerate}
 
-The individuals removed in this phase, if any, can be found in the file *-url{%(irem)s}-"
+The individuals removed in this phase, if any, can be found in the file *-url{%(irem)s}.
 
 *-section{Final results}
 
@@ -224,6 +251,11 @@ The final output files are
 *-item *-url{$cfam}.
 *-end{itemize}
 
+The ouput files' md5 sums are shown below
+
+*-begin{verbatim}
+%(outmd5)s
+*-end{verbatim}
 
 *-pagebreak[4]
 
@@ -238,7 +270,7 @@ The following tools were used:
 *-item R version %(rversion)s [R Core Team, 2016]
 *-item $nextflowversion [Di Tommaso et al]
 *-item $wflowversion
-*-item The command line *-verbatim:${workflow.commandLine}: was called
+*-item The command line *-verb:${workflow.commandLine}: was called
 *-item The profile ${workflow.profile} was used%(dockerimages)s.
 *-item The full configuration can be found in the appendix.
 *-end{itemize}
@@ -277,6 +309,12 @@ def countLines(fn):
             count=count+1
     return count
 
+def readLines(fn):
+    resp=""
+    with open(fn) as f:
+        for  line in f:
+            resp=resp+line
+    return resp
 
 f=open(args.orig)
 pdict['numrsnps'] = f.readline().split()[0]
@@ -297,7 +335,10 @@ pdict['numcfam']  =  countLines(args.cfam)
 pdict['numdups']  =  countLines(args.dupf)
 pdict['numdiffmiss'] = countLines("$diffmiss")
 pdict['numrels']       = countLines("$relf")
-pdict['irem']       = countLines("$irem")
+pdict['irem']       = "$irem"
+
+pdict['inpmd5']= readLines("$inpmd5")
+pdict['outmd5']= readLines("$outmd5")
 
 f=open("$nextflowconfig")
 conf=""
@@ -316,7 +357,6 @@ num_fs = countLines(args.fsex)
 if num_fs == 1:
     head=open(args.fsex).readline()
     if "No sex" in head: num_fs=0
-
 pdict['numfailedsex']=num_fs
 
     

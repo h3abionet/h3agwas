@@ -24,9 +24,8 @@
 
 import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
+import java.security.MessageDigest;
 
-
-latex_styles = Channel.fromPath(workflow.projectDir+"/scripts/*.sty")
 
 def helps = [ 'help' : 'help' ]
 params.help = false
@@ -55,10 +54,13 @@ else
   wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related"]
+repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5"]
 
 
 repnames.each { report[it] = Channel.create() }
+
+repmd5   = report["inpmd5"]
+orepmd5 = report["outmd5"]
 
 max_plink_cores = params.max_plink_cores 
 plink_mem_req = params.plink_process_memory
@@ -190,12 +192,11 @@ def phaseAllMap = { chanmap ->
 }
 
 
-//---------------------------------------------------------------------
 
 
 raw_ch = Channel.create()
 bim_ch = Channel.create()
-
+inpmd5ch = Channel.create()
 
 /* Get the input files -- could be a glob
  * We match the bed, bim, fam file -- order determined lexicographically
@@ -208,7 +209,25 @@ Channel
 .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-   .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
+   .separate(raw_ch, bim_ch, inpmd5ch) { a -> [a,a[1],a] }
+
+
+// Generate MD5 sums of output files
+process inMD5 {
+  input:
+     file plink from inpmd5ch
+  output:
+     file(out) into report["inpmd5"]
+  echo true
+  script:
+       bed = plink[0]
+       bim = plink[1]
+       fam = plink[2]
+       out  = "${plink[0].baseName}.md5"
+       template "md5.py"
+}
+
+
 
 
 
@@ -658,6 +677,7 @@ process removeQCPhase1 {
   output:
     file("${output}*.{bed,bim,fam,irem,log}") into report["cleaned"]
     file("${output}*") into pca_ch
+    file("${output}*.{bed,bim,fam}") into outmd5_ch
   script:
      base=inputs[0].baseName
      bad =inputs[3]
@@ -678,6 +698,23 @@ process removeQCPhase1 {
      cat temp1.irem >> ${output}.irem
   """
 }
+
+// Generate MD5 sums of output files
+process outMD5 {
+  input:
+     file plink from outmd5_ch
+  output:
+     file(out) into report["outmd5"]
+  echo true
+  script:
+       bed = plink[0]
+       bim = plink[1]
+       fam = plink[2]
+       out  = "${plink[0].baseName}.md5"
+       template "md5.py"
+}
+
+
 
 
 process compPCA {
@@ -714,8 +751,6 @@ process produceReports {
   input:
      file results from  phaseAllMap(report)
      file rversion
-     file styles from latex_styles.toList()
-  echo true
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${base}.pdf")
@@ -740,6 +775,8 @@ process produceReports {
      pcapdf       = results[15]
      hwepdf       = results[16]
      relf         = results[17]
+     inpmd5    = results[18]
+     outmd5  = results[19]
      nextflowconfig= file("nextflow.config")
      template "qcreport.py"
 }
