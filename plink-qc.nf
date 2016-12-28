@@ -174,9 +174,7 @@ def combineElts = { u, v ->
 // Take a list of channels and phase them
 def phaseAllLists = { channels ->
      start = channels[0]
-     println("phaseAllists $start")
      for (c in channels[1..-1]){
-         println("phaseAllists $c")
          start = start.phase(c) { gBase(it) } .map(combineElts)
      }
      return start;
