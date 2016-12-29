@@ -79,7 +79,7 @@ pdict = vars(args)
 template='''
 *-documentclass[11pt]{article}
 
-*-usepackage{a4paper}
+*-usepackage{a4}
 *-usepackage{graphicx}
 *-usepackage{url}
 *-title{Quality control report for %(base)s}
