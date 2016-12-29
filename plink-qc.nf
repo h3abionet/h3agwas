@@ -195,6 +195,7 @@ def phaseAllMap = { chanmap ->
 raw_ch = Channel.create()
 bim_ch = Channel.create()
 inpmd5ch = Channel.create()
+configfile = Channel.create()
 
 /* Get the input files -- could be a glob
  * We match the bed, bim, fam file -- order determined lexicographically
@@ -207,7 +208,7 @@ Channel
 .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-   .separate(raw_ch, bim_ch, inpmd5ch) { a -> [a,a[1],a] }
+   .separate(raw_ch, bim_ch, inpmd5ch,configfile) { a -> [a,a[1],a,"${workflow.projectDir}/nextflow.config"] }
 
 
 // Generate MD5 sums of output files
@@ -749,6 +750,7 @@ process produceReports {
   input:
      file results from  phaseAllMap(report)
      file rversion
+     file configfile
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${base}.pdf")
@@ -775,7 +777,7 @@ process produceReports {
      relf         = results[17]
      inpmd5    = results[18]
      outmd5  = results[19]
-     nextflowconfig= file("nextflow.config")
+     nextflowconfig= configfile
      template "qcreport.py"
 }
 
