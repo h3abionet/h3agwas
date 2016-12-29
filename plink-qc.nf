@@ -208,7 +208,7 @@ Channel
 .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-   .separate(raw_ch, bim_ch, inpmd5ch,configfile) { a -> [a,a[1],a,"${workflow.projectDir}/nextflow.config"] }
+   .separate(raw_ch, bim_ch, inpmd5ch,configfile) { a -> [a,a[1],a,file("${workflow.projectDir}/nextflow.config"]) }
 
 
 // Generate MD5 sums of output files
