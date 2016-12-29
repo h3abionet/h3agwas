@@ -351,7 +351,7 @@ if "${workflow.container}"=="[:]":
 else:
    pdict["dockerimages"] = ": used docker images %s."%"${workflow.container}"
 
-
+pdict["dockerimages"]=pdict["dockerimages"].replace(unichr(36),"")
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:
