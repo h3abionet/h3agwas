@@ -372,6 +372,7 @@ else:
    images = getImages("${workflow.container}")
    pdict["dockerimages"] = ": the docker images used are found in "+images
 
+
 pdict["dockerimages"]=pdict["dockerimages"].replace(unichr(36),"")
 pdict["date"]=check_output("date")
 
