@@ -330,7 +330,7 @@ def getImages(images):
       (proc,dimg)=img.split(":")
       result = result +  \
                   proc + "&" + unichr(92) + "url{%s}"%dimg+\
-                  unichr(92)+unichr(92)+unichr(92)+"n"
+                  unichr(92)+unichr(92)
    result = result+unichr(92)+"end{tabular}"      
    return result
  
