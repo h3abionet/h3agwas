@@ -16,7 +16,7 @@ import argparse
 import sys
 import os
 import re
-from  subprocess import check_output
+from  subprocess import check_output, CalledProcessError
 
 
 # Check we have pdflatex and up to date style file
@@ -35,10 +35,14 @@ fancy="""
 *-lfoot{Page *-thepage}
 """
 
-kpsewhich=check_output("which kpsewhich",shell=True)
+try:
+   kpsewhich=check_output("which kpsewhich",shell=True)
+except CalledProcessError:
+   kpsewhich=""
+   
 dateheader=""
 if len(kpsewhich)>1:
-   dfmt = check_output("kpsewhich datetime.sty",shell=True).rstrip()
+   dfmt = kpsewhich.rstrip()
    if os.access(dfmt,os.R_OK):
       with open(dfmt) as f:
          for line in f:
@@ -83,6 +87,7 @@ template='''
 *-usepackage{graphicx}
 *-usepackage{url}
 *-title{Quality control report for %(base)s}
+*-date{%(date)s}
 '''+dateheader+'''
 *-author{H3Agwas QC Pipeline}
 
@@ -316,6 +321,14 @@ def readLines(fn):
             resp=resp+line
     return resp
 
+def getImages(images):
+   images =images.replace("[","").replace("]","").split()
+   result = ""
+   for img in images:
+      (proc,dimg)=img.split(":")
+      result = result + " " + proc + unichr(92) + "url{%s}"%dimg
+   return result
+ 
 f=open(args.orig)
 pdict['numrsnps'] = f.readline().split()[0]
 pdict['numrfam']  = f.readline().split()[0]
@@ -340,6 +353,7 @@ pdict['irem']       = "$irem"
 pdict['inpmd5']= readLines("$inpmd5")
 pdict['outmd5']= readLines("$outmd5")
 
+
 f=open("$nextflowconfig")
 conf=""
 for line in f: conf=conf+line
@@ -349,9 +363,11 @@ pdict['configuration']=conf
 if "${workflow.container}"=="[:]":
    pdict["dockerimages"] = ": locally installed binaries used"
 else:
-   pdict["dockerimages"] = ": used docker images %s."%"${workflow.container}"
+   images = getImages("${workflow.container}")
+   pdict["dockerimages"] = ": used docker images %s."%images
 
 pdict["dockerimages"]=pdict["dockerimages"].replace(unichr(36),"")
+pdict["date"]=check_output("date")
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:
