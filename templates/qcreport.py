@@ -43,7 +43,7 @@ if len(kpsewhich)>1:
       with open(dfmt) as f:
          for line in f:
             m=re.search("ProvidesPackage.datetime..(..../../..)",line)
-            if m and m.group(1) >= "2015/03/20":
+            if m and m.group(1) >= "2010/09/21":
                dateheader=fancy
 
 
