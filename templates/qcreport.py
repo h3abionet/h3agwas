@@ -38,13 +38,13 @@ fancy="""
 try:
    kpsewhich=check_output("which kpsewhich",shell=True)
    if kpsewhich:
-      kpsewhich=check_output("kpsewhich datetime.sty")
+      kpsewhich=check_output("kpsewhich datetime.sty",shell=True)
 except CalledProcessError:
    kpsewhich=""
    
 dateheader=""
 if len(kpsewhich)>1:
-   dfmt = check.rstrip()
+   dfmt = kpsewhich.rstrip()
    if os.access(dfmt,os.R_OK):
       with open(dfmt) as f:
          for line in f:
@@ -330,7 +330,7 @@ def getImages(images):
       (proc,dimg)=img.split(":")
       result = result +  \
                   proc + "&" + unichr(92) + "url{%s}"%dimg+\
-                  unichr(92)+unichr(92)+"\n"
+                  unichr(92)+unichr(92)+unichr(92)+"n"
    result = result+unichr(92)+"end{tabular}"      
    return result
  
