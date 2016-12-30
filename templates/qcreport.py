@@ -37,12 +37,14 @@ fancy="""
 
 try:
    kpsewhich=check_output("which kpsewhich",shell=True)
+   if kpsewhich:
+      kpsewhich=check_output("kpsewhich datetime.sty")
 except CalledProcessError:
    kpsewhich=""
    
 dateheader=""
 if len(kpsewhich)>1:
-   dfmt = kpsewhich.rstrip()
+   dfmt = check.rstrip()
    if os.access(dfmt,os.R_OK):
       with open(dfmt) as f:
          for line in f:
@@ -323,10 +325,13 @@ def readLines(fn):
 
 def getImages(images):
    images =images.replace("[","").replace("]","").split()
-   result = ""
+   result = unichr(92)+"begin{tabular}{ll}"
    for img in images:
       (proc,dimg)=img.split(":")
-      result = result + " " + proc + unichr(92) + "url{%s}"%dimg
+      result = result +  \
+                  proc + "&" + unichr(92) + "url{%s}"%dimg+\
+                  unichr(92)+unichr(92)+"\n"
+   result = result+unichr(92)+"end{tabular}"      
    return result
  
 f=open(args.orig)
