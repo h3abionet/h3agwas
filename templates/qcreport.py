@@ -362,7 +362,9 @@ pdict['outmd5']= readLines("$outmd5")
 
 f=open("$nextflowconfig")
 conf=""
-for line in f: conf=conf+line
+for line in f:
+   if  "accessKey" in line or "secretKey" in line: continue
+   conf=conf+line
 f.close()
 pdict['configuration']=conf
 

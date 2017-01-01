@@ -33,10 +33,40 @@ public class H3agwasConfig {
         String.format("    %-20s = \"%s\"\n",out);
     }
     
+    private static String common_docker_options = 
+                  "        process.$removeDuplicateSNPs.container = \"$plinkImage\"\n"
+                + "        process.$identifyIndivDiscSexinfo.container = \"$plinkImage\"\n"
+                + "        process.$calculateSampleMissing.container = \"$plinkImage\"\n"
+                + "        process.$calculateSampleHetrozygosity.container = \"$plinkImage\"\n"
+                + "        process.$compPCA.container = \"$plinkImage\"\n"
+                + "        process.$pruneForIBD.container = \"$plinkImage\"\n"
+                + "        process.$removeQCIndivs.container = \"$plinkImage\"\n"
+                + "        process.$calculateMaf.container = \"$plinkImage\"\n"
+                + "        process.$calculateSnpMissingness.container = \"$plinkImage\"\n"
+                + "        process.$calculateSnpSkewStatus.container = \"$plinkImage\"\n"
+                + "        process.$removeQCPhase1.container = \"$plinkImage\"\n"
+                + "        process.$computePhase0.container = \"$plinkImage\"\n"
+                + "        process.$drawPCA.container = \"$rEngineImage\"\n"
+                + "        process.$generateIndivMissingnessPlot.container=\"$rEngineImage\"\n"
+                + "        process.$generateMissHetPlot.container = \"$rEngineImage\"\n"
+                + "        process.$generateMafPlot.container = \"$rEngineImage\"\n"
+                + "        process.$generateSnpMissingnessPlot.container = \"$rEngineImage\"\n"
+                + "        process.$generateDifferentialMissingnessPlot.container = \"$rEngineImage\"\n"
+                + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
+                + "        process.$produceReports.container =\"$latexImage\""
+                + "\n"
+                + "        docker.remove = true\n"
+                + "        docker.runOptions = '--rm'\n"
+                + "\t      docker.registry = 'quay.io'\n"
+                + "        docker.enabled = true\n"
+                + "        docker.temp = 'auto'\n"
+                + "        docker.fixOwnership = true\n";
+    
     private static String template() {
         String template = 
                   "plinkImage = '"+harg.get("plinkImage")+"'\n"
                 + "rEngineImage = '"+harg.get("rEngineImage")+"'\n"
+                + "latexImage = '"+harg.get("latexImage")+"'\n"
                 + "swarmPort = '2376'\n"
                 + "\n"
                 + "manifest {\n"
@@ -44,12 +74,29 @@ public class H3agwasConfig {
                 + "    description = 'GWAS Pipeline for H3Africa'\n"
                 + "    mainScript = 'plink-qc.nf'\n"
                 + "}\n"
-                + "\n"
+                + "\n\n"
                 + "aws {\n"
                 + "    accessKey ='"+harg.get("accessKey")+"'\n"
                 + "    secretKey ='"+harg.get("secretKey")+"'\n"
                 + "    region    ='"+harg.get("region")+"'\n"
                 + "}\n\n"
+                + "    cloud {\n" +
+                "\n" +
+                "            imageId = \""+harg.get("AMI")+"\"      // specify your AMI id here\n" +
+                "            instanceType = \""+harg.get("instanceType")+"\"\n" +
+                "            subnetId = \""+harg.get("subnetid")+"\"\n" +
+                "            sharedStorageId   = \""+harg.get("sharedStorageId")+"\"\n"+
+                "   	     sharedStorageMount = \""+harg.get("sharedStorageMount")+"\"\n"+
+                "            bootStorageSize = \""+harg.get("bootStorageSize")+"\"     // Size of disk for images spawned\n" +
+                "//          instanceStorageMount = \"\"   // Set a common mount point for images\n" +
+                "//          instanceStorageDevice = \"\"  // Set a common block device for images\n" +
+                "            autoscale {\n" +
+                "               enabled = true\n" +
+                "               maxInstances = "+harg.get("maxInstances")+"\n" +
+                "               terminateWhenIdle = true\n" +
+                "             }\n" +
+                "\n" +
+                "    }\n\n\n"
                 + "params {\n"
                 + "\n"
                 + "    // Directories\n"
@@ -86,90 +133,19 @@ public class H3agwasConfig {
                 + "    pbsDocker {\n"
                 + "\n"
                 + "        process.executor = 'pbs'\n"
-                + "        process.queue = '"+harg.get("queue")+"'\n"
-                + "        process.memory= '10GB'\n"
-                + "\n"
-                + "        process.$removeDuplicateSNPs.container = \"$plinkImage\"\n"
-                + "        process.$identifyIndivDiscSexinfo.container = \"$plinkImage\"\n"
-                + "        process.$calculateSampleMissing.container = \"$plinkImage\"\n"
-                + "        process.$calculateSampleHetrozygosity.container = \"$plinkImage\"\n"
-                + "        process.$pruneForIBD.container = \"$plinkImage\"\n"
-                + "        process.$removeQCIndivs.container = \"$plinkImage\"\n"
-                + "        process.$calculateMaf.container = \"$plinkImage\"\n"
-                + "        process.$calculateSnpMissigness.container = \"$plinkImage\"\n"
-                + "        process.$calculateSnpSkewStatus.container = \"$plinkImage\"\n"
-                + "        process.$removeQCPhase1.container = \"$plinkImage\"\n"
-                + "        process.$computePhase0.container = \"$plinkImage\"\n"
-                + "\n"
-                + "        process.$generateMissHetPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateMafPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateSnpMissingnessPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateDifferentialMissingnessPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
-                + "\n"
-                + "        docker.remove = true\n"
-                + "        docker.runOptions = '--rm'\n"
-                + "        docker.registry = 'quay.io'\n"
-                + "        docker.enabled = true\n"
-                + "        docker.temp = 'auto'\n"
-                + "        docker.fixOwnership = true\n"
+                + common_docker_options
                 + "\n"
                 + "    }\n"
                 + "\n"
                 + "    // Execute pipeline with Docker locally\n"
                 + "    docker {\n"
-                + "        process.$removeDuplicateSNPs.container = \"$plinkImage\"\n"
-                + "        process.$identifyIndivDiscSexinfo.container = \"$plinkImage\"\n"
-                + "        process.$calculateSampleMissing.container = \"$plinkImage\"\n"
-                + "        process.$calculateSampleHetrozygosity.container = \"$plinkImage\"\n"
-                + "        process.$pruneForIBD.container = \"$plinkImage\"\n"
-                + "        process.$removeQCIndivs.container = \"$plinkImage\"\n"
-                + "        process.$calculateMaf.container = \"$plinkImage\"\n"
-                + "        process.$calculateSnpMissigness.container = \"$plinkImage\"\n"
-                + "        process.$calculateSnpSkewStatus.container = \"$plinkImage\"\n"
-                + "        process.$removeQCPhase1.container = \"$plinkImage\"\n"
-                + "        process.$computePhase0.container = \"$plinkImage\"\n"
-                + "\n"
-                + "        process.$generateMissHetPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateMafPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateSnpMissingnessPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateDifferentialMissingnessPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
-                + "\n"
-                + "        docker.remove = true\n"
-                + "        docker.runOptions = '--rm'\n"
-                + "\t      docker.registry = 'quay.io'\n"
-                + "        docker.enabled = true\n"
-                + "        docker.temp = 'auto'\n"
+                + common_docker_options
                 + "        docker.process.executor = 'local'\n"
-                + "        docker.fixOwnership = true\n"
                 + "    }\n"
                 + "\n"
                 + "    dockerpbs {\n"
                 + "        process.executor = 'pbs'\n"
-               + "        process.$removeDuplicateSNPs.container = \"$plinkImage\"\n"
-                + "        process.$identifyIndivDiscSexinfo.container = \"$plinkImage\"\n"
-                + "        process.$calculateSampleMissing.container = \"$plinkImage\"\n"
-                + "        process.$calculateSampleHetrozygosity.container = \"$plinkImage\"\n"
-                + "        process.$pruneForIBD.container = \"$plinkImage\"\n"
-                + "        process.$removeQCIndivs.container = \"$plinkImage\"\n"
-                + "        process.$calculateMaf.container = \"$plinkImage\"\n"
-                + "        process.$calculateSnpMissigness.container = \"$plinkImage\"\n"
-                + "        process.$calculateSnpSkewStatus.container = \"$plinkImage\"\n"
-                + "        process.$removeQCPhase1.container = \"$plinkImage\"\n"
-                + "        process.$computePhase0.container = \"$plinkImage\"\n"
-                + "\n"
-                + "        process.$generateMissHetPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateMafPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateSnpMissingnessPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateDifferentialMissingnessPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
-                + "\n"
-                + "        docker.remove = true\n"
-                + "        docker.runOptions = '--rm'\n"
-                + "\t      docker.registry = 'quay.io'\n"
-                + "        docker.enabled = true\n"
-                + "        docker.temp = 'auto'\n"
+                + common_docker_options
                 + "        docker.process.executor = 'local'\n"
                 + "        docker.fixOwnership = true\n"
                 + "    }\n"
@@ -178,49 +154,11 @@ public class H3agwasConfig {
                 + "    // Execute pipeline with Docker Swarm setup\n"
                 + "    dockerSwarm {\n"
                 + "\n"
-                + "        process.$removeDuplicateSNPs.container = \"$plinkImage\"\n"
-                + "        process.$identifyIndivDiscSexinfo.container = \"$plinkImage\"\n"
-                + "        process.$calculateSampleMissing.container = \"$plinkImage\"\n"
-                + "        process.$calculateSampleHetrozygosity.container = \"$plinkImage\"\n"
-                + "        process.$pruneForIBD.container = \"$plinkImage\"\n"
-                + "        process.$removeQCIndivs.container = \"$plinkImage\"\n"
-                + "        process.$calculateMaf.container = \"$plinkImage\"\n"
-                + "        process.$calculateSnpMissigness.container = \"$plinkImage\"\n"
-                + "        process.$calculateSnpSkewStatus.container = \"$plinkImage\"\n"
-                + "        process.$removeQCPhase1.container = \"$plinkImage\"\n"
-                + "        process.$computePhase0.container = \"$plinkImage\"\n"
-                + "\n"
-                + "        process.$generateMissHetPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateMafPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateSnpMissingnessPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateDifferentialMissingnessPlot.container = \"$rEngineImage\"\n"
-                + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
-                + "\n"
-                + "        docker.registry = 'quay.io'\n"
-                + "        docker.remove = true\n"
-                + "        docker.runOptions = '--rm'\n"
-                + "        docker.enabled = true\n"
-                + "        docker.temp = 'auto'\n"
+                + common_docker_options
                 + "        docker.process.executor = 'local'\n"
-                + "        docker.fixOwnership = true\n"
                 + "        docker.engineOptions = \"-H :$swarmPort\"\n"
                 + "    }\n"
                 + "\n"
-                + "    cloud {\n" +
-                "\n" +
-                "            imageId = \""+harg.get("AMI")+"\"      // specify your AMI id here\n" +
-                "            instanceType = \""+harg.get("instanceType")+"\"\n" +
-                "            subnetId = \""+harg.get("subnetid")+"\"\n" +
-                "            bootStorageSize = \""+harg.get("bootStorageSize")+"\"     // Size of disk for images spawned\n" +
-                "//          instanceSotrageMount = \"\"   // Set a common mount point for images\n" +
-                "//          instanceStorageDevice = \"\"  // Set a common block device for images\n" +
-                "            autoscale {\n" +
-                "               enabled = true\n" +
-                "               maxInstances = "+harg.get("maxInstances")+"\n" +
-                "               terminateWhenIdle = true\n" +
-                "             }\n" +
-                "\n" +
-                "    }"
                 + "\n"
                 + "\n"
                 + "}\n"
