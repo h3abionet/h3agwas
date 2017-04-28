@@ -16,7 +16,7 @@ import argparse
 import sys
 import os
 import re
-from  subprocess import check_output
+from  subprocess import check_output, CalledProcessError
 
 
 # Check we have pdflatex and up to date style file
@@ -35,15 +35,21 @@ fancy="""
 *-lfoot{Page *-thepage}
 """
 
-kpsewhich=check_output("which kpsewhich",shell=True)
+try:
+   kpsewhich=check_output("which kpsewhich",shell=True)
+   if kpsewhich:
+      kpsewhich=check_output("kpsewhich datetime.sty",shell=True)
+except CalledProcessError:
+   kpsewhich=""
+   
 dateheader=""
 if len(kpsewhich)>1:
-   dfmt = check_output("kpsewhich datetime.sty",shell=True).rstrip()
+   dfmt = kpsewhich.rstrip()
    if os.access(dfmt,os.R_OK):
       with open(dfmt) as f:
          for line in f:
             m=re.search("ProvidesPackage.datetime..(..../../..)",line)
-            if m and m.group(1) >= "2015/03/20":
+            if m and m.group(1) >= "2010/09/21":
                dateheader=fancy
 
 
@@ -83,6 +89,7 @@ template='''
 *-usepackage{graphicx}
 *-usepackage{url}
 *-title{Quality control report for %(base)s}
+*-date{%(date)s}
 '''+dateheader+'''
 *-author{H3Agwas QC Pipeline}
 
@@ -271,7 +278,7 @@ The following tools were used:
 *-item $nextflowversion [Di Tommaso et al]
 *-item $wflowversion
 *-item The command line *-verb:${workflow.commandLine}: was called
-*-item The profile ${workflow.profile} was used%(dockerimages)s.
+*-item The profile ${workflow.profile} was used%(dockerimages)s
 *-item The full configuration can be found in the appendix.
 *-end{itemize}
 
@@ -286,7 +293,8 @@ The following tools were used:
 *- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Baraja, Cedric Notredame. A novel tool for highly scalable computational pipelines. *-url{http://dx.doi.org/10.6084/m9.figshare.1254958}. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
 *-end{itemize}
 
-*-pagebreak[4]
+*-clearpage
+
 *-appendix
 *-section{nextflow.config}
 
@@ -316,6 +324,17 @@ def readLines(fn):
             resp=resp+line
     return resp
 
+def getImages(images):
+   images =images.replace("[","").replace("]","").replace(",","").split()
+   result = "Table "+unichr(92)+"ref{table:docker}"+unichr(10)+unichr(92)+"begin{table}"+unichr(92)+"begin{tabular}{ll}"+unichr(92)+"textbf{Nextflow process} &" + unichr(92)+"textbf{Docker Image}"+unichr(92)+unichr(92)+unichr(92)+"hline"+unichr(10)
+   for img in images:
+      (proc,dimg)=img.split(":")
+      result = result +  \
+                  proc + "&" + unichr(92) + "url{%s}"%dimg+\
+                  unichr(92)+unichr(92)
+   result = result+unichr(92)+"end{tabular}"+unichr(92)+"caption{Docker Images Used}" +unichr(92)+"label{table:docker}"+unichr(92)+"end{table}"
+   return result
+ 
 f=open(args.orig)
 pdict['numrsnps'] = f.readline().split()[0]
 pdict['numrfam']  = f.readline().split()[0]
@@ -340,18 +359,24 @@ pdict['irem']       = "$irem"
 pdict['inpmd5']= readLines("$inpmd5")
 pdict['outmd5']= readLines("$outmd5")
 
+
 f=open("$nextflowconfig")
 conf=""
-for line in f: conf=conf+line
+for line in f:
+   if  "accessKey" in line or "secretKey" in line: continue
+   conf=conf+line
 f.close()
 pdict['configuration']=conf
 
 if "${workflow.container}"=="[:]":
    pdict["dockerimages"] = ": locally installed binaries used"
 else:
-   pdict["dockerimages"] = ": used docker images %s."%"${workflow.container}"
+   images = getImages("${workflow.container}")
+   pdict["dockerimages"] = ": the docker images used are found in "+images
+
 
 pdict["dockerimages"]=pdict["dockerimages"].replace(unichr(36),"")
+pdict["date"]=check_output("date")
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:
