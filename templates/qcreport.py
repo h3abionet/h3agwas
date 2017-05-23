@@ -277,17 +277,8 @@ The following tools were used:
 *-item R version %(rversion)s [R Core Team, 2016]
 *-item $nextflowversion [Di Tommaso et al]
 *-item $wflowversion
-<<<<<<< HEAD
-*-item The command line 
-   
- ${workflow.commandLine} 
-
-  was called
-*-item The profile ${workflow.profile} was used %(dockerimages)s.
-=======
-*-item The command line *-verb:${workflow.commandLine}: was called
+*-item The command line *-url:${workflow.commandLine}: was called
 *-item The profile ${workflow.profile} was used%(dockerimages)s
->>>>>>> 9f2ec0dad54d65e698c4ffd100a8573b0d5f86dd
 *-item The full configuration can be found in the appendix.
 *-end{itemize}
 
