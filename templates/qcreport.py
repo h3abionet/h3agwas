@@ -234,8 +234,12 @@ The following tools were used:
 *-item R version %(rversion)s [R Core Team, 2016]
 *-item $nextflowversion [Di Tommaso et al]
 *-item $wflowversion
-*-item The command line ${workflow.commandLine} was called
-*-item The profile ${workflow.profile} was used%(dockerimages)s.
+*-item The command line 
+   
+ ${workflow.commandLine} 
+
+  was called
+*-item The profile ${workflow.profile} was used %(dockerimages)s.
 *-item The full configuration can be found in the appendix.
 *-end{itemize}
 
@@ -247,7 +251,7 @@ The following tools were used:
 *-item R Core Team (2016). *-emph{R: A language and environment for statistical
   computing}. R Foundation for Statistical Computing, Vienna, Austria.
   *-url{https://www.R-project.org/}
-*- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Baraja, Cedric Notredame. A novel tool for highly scalable computational pipelines. *-url{http://dx.doi.org/10.6084/m9.figshare.1254958}. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
+*- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Barja, Emilio Palumbo, Cedric Notredame. Nextflow enables reproducible computational workflows *-emph{Nature Biotechnology}, 35, 316-319, 2017. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
 *-end{itemize}
 
 *-pagebreak[4]
