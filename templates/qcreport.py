@@ -15,7 +15,42 @@ from __future__ import print_function
 import argparse
 import sys
 import os
+import re
+from  subprocess import check_output, CalledProcessError
 
+
+# Check we have pdflatex and up to date style file
+pdflatex=check_output("which pdflatex",shell=True)
+if len(pdflatex)<2:
+   check_output("echo no pdflatex > report.pdf",shell=True)
+   print("No PDFLATEX")
+   sys.exit(0)
+
+fancy="""
+*-usepackage{fancyhdr}
+*-usepackage[yyyymmdd,hhmmss]{datetime}
+*-pagestyle{fancy}
+*-rfoot{Completed on *-today*- at *-currenttime}
+*-cfoot{}
+*-lfoot{Page *-thepage}
+"""
+
+try:
+   kpsewhich=check_output("which kpsewhich",shell=True)
+   if kpsewhich:
+      kpsewhich=check_output("kpsewhich datetime.sty",shell=True)
+except CalledProcessError:
+   kpsewhich=""
+   
+dateheader=""
+if len(kpsewhich)>1:
+   dfmt = kpsewhich.rstrip()
+   if os.access(dfmt,os.R_OK):
+      with open(dfmt) as f:
+         for line in f:
+            m=re.search("ProvidesPackage.datetime..(..../../..)",line)
+            if m and m.group(1) >= "2010/09/21":
+               dateheader=fancy
 
 
 # check if we are being called from the command line or as a template
@@ -45,20 +80,17 @@ def parseArguments():
 args = parseArguments()
 pdict = vars(args)
 
+
+
 template='''
 *-documentclass[11pt]{article}
 
-*-usepackage{a4wide}
+*-usepackage[paper=a4paper,left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 *-usepackage{graphicx}
 *-usepackage{url}
-*-usepackage{fancyhdr}
-*-usepackage[yyyymmdd,hhmmss]{datetime}
-*-pagestyle{fancy}
-*-rfoot{Completed on *-today*- at *-currenttime}
-*-cfoot{}
-*-lfoot{Page *-thepage}
 *-title{Quality control report for %(base)s}
-
+*-date{%(date)s}
+'''+dateheader+'''
 *-author{H3Agwas QC Pipeline}
 
 *-newcommand{*-ourfig}[3]{*-begin{figure}[ht]*-begin{center}*-includegraphics[scale=0.6]{#3} *-end{center} *-caption{#2 [File is #3]}  *-label{#1}*-end{figure}}
@@ -68,12 +100,16 @@ template='''
 
 *-section{Introduction}
 
-The input file for this analysis was *-emph{%(base)s}. This data includes:
+The input file for this analysis was *-url{%(base)s.{bed,bim,fam}}. This data includes:
 *-begin{itemize}
 *-item %(numrsnps)s SNPs
 *-item %(numrfam)s  participants
 *-end{itemize}
 
+*-noindent The input files and md5 sums were
+*-begin{verbatim}
+%(inpmd5)s
+*-end{verbatim}
 
 *-subsection*{Approach}
 
@@ -202,6 +238,8 @@ The details of the final filtering can be found in the Nextflow script. Note tha
 *-end{itemize}
 *-end{enumerate}
 
+The individuals removed in this phase, if any, can be found in the file *-url{%(irem)s}.
+
 *-section{Final results}
 
 *-noindent
@@ -220,6 +258,11 @@ The final output files are
 *-item *-url{$cfam}.
 *-end{itemize}
 
+The ouput files' md5 sums are shown below
+
+*-begin{verbatim}
+%(outmd5)s
+*-end{verbatim}
 
 *-pagebreak[4]
 
@@ -234,12 +277,17 @@ The following tools were used:
 *-item R version %(rversion)s [R Core Team, 2016]
 *-item $nextflowversion [Di Tommaso et al]
 *-item $wflowversion
+<<<<<<< HEAD
 *-item The command line 
    
  ${workflow.commandLine} 
 
   was called
 *-item The profile ${workflow.profile} was used %(dockerimages)s.
+=======
+*-item The command line *-verb:${workflow.commandLine}: was called
+*-item The profile ${workflow.profile} was used%(dockerimages)s
+>>>>>>> 9f2ec0dad54d65e698c4ffd100a8573b0d5f86dd
 *-item The full configuration can be found in the appendix.
 *-end{itemize}
 
@@ -254,7 +302,8 @@ The following tools were used:
 *- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Barja, Emilio Palumbo, Cedric Notredame. Nextflow enables reproducible computational workflows *-emph{Nature Biotechnology}, 35, 316-319, 2017. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
 *-end{itemize}
 
-*-pagebreak[4]
+*-clearpage
+
 *-appendix
 *-section{nextflow.config}
 
@@ -277,7 +326,24 @@ def countLines(fn):
             count=count+1
     return count
 
+def readLines(fn):
+    resp=""
+    with open(fn) as f:
+        for  line in f:
+            resp=resp+line
+    return resp
 
+def getImages(images):
+   images =images.replace("[","").replace("]","").replace(",","").split()
+   result = "Table "+unichr(92)+"ref{table:docker}"+unichr(10)+unichr(92)+"begin{table}"+unichr(92)+"begin{tabular}{ll}"+unichr(92)+"textbf{Nextflow process} &" + unichr(92)+"textbf{Docker Image}"+unichr(92)+unichr(92)+unichr(92)+"hline"+unichr(10)
+   for img in images:
+      (proc,dimg)=img.split(":")
+      result = result +  \
+                  proc + "&" + unichr(92) + "url{%s}"%dimg+\
+                  unichr(92)+unichr(92)
+   result = result+unichr(92)+"end{tabular}"+unichr(92)+"caption{Docker Images Used}" +unichr(92)+"label{table:docker}"+unichr(92)+"end{table}"
+   return result
+ 
 f=open(args.orig)
 pdict['numrsnps'] = f.readline().split()[0]
 pdict['numrfam']  = f.readline().split()[0]
@@ -297,25 +363,34 @@ pdict['numcfam']  =  countLines(args.cfam)
 pdict['numdups']  =  countLines(args.dupf)
 pdict['numdiffmiss'] = countLines("$diffmiss")
 pdict['numrels']       = countLines("$relf")
+pdict['irem']       = "$irem"
+
+pdict['inpmd5']= readLines("$inpmd5")
+pdict['outmd5']= readLines("$outmd5")
+
 
 f=open("$nextflowconfig")
 conf=""
-for line in f: conf=conf+line
+for line in f:
+   if  "accessKey" in line or "secretKey" in line: continue
+   conf=conf+line
 f.close()
 pdict['configuration']=conf
 
 if "${workflow.container}"=="[:]":
    pdict["dockerimages"] = ": locally installed binaries used"
 else:
-   pdict["dockerimages"] = ": used docker images %s."%"${workflow.container}"
+   images = getImages("${workflow.container}")
+   pdict["dockerimages"] = ": the docker images used are found in "+images
 
 
+pdict["dockerimages"]=pdict["dockerimages"].replace(unichr(36),"")
+pdict["date"]=check_output("date")
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:
     head=open(args.fsex).readline()
     if "No sex" in head: num_fs=0
-
 pdict['numfailedsex']=num_fs
 
     

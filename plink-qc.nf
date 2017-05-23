@@ -24,6 +24,8 @@
 
 import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
+import java.security.MessageDigest;
+
 
 def helps = [ 'help' : 'help' ]
 params.help = false
@@ -52,10 +54,13 @@ else
   wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmiss","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related"]
+repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5"]
 
 
 repnames.each { report[it] = Channel.create() }
+
+repmd5   = report["inpmd5"]
+orepmd5 = report["outmd5"]
 
 max_plink_cores = params.max_plink_cores 
 plink_mem_req = params.plink_process_memory
@@ -185,12 +190,12 @@ def phaseAllMap = { chanmap ->
 }
 
 
-//---------------------------------------------------------------------
 
 
 raw_ch = Channel.create()
 bim_ch = Channel.create()
-
+inpmd5ch = Channel.create()
+configfile = Channel.create()
 
 /* Get the input files -- could be a glob
  * We match the bed, bim, fam file -- order determined lexicographically
@@ -200,10 +205,28 @@ inpat = "${params.input_dir}/${params.input_pat}"
 
 
 Channel
-.fromFilePairs("${inpat}",size:3, flat : true){ file -> file.baseName }  \
+.fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
    .ifEmpty { error "No matching plink files" }        \
    .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-   .separate(raw_ch, bim_ch) { a -> [a,a[1]] }
+   .separate(raw_ch, bim_ch, inpmd5ch,configfile) { a -> [a,a[1],a,file("${workflow.projectDir}/nextflow.config")]}
+
+
+// Generate MD5 sums of output files
+process inMD5 {
+  input:
+     file plink from inpmd5ch
+  output:
+     file(out) into report["inpmd5"]
+  echo true
+  script:
+       bed = plink[0]
+       bim = plink[1]
+       fam = plink[2]
+       out  = "${plink[0].baseName}.md5"
+       template "md5.py"
+}
+
+
 
 
 
@@ -454,13 +477,13 @@ process removeQCIndivs {
   output:
      file("${out}.{bed,bim,fam}") into\
          (clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
-
   script:
    base = bed.baseName
    out  = "${base}-c"
     """
      cat $f_sex_check_f $rel_indivs $f_miss_het | sort -k1 | uniq > failed_inds
      plink --bfile $base $sexinfo --remove failed_inds --make-bed --out $out
+     mv failed_inds ${out}.irem
   """
 }
 
@@ -545,7 +568,7 @@ process generateIndivMissingnessPlot {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
 
   output:
-    file(output) into report["indmiss"]
+    file(output) into report["indmisspdf"]
 
   script:
     input  = imissf
@@ -651,14 +674,16 @@ process removeQCPhase1 {
            .map (combineElts)
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    file("${output}*") into report["cleaned"]
+    file("${output}*.{bed,bim,fam,irem,log}") into report["cleaned"]
     file("${output}*") into pca_ch
+    file("${output}*.{bed,bim,fam}") into outmd5_ch
   script:
      base=inputs[0].baseName
      bad =inputs[3]
      output = "${base}-clean"
      """
      # remove really realy bad SNPs and really bad individuals
+     touch temp1.irem
      plink --bfile $base $sexinfo --exclude $bad --mind 0.2 --make-bed --out temp1
      # remove bad SNPs
      plink --bfile temp1 $sexinfo --geno 0.2 --make-bed --out temp2
@@ -668,8 +693,27 @@ process removeQCPhase1 {
          --maf $params.cut_maf --mind $params.cut_mind\
           --geno $params.cut_geno --hwe $params.cut_hwe \
          --make-bed --out $output 
+     touch ${output}.irem
+     cat temp1.irem >> ${output}.irem
   """
 }
+
+// Generate MD5 sums of output files
+process outMD5 {
+  input:
+     file plink from outmd5_ch
+  output:
+     file(out) into report["outmd5"]
+  echo true
+  script:
+       bed = plink[0]
+       bim = plink[1]
+       fam = plink[2]
+       out  = "${plink[0].baseName}.md5"
+       template "md5.py"
+}
+
+
 
 
 process compPCA {
@@ -706,7 +750,7 @@ process produceReports {
   input:
      file results from  phaseAllMap(report)
      file rversion
-  echo true
+     file configfile
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${base}.pdf")
@@ -727,11 +771,13 @@ process produceReports {
      fsex        = results[11]
      misshetremf  = results[12]
      diffmisspdf  = results[13]
-     diffmiss       = results[14]
-     pcapdf         = results[15]
-     hwepdf        = results[16]
-     relf              = results[17]
-     nextflowconfig= file("nextflow.config")
+     diffmiss     = results[14]
+     pcapdf       = results[15]
+     hwepdf       = results[16]
+     relf         = results[17]
+     inpmd5    = results[18]
+     outmd5  = results[19]
+     nextflowconfig= configfile
      template "qcreport.py"
 }
 
