@@ -87,6 +87,12 @@ template='''
 
 *-usepackage[paper=a4paper,left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 *-usepackage{graphicx}
+*-usepackage{listings}
+*-lstset{
+basicstyle=*-small*-ttfamily,
+columns=flexible,
+breaklines=true
+}
 *-usepackage{url}
 *-title{Quality control report for %(base)s}
 *-date{%(date)s}
@@ -107,9 +113,9 @@ The input file for this analysis was *-url{%(base)s.{bed,bim,fam}}. This data in
 *-end{itemize}
 
 *-noindent The input files and md5 sums were
-*-begin{verbatim}
+*-begin{lstlisting}
 %(inpmd5)s
-*-end{verbatim}
+*-end{lstlisting}
 
 *-subsection*{Approach}
 
@@ -277,7 +283,10 @@ The following tools were used:
 *-item R version %(rversion)s [R Core Team, 2016]
 *-item $nextflowversion [Di Tommaso et al]
 *-item $wflowversion
-*-item The command line *-verb:${workflow.commandLine}: was called
+*-item The command line below was called [NB: if the command line is long, the linebreak may break oddly after a hyphen or dash so take care.]
+*-begin{lstlisting}
+${workflow.commandLine}
+*-end{lstlisting}
 *-item The profile ${workflow.profile} was used%(dockerimages)s
 *-item The full configuration can be found in the appendix.
 *-end{itemize}
@@ -290,7 +299,7 @@ The following tools were used:
 *-item R Core Team (2016). *-emph{R: A language and environment for statistical
   computing}. R Foundation for Statistical Computing, Vienna, Austria.
   *-url{https://www.R-project.org/}
-*- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Baraja, Cedric Notredame. A novel tool for highly scalable computational pipelines. *-url{http://dx.doi.org/10.6084/m9.figshare.1254958}. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
+*- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Barja, Emilio Palumbo, Cedric Notredame. Nextflow enables reproducible computational workflows *-emph{Nature Biotechnology}, 35, 316-319, 2017. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
 *-end{itemize}
 
 *-clearpage
