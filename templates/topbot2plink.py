@@ -14,6 +14,7 @@ from __future__ import print_function
 import sys
 import argparse
 import re
+
 def parseArguments():
     parser=argparse.ArgumentParser()
     parser.add_argument('array', type=str, metavar='samplesheet'),
@@ -21,6 +22,7 @@ def parseArguments():
     parser.add_argument('output', type=str, metavar='fname',help="output base"),
     args = parser.parse_args()
     return args
+
 
 # auxiliary defs
 chr2chr = map(str,range(0,27))
@@ -88,7 +90,7 @@ def parseChipReport(array,fname,output):
             continue
         a1       = fields[alle_1]
         a2       = fields[alle_2]
-        lgenf.write("{}\t{}\t{}\t{}\t{}\n".format(fields[samp_i],fields[samp_i],snp_name,a1,a2))
+        lgenf.write("{}\\t{}\\t{}\\t{}\\t{}\\n".format(fields[samp_i],fields[samp_i],snp_name,a1,a2))
     lgenf.close()
 
 
@@ -107,9 +109,13 @@ def outputMap(array,outname):
         print(chrom,len(entries[chrom]))
         print(type(entries[chrom]))
         for [pos,cm,snp] in entries[chrom]:
-            mapf.write("{}\t{}\t{}\t{}\n".format(chrom,snp,cm,pos))
+            mapf.write("{}\\t{}\\t{}\\t{}\\n".format(chrom,snp,cm,pos))
     mapf.close()
             
+
+
+if len(sys.argv) == 1:
+   sys.argv=["topbot2plink.py","$array","$report","$output"]
     
 
 args = parseArguments()
