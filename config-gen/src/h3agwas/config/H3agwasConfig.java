@@ -54,6 +54,7 @@ public class H3agwasConfig {
                 + "        process.$generateDifferentialMissingnessPlot.container = \"$rEngineImage\"\n"
                 + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
                 + "        process.$produceReports.container =\"$latexImage\""
+                + "        process.$create_bed = \"plinkImage\""
                 + "\n"
                 + "        docker.remove = true\n"
                 + "        docker.runOptions = '--rm'\n"
