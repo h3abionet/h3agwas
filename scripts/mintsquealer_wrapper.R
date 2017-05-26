@@ -31,7 +31,6 @@ cdf_name_in <- args[8]
 run_quietly_in <- as.logical(args[9])
 show_advanced_params_in <- as.logical(args[10])
 
-
 if (mintsquealer_run == "advanced") {
 
     # set advanced params 
@@ -75,8 +74,8 @@ if (mintsquealer_run == "advanced") {
 }
 
 
-source("/Users/lmagosi/Downloads/crlmm_tutorials/mintsquealer/mintsquealer.R")
 
+source("mintsquealer.R")
 
 
 mintsquealer_wrapper <- function(mintsquealer_run) {

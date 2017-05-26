@@ -1,12 +1,39 @@
-plinkImage = 'banshee1221/h3agwas-plink'
-rEngineImage = 'banshee1221/h3agwas-r'
+plinkImage = 'h3abionet_org/h3agwas-plink'
+rEngineImage = 'h3abionet_org/h3agwas-rtools'
+latexImage = 'null'
 swarmPort = '2376'
 
 manifest {
     homePage = 'http://github.com/h3abionet/h3agwas'
     description = 'GWAS Pipeline for H3Africa'
-    mainScript = 'gwas.nf'
+    mainScript = 'plink-qc.nf'
 }
+
+
+aws {
+    accessKey ='null'
+    secretKey ='null'
+    region    ='null'
+}
+
+    cloud {
+
+            imageId = "null"      // specify your AMI id here
+            instanceType = "null"
+            subnetId = "null"
+            sharedStorageId   = "null"
+   	     sharedStorageMount = "null"
+            bootStorageSize = "null"     // Size of disk for images spawned
+//          instanceStorageMount = ""   // Set a common mount point for images
+//          instanceStorageDevice = ""  // Set a common block device for images
+            autoscale {
+               enabled = true
+               maxInstances = null
+               terminateWhenIdle = true
+             }
+
+    }
+
 
 params {
 
@@ -32,6 +59,13 @@ params {
     plink_process_memory = "750MB"
     other_process_memory = "750MB"
     max_plink_cores      = "4"
+    accessKey            = "null"
+    secretKey            = "null"
+    region               = "null"
+    AMI                  = "null"
+    instanceType         = "null"
+    bootStorageSize      = "null"
+    maxInstances         = "null"
 
 }
 profiles {
@@ -44,37 +78,36 @@ profiles {
     // For execution on a PBS scheduler, no containerization.
     pbs {
         process.executor = 'pbs'
-        process.queue = 'long'
+        process.queue = 'null'
     }
 
     // For execution on a PBS scheduler with containerization.
     pbsDocker {
 
         process.executor = 'pbs'
-        process.queue = 'long'
-        process.memory= '10GB'
-
         process.$removeDuplicateSNPs.container = "$plinkImage"
         process.$identifyIndivDiscSexinfo.container = "$plinkImage"
         process.$calculateSampleMissing.container = "$plinkImage"
         process.$calculateSampleHetrozygosity.container = "$plinkImage"
+        process.$compPCA.container = "$plinkImage"
         process.$pruneForIBD.container = "$plinkImage"
         process.$removeQCIndivs.container = "$plinkImage"
         process.$calculateMaf.container = "$plinkImage"
-        process.$calculateSnpMissigness.container = "$plinkImage"
+        process.$calculateSnpMissingness.container = "$plinkImage"
         process.$calculateSnpSkewStatus.container = "$plinkImage"
         process.$removeQCPhase1.container = "$plinkImage"
         process.$computePhase0.container = "$plinkImage"
-
+        process.$drawPCA.container = "$rEngineImage"
+        process.$generateIndivMissingnessPlot.container="$rEngineImage"
         process.$generateMissHetPlot.container = "$rEngineImage"
         process.$generateMafPlot.container = "$rEngineImage"
         process.$generateSnpMissingnessPlot.container = "$rEngineImage"
         process.$generateDifferentialMissingnessPlot.container = "$rEngineImage"
         process.$generateHwePlot.container = "$rEngineImage"
-
+        process.$produceReports.container ="$latexImage"        process.$create_bed = "plinkImage"
         docker.remove = true
         docker.runOptions = '--rm'
-        docker.registry = 'quay.io'
+	      docker.registry = 'quay.io'
         docker.enabled = true
         docker.temp = 'auto'
         docker.fixOwnership = true
@@ -87,27 +120,29 @@ profiles {
         process.$identifyIndivDiscSexinfo.container = "$plinkImage"
         process.$calculateSampleMissing.container = "$plinkImage"
         process.$calculateSampleHetrozygosity.container = "$plinkImage"
+        process.$compPCA.container = "$plinkImage"
         process.$pruneForIBD.container = "$plinkImage"
         process.$removeQCIndivs.container = "$plinkImage"
         process.$calculateMaf.container = "$plinkImage"
-        process.$calculateSnpMissigness.container = "$plinkImage"
+        process.$calculateSnpMissingness.container = "$plinkImage"
         process.$calculateSnpSkewStatus.container = "$plinkImage"
         process.$removeQCPhase1.container = "$plinkImage"
         process.$computePhase0.container = "$plinkImage"
-
+        process.$drawPCA.container = "$rEngineImage"
+        process.$generateIndivMissingnessPlot.container="$rEngineImage"
         process.$generateMissHetPlot.container = "$rEngineImage"
         process.$generateMafPlot.container = "$rEngineImage"
         process.$generateSnpMissingnessPlot.container = "$rEngineImage"
         process.$generateDifferentialMissingnessPlot.container = "$rEngineImage"
         process.$generateHwePlot.container = "$rEngineImage"
-
+        process.$produceReports.container ="$latexImage"        process.$create_bed = "plinkImage"
         docker.remove = true
         docker.runOptions = '--rm'
 	      docker.registry = 'quay.io'
         docker.enabled = true
         docker.temp = 'auto'
-        docker.process.executor = 'local'
         docker.fixOwnership = true
+        docker.process.executor = 'local'
     }
 
     dockerpbs {
@@ -116,25 +151,28 @@ profiles {
         process.$identifyIndivDiscSexinfo.container = "$plinkImage"
         process.$calculateSampleMissing.container = "$plinkImage"
         process.$calculateSampleHetrozygosity.container = "$plinkImage"
+        process.$compPCA.container = "$plinkImage"
         process.$pruneForIBD.container = "$plinkImage"
         process.$removeQCIndivs.container = "$plinkImage"
         process.$calculateMaf.container = "$plinkImage"
-        process.$calculateSnpMissigness.container = "$plinkImage"
+        process.$calculateSnpMissingness.container = "$plinkImage"
         process.$calculateSnpSkewStatus.container = "$plinkImage"
         process.$removeQCPhase1.container = "$plinkImage"
         process.$computePhase0.container = "$plinkImage"
-
+        process.$drawPCA.container = "$rEngineImage"
+        process.$generateIndivMissingnessPlot.container="$rEngineImage"
         process.$generateMissHetPlot.container = "$rEngineImage"
         process.$generateMafPlot.container = "$rEngineImage"
         process.$generateSnpMissingnessPlot.container = "$rEngineImage"
         process.$generateDifferentialMissingnessPlot.container = "$rEngineImage"
         process.$generateHwePlot.container = "$rEngineImage"
-
+        process.$produceReports.container ="$latexImage"        process.$create_bed = "plinkImage"
         docker.remove = true
         docker.runOptions = '--rm'
 	      docker.registry = 'quay.io'
         docker.enabled = true
         docker.temp = 'auto'
+        docker.fixOwnership = true
         docker.process.executor = 'local'
         docker.fixOwnership = true
     }
@@ -147,27 +185,29 @@ profiles {
         process.$identifyIndivDiscSexinfo.container = "$plinkImage"
         process.$calculateSampleMissing.container = "$plinkImage"
         process.$calculateSampleHetrozygosity.container = "$plinkImage"
+        process.$compPCA.container = "$plinkImage"
         process.$pruneForIBD.container = "$plinkImage"
         process.$removeQCIndivs.container = "$plinkImage"
         process.$calculateMaf.container = "$plinkImage"
-        process.$calculateSnpMissigness.container = "$plinkImage"
+        process.$calculateSnpMissingness.container = "$plinkImage"
         process.$calculateSnpSkewStatus.container = "$plinkImage"
         process.$removeQCPhase1.container = "$plinkImage"
         process.$computePhase0.container = "$plinkImage"
-
+        process.$drawPCA.container = "$rEngineImage"
+        process.$generateIndivMissingnessPlot.container="$rEngineImage"
         process.$generateMissHetPlot.container = "$rEngineImage"
         process.$generateMafPlot.container = "$rEngineImage"
         process.$generateSnpMissingnessPlot.container = "$rEngineImage"
         process.$generateDifferentialMissingnessPlot.container = "$rEngineImage"
         process.$generateHwePlot.container = "$rEngineImage"
-
-        docker.registry = 'quay.io'
+        process.$produceReports.container ="$latexImage"        process.$create_bed = "plinkImage"
         docker.remove = true
         docker.runOptions = '--rm'
+	      docker.registry = 'quay.io'
         docker.enabled = true
         docker.temp = 'auto'
-        docker.process.executor = 'local'
         docker.fixOwnership = true
+        docker.process.executor = 'local'
         docker.engineOptions = "-H :$swarmPort"
     }
 

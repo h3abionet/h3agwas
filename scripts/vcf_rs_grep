@@ -1,0 +1,145 @@
+#!/usr/bin/perl
+# vcf_rs_grep greps RS from a VCF file
+# and is released under the terms of the GNU GPL version 3, or any
+# later version, at your option. See the file README and COPYING for
+# more information.
+# Copyright 2017 by Don Armstrong <don@donarmstrong.com>.
+
+
+use warnings;
+use strict;
+
+use Getopt::Long;
+use Pod::Usage;
+
+=head1 NAME
+
+vcf_rs_grep - greps RS from a VCF file
+
+=head1 SYNOPSIS
+
+vcf_rs_grep [options] vcf_file.gz < rs_list |gzip -c > vcf_greped.gz
+
+ Options:
+   --debug, -d debugging level (Default 0)
+   --help, -h display this help
+   --man, -m display manual
+
+=head1 OPTIONS
+
+=over
+
+=item B<--debug, -d>
+
+Debug verbosity. (Default 0)
+
+=item B<--help, -h>
+
+Display brief usage information.
+
+=item B<--man, -m>
+
+Display this manual.
+
+=back
+
+=head1 EXAMPLES
+
+vcf_rs_grep vcf_file.gz < rs_list |gzip -c > vcf_greped.gz
+
+=cut
+
+
+use vars qw($DEBUG);
+
+my %options = (debug           => 0,
+               help            => 0,
+               man             => 0,
+              );
+
+GetOptions(\%options,
+           'merge=s',
+           'debug|d+','help|h|?','man|m');
+
+pod2usage() if $options{help};
+pod2usage({verbose=>2}) if $options{man};
+
+$DEBUG = $options{debug};
+
+my @USAGE_ERRORS;
+if (@ARGV!=1) {
+    push @USAGE_ERRORS,"You must provide exactly one VCF file to read";
+}
+
+pod2usage(join("\n",@USAGE_ERRORS)) if @USAGE_ERRORS;
+
+
+sub open_compressed_file {
+    my ($file) = @_;
+    my $fh;
+    my $mode = '<:encoding(UTF-8)';
+    my @opts;
+    if ($file =~ /\.gz$/) {
+        $mode = '-|:encoding(UTF-8)';
+        push @opts,'gzip','-dc';
+    }
+    if ($file =~ /\.xz$/) {
+        $mode = '-|:encoding(UTF-8)';
+        push @opts,'xz','-dc';
+    }
+    if ($file =~ /\.bz2$/) {
+        $mode = '-|:encoding(UTF-8)';
+        push @opts,'bzip2','-dc';
+    }
+    open($fh,$mode,@opts,$file);
+    return $fh;
+}
+
+my $vcf = open_compressed_file($ARGV[0]) or
+    die "Unable to open file $ARGV[0]";
+
+my %rsids;
+while (<STDIN>) {
+    chomp;
+    $rsids{$_} = 1;
+}
+
+my %merge_rsids;
+if (defined $options{merge}) {
+    my $merge = open_compressed_file($options{merge})
+        or die "Unable to open file $options{merge}: $!";
+    while (<$merge>) {
+        chomp;
+        my ($old,$new,undef) = split /\t/;
+        next unless exists $rsids{'rs'.$old};
+        $merge_rsids{'rs'.$old} = 'rs'.$new;
+        $rsids{'rs'.$new} = 1;
+    }
+    close ($merge);
+}
+
+while (<$vcf>) {
+    if (/^#/o) {
+        print $_;
+        next;
+    }
+    $_ =~ /^\S+\s+\S+\s+(\S+)/o;
+    next unless $1;
+    next unless exists $rsids{$1} and $rsids{$1};
+    $rsids{$1}++;
+    print $_;
+}
+
+my @unused_rsids;
+for my $rsid (keys %rsids) {
+    if ($rsids{$rsid} == 1) {
+        push @unused_rsids,$rsid;
+    }
+}
+if (@unused_rsids) {
+    print STDERR "The following rsids were not found\n";
+    print STDERR map {$_."\n"} @unused_rsids;
+}
+
+
+__END__

@@ -53,23 +53,33 @@ public class H3agwasConfig {
                 + "        process.$generateSnpMissingnessPlot.container = \"$rEngineImage\"\n"
                 + "        process.$generateDifferentialMissingnessPlot.container = \"$rEngineImage\"\n"
                 + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
-                + "        process.$produceReports.container =\"$latexImage\""
+                + "        process.$produceReports.container  =\"$latexImage\"\n"
+                + "        process.$lgen2ped.container        = \"$plinkImage\"\n"
+                + "        process.$create_bed.container      = \"$plinkImage\"\n" 
+                + "        process.$lgen2ped.container        = \"$plinkImage\"\n"
+                + "        process.$flip.container            = \"$bioperlImage\"\n"
+                + "        process.$computePCA.container      = \"$plinkImage\"\n"
+                + "        process.$computeTest.container     = \"$gemmaImage\"\n"
+                + "        process.$annotation.container      = \"$bioperlImage\"\n"
                 + "\n"
-                + "        docker.remove = true\n"
-                + "        docker.runOptions = '--rm'\n"
-                + "\t      docker.registry = 'quay.io'\n"
-                + "        docker.enabled = true\n"
-                + "        docker.temp = 'auto'\n"
-                + "        docker.fixOwnership = true\n";
+                + "        docker.remove      = true\n"
+                + "        docker.runOptions  = '--rm'\n"
+                + "\t      docker.registry    = 'quay.io'\n"
+                + "        docker.enabled     = true\n"
+                + "        docker.temp        = 'auto'\n"
+                + "        docker.fixOwnership= true\n";
     
     private static String template() {
-        String template = 
-                  "plinkImage = '"+harg.get("plinkImage")+"'\n"
-                + "rEngineImage = '"+harg.get("rEngineImage")+"'\n"
-                + "latexImage = '"+harg.get("latexImage")+"'\n"
-                + "swarmPort = '2376'\n"
-                + "\n"
-                + "manifest {\n"
+        String template = "";
+        for (String key : harg.keySet()) {
+            if (key.contains("Image")) {
+                template=  template+key+"=\""+harg.get(key)+"\"\n";
+            }
+        }
+        template += 
+                "swarmPort = '2376'\n\n"
+                +
+                 "manifest {\n"
                 + "    homePage = 'http://github.com/h3abionet/h3agwas'\n"
                 + "    description = 'GWAS Pipeline for H3Africa'\n"
                 + "    mainScript = 'plink-qc.nf'\n"
@@ -88,7 +98,7 @@ public class H3agwasConfig {
                 "            sharedStorageId   = \""+harg.get("sharedStorageId")+"\"\n"+
                 "   	     sharedStorageMount = \""+harg.get("sharedStorageMount")+"\"\n"+
                 "            bootStorageSize = \""+harg.get("bootStorageSize")+"\"     // Size of disk for images spawned\n" +
-                "//          instanceStorageMount = \"\"   // Set a common mount point for images\n" +
+                "//          instanceStorageMount = \""+""+"\"   // Set a common mount point for images\n" +
                 "//          instanceStorageDevice = \"\"  // Set a common block device for images\n" +
                 "            autoscale {\n" +
                 "               enabled = true\n" +
@@ -107,9 +117,10 @@ public class H3agwasConfig {
                 + "\n"
                 + "    // Data\n";
         String parms [] = {"input_pat","high_ld_regions_fname","sexinfo_available",
-                           "cut_het_high","cut_het_low","cut_miss","cut_diff_miss",
+                           "cut_het_high","cut_het_low","cut_diff_miss",
                            "cut_maf","cut_mind","cut_geno","cut_hwe","pi_hat",
-                           "plink_process_memory","other_process_memory",
+                           "topbot","fam","reference","dbsnp_all_vcf","manifest",
+                           "plink_process_memory","other_process_memory","sharedStorageMount",
                            "max_plink_cores","accessKey","secretKey","region","AMI","instanceType","bootStorageSize","maxInstances"};
         for (String arg : parms)
            template = template + showArg(arg);
