@@ -432,7 +432,7 @@ process pruneForIBD {
     ldreg  = plinks[0]
     outf   =  base
     if (params.high_ld_regions_fname != "")
-      range = "--range --exclude $ldreg"
+      range = " --exclude range $ldreg"
     else
       range =""
     """
