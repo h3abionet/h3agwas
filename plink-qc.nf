@@ -29,7 +29,7 @@ import java.security.MessageDigest;
 
 def helps = [ 'help' : 'help' ]
 params.help = false
-
+params.topbottom = false
 
 def params_help = new LinkedHashMap(helps)
 
@@ -203,7 +203,7 @@ configfile = Channel.create()
  * send the all the files to raw_ch and just the bim file to bim_ch */
 inpat = "${params.input_dir}/${params.input_pat}"
 
-if (params.vcf) {
+if (params.topbottom) {
 
   vcfChannel =  Channel.fromPath(${inpat})
 
