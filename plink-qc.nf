@@ -203,13 +203,19 @@ configfile = Channel.create()
  * send the all the files to raw_ch and just the bim file to bim_ch */
 inpat = "${params.input_dir}/${params.input_pat}"
 
+if (params.vcf) {
 
-Channel
-.fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
-   .ifEmpty { error "No matching plink files" }        \
-   .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-   .separate(raw_ch, bim_ch, inpmd5ch,configfile) { a -> [a,a[1],a,file("${workflow.projectDir}/nextflow.config")]}
+  vcfChannel =  Channel.fromPath(${inpat})
 
+}  else  {
+   Channel
+   .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
+      .ifEmpty { error "No matching plink files" }        \
+      .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
+      .separate(raw_ch, bim_ch, inpmd5ch,configfile) { a -> [a,a[1],a,file("${workflow.projectDir}/nextflow.config")]}
+}  
+
+ 
 
 // Generate MD5 sums of output files
 process inMD5 {
