@@ -13,7 +13,7 @@
  *      Abayomi Mosaku
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2016
+ *  2015-2017
  *
  *
  * Description  : Nextflow pipeline for Wits GWAS.
@@ -52,16 +52,17 @@ supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
 
 
 params.chi2     = 1
-params.fisher   = 1
-params.model    = 0
+params.fisher   = 0
+params.cmh     = 0
+params.model   = 0
 params.linear   = 0
-params.logistic = 1
-params.gemma    = 0
+params.logistic = 0
+params.gemma = 0
 params.gemma_relopt = 1
 params.gemma_lmmopt = 4
 
 
-params.input_testing  = 'raw-GWA-data'
+params.input_pat  = 'raw-GWA-data'
 
 params.sexinfo_available = "false"
 
@@ -119,9 +120,9 @@ checker = { fn ->
 
 
 
-bed = Paths.get(params.input_dir,"${params.input_testing}.bed").toString()
-bim = Paths.get(params.input_dir,"${params.input_testing}.bim").toString()
-fam = Paths.get(params.input_dir,"${params.input_testing}.fam").toString()
+bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
+bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
+fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
 
 
 
