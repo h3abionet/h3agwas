@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # remap_map_and_ped.pl remaps map files and ped files using a VCF
 # and is released under the terms of the GNU GPL version 3, or any
 # later version, at your option. See the file README and COPYING for
