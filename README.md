@@ -47,14 +47,16 @@ SNP QC tasks checking:
 
 
 
-** Running the pipeline **
+**Running the pipeline**
 
 The pipeline is controlled through the nextflow.config file. All parameters including input files, and parameters.  This can be edited manually 
 
 
+## Copyright
+
 ### Authors
 
-Lerato E. Magosi, Kiran Anmol, Shaun Aron, Rob Clucas, Eugene de Beste, Scott Hazelhurst, Aboyomini Mosaku and the Wits Bioinformatics team
+Lerato E. Magosi, Kiran Anmol, Shaun Aron, Rob Clucas, Eugene de Beste, Scott Hazelhurst, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
 
 ### License
 witsGWAS is offered under the MIT license. See LICENSE.txt.

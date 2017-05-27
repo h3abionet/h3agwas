@@ -5,7 +5,7 @@
 
 \$cut_het_high="${params.cut_het_high}";
 \$cut_het_low="${params.cut_het_low}";
-\$cut_miss="${params.cut_miss}";
+\$cut_miss="${params.cut_mind}";
 
 open(MISSFILE,"$imiss");
 open(HETFILE,"$het");
