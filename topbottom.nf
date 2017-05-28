@@ -9,7 +9,7 @@ params.vcf_merge_table="/data/aux/RsMergeArch.bcp.gz"
 params.reference      ="/data/aux/Homo_sapiens.GRCh37.75.dna.toplevel.fa"
 params.dbsnp_all_vcf  ="/data/aux/All_20170403.vcf.gz"
 params.manifest       ="/data/aux/HumanOmni5-4-v1-0-D.csv"
-
+params.chipdescription = "/external/diskA/novartis/metadata/HumanOmni5-4v1_B_Physical-and-Genetic-Coordinates.txt"
 inpat = "${params.input_dir}/${params.input_pat}"
 
 
@@ -28,8 +28,8 @@ checker = { fn ->
 
 if (params.topbot) {
 
-  topbot_chan = Channel.fromPath("${inpat}.lgen")
-  lmap = Channel.fromPath("${inpat}.map")
+
+  output     = params.output
   fam         = Channel.fromPath(params.fam)
   rsmerge_ch  = Channel.fromPath(params.vcf_merge_table)
   ref_ch      = Channel.fromPath(params.reference)
@@ -37,23 +37,37 @@ if (params.topbot) {
   remap       = Channel.fromPath("scripts/remap_map_and_ped.pl")
   all_vcf     = Channel.fromPath(params.dbsnp_all_vcf)
   fix_strandedness = Channel.fromPath("scripts/fix_strandedness.pl")
-  array_csv   = Channel.fromPath(params.manifest)
+  array       = Channel.fromPath(params.chipdescription)
+  manifest_csv   = Channel.fromPath(params.manifest)
+  
+
+  process illumina2lgen {
+    input:
+       file(inpat)
+       file(array)
+    output:
+       file("$output*") into lgenfs
+    script:
+        report = inpat
+        template "topbot2plink.py"
+  }
 
 
+  chroms = 1..26
 
   process lgen2ped {
     
     input:
-      file(topbot_chan)
-      file(lmap)
+      file(lgenf) from lgenfs.toList()
       file(fam)
+      each chrom from chroms
     output:
       set file("${base}.ped"), file("${base}.map") into input_ch
       file("${base}.map") into mapf
    script:
-      base = topbot_chan.baseName
+      base = "${output}-${chrom}"
       """
-      plink --lgen $topbot_chan --map $lmap --fam $fam --recode --out $base
+      plink --lgen ${base}.lgen --map ${base}.map --fam $fam --recode --out $base
       """
   }
 
@@ -135,8 +149,6 @@ Channel
 
 
 } 
-
-
 
 
 

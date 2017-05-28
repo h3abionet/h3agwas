@@ -81,7 +81,9 @@ def parseChipReport(array,fname,output):
     samp_i = fields.index("Sample ID")
     alle_1 = fields.index("Allele1 - Top")
     alle_2 = fields.index("Allele2 - Top")
-    lgenf = open ("{}.lgen".format(output),"w")
+    lgenf = []
+    for chrom in range(27):
+        lgenf.append(open ("{}-{}.lgen".format(output,chrom),"w"))
     for line in f:
         fields   = re.split("[,\t]",line.rstrip())
         snp_name = fields[name_i]
@@ -90,13 +92,14 @@ def parseChipReport(array,fname,output):
             continue
         a1       = fields[alle_1]
         a2       = fields[alle_2]
-        lgenf.write("{}\\t{}\\t{}\\t{}\\t{}\\n".format(fields[samp_i],fields[samp_i],snp_name,a1,a2))
-    lgenf.close()
+        chrom = int(array[snp_name][0])
+        entry = "{}\\t{}\\t{}\\t{}\\t{}\\n".format(fields[samp_i],fields[samp_i],snp_name,a1,a2)
+        lgenf[chrom].write(entry)
+    for f in lgenf: f.close()
 
 
 def outputMap(array,outname):
     entries = [[] for chrom in range(27) ]
-    mapf= open("{}.map".format(outname),"w")
     i=0
     for snp in array:
         curr = array[snp]
@@ -105,12 +108,11 @@ def outputMap(array,outname):
         entries[curr[0]].append(data)
         i=i+1
     for chrom in range(27):
+        mapf= open("{}{}.map".format(outname,chrom),"w")
         entries[chrom].sort()
-        print(chrom,len(entries[chrom]))
-        print(type(entries[chrom]))
         for [pos,cm,snp] in entries[chrom]:
             mapf.write("{}\\t{}\\t{}\\t{}\\n".format(chrom,snp,cm,pos))
-    mapf.close()
+        mapf.close()
             
 
 
