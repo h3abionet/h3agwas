@@ -9,7 +9,7 @@ h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney
 
 ## Documentation 
 
-Installation, Examples and tutorials for witsGWAS can be accessed at the
+Installation, Examples and tutorials for witsGWAS can be found in the wiki
 
 ## Features
 
@@ -62,6 +62,7 @@ Lerato E. Magosi, Kiran Anmol, Shaun Aron, Rob Clucas, Eugene de Beste, Scott Ha
 witsGWAS is offered under the MIT license. See LICENSE.txt.
 
 ### Download
-[witsGWAS-0.1.0](https://github.com/magosil86/witsGWAS/releases)
+
+`git clone https://github.com/h3abionet/h3agwas`
 
 ### References

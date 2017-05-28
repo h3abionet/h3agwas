@@ -55,7 +55,7 @@ public class H3agwasConfig {
                 + "        process.$generateHwePlot.container = \"$rEngineImage\"\n"
                 + "        process.$produceReports.container  =\"$latexImage\"\n"
                 + "        process.$lgen2ped.container        = \"$plinkImage\"\n"
-                + "        process.$create_bed.container      = \"$plinkImage\"\n" 
+                + "        process.$createBed.container      = \"$plinkImage\"\n" 
                 + "        process.$lgen2ped.container        = \"$plinkImage\"\n"
                 + "        process.$flip.container            = \"$bioperlImage\"\n"
                 + "        process.$computePCA.container      = \"$plinkImage\"\n"

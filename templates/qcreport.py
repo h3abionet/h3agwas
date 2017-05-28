@@ -20,11 +20,11 @@ from  subprocess import check_output, CalledProcessError
 
 
 # Check we have pdflatex and up to date style file
-pdflatex=check_output("which pdflatex",shell=True)
-if len(pdflatex)<2:
-   check_output("echo no pdflatex > report.pdf",shell=True)
-   print("No PDFLATEX")
-   sys.exit(0)
+#pdflatex=check_output("which pdflatex",shell=True)
+#if len(pdflatex)<2:
+#   check_output("echo no pdflatex > report.pdf",shell=True)
+#  print("No PDFLATEX")
+#   sys.exit(0)
 
 fancy="""
 *-usepackage{fancyhdr}
@@ -281,7 +281,7 @@ The following tools were used:
 *-begin{itemize}
 *-item %(plinkversion)s  [Chang et al 2015]
 *-item R version %(rversion)s [R Core Team, 2016]
-*-item $nextflowversion [Di Tommaso et al]
+*-item $nextflowversion [Di Tommaso et al, 2017]
 *-item $wflowversion
 *-item The command line below was called [NB: if the command line is long, the linebreak may break oddly after a hyphen or dash so take care.]
 *-begin{lstlisting}
@@ -295,11 +295,11 @@ ${workflow.commandLine}
 *-section{References}
 
 *-begin{itemize}
-*-item Chang, C. C., Chow, C. C., Tellier, L. C., Vattikuti, S., Purcell, S. M., and Lee, J. J. (2015). Second-generation PLINK: rising to the challenge of larger and richer datasets. *-emph{GigaScience}, 4(1), 1-16. *-url{http://doi.org/10.1186/s13742-015-0047-8}
+*-item Chang  CC, Chow CC, Tellier LC, Vattikuti S, Purcell SM, and Lee JJ. (2015). Second-generation PLINK: rising to the challenge of larger and richer datasets. *-emph{GigaScience}, 4(1), 1-16. *-url{http://doi.org/10.1186/s13742-015-0047-8}
 *-item R Core Team (2016). *-emph{R: A language and environment for statistical
   computing}. R Foundation for Statistical Computing, Vienna, Austria.
   *-url{https://www.R-project.org/}
-*- Paolo Di Tommaso, Maria Chatzou, Pablo Prieto Barja, Emilio Palumbo, Cedric Notredame. Nextflow enables reproducible computational workflows *-emph{Nature Biotechnology}, 35, 316-319, 2017. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
+*-item Di Tommaso P, Chatzou M, Prieto Barja P, Palumbo P, Notredame C. Nextflow enables reproducible computational workflows. *-emph{Nature Biotechnology}, 35, 316-319, 2017. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
 *-end{itemize}
 
 *-clearpage
