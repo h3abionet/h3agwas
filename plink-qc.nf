@@ -409,7 +409,7 @@ process getBadIndivs_Missing_Het {
   script:
     base = het.baseName
     outfname = "${base}-fail_miss_het.txt"
-    template "select_miss_het_qcplink.pl"
+    template "select_miss_het_qcplink.py"
 
 }
 
@@ -468,7 +468,7 @@ process findRelatedIndiv {
   script:
      base = missing.baseName
      outfname = "${base}-fail_IBD.txt"
-     template "run_IBD_QC_qcplink.pl"
+     template "run_IBD_QC_qcplink.py"
 }
 
 
