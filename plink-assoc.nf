@@ -163,7 +163,9 @@ num_assoc_cores = params.mperm == 0 ? 1 : max_plink_cores
 
 supported_tests = ["chi2","fisher","model","cmh","linear","logistic","gemma"]
 
-requested_tests = supported_tests.findAll { entry -> params.get(entry)==1 }
+requested_tests = supported_tests.findAll { entry -> params.get(entry) }
+
+
 
 process computeTest {
    echo true
