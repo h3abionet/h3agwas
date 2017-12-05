@@ -89,7 +89,9 @@ if (params.help) {
 /* Define the command to add for plink depending on whether sexinfo is
  * available or not.
  */
-if ( params.sexinfo_available == "false" ) {
+println(params.sexinfo_available);
+
+if ( params.sexinfo_available == false ) {
   sexinfo = "--allow-no-sex"
   println "Sexinfo not available, command --allow-no-sex\n"
 } else {
