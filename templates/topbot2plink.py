@@ -14,11 +14,13 @@ from __future__ import print_function
 import sys
 import argparse
 import re
+from shutil import copyfile
 
 def parseArguments():
     parser=argparse.ArgumentParser()
     parser.add_argument('array', type=str, metavar='samplesheet'),
     parser.add_argument('report', type=str, metavar='report',help="TOP/BOT report"),
+    parser.add_argument('fam', type=str, metavar='report',help="fam file"),
     parser.add_argument('output', type=str, metavar='fname',help="output base"),
     args = parser.parse_args()
     return args
@@ -54,7 +56,6 @@ def parseArray(fname):
     fields=re.split("[,\t]",line.rstrip())
     name_i = fields.index("Name")
     indices = [fields.index("Chr"),fields.index("MapInfo")]
-    print(fields)
     if "deCODE(cM)" in fields:
         indices.append(fields.index("deCODE(cM)"))
     array = {}
@@ -83,16 +84,16 @@ def parseChipReport(array,fname,output):
     alle_2 = fields.index("Allele2 - Top")
     lgenf = []
     for chrom in range(27):
-        lgenf.append(open ("{}-{}.lgen".format(output,chrom),"w"))
+        lgenf.append(open ("{}-{}.lgen".format(output,chr2chr[chrom]),"w"))
     for line in f:
         fields   = re.split("[,\t]",line.rstrip())
         snp_name = fields[name_i]
+        chrom    = conv(array[fields[name_i]][0])
         if snp_name  not in array:
             print("Unknown SNP name in line "+line)
             continue
         a1       = fields[alle_1]
         a2       = fields[alle_2]
-        chrom = int(array[snp_name][0])
         entry = "{}\\t{}\\t{}\\t{}\\t{}\\n".format(fields[samp_i],fields[samp_i],snp_name,a1,a2)
         lgenf[chrom].write(entry)
     for f in lgenf: f.close()
@@ -108,23 +109,26 @@ def outputMap(array,outname):
         entries[curr[0]].append(data)
         i=i+1
     for chrom in range(27):
-        mapf= open("{}{}.map".format(outname,chrom),"w")
+        mapf= open("{}-{}.map".format(outname,chr2chr[chrom]),"w")
         entries[chrom].sort()
         for [pos,cm,snp] in entries[chrom]:
             mapf.write("{}\\t{}\\t{}\\t{}\\n".format(chrom,snp,cm,pos))
         mapf.close()
             
 
+def copyFam(fam,output):
+    for chrom in range(27):
+        copyfile(fam,"{}-{}.fam".format(output,chr2chr[chrom]))
 
 if len(sys.argv) == 1:
-   sys.argv=["topbot2plink.py","$array","$report","$output"]
+   sys.argv=["topbot2plink.py","$array","$report","$fam","$output"]
     
+
 
 args = parseArguments()
 
 array = parseArray(args.array)
-print("Done")
 outputMap(array,args.output)
 parseChipReport(array,args.report,args.output)
-
+copyFam(args.fam,args.output)
 

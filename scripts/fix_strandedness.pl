@@ -251,6 +251,7 @@ while (<$ped>) {
             $a = flip_strand($a);
             $b = flip_strand($b);
         }
+	print $mr->{rsid};
         if ((defined $snps->{$mr->{rsid}}{ambiguous} and
              $snps->{$mr->{rsid}}{ambiguous}) or
             $snps->{$mr->{rsid}}{chr} eq "0" or
