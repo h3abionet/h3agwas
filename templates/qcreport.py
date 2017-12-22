@@ -141,8 +141,7 @@ Levels of heterozygosity were examined. Figure~*-ref{fig:missvhet} shows plots o
 individual missingness (i.e., the number of SNPs missing per
 individual).  Levels of heterozygosity should be between the ranges
 given -- anything higher may indicate that there is sample
-contamination, lower may indicate inbreeding. However, you need to
-apply your mind to the data. Missingness should be low.
+contamination, lower may indicate inbreeding. However, each set of data must be treated on ot sown merits and the analyst must apply their mind the problem. Missingness should be low.
 
 *-ourfig{fig:missvhet}{Missingness versus heterozygosity}{*-detokenize{%(missingvhetpdf)s}}
 
@@ -159,7 +158,7 @@ and then heterozysgosity checked. Any indviduals with heterozygosity:
 Overall %(numhetrem)s individuals were removed. These individuals, if any, can be found in the file *-url{$misshetremf}.
 
 
-Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas *-ref{fig:indmiss} show the spread of missingness per individual across the sample these should be compared.
+Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas Figure *-ref{fig:indmiss} shows the spread of missingness per individual across the sample these should be compared.
 
 *-ourfig{fig:snpmiss}{SNP missingness}{*-detokenize{%(snpmisspdf)s}}
 
@@ -174,7 +173,7 @@ Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sam
 *-section{Minor Allele Frequency Spread}
 
 Figure~*-ref{fig:maf} shows the cumulative distribution of minor
-allele frequency in the data. The MAF cut-off should be chosen high enough that you are sure that the variants you are seeing are real (so this would depend on the size of the sample). You have chosen a cut off of ${params.cut_maf}.
+allele frequency in the data. The MAF cut-off should be chosen high enough that one is sure that the variants seen are real (so this would depend on the size of the sample and the quality of the genotyping and whether some of the data is imputed). In this analysis the cut off was ${params.cut_maf}.
 
 
 *-ourfig{fig:maf}{Minor allele frequency distribution}{*-detokenize{%(mafpdf)s}}
