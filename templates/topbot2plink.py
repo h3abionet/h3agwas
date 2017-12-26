@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Takes as input
 #  - A file describing an Illumica chip 
 #     It should have a header line columns within the first 15 lines "Name Chr MapInfo deCODE(cM):
@@ -14,20 +14,25 @@ from __future__ import print_function
 import sys
 import argparse
 import re
+import gzip
+import numpy as np
 from shutil import copyfile
 
 def parseArguments():
     parser=argparse.ArgumentParser()
     parser.add_argument('array', type=str, metavar='samplesheet'),
     parser.add_argument('report', type=str, metavar='report',help="TOP/BOT report"),
-    parser.add_argument('fam', type=str, metavar='report',help="fam file"),
+    parser.add_argument('abbreviate', type=str, metavar='abbreviate',help="abbreviate IDs"),
     parser.add_argument('output', type=str, metavar='fname',help="output base"),
     args = parser.parse_args()
     return args
 
 
+TAB=chr(9)
+EOL=chr(10)
+
 # auxiliary defs
-chr2chr = map(str,range(0,27))
+chr2chr = list(map(str,range(0,27)))
 chr2chr[23]="X"
 chr2chr[24]="Y"
 chr2chr[25]="XY"
@@ -50,7 +55,7 @@ def parseArray(fname):
     f = open(fname)
     for i in range(15):
         line = f.readline()
-        if "Name" in line: break
+        if ",Name," in line: break
     else:
         sys.exit("Cannot find header line in "+fname)
     fields=re.split("[,\t]",line.rstrip())
@@ -59,76 +64,103 @@ def parseArray(fname):
     if "deCODE(cM)" in fields:
         indices.append(fields.index("deCODE(cM)"))
     array = {}
+    snp_elt=[]
+    i=0
     for line in f:
         fields=re.split("[,\t]",line.rstrip())
-        curr  =[conv(fields[indices[0]]), int(fields[indices[1]])]
+        if "[Controls]" in line: break
         if len(indices)==3:
             cm = fields[indices[2]]
             cm = 0.0 if  "NA" in cm else float(cm)
-            curr.append(cm)
-        array[fields[name_i]]=curr
-    return array
+        else:
+            cm = 0.0
+        snp_elt.append([conv(fields[indices[0]]), int(fields[indices[1]]), cm, fields[name_i]])
+    snp_elt.sort()
+    for i,content in enumerate(snp_elt):
+        array[content[-1]]=i
+    return snp_elt, array
 
-def parseChipReport(array,fname,output):
-    f = open(fname)
+def generate_line(pedf,old_sample_id,output):
+    pedf.write(TAB.join([old_sample_id,old_sample_id,"0","0","0","0"]))
+    pedf.write(TAB)
+    pedf.write(TAB.join(output)+EOL)
+    pass
+
+def getReportIndices(line):
+    #SNP NameSample IDAllele1 - TopAllele2 - Top
+    #fields=re.split("[,\t]",line.rstrip())
+    fields = line.rstrip().split(",")
+    name_i = fields.index("SNP Name")
+    samp_i = fields.index("Sample ID")
+    alle_1 = fields.index("Allele1 - Top")
+    alle_2 = fields.index("Allele2 - Top")
+    return name_i, samp_i, alle_1, alle_2
+
+def getAbbrev(sample_id):
+    m = re.search(".*_(.*)",sample_id)
+    if m:
+       sample_id=m.group(1)
+    else:
+       sys.exit("Sample ID <%s> cannot be abbreviated"%sample_id)
+    return sample_id
+
+def parseChipReport(snp_elt,array,fname,abbreviate,output):
+    f = gzip.open(fname,"rt")
     for i in range(15):
         line = f.readline()
         if "SNP Name" in line: break
     else:
         sys.exit("Cannot find header line in "+fname)
-    #SNP NameSample IDAllele1 - TopAllele2 - Top
-    fields=re.split("[,\t]",line.rstrip())
-    name_i = fields.index("SNP Name")
-    samp_i = fields.index("Sample ID")
-    alle_1 = fields.index("Allele1 - Top")
-    alle_2 = fields.index("Allele2 - Top")
-    lgenf = []
-    for chrom in range(27):
-        lgenf.append(open ("{}-{}.lgen".format(output,chr2chr[chrom]),"w"))
+    name_i, samp_i, alle_1, alle_2 = getReportIndices(line)
+    print(name_i,samp_i)
+    pedf = open ("{}.ped".format(output),"w")
+    old_sample_id="xxx"
+    num=0
+    output = np.empty([len(snp_elt)*2],dtype='U1')
+    output.fill("0")
     for line in f:
-        fields   = re.split("[,\t]",line.rstrip())
+        #line = str(line)
+        #fields   = re.split("[,\t]",line.rstrip())
+        fields = line.rstrip().split(",")
         snp_name = fields[name_i]
-        chrom    = conv(array[fields[name_i]][0])
         if snp_name  not in array:
-            print("Unknown SNP name in line "+line)
-            continue
+            sys.exit("Unknown SNP name in line "+line)
         a1       = fields[alle_1]
         a2       = fields[alle_2]
-        entry = "{}\\t{}\\t{}\\t{}\\t{}\\n".format(fields[samp_i],fields[samp_i],snp_name,a1,a2)
-        lgenf[chrom].write(entry)
-    for f in lgenf: f.close()
+        if a1 == "-": a1="0"
+        if a2 == "-": a2="0"
+        sample_id = fields[samp_i]
+        if abbreviate: sample_id = getAbbrev(sample_id)
+        if sample_id != old_sample_id:
+            print(old_sample_id)
+            if old_sample_id!="xxx":
+                generate_line(pedf,old_sample_id,output)
+            output.fill("0")
+            old_sample_id = sample_id
+            num=num+1
+        ind = array.get(snp_name)
+        output[2*ind]=a1
+        output[2*ind+1]=a2
+    pedf.close()
 
 
-def outputMap(array,outname):
-    entries = [[] for chrom in range(27) ]
-    i=0
-    for snp in array:
-        curr = array[snp]
-        data = curr[1:]
-        data.append(snp)
-        entries[curr[0]].append(data)
-        i=i+1
-    for chrom in range(27):
-        mapf= open("{}-{}.map".format(outname,chr2chr[chrom]),"w")
-        entries[chrom].sort()
-        for [pos,cm,snp] in entries[chrom]:
-            mapf.write("{}\\t{}\\t{}\\t{}\\n".format(chrom,snp,cm,pos))
-        mapf.close()
+def outputMap(snp_elt,array,outname):
+    mapf= open("{}.map".format(outname),"w")
+    for [chrom,pos,cm,snp] in snp_elt:
+        mapf.write("{}{}{}{}{}{}{}{}".format(chrom,TAB,snp,TAB,cm,TAB,pos,EOL))
+    mapf.close()
             
-
-def copyFam(fam,output):
-    for chrom in range(27):
-        copyfile(fam,"{}-{}.fam".format(output,chr2chr[chrom]))
-
 if len(sys.argv) == 1:
-   sys.argv=["topbot2plink.py","$array","$report","$fam","$output"]
+   sys.argv=["topbot2plink.py","$array","$report","$abbrev", "$output"]
     
 
 
 args = parseArguments()
 
-array = parseArray(args.array)
-outputMap(array,args.output)
-parseChipReport(array,args.report,args.output)
-copyFam(args.fam,args.output)
+snp_elt, array = parseArray(args.array)
+parseChipReport(snp_elt,array,args.report,args.abbreviate,args.output)
+outputMap(snp_elt,array,args.output)
+
+
+#copyFam(args.fam,args.output)
 

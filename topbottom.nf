@@ -1,22 +1,32 @@
 /* (C) H3ABionet
  GPL
 
- Don Armstrong
  Scott Hazelhrust
 */
 
-params.vcf_merge_table="/data/aux/RsMergeArch.bcp.gz"
-params.reference      ="/data/aux/Homo_sapiens.GRCh37.75.dna.toplevel.fa"
-params.dbsnp_all      ="/data/aux/All_20170403.vcf.gz"
-params.manifest       ="/data/aux/HumanOmni5-4-v1-0-D.csv"
+params.vcf_merge_table="/dataB/aux/RsMergeArch.bcp.gz"
+params.reference      ="/dataB/aux/Homo_sapiens.GRCh37.75.dna.toplevel.fa"
+params.dbsnp_all      ="/dataB/aux/37/All_20170403.vcf.gz"
+params.manifest       ="/dataB/aux/HumanOmni5-4-v1-0-D.csv"
 params.chipdescription = "/external/diskA/novartis/metadata/HumanOmni5-4v1_B_Physical-and-Genetic-Coordinates.txt"
 inpat = "${params.input_dir}/${params.input_pat}"
 params.output         = "chip"
-
+params.strandreport    = false
 
 params.vcf = false
 
 plink_src = Channel.create()
+
+if (params.strandreport) {
+  strand_ch = Channel.fromPath(params.strandreport);
+} else {
+  File empty = new File("empty.txt")
+  empty.createNewFile()
+  strand_ch = Channel.fromPath("empty.txt")
+}
+	 
+
+
 
 checker = { fn ->
    if (fn.exists())
@@ -62,7 +72,6 @@ def combineElts = { u, v ->
 
 def phaseAllLists = { channels ->
      start = channels[0]
-     println("HELLO")
      for (c in channels[1..-1]){
          start = start.phase(c) .map(combineElts)
      }
@@ -74,11 +83,10 @@ def phaseAllLists = { channels ->
 
   output      = params.output
 
-  fam         = Channel.fromPath(params.fam)
 
   rsmerge_ch  = Channel.create()
 
-
+  samplesheet = Channel.fromPath(params.samplesheet)
   ref_ch      = Channel.fromPath(params.reference)
   remap       = Channel.fromPath("scripts/remap_map_and_ped.pl")
   dbsnp_all   = Channel.fromPath(params.dbsnp_all)
@@ -86,137 +94,110 @@ def phaseAllLists = { channels ->
   array2        = Channel.fromPath(params.chipdescription)
   manifest_csv   = Channel.fromPath(params.manifest)
   report        = Channel.fromPath(inpat)
-  vcf_rs_grep  = file("templates/vcf_rs_grep")
-  remap        = file("templates/remap_map_and_ped.pl")
-  fix_strandedness = Channel.fromPath("scripts/fix_strandedness.pl")
+
   chroms = 1..26
-  (1..26).each {   rsmerge_ch.bind(file(params.vcf_merge_table)) }
 
 
+
+  
 
   process illumina2lgen {
+    maxForks 32
     input:
-       file(report)
-       file(array)
-       file(fam)
+       set file(report), file(array) from report.combine(array)
     output:
-       file("$output*") into lgenfs
+       set file("${output}.ped"), file("${output}.map") into ped_ch
     script:
-        report = inpat
+	abbrev = 1
+        output = report.baseName
         template "topbot2plink.py"
   }
 
 
 
 
-  process lgen2ped {
+  process bedfiy {
     
    input:
-     set val(base), file (fs) from lgenfs.flatten().map { fn -> tuple (gChrom(fn) , fn) }.groupTuple ()
+     set file(ped), file(map) from ped_ch
    output:
-     set val(base), file("${base}.ped"), file("${base}.map") into plink_chroms
-     set val(base), file("${base}.map") into  map_ch1, map_ch2
+     file("${base}.bed") into bed_ch
+     file ("${base}.bim") into bim_ch
+     file("${base}.fam") into fam_ch
    script:
+      base = ped.baseName
       """
       echo $base
-      echo $fs
 
-      plink --lgen chip-${base}.lgen --map chip-${base}.map --fam chip-${base}.fam --recode --out $base
+      plink --file $base --make-bed --out $base
       """
   }
 
 
-  process getChromSnps {
-    // extract out SNPs for each chromosome
-    time '10h' 
-    input:
-       file(dbsnp_all) 
-    output:
-       file("*-*.vcf.gz") into dbsnp_chrom
-    script:
-      inputf=dbsnp_all
-      template "vcf_split_chrom.py"
-      //"""
-      //for x in `seq 1 22`; do
-      //    touch All_20170403-\${x}.vcf.gz
-      //done
-      //touch All_20170403-X.vcf.gz
-      //touch All_20170403-Y.vcf.gz
-      //touch All_20170403-MT.vcf.gz
-      //"""
-  }
 
-  process grepAnnotation { 
-    input:
-      set val(base), file(mapf) from map_ch1
-    output:
-      set val(base), file("${base}_grep") into base_grep
-    script:
-         "awk '{print \$\$2}' $mapf > ${base}_grep"
-  }
-
-
-  process annotation {
-    input:
-      set val(chrom), file(dbsnp), file(awkout) from \
-            phaseAllLists([dbsnp_chrom.flatten().map { b -> [gChrom(b), b]},base_grep])
-      file (vcf_merge_table) from  rsmerge_ch
-    output:
-      set val(chrom), file("annotation.vcf.gz"), file(vcf_merge_table) into annotation_ch
-    script:
-      chrom_vcf=dbsnp_chrom
-      "${vcf_rs_grep}  $vcf_merge_table $dbsnp $awkout | gzip -c > annotation.vcf.gz"
-    }
-
-
-  process fix_plink {
-    input:
-      set val(base), file(ped), file(map), file(annotation), file(bcp) from phaseAllLists([plink_chroms,annotation_ch])
-    output:
-      set val(base), file("${base}_fixed.ped"), file("${base}_fixed.map"), file(annotation), file(bcp) into fixed_ch
-    script:
-    base = ped.baseName    
-    """
-       $remap --vcf $annotation --ped $ped --map ${map} \
-              --ped_out ${base}_fixed.ped --map_out ${base}_fixed.map --merge $bcp
-    """
-  }
-
-
-  process flip {
-    input:
-    set val(base), file(ped), file(map), file(annotation), file(bcp), \
-        file(fix_strandedness), file(array2), file(ref_genome) from \
-            fixed_ch.combine(fix_strandedness).combine(array2).combine(ref_ch)
-    output:  
-       set file("${flipped}.ped"),file("${flipped}.map"),file("${flipped}_flipping.log") into create_bed_ch
-    publishDir params.output_dir, pattern: "*log", \
-             overwrite:true, mode:'copy'
-    script:
-       flipped = "${base}_fl"
-       """
-	   ./${fix_strandedness} --ped $ped --map $map                \
-	   --ped-out ${flipped}.ped --map-out ${flipped}.map		\
-           --illumina-data ${array2} \
-           --merge $bcp  \
-           --vcf $annotation \
-           --ref $ref_genome                                       \
-           > ${flipped}_flipping.log          \
-      """
-    }	  
-
- process create_bed {
+ process combine_bed {
    input:
-     file(data) from create_bed_ch.toList()
+     file(bed) from bed_ch.toList()
+     file(bim) from bim_ch.toList()
+     file(fam) from fam_ch.toList()
    output:
-     set file("out.{bed,bim,fam}") into plink_src
+     set file("raw.{bed,bim,fam,log}") into plink_src
+     file ('orig.fam') into fix_fam_ch
    script:
     """
-    ls *.ped | sort > peds
-    ls *.map | sort >  maps
-    paste peds maps >  mergelist
+    ls *.bed | sort > beds
+    ls *.bim | sort >  bims
+    ls *.fam | sort >  fams
+    paste beds bims fams >  mergelist
     plink --merge-list mergelist --make-bed --out $output
+    mv ${output}.fam orig.fam
     """
  } 
+
+
+ process getFlips {
+   input:
+     file(strandreport) from strand_ch
+   output:
+     file(flips) into flip_ch
+   script:
+    flips = "flips.txt"
+    template "strandmismatch.py"
+ }
+
+
+ process alignStrand {
+   input:
+    set file(bed), file(bim), file(fam), file(log) from plink_src
+    file(flips) from flip_ch
+    publishDir params.output_dir, pattern: "*.{bed,bim,log}", \
+        overwrite:true, mode:'copy'
+   output:
+    set file("$output.{bed,bim,log}") into aligned_ch
+   script:
+    base = bed.baseName
+    """
+    plink --bfile $base --flip $flips --make-bed --out $output
+    cp $log combine.log
+    """
+ }
+
+
+
+
+ process fixFam {
+   input:
+     file(samplesheet)
+     file(fam) from fix_fam_ch
+   publishDir params.output_dir, pattern: "${output}.fam", \
+             overwrite:true, mode:'copy'
+   output:
+     set file("${output}.fam") into fixedfam_ch
+   script:
+    abbreviate = "1"
+    template "sheet2fam.py"
+ } 
+
+
 
 
