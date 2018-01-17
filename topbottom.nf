@@ -1,39 +1,39 @@
 /* (C) H3ABionet
  GPL
 
- Scott Hazelhrust
+ Scott Hazelhust, 2017-2018
 */
 
-params.vcf_merge_table="/dataB/aux/RsMergeArch.bcp.gz"
-params.reference      ="/dataB/aux/Homo_sapiens.GRCh37.75.dna.toplevel.fa"
-params.dbsnp_all      ="/dataB/aux/37/All_20170403.vcf.gz"
-params.manifest       ="/dataB/aux/HumanOmni5-4-v1-0-D.csv"
+
 params.chipdescription = "/external/diskA/novartis/metadata/HumanOmni5-4v1_B_Physical-and-Genetic-Coordinates.txt"
 inpat = "${params.input_dir}/${params.input_pat}"
 params.output         = "chip"
-params.strandreport    = false
+params.strandreport   = false
+params.manifest       = false
+params.abbrev         = "1"
 
-params.vcf = false
+
+abbrev = params.abbrev
 
 plink_src = Channel.create()
 
-if (params.strandreport) {
-  strand_ch = Channel.fromPath(params.strandreport);
-} else {
-  File empty = new File("empty.txt")
-  empty.createNewFile()
-  strand_ch = Channel.fromPath("empty.txt")
+def condChannel = { parm, descr ->
+  if ((parm==0) || (parm=="0") || (parm == false) || (parm=="false")) {
+    println(parm+" "+descr)
+    File empty = new File("empty."+descr)
+    empty.createNewFile()
+    return Channel.fromPath(empty)
+  }  else {
+    return  Channel.fromPath(parm);
+  }
 }
-	 
 
 
+ref_ch      = condChannel(params.reference,"ref")
+manifest_ch = condChannel(params.manifest,"man")
+strand_ch   = condChannel(params.strandreport,"strn")
 
-checker = { fn ->
-   if (fn.exists())
-       return fn;
-    else
-       error("\n\n-----------------\nFile $fn does not exist\n\n---\n")
-}
+
 
 
 
@@ -45,70 +45,24 @@ def gChrom= { x ->
 
 
 
-// Take a list of channels and phase them
-def combineElts = { u, v ->
-  ut=u.getClass()
-  vt=v.getClass()
-  ft = file("tmp").getClass()
-  lt = [].getClass()
-  st = "tmp".getClass()
-  inty = 1.getClass()
-  // if the two arguments are singletons return the list
-  if  ( (ut in [st,inty,ft]) && vt in [st,inty,ft]) {
-    return [u,v]
-  }
-  else
-    if (ut != lt)   u = [u]
-    if (vt == lt) 
-       if (v[0].getClass() == ft) 
-         return u+v;
-       else 
-         // The zeroth element of v is a key and we don't want to repeat
-         return u+v[1..-1]
-    else 
-    return u+[v];
- 
-}
-
-def phaseAllLists = { channels ->
-     start = channels[0]
-     for (c in channels[1..-1]){
-         start = start.phase(c) .map(combineElts)
-     }
-     return start;
-}
-
-
-
-
   output      = params.output
-
-
-  rsmerge_ch  = Channel.create()
-
   samplesheet = Channel.fromPath(params.samplesheet)
-  ref_ch      = Channel.fromPath(params.reference)
-  remap       = Channel.fromPath("scripts/remap_map_and_ped.pl")
-  dbsnp_all   = Channel.fromPath(params.dbsnp_all)
-  array        = Channel.fromPath(params.chipdescription)
-  array2        = Channel.fromPath(params.chipdescription)
-  manifest_csv   = Channel.fromPath(params.manifest)
-  report        = Channel.fromPath(inpat)
+  array       = Channel.fromPath(params.chipdescription)
+  report       = Channel.fromPath(inpat)
+  output_align = params.output_align
 
-  chroms = 1..26
 
 
 
   
 
   process illumina2lgen {
-    maxForks 32
+    maxForks 95
     input:
        set file(report), file(array) from report.combine(array)
     output:
        set file("${output}.ped"), file("${output}.map") into ped_ch
     script:
-	abbrev = 1
         output = report.baseName
         template "topbot2plink.py"
   }
@@ -141,16 +95,15 @@ def phaseAllLists = { channels ->
      file(bim) from bim_ch.toList()
      file(fam) from fam_ch.toList()
    output:
-     set file("raw.{bed,bim,fam,log}") into plink_src
-     file ('orig.fam') into fix_fam_ch
+     set file("raw.bed"), file("raw.bim"), file("raw.fam"), file("raw.log") into plink_src
+     file ('raw.fam') into fix_fam_ch
    script:
     """
     ls *.bed | sort > beds
     ls *.bim | sort >  bims
     ls *.fam | sort >  fams
     paste beds bims fams >  mergelist
-    plink --merge-list mergelist --make-bed --out $output
-    mv ${output}.fam orig.fam
+    plink --merge-list mergelist --make-bed --out raw
     """
  } 
 
@@ -158,31 +111,33 @@ def phaseAllLists = { channels ->
  process getFlips {
    input:
      file(strandreport) from strand_ch
+     file(manifest) from manifest_ch
    output:
      file(flips) into flip_ch
    script:
-    flips = "flips.txt"
+    flips = "flips.lst"
     template "strandmismatch.py"
  }
 
 
  process alignStrand {
    input:
-    set file(bed), file(bim), file(fam), file(log) from plink_src
+    set file(bed), file(bim), file(fam), file(logfile) from plink_src
+    file(ref) from ref_ch
     file(flips) from flip_ch
     publishDir params.output_dir, pattern: "*.{bed,bim,log}", \
         overwrite:true, mode:'copy'
    output:
-    set file("$output.{bed,bim,log}") into aligned_ch
+    set file("*.{bed,bim,log}") into aligned_ch
    script:
     base = bed.baseName
+    refBase = ref.baseName
+    opt = "--a2-allele $ref"
+    if (refBase=="empty") opt="--keep-allele-order"
     """
-    plink --bfile $base --flip $flips --make-bed --out $output
-    cp $log combine.log
+    plink --bfile $base $opt --flips $flips --make-bed --out $output
     """
  }
-
-
 
 
  process fixFam {
@@ -194,7 +149,6 @@ def phaseAllLists = { channels ->
    output:
      set file("${output}.fam") into fixedfam_ch
    script:
-    abbreviate = "1"
     template "sheet2fam.py"
  } 
 

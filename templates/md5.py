@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import hashlib
 from os.path import basename
 # Taken from http://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file

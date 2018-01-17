@@ -5,7 +5,6 @@ from __future__ import print_function
 import argparse
 import os
 import sys
-from multiprocessing import Process,Pool
 import struct
 from  numpy import empty, uint32,fromfile,uint16
 

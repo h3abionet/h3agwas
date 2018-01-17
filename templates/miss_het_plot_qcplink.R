@@ -35,10 +35,10 @@ if (!(min(imiss\$F_MISS) == 0 && max(imiss\$F_MISS) == 0)) {
    axis(1,at=c(-3,-2,-1,0),labels=c(0.001,0.01,0.1,1))
    #Heterozygosity thresholds (Horizontal Line)
    abline(h=mean(het\$meanHet)-(3*sd(het\$meanHet)),col="RED",lty=2)
-   abline(h=mean(het\$meanHet)+(3*sd(het\$meanHet)),col="RED",lty=2)
+   abline(h=mean(het\$meanHet)+(3*sd(het\$meanHet)),col="BLUE",lty=2)
    #Missing Data Thresholds (Vertical Line)
-   abline(v=-1.30103, col="BLUE", lty=2) #THRESHOLD=0.07
-   abline(v=-1.522879, col="RED", lty=2) #THRESHOLD=0.05
+   #abline(v=-1.30103, col="BLUE", lty=2) #THRESHOLD=0.07
+   #abline(v=-1.522879, col="RED", lty=2) #THRESHOLD=0.05
    
 } else {
   
@@ -52,4 +52,4 @@ if (!(min(imiss\$F_MISS) == 0 && max(imiss\$F_MISS) == 0)) {
     pdf("$meanhet")	
     plot(het\$meanHet)
     abline(h=mean(het\$meanHet)-(3*sd(het\$meanHet)),col="RED",lty=2)
-    abline(h=mean(het\$meanHet)+(3*sd(het\$meanHet)),col="RED",lty=2)}
+    abline(h=mean(het\$meanHet)+(3*sd(het\$meanHet)),col="BLUE",lty=2)}

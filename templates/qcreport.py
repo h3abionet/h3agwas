@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Scott Hazelhurst, 2016
 # Creates a PDF report for QC
@@ -87,7 +87,22 @@ template='''
 
 *-usepackage[paper=a4paper,left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 *-usepackage{graphicx}
+*-usepackage{subfig}
 *-usepackage{listings}
+*-usepackage{longtable}
+*-usepackage{array}
+*-usepackage{booktabs}
+*-usepackage{float}
+*-floatstyle{ruled}
+*-restylefloat{figure}
+*-restylefloat{table}
+*-newcommand{*-lefttblcol}{*-raggedright*-hspace{0pt}}
+*-newcommand{*-righttblcol}{*-raggedleft*-hspace{0pt}}
+*-newcommand{*-centretblcol}{*-centering*-hspace{0pt}}
+
+*-newcolumntype{P}[1]{>{*-lefttblcol}p{#1}}
+*-newcolumntype{Q}[1]{>{*-righttblcol}p{#1}}
+*-newcolumntype{R}[1]{>{*-centretblcol}p{#1}}
 *-lstset{
 basicstyle=*-small*-ttfamily,
 columns=flexible,
@@ -99,7 +114,7 @@ breaklines=true
 '''+dateheader+'''
 *-author{H3Agwas QC Pipeline}
 
-*-newcommand{*-ourfig}[3]{*-begin{figure}[ht]*-begin{center}*-includegraphics[scale=0.6]{#3} *-end{center} *-caption{#2 [File is #3]}  *-label{#1}*-end{figure}}
+*-newcommand{*-ourfig}[3]{*-begin{figure}[ht]*-begin{center}*-includegraphics[scale=0.6]{#3} *-end{center} *-caption{#2 [File is *-protect*-url{#3}]}  *-label{#1}*-end{figure}}
 *-begin{document}
 
 *-maketitle
@@ -117,6 +132,9 @@ The input file for this analysis was *-url{%(base)s.{bed,bim,fam}}. This data in
 %(inpmd5)s
 *-end{lstlisting}
 
+*-noindent
+Note that some statistics are shown twice -- on the raw input data and on the final result, since these statistics are needed or different purposed.
+
 *-subsection*{Approach}
 
 The pipeline takes an incremental approach to QC, trading extra
@@ -127,27 +145,65 @@ genotyped SNPs before checking for heterozygosity wil result in fewer individual
 failing heterozygosity checks).
 
 
-*-section{Initial QC}
+*-section{QC Phase 0}
+
+*-label{sec:phasezero}
+
+This phase only removes SNPs which are duplicated (based on SNP name). No other QC is done and so the output of this phase should really be consiered as raw data.
+*-begin{enumerate}
+*-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called {*-em %(dupf)s}. Note that duplicate SNPs are determiend by the names of the SNPs. SNPs which appear at the same position are probably duplicates but may not be. If you wish to detect such SNPs, you should rename the SNPs using a script like *-emph{bimrs2chrbp.sh}.
+*-item %(numfailedsex)s individuals had discordant sex information -- an extract of the PLINK report can be found can be found in {*-em %(fsex)s}, and a more detailed analysis can be found in Section~*-ref{sec:batch}.
+*-end{enumerate}
+
+Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas Figure *-ref{fig:indmiss} shows the spread of missingness per individual across the sample. Note that this shows missingness before any filtering or cleaning up of the data.
+
+*-ourfig{fig:snpmiss}{SNP missingness: For each level of missingness specified on the ##x## axis, the corresponding ##y##-value shows the proportion of SNPs which have missingness *-emph{less} than this.}{{%(snpmisspdf)s}}
+
+*-ourfig{fig:indmiss}{Missingness per indvididual: For each level of missingness specified on the ##x## axis, the corresponding ##y##-value shows the proportion of individuals which have missingness *-emph{less} than this.}{{%(indmisspdf)s}}
+
+
+*-input $initmaftex
+
+*-clearpage
+*-section{QC Phase 1}
+
+The details of the final filtering can be found in the Nextflow script. Note that the exact ordering or removal will affect the final results. However, we take a conservative approach.
+
 
 *-begin{enumerate}
-*-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called {*-em %(dupf)s}.
-*-item %(numfailedsex)s individuals had discordant sex information -- further information can be found in {*-em %(fsex)s}.
+*-item Only autosomal SNPs are included
+*-item SNPs and individuals that have been very poorly genotyped (missingness exceeding 10 per cent) are removed.
+*-item Individuals with missingness greater than ${params.cut_mind} are removed (by filtering out very badly genotyped individuals or SNPs) in the previous steps we *-emph{may} save a few individuals in this step;
+*-item SNP with missingness greater than ${params.cut_geno} are removed ;
+*-item minor allele frequency less than ${params.cut_maf} (and greater than 1-${params.cut_maf});
+*-item HWE p-value less than ${params.cut_hwe}
 *-end{enumerate}
+
+*-noindent
+
+*-input $qc1
+
+
+
+*-input $batch
+
+*-clearpage
 
 
 *-section{Heterozygosity check}
 
-Levels of heterozygosity were examined. Figure~*-ref{fig:missvhet} shows plots of heterozygosity versus
-individual missingness (i.e., the number of SNPs missing per
-individual).  Levels of heterozygosity should be between the ranges
-given -- anything higher may indicate that there is sample
-contamination, lower may indicate inbreeding. However, each set of data must be treated on ot sown merits and the analyst must apply their mind the problem. Missingness should be low.
+Levels of heterozygosity were examined in the data filtered in the
+previous step. Figure~*-ref{fig:missvhet} shows plots of
+heterozygosity versus individual missingness (i.e., the number of SNPs
+missing per individual).  Levels of heterozygosity should be between
+the ranges given in the confguration file -- anything higher may indicate that there is sample
+contamination, lower may indicate inbreeding. However, each set of
+data must be treated on its own merits and the analyst must apply
+their mind the problem. Missingness should be low.
 
-*-ourfig{fig:missvhet}{Missingness versus heterozygosity}{*-detokenize{%(missingvhetpdf)s}}
+*-ourfig{fig:missvhet}{Missingness versus heterozygosity: the lines show the mean heterozygosity plus/minus standard deviations.}{{%(missingvhetpdf)s}}
 
-Individuals out of range heterozygosity were removed: first
-SNPs with a genotyping failure rate of over 10 per cent were removed,
-and then heterozysgosity checked. Any indviduals with heterozygosity:
+Individuals out of range heterozygosity were removed. Any indviduals with heterozygosity:
 
 *-begin{itemize}
 *-item less than ${params.cut_het_low} are removed. This may indicate inbreeding.
@@ -158,36 +214,22 @@ and then heterozysgosity checked. Any indviduals with heterozygosity:
 Overall %(numhetrem)s individuals were removed. These individuals, if any, can be found in the file *-url{$misshetremf}.
 
 
-Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas Figure *-ref{fig:indmiss} shows the spread of missingness per individual across the sample these should be compared.
-
-*-ourfig{fig:snpmiss}{SNP missingness}{*-detokenize{%(snpmisspdf)s}}
-
-*-ourfig{fig:indmiss}{Missingness per indvididual}{*-detokenize{%(indmisspdf)s}}
-
-
-
-
 
 
 *-pagebreak[3]
 *-section{Minor Allele Frequency Spread}
 
 Figure~*-ref{fig:maf} shows the cumulative distribution of minor
-allele frequency in the data. The MAF cut-off should be chosen high enough that one is sure that the variants seen are real (so this would depend on the size of the sample and the quality of the genotyping and whether some of the data is imputed). In this analysis the cut off was ${params.cut_maf}.
+allele frequency in the data *-textbf{after} quality control (the figures shown in Section *-ref{sec:phasezero} show the MAF before QC. The MAF cut-off should be chosen high enough that one is sure that the variants seen are real (so this would depend on the size of the sample and the quality of the genotyping and whether some of the data is imputed). In this analysis the cut off was ${params.cut_maf}. Again, note that the *-emph{minor} allele is dtermined with respect to the frequency spectrum in this data -- `minor' is not synonym for alternate or non-reference allele, or the allele that has minor frequency in some other data set. Under this definition the MAF is always ##*-leq 0.5##.
 
 
-*-ourfig{fig:maf}{Minor allele frequency distribution}{*-detokenize{%(mafpdf)s}}
+*-ourfig{fig:maf}{Minor allele frequency distribution}{{%(mafpdf)s}}
 
 
-*-section{Relatedness}
-
-Using PLINK, relatedness is computed using IBD and ##{*-widehat{*-pi}}## as a proxy. All pairs of individuals with a ##{*-widehat{*-pi} *-geq ${pi_hat} }## are examined -- that individual with the greater missingness is removed. The ##*-widehat{*-pi}## of ${pi_hat} is a parameter of the pipeline. 
-
-%(numrels)s individuals were removed because of relatedness. The list of all individuals can be found in the *-url{$relf} file. 
 
 *-section{Differences between cases and controls}
 
-We do not expect there to be large, observable macro-scale differences between cases and controls. Great caution needs to be taken in this case. 
+We do not expect there to be large, observable macro-scale differences between cases and controls. Great caution needs to be taken in this case. If the samples are from heterogeneous groups, where the case-control status differs between groups, then there may well statistically significant differences between the cases and controls and a batch analysis should be undertaken. 
 
 We compute for each SNP the missingness in the cases, and the
 missingness in the controls, and the corresponding p-value describing
@@ -198,7 +240,7 @@ many SNPs with very highly significant p-values are found, great care
 should be taken. Figure~*-ref{fig:diffP} plots the differences between
 cases and controls, showing the SNP-wise p-value, unadjusted for multiple testing
 
-*-ourfig{fig:diffP}{The plot shows for each (log) level of significance, the number of SNPs with that p-value}{*-detokenize{$diffmisspdf}}
+*-ourfig{fig:diffP}{The plot shows for each (log) level of significance, the number of SNPs with that p-value}{{$diffmisspdf}}
 
 For removal of SNPs, we compute the p-value adjusted for multiple testing, by performing permutation testing (1000 rounds) using the PLINK mperm maxT option.
 SNPs are removed from the data set if their adjusted (EMP2) differential missingness p-value is less than ${params.cut_diff_miss}. The SNPs that are removed can be
@@ -213,37 +255,19 @@ Moreover should there be any significant clusters or outliers, association
 testing should take into account stratification. Statistical testing could also
 be done.
 
-*-ourfig{fig:pca}{Principal Component Analysis of Cases Versus Controls}{*-detokenize{$pcapdf}}
+*-ourfig{fig:pca}{Principal Component Analysis of Cases Versus Controls}{{$pcapdf}}
 
 *-section{Hardy-Weinberg Equilibrium}
 
 Deviation for Hardy-Weinberg Equilibrium (HWE) may indicate sample contamination. However, this need not apply to cases, nor in a situation where there is admixture. For each SNP, we compute  the probability of the null hypothesis (that  the deviation from HWE is by chance alone).  Figure~*-ref{fig:hwe} shows a plot of the corresponding p-value versus the frequency of occurrence.
 
 *-ourfig{fig:hwe}{The plot shows for each level of significance, the number of SNPs with H
-WE p-value}{*-detokenize{$hwepdf}}
-
-The description of how SNPs were filtered based on HWE are discussed in Section~*-ref{sec:final}
+WE p-value}{{$hwepdf}}
 
 
-*-section{Final filtering}
-
-*-label{sec:final}
-The details of the final filtering can be found in the Nextflow script. Note that the exact ordering or removal will affect the final results. However, we take a conservative approach.
 
 
-*-begin{enumerate}
-*-item SNPs that failed differential missingness,  and individuals that have been very poorly genotyped (missingness exceeding 20 per cent) are removed.
-*-item Then, SNPs that have been very poorly genotyped (missingness exceeding 20 per cent) are removed.
-*-item Finally we select only autosomal SNPs and filter out SNPs  with
-*-begin{itemize}
-*-item minor allele frequence less than ${params.cut_maf};
-*-item individual missingness greater than ${params.cut_mind};
-*-item SNP missingness greater than ${params.cut_geno}; and 
-*-item HWE p-value less than ${params.cut_hwe}
-*-end{itemize}
-*-end{enumerate}
 
-The individuals removed in this phase, if any, can be found in the file *-url{%(irem)s}.
 
 *-section{Final results}
 
@@ -303,20 +327,22 @@ ${workflow.commandLine}
 
 *-clearpage
 
+
+
 *-appendix
-*-section{nextflow.config}
+*-section{Configuration}
 
 {*-footnotesize
 
-*-begin{verbatim}
+
 %(configuration)s
-*-end{verbatim}
+
 
 }
 *-end{document}'''
 
 # gymnastics to get backslash and dollar
-template=template.replace("*-",unichr(92)).replace("##",unichr(36))
+template=template.replace("*-",chr(92)).replace("##",chr(36))
 
 def countLines(fn):
     count=0
@@ -334,13 +360,13 @@ def readLines(fn):
 
 def getImages(images):
    images =images.replace("[","").replace("]","").replace(",","").split()
-   result = "Table "+unichr(92)+"ref{table:docker}"+unichr(10)+unichr(92)+"begin{table}"+unichr(92)+"begin{tabular}{ll}"+unichr(92)+"textbf{Nextflow process} &" + unichr(92)+"textbf{Docker Image}"+unichr(92)+unichr(92)+unichr(92)+"hline"+unichr(10)
+   result = "Table "+chr(92)+"ref{table:docker}"+chr(10)+chr(92)+"begin{table}"+chr(92)+"begin{tabular}{ll}"+chr(92)+"textbf{Nextflow process} &" + chr(92)+"textbf{Docker Image}"+chr(92)+chr(92)+chr(92)+"hline"+chr(10)
    for img in images:
       (proc,dimg)=img.split(":")
       result = result +  \
-                  proc + "&" + unichr(92) + "url{%s}"%dimg+\
-                  unichr(92)+unichr(92)
-   result = result+unichr(92)+"end{tabular}"+unichr(92)+"caption{Docker Images Used}" +unichr(92)+"label{table:docker}"+unichr(92)+"end{table}"
+                  proc + "&" + chr(92) + "url{%s}"%dimg+\
+                  chr(92)+chr(92)
+   result = result+chr(92)+"end{tabular}"+chr(92)+"caption{Docker Images Used}" +chr(92)+"label{table:docker}"+chr(92)+"end{table}"
    return result
  
 f=open(args.orig)
@@ -361,20 +387,13 @@ pdict['numcsnps'] =  countLines(args.cbim)
 pdict['numcfam']  =  countLines(args.cfam)
 pdict['numdups']  =  countLines(args.dupf)
 pdict['numdiffmiss'] = countLines("$diffmiss")
-pdict['numrels']       = countLines("$relf")
 pdict['irem']       = "$irem"
 
 pdict['inpmd5']= readLines("$inpmd5")
 pdict['outmd5']= readLines("$outmd5")
 
 
-f=open("$nextflowconfig")
-conf=""
-for line in f:
-   if  "accessKey" in line or "secretKey" in line: continue
-   conf=conf+line
-f.close()
-pdict['configuration']=conf
+pdict['configuration']="""$configText""".replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10))
 
 if "${workflow.container}"=="[:]":
    pdict["dockerimages"] = ": locally installed binaries used"
@@ -383,8 +402,8 @@ else:
    pdict["dockerimages"] = ": the docker images used are found in "+images
 
 
-pdict["dockerimages"]=pdict["dockerimages"].replace(unichr(36),"")
-pdict["date"]=check_output("date")
+pdict["dockerimages"]=pdict["dockerimages"].replace(chr(36),"")
+pdict["date"]=check_output("date",encoding='ascii').strip()
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:

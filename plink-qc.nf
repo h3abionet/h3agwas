@@ -54,7 +54,7 @@ else
   wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5"]
+repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch","batchpdf"]
 
 
 repnames.each { report[it] = Channel.create() }
@@ -82,6 +82,18 @@ if (params.help) {
   }
   System.exit(-1)
 }
+
+
+if (params.case_control) {
+  ccfile = params.case_control
+  col    = params.case_control_col
+  diffpheno = "--pheno $ccfile --pheno $col"
+} else {
+  diffpheno = ""
+}
+
+
+
 
 //---- Modification of variables for pipeline -------------------------------//
 
@@ -283,7 +295,7 @@ process removeDuplicateSNPs {
 
   output:
     set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
-         into (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch)
+    into (sex_check_ch,missing_ch,het_ch,ibd_prune_ch,remove_inds_ch)
     set file("${base}.orig"), file(dups) into report["dups"]
   script:
    base    = plinks[0].baseName
@@ -291,7 +303,7 @@ process removeDuplicateSNPs {
    nodup   = "${base}-nd"
    logfile = "${base}-0002-dups.log"
    """
-    plink --bfile $base $sexinfo --exclude $dups --make-bed --out $nodup
+    plink --keep-allele-order --bfile $base $sexinfo --exclude $dups --make-bed --out $nodup
     wc -l ${base}.bim > ${base}.orig
     wc -l ${base}.fam >> ${base}.orig
     mv ${nodup}.log $logfile
@@ -314,13 +326,14 @@ process identifyIndivDiscSexinfo {
 
   output:
      set val(base), file(logfile) into failed_sex_check
-     file("${base}*.sexcheck") into report["failedsex"]
+     file("${base}*failed.sexcheck") into report["failedsex"]
+     file("${base}.sexcheck") into report_ch[
   script:
     base = plinks[0].baseName
-    logfile= "${base}-failed.sexcheck"
+    logfile= "${base}-failed.badsex"
     if (params.sexinfo_available == "true")
     """
-       plink --bfile $base --check-sex  --out $base
+       plink --keep-allele-order --bfile $base --check-sex  --out $base
        if grep -Rn 'PROBLEM' ${base}.sexcheck > $logfile; then
          echo 'Discordant sex info found'
        else
@@ -349,7 +362,7 @@ process calculateSampleMissing {
      base = plinks[0].baseName
      imiss= "${base}"
      """
-       plink --bfile $base $sexinfo --geno 0.1 --missing --out $imiss
+       plink --keep-allele-order --bfile $base $sexinfo --geno 0.1 --missing --out $imiss
      """
 }
 
@@ -370,8 +383,8 @@ process calculateSampleHetrozygosity {
       base = nodups[0].baseName
       hetf = "${base}"
    """
-     plink --bfile $base $sexinfo --geno 0.1 --make-bed --out temp
-     plink --bfile temp  $sexinfo --het  --out $hetf
+     plink --keep-allele-order --bfile $base $sexinfo --geno 0.1 --make-bed --out temp
+     plink --keep-allele-order --bfile temp  $sexinfo --het  --out $hetf
    """
 }
 
@@ -444,9 +457,9 @@ process pruneForIBD {
     else
       range =""
     """
-      plink --bfile $base --threads $max_plink_cores --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
-      plink --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
-      plink --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
+      plink --keep-allele-order --bfile $base --threads $max_plink_cores --autosome $sexinfo $range --indep-pairwise 50 5 0.2 --out ibd
+      plink --keep-allele-order --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
+      plink --keep-allele-order --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
       echo DONE
      """
 
@@ -484,13 +497,13 @@ process removeQCIndivs {
   script:
   output:
      file("${out}.{bed,bim,fam}") into\
-         (clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4)
+       (clean00_ch1,clean00_ch2,clean00_ch3, clean00_ch4, clean00_ch5)
   script:
    base = bed.baseName
    out  = "${base}-c"
     """
      cat $f_sex_check_f $rel_indivs $f_miss_het | sort -k1 | uniq > failed_inds
-     plink --bfile $base $sexinfo --remove failed_inds --make-bed --out $out
+     plink --keep-allele-order --bfile $base $sexinfo --remove failed_inds --make-bed --out $out
      mv failed_inds ${out}.irem
   """
 }
@@ -511,7 +524,7 @@ process calculateMaf {
   script:
     base = plinks[0].baseName
     """
-      plink --bfile $base $sexinfo  --freq --out $base
+      plink --keep-allele-order --bfile $base $sexinfo  --freq --out $base
     """
 }
 
@@ -541,10 +554,11 @@ process calculateSnpMissingness {
   output:
    file ("${base}.lmiss") into clean_lmiss_plot_ch
    file ("${base}.imiss") into clean_imiss_plot_ch
+   set file("${base}.imiss"),file("${base}.lmiss") into batch_missing_ch
   script:
    base=plinks[0].baseName
    """
-     plink --bfile $base $sexinfo --missing --out $base
+     plink --keep-allele-order --bfile $base $sexinfo --missing --out $base
    """
 }
 
@@ -600,7 +614,7 @@ process calculateSnpSkewStatus {
   script:
    base = plinks[0].baseName
    """
-    plink --threads ${max_plink_cores} --bfile $base $sexinfo --test-missing mperm=20000 --hardy --out $base
+    plink --keep-allele-order --threads ${max_plink_cores} --autosome --bfile $base $sexinfo $diffpheno--test-missing mperm=10000 --hardy --out $base
    """
 }
 
@@ -692,11 +706,11 @@ process removeQCPhase1 {
      """
      # remove really realy bad SNPs and really bad individuals
      touch temp1.irem
-     plink --bfile $base $sexinfo --exclude $bad --mind 0.2 --make-bed --out temp1
+     plink --keep-allele-order --bfile $base $sexinfo --exclude $bad --mind 0.2 --make-bed --out temp1
      # remove bad SNPs
-     plink --bfile temp1 $sexinfo --geno 0.2 --make-bed --out temp2
+     plink --keep-allele-order --bfile temp1 $sexinfo --geno 0.2 --make-bed --out temp2
      # Now do final QC
-     plink --bfile temp2  $sexinfo \
+     plink --keep-allele-order --bfile temp2  $sexinfo \
          --autosome \
          --maf $params.cut_maf --mind $params.cut_mind\
           --geno $params.cut_geno --hwe $params.cut_hwe \
@@ -729,16 +743,37 @@ process compPCA {
    input:
       file plinks from pca_ch
    output:
-    set file ("${prune}.eigenval"), file("${prune}.eigenvec") into pcares
+      set file ("${prune}.eigenval"), file("${prune}.eigenvec") into (pcares, pcares1)
    script:
       base = plinks[0].baseName
       prune= "${base}-prune"
      """
-     plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
-     plink --bfile ${base} --extract check.prune.in --make-bed --out $prune
-     plink --bfile ${prune} --pca --out $prune 
+     plink --keep-allele-order --bfile ${base} --indep-pairwise 100 20 0.2 --out check
+     plink --keep-allele-order --bfile ${base} --extract check.prune.in --make-bed --out $prune
+     plink --keep-allele-order --bfile ${prune} --pca --out $prune 
      """
 }
+
+
+process batchProc {
+  input:
+    set file(eigenval), file(eigenvec) from pcares1
+    file plinks from clean00_ch5
+    file sexcheck_report from sexcheck_report_ch
+    set file(imiss), file(lmiss) from batch_missing_ch
+  output:
+    file("${base}.tex") into report["batch"]
+    file("*pdf") into pdf_ch
+  script:
+    base = plinks[0].baseName
+    batch = params.batch
+    batch_col = params.batch_col
+    phenotype = params.phenotype
+    pheno_col = params.pheno_col
+    template "batchReport.py"
+}
+   
+
 
 process drawPCA {
     input:
@@ -757,6 +792,7 @@ process drawPCA {
 process produceReports {
   input:
      file results from  phaseAllMap(report)
+     file pdf from pdf_ch
      file rversion
      file configfile
   publishDir params.output_dir, overwrite:true, mode:'copy'
@@ -785,6 +821,7 @@ process produceReports {
      relf         = results[17]
      inpmd5    = results[18]
      outmd5  = results[19]
+     batch   = results[20]
      nextflowconfig= configfile
      template "qcreport.py"
 }
