@@ -6,7 +6,7 @@ import pandas as pd
 EOL = chr(10)
 
 if len(sys.argv) <= 1:
-    sys.argv=["select_diffmiss_qcplink.py","$missing", "$probcol", "$cuff_diff_miss","$failed"]
+    sys.argv=["select_diffmiss_qcplink.py","$missing", "$probcol", "$cut_diff_miss","$failed"]
 
 mfr     = pd.read_csv(sys.argv[1],delim_whitespace=True)
 probcol = sys.argv[2]

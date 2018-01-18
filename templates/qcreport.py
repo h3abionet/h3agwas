@@ -149,9 +149,9 @@ failing heterozygosity checks).
 
 *-label{sec:phasezero}
 
-This phase only removes SNPs which are duplicated (based on SNP name). No other QC is done and so the output of this phase should really be consiered as raw data.
+This phase only removes SNPs which are duplicated (based on SNP name). No other QC is done and so the output of this phase should really be considered as raw data.
 *-begin{enumerate}
-*-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called {*-em %(dupf)s}. Note that duplicate SNPs are determiend by the names of the SNPs. SNPs which appear at the same position are probably duplicates but may not be. If you wish to detect such SNPs, you should rename the SNPs using a script like *-emph{bimrs2chrbp.sh}.
+*-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called {*-em %(dupf)s}. Note that duplicate SNPs are determined by the names of the SNPs. SNPs which appear at the same position are probably duplicates but may not be. If you wish to detect such SNPs, you should rename the SNPs using a script like *-emph{bimrs2chrbp.sh}.
 *-item %(numfailedsex)s individuals had discordant sex information -- an extract of the PLINK report can be found can be found in {*-em %(fsex)s}, and a more detailed analysis can be found in Section~*-ref{sec:batch}.
 *-end{enumerate}
 
@@ -185,7 +185,7 @@ The details of the final filtering can be found in the Nextflow script. Note tha
 
 
 
-*-input $batch
+*-input $batch_tex
 
 *-clearpage
 
@@ -393,7 +393,7 @@ pdict['inpmd5']= readLines("$inpmd5")
 pdict['outmd5']= readLines("$outmd5")
 
 
-pdict['configuration']="""$configText""".replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10))
+pdict['configuration']="""$config_text""".replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10))
 
 if "${workflow.container}"=="[:]":
    pdict["dockerimages"] = ": locally installed binaries used"

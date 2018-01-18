@@ -77,12 +77,14 @@ rel_template = """
 
 *-subsection{Relatedness}
 
-Using PLINK, relatedness is computed on the using IBD and
+Using PLINK, relatedness is computed on using IBD with
 ##{*-widehat{*-pi}}## as a proxy. The data used for this analysis was
-the result of the QC Phase 1 work.  All pairs of individuals with a
-##{*-widehat{*-pi} *-geq ${pi_hat} }## are examined -- that individual
-with the greater missingness is removed. The ##*-widehat{*-pi}## of
-${pi_hat} is a parameter of the pipeline.
+the result of the QC Phase 1 work.  The ##*-widehat{*-pi}## of
+${pi_hat} is a parameter of the pipeline..
+
+All pairs of individuals with a
+##{*-widehat{*-pi} *-geq ${pi_hat} }## are examined -- we try to remove as few individuals as possible by
+removing first those who are related to multiple people (e.g. if A is a cousin of B and C, B and C may not be related so it makes sense to remove A rather than B and C).
 
 *-begin{itemize}
 *-item %d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%s}.
@@ -351,7 +353,7 @@ det_sex_analysis = """
 The this section we show detailed analysis of sex check errors. The purpose of this analysis is to help
 identify trends between sub-groups, as well as possible labelling and sampling errors. In this analysis,
 we use PLINK to analyse the non-recombining regions of the X-chromosome, and in particular its computation 
-of the inbreeding co-efficient of the X-chromosome. If the F statistic is greater than $f_low_male, PLINK
+of the inbreeding co-efficient of the X-chromosome. If the F statistic is greater than $f_lo_male, PLINK
 infers that the sample is male; if it is less than $f_hi_female, it infers that the sample is female.
 
 There are two types of errors that can happen. *-emph{Soft} errors are
@@ -492,7 +494,7 @@ col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 
 eigs=pd.read_csv(args.eigenvec,delim_whitespace=True,header=None,names=col_names,index_col=[0,1])
 
-if args.batch in ["0",False,"False","FALSE","nil","false",0,None,""]::
+if args.batch in ["0",False,"False","FALSE","nil","false",0,None,""]:
     args.batch_col = 'batch'
     bfrm = DataFrame([1]*len(eigs),index=eigs.index,columns=['batch'])
 if args.phenotype in ["0",False,"False","FALSE","nil","false",0,None,""]:

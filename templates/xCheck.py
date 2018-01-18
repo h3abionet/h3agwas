@@ -8,7 +8,7 @@ import os
 import pandas as pd
 import numpy as np
 if len(sys.argv)<=1:
-    sys.argv=["xCheck.py","x","$out"]
+    sys.argv=["xCheck.py","$x","$out"]
     missingness=eval("$missingness")
 else:
     missingness = [0.01,0.03,0.05]
