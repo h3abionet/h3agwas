@@ -647,10 +647,10 @@ process findSnpExtremeDifferentialMissingness {
   script:
     cut_diff_miss=params.cut_diff_miss
     missing = clean_missing
-    base     = missing.baseName
-    probcol = '3'  // 4 if using the non mperm
+    base     = missing.baseName.replace("-.*","")
+    probcol = 'EMP2'  // need to change if we don't use mperm
     failed   = "${base}-failed_diffmiss.snps"
-    template "select_diffmiss_qcplink.pl"
+    template "select_diffmiss_qcplink.py"
 }
 
 // Find HWE scores of each SNP
