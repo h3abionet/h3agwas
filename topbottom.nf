@@ -125,17 +125,18 @@ def gChrom= { x ->
     set file(bed), file(bim), file(fam), file(logfile) from plink_src
     file(ref) from ref_ch
     file(flips) from flip_ch
-    publishDir params.output_dir, pattern: "*.{bed,bim,log}", \
+    publishDir params.output_dir, pattern: "*.{bed,bim,log,badsnps}", \
         overwrite:true, mode:'copy'
    output:
-    set file("*.{bed,bim,log}") into aligned_ch
+    set file("*.{bed,bim,log,badsnps}") into aligned_ch
    script:
     base = bed.baseName
     refBase = ref.baseName
     opt = "--a2-allele $ref"
     if (refBase=="empty") opt="--keep-allele-order"
     """
-    plink --bfile $base $opt --flips $flips --make-bed --out $output
+    plink --bfile $base $opt --flip $flips --make-bed --out $output
+    grep Impossible $output.log | tr -d . | sed "s/.*variant//"  > $output.badsnps
     """
  }
 
