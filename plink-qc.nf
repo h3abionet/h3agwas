@@ -465,10 +465,8 @@ process pruneForIBD {
 
 
 
-// run script to find related individuals
+// run script to find a set of individuals we can remove to ensure no relatedness
 //  Future - perhaps replaced with Primus
-//  Currently we remove one element from each pair -- choose
-//  the one with the greater missingness
 process findRelatedIndiv {
   memory other_mem_req
   input:
@@ -734,7 +732,7 @@ process batchProc {
     file batch     from batch_ch        // staged input file
     file genome    from batch_rel_ch    // pruneForIBD
     file pkl       from x_analy_res_ch  // analyseX
-    file rel_indivs from related_indivs_ch2 // findRel
+    file rem_indivs from related_indivs_ch2 // findRel
   output:
       file("${base}-batch.tex")      into report["batch_report"]
       set file("*.csv"), file("*pdf") into report["batch_aux"] // need to stage

@@ -80,13 +80,14 @@ rel_template = """
 Using PLINK, relatedness is computed on using IBD with
 ##{*-widehat{*-pi}}## as a proxy. The data used for this analysis was
 the result of the QC Phase 1 work.  The ##*-widehat{*-pi}## of
-${pi_hat} is a parameter of the pipeline..
+${pi_hat} is a parameter of the pipeline.
 
 All pairs of individuals with a
 ##{*-widehat{*-pi} *-geq ${pi_hat} }## are examined -- we try to remove as few individuals as possible by
 removing first those who are related to multiple people (e.g. if A is a cousin of B and C, B and C may not be related so it makes sense to remove A rather than B and C).
 
 *-begin{itemize}
+*-item There were %d pairs of individuals over the cut-off.
 *-item %d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%s}.
 *-end{itemize}
 
@@ -334,9 +335,9 @@ def getRelatedPairs(pfrm,pheno_col,genome):
                 for (p1, p2) in prs:
                     rel_text=rel_text+" "+pstr(p1)+" "+pstr(p2)+"; "
             rel_text=rel_mixed+rel_text+"}"+EOL
-    num_rel = len(open("$rel_indivs").readlines())
+    num_rem = len(open("$rem_indivs").readlines())
     rel_file="%s-reltable.csv"%(args.base)
-    text=rel_template%(num_rel,rel_file,pheno_col,rows)+rel_text
+    text=rel_template%(group[" ALL"],num_rem,rel_file,pheno_col,rows)+rel_text
     vclose  = getVClose(gfrm,pfrm,pheno_col)
     g=open(rel_file, "w")
     g.write(vclose)
@@ -350,16 +351,16 @@ def getRelatedPairs(pfrm,pheno_col,genome):
 det_sex_analysis = """
 *-subsection{Detailed Sex Check Analysis}
 
-The this section we show detailed analysis of sex check errors. The purpose of this analysis is to help
+This section showa adetailed analysis of sex check errors. The purpose of this analysis is to help
 identify trends between sub-groups, as well as possible labelling and sampling errors. In this analysis,
 we use PLINK to analyse the non-recombining regions of the X-chromosome, and in particular its computation 
-of the inbreeding co-efficient of the X-chromosome. If the F statistic is greater than $f_lo_male, PLINK
+of the inbreeding co-efficient of the X-chromosome. If the ##F## statistic is greater than $f_lo_male, PLINK
 infers that the sample is male; if it is less than $f_hi_female, it infers that the sample is female.
 
 There are two types of errors that can happen. *-emph{Soft} errors are
 those cases where an individual is slightly above or below the stated
-threshholds. These may not be errors -- since the F cut-off values are
-arbitrary, a too strict F-value may be chosen, or there may be unusual
+threshholds. These may not be errors -- since the ##F## cut-off values are
+arbitrary, a too strict ##F##-value may be chosen, or there may be unusual
 patterns within the individuals studied. How these samples should be
 treated will require some thought, but these are not a sign of
 problems of the experimental protocol, and not by itself probably a sign of problems with
