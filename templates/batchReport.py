@@ -178,8 +178,12 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
     ave_miss    = 100*g['N_MISS'].sum()/g['N_GENO'].sum()
     num_poor_i  = g[['F_MISS']].agg(poorFn)
     sxfrm       = getCsvI(sexcheck_report)
-    g = sxfrm.groupby(group_fn)
-    problems = g[['STATUS']].agg(sexCheckProblem)
+    if len(sxfrm)==0:
+        problems =  pd.DataFrame([-999]*len(ifrm),index=ifrm.index,columns=["STATUS"])
+
+    else:
+        g = sxfrm.groupby(group_fn)
+        problems = g[['STATUS']].agg(sexCheckProblem)
     sex_report=EOL+EOL
     #"Any samples with anomalous sex status can be found in the following files: "
     #glist = []
@@ -459,12 +463,19 @@ def dumpMissingSexTable(fname, ifrm,sxAnalysis,pfrm):
     g.close()
 
 
+noX = """*-subsection{Detailed sex analysis}
+
+There were no X-chromosome SNPs and so this was not possible. Note that in Table*-ref{table:batchrep:all} it was not possible to compute the number of samples that failed the sex check.
+
+"""
 
 def detailedSexAnalysis(pfrm,ifrm,sxAnalysisPkl,pheno_col):
     def group_fn(x):
         return pfrm.ix[x][pheno_col]
     sex_fname = args.base+"_missing_and_sexcheck.csv"
     sxAnalysis = pd.read_pickle(sxAnalysisPkl)
+    if type(sxAnalysis)==str:
+        return noX
     dumpMissingSexTable(sex_fname,ifrm,sxAnalysis,pfrm[pheno_col])
     header = detSexHeader(sxAnalysis,pheno_col)
     tbl    = detSexGroup(sxAnalysis,"overall")

@@ -32,9 +32,18 @@ def getResForM(base,m):
     sf[m] = np.where(sf['STATUS']=='OK',"OK", np.where((sf['F']>=0.34) & (sf['F']<=0.66),"S","H"))
     return sf
 
+def checkNoX(base,outfn):
+    line = open("%s.fam"%base).readline()
+    if not line:
+        pd.to_pickle("NO",outfn)
+        sys.exit(0)
+    return
+
 
 base   = sys.argv[1]
 outfn  = sys.argv[2]
+
+checkNoX(base,outfn)
 
 result = getResForM(base,1)
 for m in missingness:

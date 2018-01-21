@@ -269,7 +269,11 @@ process getX {
    script:
    base = plink[0].baseName
    """
-     plink --bfile $base --chr 23 --geno 0.04 --make-bed --out X
+     if [[ `grep  "^23" *bim`  ]];  then
+        plink --bfile $base --chr 23 --geno 0.04 --make-bed --out X
+     else
+        touch X.bed X.bim X.fam EMPTYX
+     fi
    """
 }
 
