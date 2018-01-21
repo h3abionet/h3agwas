@@ -584,7 +584,7 @@ Nextflow supports execution on Amazon EC2. Of course, you can do your own custom
              ...
              ...
              ... other options
-             imageId = "ami-0768f27e"      // AMI which has cloud-init installed
+             imageId = "ami-710b9108"      // AMI which has cloud-init installed
              sharedStorageId   = "fs-XXXXXXXXX"   // Set a common mount point for images
              sharedStorageMount = "/mnt/shared 
    	     subnetId = "subnet-XXXXXXX" 
@@ -610,7 +610,7 @@ The instructions below assume you are using nextflow. If you launch the machine 
 > Launch configuration:
  - bootStorageSize: '20GB'
  - driver: 'aws'
- - imageId: 'ami-0768f27e'
+ - imageId: 'ami-710b9108'
  - instanceType: 'm4.xlarge'
  - keyFile: /home/user/.ssh/id_rsa.pub
  - sharedStorageId: 'fs-e17f461c'
