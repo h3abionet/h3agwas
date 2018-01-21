@@ -95,7 +95,7 @@ In a later version of the pipeline, we hope to support Singularity.
 
 # 2. Installing h3aGWAS
 
-# 2.1 Background
+## 2.1 Background
 
 The h3agwas pipeline can be run in different environments; the requirements differ. The different modes are described in detail below
 * Running on Docker/Singularity. This is the easiest way of running h3agwas. We have a set of Docker containers that have all the required executables and libraries.
@@ -106,7 +106,7 @@ The h3agwas pipeline can be run in different environments; the requirements diff
 
 We now explore these in details
 
-# 2.2 Basic requirements
+## 2.2 Basic requirements
 
 **All** modes of h3agwas have the following requirements
 * Java 8
@@ -291,11 +291,196 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
     This is useful for seeing how long different parts of your process took. Also useful is peak virtual memory used, which you may need to know if running on very large data to ensure you have a big enough machine and specify the right parmeters.
 
 
-# 5. Running the workflow in different environment
+
+
+
+# 5 The QC pipeline: `plink-qc.nf`
+
+
+This section describes the various ways in which the pipeline can be run and various options. Usually options are specified in the _nextflow.config_ file (or which ever file you use). However, you can also pass parameters to the Nextflow script on the command-line. Parameters on the command line over-ride any parameters specified in the config file.
+
+
+The main pipeline is the PLINK QC pipeline. It takes as input PLINK bed,bim,fam files and performs quality control on  the data according to the parameters specified in the config file.
+
+The Nextflow script file is called *plink-qc.nf*. This could be
+called, for example, by running `nextflow run plink-qc.nf`.
+
+The output of the QC is a set of PLINK files that can be used for GWAS, as well as PDF report that describes the QC steps.
+
+## 5.1 Input/Output :  PLINK format
+
+Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  The key Nextflow parameters to set are:
+
+* `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
+* input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
+* `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
+* `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id)d)
+* `output`: the base name of the output files. *This cannot be the same as the input!!!*
+
+## 5.2 Overview of the workflow
+
+The QC process consists of:
+
+* removing duplicate markers;
+* indentifying indviduals for whom there is discordant sex information;
+* removing individuals with too high missingness or excessive heterozygosity;
+* detecting whether there are any related individuals and removing enough to ensure that there are not related pairs;
+* removing SNPs with too low MAF, or too high missingness, or anomalous HWE, or SNPs where there is a high differential missingness between cases and controls;
+* a PCA of the resultant data is computed;
+* a detailed report of the QC process is done.
+
+## 5.3 Additional QC Parameters
+
+The following parameters control QC
+
+*  `sexinfo_available`: TRUE or FALSE. If we don't have sex information then we cannot do the check for discordant genotype;
+*  `f_low_male` and `f_hi_female`. Discordant sex genotype is done on the X-chromosome using the non-recombining parts. F, the in-breeding coefficient of the X-chromosome is computed. If F is above `f_low_male`, the individual is predicted to be male; if F is below `f_hi_female`, the individual is predicted to be female. Anyone in between is flagged. These cut-off values are arbitrary and especially in large samples you are likely to find a range of F values. However, a large number of discrepant values probably indicates a sample mishandle error.  The PLINK default values (0.8 and 0.2) are the default parameters of the pipeline.
+*  `cut_het_high`: What is the maximum allowable heterozygosity for individualsl;
+*  `cut_het_low`: minimum
+*   `cut_maf `: the minimum minor allele frequency a SNP must have to be included
+*   `cut_diff_miss `: allowable differential missingness between cases and controls;
+*   `cut_geno`: maximum allowable per-SNP mssingness
+*   `cut_mind`: maximum allowable per-individual missingness
+*   `cut_hwe`: minimum allowable per-SNP Hardy-Weinberg Equilibrium p-value 
+*   `pi_hat`:  maximum allowable relatedness
+*   `batch`: if you want to do QC at a batch level, you need to specify a file with the batch information. This should be a standard PLINK phenotype file (with labels as the first line). If you specify "false" or 0, then no batch-analysis is done. Typically batch information relates to the batches in which samples were genotyped is not intrinsic to the data (e.g. you genotype the first 2500 samples that are available).
+*   `batch_col`: the column label of the file to be used.
+*   `phenotype`: default is 'false'. If you are doing batch analysis you may wish to show how different sub-groups perform in QC with respect to the batch. You will then specify a PLINK-style phenotype file (with labels as the first name).  For example, if you have a multi-site project, you may choose to use the site information as a phenotype. Other possibilities are sex and self-identified group. If you specify "false" or 0, no categorisation will be done.
+* `pheno_col` is the column label of the column in  the phenotype file which should be used.
+*  `case_control` : This is the name of a PLINK-style phenotype file with labels in the first line. This is a compulsory parameter. The QC process uses the case/control status of individuals. A principal component analysis is done. We do not expect typically overall that there will be difference between cases and controls. The PC-analysis tests that this is so. Of course, you need to apply your mind to the result as YMMV. If your study has several case/control categories, choose an appropriate one that will give insight. If you only have continuous measures (e.g., BMI), then discretise and make an artificial case-control category. Remember, this is for QC purposes not to find interesting biology.
+* `case_control_col`: this is the label of the column.
+
+Several of the above parameters make reference to a phenotype file. Of course, these can be to the same phenotype file, but probably using different columns.
+
+## 5.4 Performance parameters
+
+There are three parameters that are important control performance. You probably won't need to change this, but feel free.
+
+* `plink_process_memory` : specify in MB or GB how much memory your processes that use PLINK require;
+*  ` other_process_memory` : specify how much other processes need;
+*  `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
+
+
+## 5.5 Output
+
+A PDF report can be found in the output directory. This describes the process as well as what the inputs and outputs were.
+
+Note that one issue that sometimes occurs in analysis is that there may over time be multple copies of the same file, perhaps with minor differences. To help version control, the PDF report captures the md5 checksums of inputs and outputs.
+
+
+# 6. Simple association test pipeline: `plink-assoc.nf`
+
+An association study is a complex analysis and each analysis has to consider
+* the disease/phenotype being studied and its mode of inheritance
+* population structure
+* other covariates
+
+For this reason it is difficult to build a high quality, generic pipeline to do an association study. 
+
+The purpose of this pipeline is to perform a very superficial initial analysis that can be used as one piece of information to guide a rigorous analysis. Of course, we would encourage users to build their own Nextflow script for their rigorous analysis, perhaps using our script as a start.
+
+Our script, *plink-assoc.nf* takes as input PLINK files that have been through quality control and 
+* does a principal component analysis on the data, and produces pictures from that; 
+* performs a simple association test giving odds ratio and  raw and adjusted _p_ values
+
+## Running
+
+The pipeline is run: `nextflow run plink-assoc.nf`
+
+The key options are:
+* `input_dir`, `output_dir`: where input and output goes to and comes from;
+* `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+
+By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
+
+* `chi2` : should a chi2 test be used (0 or 1)
+* `fisher`: Fisher exact test
+*  `linear`: should linear regreession be used?
+*  `logistic`: should linear regression be used?
+*  `gemma`: should gemma be used?
+
+and then for all the tests except _gemma_, do you want to adjust for multiiple testing using Bonferroni correction
+
+* adjust
+
+For example
+
+```nextflow run plink-assoc --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1``
+
+analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
+
+
+# 7. Converting from Illumina genotyping reports in TOP/BOTTOM format
+
+This workflow is run by 
+
+```nextflow run topbottom.nf```
+
+and converts from an Illumina TOP/BOTTOM call file. Together with auxiliary input data, this file is first converted into a raw PLINK file and then the PLINK file is aligned to a strand, and then convered into binary PLINK format. This process can take a very long time.
+
+
+This process is expensive because:
+
+* the top/bottom file is a very bulky and inefficient format
+* we convert first to PLINK using the inefficenct PED format
+
+As an example, on a 2.5m SNP-chip with 10k individuals, you are looking at over 200 CPU-hours.
+
+17 January 2017: this code has been completely reworked to make it more efficient and with fewer dependancies. But it is also less  powerful. There is other code, such as Don Armstrong's code and another option is the unofficially supported Illumina code https://github.com/Illumina/GTCtoVCF.  You can go back to the older code
+
+## Input 
+
+You require the following input
+* the actual call files from Illumina
+* `input_dir`: the directories where the Illumina genotyping reports can be found. Unix-style globs allowed
+
+e.g. `params.input_dir = "/project/HumCVD/Batches/Batch*/Batch*Reports/"`
+
+* `input_pat`. The files that inside these directories.
+
+e.g. `params.input_pat = "*gtReport*.csv.gz"`
+
+* `output`: the base name of the PLINK output file
+
+e.g. `params.output = "cvd-rawcalls"`
+
+* `manifest`: The chip manifest file. This is crucial. You can find examples here: https://support.illumina.com/downloads.html, but you may have to ask Illumina for the correct vrsion.
+
+* `chipdescription`: this is a standard file produced by Illumina for your chip which contains not only the chromosome/coordinate of each SNP but also the genomic position (measured in centimorgans). If you don't have this -- give the manifest file. All will work except your bim files will not contain genonomic positoin
+
+* `samplesheet`: This is Excel spreadsheet that Illumina provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can make your own. There are three columns that are important: "Institute Sample Label", "Manifest Gender" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
+
+* `abbrev`. Default is "1" (yes). The Illumina IDs in the sample ID are typically a long string with Illumina relevant IDs followed by an underscore followed by your own ID. If you have abbrev as 1, tthen the script will attempt to remove the Illumina component. YMMV and you  may have to manually change.
+
+* `output_align`. This can be one of three values: _topbottom_, _dbsnp_ and _ref_. If topbot, the SNPs will be aligned to the Illumnia TOP strand. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. In the latter two cases, many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).
+
+* `strandreport`: This is an Illumina-style strand report. It is not needed if you choose "tobot" above, but it is needed for "dbsnp" or "ref"
+
+* `refererence`: This is the name of a file that gives the reference allele for each SNP on the chip.  This is only useful if the "ref" option is used for `output_align`, and is optional in this case. Note that the difference between aligning and the use of the reference. Aligning will decide which strand of the reference genome as found in the Illumina genotyping teh alleles can be found on. For example, if the genotyping report gives the two options as A and C, aligning checks whether this is A and C on the + strand of the reference genome or (and so will be A and C in the output bim file) or whther this is A and C on the $-$ strand of the reference genome and so should be reported as T and G. This is done using information in the chip manifest file. The second step is to know which allele is the reference allele and which is the alternate allele.
+
+A reference file suitable for the H3A chip can be found here http://www.bioinf.wits.ac.za/data/h3agwas/
+
+## Output
+
+The output are a set of PLINK files (bed, bim, fam, log).
+
+In addition, there may be a file with a _.badsnps_. If you chose to align against the reference genome, these are the SNPs for which the reference allele is inconsistent with the two allele choices in the data. For example, the reference allele is A and the choice of alleles in the data is C/T.  Hopefully this will be a small number (a thousand or so). There are a number of reasons why this may be the case;
+
+* There is a problem in the chip. Chip design and some SNPs are hard to design for. This may result in some SNPs coordinates that mismatch with the probe design, or for which the strand alignment is unclear.
+* There is a problem with the reference file you provided.
+
+Possible ways forward:
+* if you have tens of thousands of such SNPs, then there's a problem which must be resolved.
+* if you have one or two thousand or less, then for population structure studies, just remove the SNPs from the data.
+* if you are doing a GWAS, you can leave them in but if you find interesting matches check carefully whether the SNP is on this list. If it is you need to be carefully study the SNP (looking at the reference genome, strand file, etc to see why it mismatched and looking at the image files).
+* if you are doing imputation from the data, it's probably best to remove them unless you have a specific need for a particular SNP.
+
+
+$ 8. Running the workflow in different environment
 
 In the  quick start we gave an overview of running our workflows in different environments. Here we go through all the options, in a little more detail
 
-## 5.1 Running natively on a machine
+#$ 8.1 Running natively on a machine
 
 This option requires that all dependancies have been installed. You run the code by saying
 
@@ -305,7 +490,7 @@ nextflow run plink-qc.nf
 
 You can add that any extra parameters at the end.
 
-## 5.2 Running  on a local machine with Docker
+#$ 8.2 Running  on a local machine with Docker
 
 This requires the user to have docker installed.
 
@@ -313,7 +498,7 @@ Run by `nextlow run plink-qc.nf -profile docker`
 
 
 
-## 5.3 Running on a cluster 
+#$ 8.3 Running on a cluster 
 
 Nextflow supports execution on clusters using standard resource managers, including Torque/PBS, SLURM and SGE. Log on to the head node of the cluster, and execute the workflow as shown below. Nextflow submits the jobs to the cluster on your behalf, taking care of any dependancies. If your job is likely to run for a long time because you've got really large data sets, use a tool like _screen_ to allow you to control your session without timing out.
 
@@ -355,7 +540,7 @@ nextflow run plink-qc.nf -profile pbsDocker
 We assume all the data is visible to all nodes in the swarm. Log into the head node of the Swarm and run your chosed workflow -- for example
 
 
-## 5.4 Running on Docker Swarm
+#$ 8.4 Running on Docker Swarm
 
 We have tested our workflow on different Docker Swarms. How to set up Docker Swarm is beyond the scope of this tutorial, but if you have a Docker Swarm, it is easy to run. From the head node of your Docker swarm, run
 
@@ -363,12 +548,12 @@ We have tested our workflow on different Docker Swarms. How to set up Docker Swa
 nextflow run plink-qc.nf -profile dockerSwarm
 ```
 
-## 5.5 Other container services
+#$ 8.5 Other container services
 
 We hope to support Singularity soon. We are unlikely to support udocker soon [for the reasons discussed here.](https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html).
 
 
-## 5.6 Running on Amazon EC2
+#$ 8.6 Running on Amazon EC2
 
 
 Nextflow supports execution on Amazon EC2. Of course, you can do your own custom thing on Amazon EC2, but there is direct support from Nextflow and  we provide an Amazon AMI that allows you to use Amazon very easilyl. This discussion assumes you are familiar with Amazon and EC2 and shows you how to run the workflow on EC2:
@@ -472,191 +657,6 @@ Then when you create your cloud you say this on your local machine
 Note there are two uses of `-c`. The positions of these arguments are crucial. The first is an argument to _nextflow_ itself and gives a configuration file to nextflow to use. The second is an argument to _cloud create_ which says how many nodes should be created. 
 
 The _scott.aws_ file is not shared or put under git control. The _nextflow.config_ and _run10.config_ files can be archived, put under git control and so on because you _want_ to share and archive this information with o thers.
-
-
-
-
-# 6 The QC pipeline: `plink-qc.nf`
-
-
-This section describes the various ways in which the pipeline can be run and various options. Usually options are specified in the _nextflow.config_ file (or which ever file you use). However, you can also pass parameters to the Nextflow script on the command-line. Parameters on the command line over-ride any parameters specified in the config file.
-
-
-The main pipeline is the PLINK QC pipeline. It takes as input PLINK bed,bim,fam files and performs quality control on  the data according to the parameters specified in the config file.
-
-The Nextflow script file is called *plink-qc.nf*. This could be
-called, for example, by running `nextflow run plink-qc.nf`.
-
-The output of the QC is a set of PLINK files that can be used for GWAS, as well as PDF report that describes the QC steps.
-
-## 6.1 Input/Output :  PLINK format
-
-Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  The key Nextflow parameters to set are:
-
-* `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
-* input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
-* `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
-* `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id)d)
-* `output`: the base name of the output files. *This cannot be the same as the input!!!*
-
-## 6.2 Overview of the workflow
-
-The QC process consists of:
-
-* removing duplicate markers;
-* indentifying indviduals for whom there is discordant sex information;
-* removing individuals with too high missingness or excessive heterozygosity;
-* detecting whether there are any related individuals and removing enough to ensure that there are not related pairs;
-* removing SNPs with too low MAF, or too high missingness, or anomalous HWE, or SNPs where there is a high differential missingness between cases and controls;
-* a PCA of the resultant data is computed;
-* a detailed report of the QC process is done.
-
-## 6.3 Additional QC Parameters
-
-The following parameters control QC
-
-*  `sexinfo_available`: TRUE or FALSE. If we don't have sex information then we cannot do the check for discordant genotype;
-*  `f_low_male` and `f_hi_female`. Discordant sex genotype is done on the X-chromosome using the non-recombining parts. F, the in-breeding coefficient of the X-chromosome is computed. If F is above `f_low_male`, the individual is predicted to be male; if F is below `f_hi_female`, the individual is predicted to be female. Anyone in between is flagged. These cut-off values are arbitrary and especially in large samples you are likely to find a range of F values. However, a large number of discrepant values probably indicates a sample mishandle error.  The PLINK default values (0.8 and 0.2) are the default parameters of the pipeline.
-*  `cut_het_high`: What is the maximum allowable heterozygosity for individualsl;
-*  `cut_het_low`: minimum
-*   `cut_maf `: the minimum minor allele frequency a SNP must have to be included
-*   `cut_diff_miss `: allowable differential missingness between cases and controls;
-*   `cut_geno`: maximum allowable per-SNP mssingness
-*   `cut_mind`: maximum allowable per-individual missingness
-*   `cut_hwe`: minimum allowable per-SNP Hardy-Weinberg Equilibrium p-value 
-*   `pi_hat`:  maximum allowable relatedness
-*   `batch`: if you want to do QC at a batch level, you need to specify a file with the batch information. This should be a standard PLINK phenotype file (with labels as the first line). If you specify "false" or 0, then no batch-analysis is done. Typically batch information relates to the batches in which samples were genotyped is not intrinsic to the data (e.g. you genotype the first 2500 samples that are available).
-*   `batch_col`: the column label of the file to be used.
-*   `phenotype`: default is 'false'. If you are doing batch analysis you may wish to show how different sub-groups perform in QC with respect to the batch. You will then specify a PLINK-style phenotype file (with labels as the first name).  For example, if you have a multi-site project, you may choose to use the site information as a phenotype. Other possibilities are sex and self-identified group. If you specify "false" or 0, no categorisation will be done.
-* `pheno_col` is the column label of the column in  the phenotype file which should be used.
-*  `case_control` : This is the name of a PLINK-style phenotype file with labels in the first line. This is a compulsory parameter. The QC process uses the case/control status of individuals. A principal component analysis is done. We do not expect typically overall that there will be difference between cases and controls. The PC-analysis tests that this is so. Of course, you need to apply your mind to the result as YMMV. If your study has several case/control categories, choose an appropriate one that will give insight. If you only have continuous measures (e.g., BMI), then discretise and make an artificial case-control category. Remember, this is for QC purposes not to find interesting biology.
-* `case_control_col`: this is the label of the column.
-
-Several of the above parameters make reference to a phenotype file. Of course, these can be to the same phenotype file, but probably using different columns.
-
-## 6.4 Performance parameters
-
-There are three parameters that are important control performance. You probably won't need to change this, but feel free.
-
-* `plink_process_memory` : specify in MB or GB how much memory your processes that use PLINK require;
-*  ` other_process_memory` : specify how much other processes need;
-*  `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
-
-
-## 6.5 Output
-
-A PDF report can be found in the output directory. This describes the process as well as what the inputs and outputs were.
-
-Note that one issue that sometimes occurs in analysis is that there may over time be multple copies of the same file, perhaps with minor differences. To help version control, the PDF report captures the md5 checksums of inputs and outputs.
-
-
-# 7. Simple association test pipeline: `plink-assoc.nf`
-
-An association study is a complex analysis and each analysis has to consider
-* the disease/phenotype being studied and its mode of inheritance
-* population structure
-* other covariates
-
-For this reason it is difficult to build a high quality, generic pipeline to do an association study. 
-
-The purpose of this pipeline is to perform a very superficial initial analysis that can be used as one piece of information to guide a rigorous analysis. Of course, we would encourage users to build their own Nextflow script for their rigorous analysis, perhaps using our script as a start.
-
-Our script, *plink-assoc.nf* takes as input PLINK files that have been through quality control and 
-* does a principal component analysis on the data, and produces pictures from that; 
-* performs a simple association test giving odds ratio and  raw and adjusted _p_ values
-
-## Running
-
-The pipeline is run: `nextflow run plink-assoc.nf`
-
-The key options are:
-* `input_dir`, `output_dir`: where input and output goes to and comes from;
-* `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
-
-By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
-
-* `chi2` : should a chi2 test be used (0 or 1)
-* `fisher`: Fisher exact test
-*  `linear`: should linear regreession be used?
-*  `logistic`: should linear regression be used?
-*  `gemma`: should gemma be used?
-
-and then for all the tests except _gemma_, do you want to adjust for multiiple testing using Bonferroni correction
-
-* adjust
-
-For example
-
-```nextflow run plink-assoc --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1``
-
-analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
-
-
-# 8. Converting from Illumina genotyping reports in TOP/BOTTOM format
-
-This workflow is run by 
-
-```nextflow run topbottom.nf```
-
-and converts from an Illumina TOP/BOTTOM call file. Together with auxiliary input data, this file is first converted into a raw PLINK file and then the PLINK file is aligned to a strand, and then convered into binary PLINK format. This process can take a very long time.
-
-
-This process is expensive because:
-
-* the top/bottom file is a very bulky and inefficient format
-* we convert first to PLINK using the inefficenct PED format
-
-As an example, on a 2.5m SNP-chip with 10k individuals, you are looking at over 200 CPU-hours.
-
-17 January 2017: this code has been completely reworked to make it more efficient and with fewer dependancies. But it is also less  powerful. There is other code, such as Don Armstrong's code and another option is the unofficially supported Illumina code https://github.com/Illumina/GTCtoVCF.  You can go back to the older code
-
-## Input 
-
-You require the following input
-* the actual call files from Illumina
-* `input_dir`: the directories where the Illumina genotyping reports can be found. Unix-style globs allowed
-
-e.g. `params.input_dir = "/project/HumCVD/Batches/Batch*/Batch*Reports/"`
-
-* `input_pat`. The files that inside these directories.
-
-e.g. `params.input_pat = "*gtReport*.csv.gz"`
-
-* `output`: the base name of the PLINK output file
-
-e.g. `params.output = "cvd-rawcalls"`
-
-* `manifest`: The chip manifest file. This is crucial. You can find examples here: https://support.illumina.com/downloads.html, but you may have to ask Illumina for the correct vrsion.
-
-* `chipdescription`: this is a standard file produced by Illumina for your chip which contains not only the chromosome/coordinate of each SNP but also the genomic position (measured in centimorgans). If you don't have this -- give the manifest file. All will work except your bim files will not contain genonomic positoin
-
-* `samplesheet`: This is Excel spreadsheet that Illumina provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can make your own. There are three columns that are important: "Institute Sample Label", "Manifest Gender" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
-
-* `abbrev`. Default is "1" (yes). The Illumina IDs in the sample ID are typically a long string with Illumina relevant IDs followed by an underscore followed by your own ID. If you have abbrev as 1, tthen the script will attempt to remove the Illumina component. YMMV and you  may have to manually change.
-
-* `output_align`. This can be one of three values: _topbottom_, _dbsnp_ and _ref_. If topbot, the SNPs will be aligned to the Illumnia TOP strand. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. In the latter two cases, many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).
-
-* `strandreport`: This is an Illumina-style strand report. It is not needed if you choose "tobot" above, but it is needed for "dbsnp" or "ref"
-
-* `refererence`: This is the name of a file that gives the reference allele for each SNP on the chip.  This is only useful if the "ref" option is used for `output_align`, and is optional in this case. Note that the difference between aligning and the use of the reference. Aligning will decide which strand of the reference genome as found in the Illumina genotyping teh alleles can be found on. For example, if the genotyping report gives the two options as A and C, aligning checks whether this is A and C on the + strand of the reference genome or (and so will be A and C in the output bim file) or whther this is A and C on the $-$ strand of the reference genome and so should be reported as T and G. This is done using information in the chip manifest file. The second step is to know which allele is the reference allele and which is the alternate allele.
-
-A reference file suitable for the H3A chip can be found here http://www.bioinf.wits.ac.za/data/h3agwas/
-
-## Output
-
-The output are a set of PLINK files (bed, bim, fam, log).
-
-In addition, there may be a file with a _.badsnps_. If you chose to align against the reference genome, these are the SNPs for which the reference allele is inconsistent with the two allele choices in the data. For example, the reference allele is A and the choice of alleles in the data is C/T.  Hopefully this will be a small number (a thousand or so). There are a number of reasons why this may be the case;
-
-* There is a problem in the chip. Chip design and some SNPs are hard to design for. This may result in some SNPs coordinates that mismatch with the probe design, or for which the strand alignment is unclear.
-* There is a problem with the reference file you provided.
-
-Possible ways forward:
-* if you have tens of thousands of such SNPs, then there's a problem which must be resolved.
-* if you have one or two thousand or less, then for population structure studies, just remove the SNPs from the data.
-* if you are doing a GWAS, you can leave them in but if you find interesting matches check carefully whether the SNP is on this list. If it is you need to be carefully study the SNP (looking at the reference genome, strand file, etc to see why it mismatched and looking at the image files).
-* if you are doing imputation from the data, it's probably best to remove them unless you have a specific need for a particular SNP.
-
 
 
 
