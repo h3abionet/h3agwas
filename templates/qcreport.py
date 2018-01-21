@@ -16,7 +16,13 @@ import argparse
 import sys
 import os
 import re
-from  subprocess import check_output, CalledProcessError
+from  subprocess import CalledProcessError
+import subprocess
+
+def check_output(x):
+   ans=subprocess.check_output(x)
+   ans=str(ans,'ascii') # encoding option only frmo python 3.6
+   return ans
 
 
 # Check we have pdflatex and up to date style file
@@ -403,7 +409,10 @@ else:
 
 
 pdict["dockerimages"]=pdict["dockerimages"].replace(chr(36),"")
-pdict["date"]=check_output("date",encoding='ascii').strip()
+
+# changed to support Python 3.5 and before
+pdict["date"]=str(check_output("date").strip(),'ascii')
+
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:
