@@ -632,25 +632,33 @@ Login in the master node using the following command:
 
 4. ssh into the head node of your Amazon cluster. The EFS is mounted onto `/mnt/shared`. In our example, we will analyse the files _sampleA.{bed,bim,fam}_ in the /mnt/shared/input directory  The  _nextflow_ binary will be found in your home directory. (Note that you can choose to mount the EFS on another mount point by modifying the nextflow option `sharedStorageMount`;
 
-5. For real runs, upload any data you need. I suggest you put in the /mnt/shared directory, and do not put any data output on the home directory.
+5. For real runs, upload any data you need. I suggest you put in the /mnt/shared directory, and do not put any data output on the home directory. Yo
 
 5. Run the workflow -- you can run directly from github. The AMI doesn't have any of the bioinformatics software installed. 
 
     Specify the docker profile and nextflow will run using Docker, fetching any necessary images.
 
-    `nextflow run  h3abionet/h3agwas -profile docker`
+    Do `nextflow pull h3abionet/h3agwas`
+
+    This pull is not strictly necessary the first time you run the job, but it's a  good practice to get into to check if there are updates.
+
+6. Then run the 
+
+    `nextflow run  h3abionet/h3agwas -profile --input_dir=/mnt/shared/XXXXX/projects/h3abionet/h3agwas/input/ --work_dir=/mnt/shared docker`
+
+   You will need to replace XXXXX with your userid -- the local copy of the repo is found in the `/mnt/shared/XXXXX/projects/h3abionet/h3agwas/` directory. But we want the work directory to be elsewhere.
 
    Of course, you can also use other parameters (e.g. -resume or --work_dir). For your own run you will want to use your nextflow.config file.
 
 
-6. The output of the default runcan be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
+7. The output of the default runcan be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
 
-7. Remember to shutdown the Amazon cluster to avoid unduly boosting Amazon's share price.
+8. Remember to shutdown the Amazon cluster to avoid unduly boosting Amazon's share price.
 
     `nextflow cloud shutdown h3agwascloud`
 
 
-8. _Security considerations_: Note that your Amazon credentials should be kept confidential. Practically this means adding the credentials to your _nextflow.config_ file is a bad idea, especially if you put that under git control or if you share your nextflow scripts. So a better way of handling this is to  put confidential information in a separate file that you don't share. So I have a file called _scott.aws_
+9. _Security considerations_: Note that your Amazon credentials should be kept confidential. Practically this means adding the credentials to your _nextflow.config_ file is a bad idea, especially if you put that under git control or if you share your nextflow scripts. So a better way of handling this is to  put confidential information in a separate file that you don't share. So I have a file called _scott.aws_
 which has the following:
 ```
 aws {
@@ -679,7 +687,7 @@ The _scott.aws_ file is not shared or put under git control. The _nextflow.confi
 
 
 
-# 9. Copyright and general
+# 10. Copyright and general
 
 ### Authors
 

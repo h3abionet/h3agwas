@@ -29,7 +29,6 @@ import java.security.MessageDigest;
 
 def helps = [ 'help' : 'help' ]
 params.help = false
-params.topbottom = false
 K = "--keep-allele-order"
 
 def params_help = new LinkedHashMap(helps)
@@ -64,12 +63,28 @@ repmd5       = report["inpmd5"]
 orepmd5      = report["outmd5"]
 
 max_plink_cores = params.max_plink_cores 
-plink_mem_req   = params.plink_process_memory
-other_mem_req   = params.other_process_memory
+plink_mem_req   = params.plink_mem_req
+other_mem_req   = params.other_mem_req
 pi_hat          = params.pi_hat
 cut_diff_miss   = params.cut_diff_miss
 f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
+
+allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sex_info_available", "sharedStorageMount","strandreport","work_dir"]
+
+/*
+There is no parameter access-key=
+There is no parameter secret-key=
+There is no parameter instance-type=m4.xlarge
+There is no parameter boot-storage-size=20GB
+There is no parameter max-instances=1
+There is no parameter shared-storage-mount=/mnt/shared
+*/
+params.each { parm ->
+  if (! allowed_params.contains(parm.key)) {
+    //	println "Check $parm";
+      }
+}
 
 if (params.help) {
     params.each {
@@ -788,7 +803,7 @@ process produceReports {
     file rversion
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
-    file("${base}.pdf")
+    file("${base}.pdf") into final_ch
    script:
      base = params.output
      config_text = getConfig()
@@ -796,3 +811,4 @@ process produceReports {
 }
 
 
+final_ch.subscribe { b=it.baseName; println "The output report is called ${params.output_dir}/${b}.pdf"}
