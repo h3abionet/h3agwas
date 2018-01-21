@@ -480,7 +480,7 @@ $ 8. Running the workflow in different environment
 
 In the  quick start we gave an overview of running our workflows in different environments. Here we go through all the options, in a little more detail
 
-#$ 8.1 Running natively on a machine
+## 8.1 Running natively on a machine
 
 This option requires that all dependancies have been installed. You run the code by saying
 
@@ -490,7 +490,7 @@ nextflow run plink-qc.nf
 
 You can add that any extra parameters at the end.
 
-#$ 8.2 Running  on a local machine with Docker
+## 8.2 Running  on a local machine with Docker
 
 This requires the user to have docker installed.
 
@@ -498,7 +498,7 @@ Run by `nextlow run plink-qc.nf -profile docker`
 
 
 
-#$ 8.3 Running on a cluster 
+## 8.3 Running on a cluster 
 
 Nextflow supports execution on clusters using standard resource managers, including Torque/PBS, SLURM and SGE. Log on to the head node of the cluster, and execute the workflow as shown below. Nextflow submits the jobs to the cluster on your behalf, taking care of any dependancies. If your job is likely to run for a long time because you've got really large data sets, use a tool like _screen_ to allow you to control your session without timing out.
 
@@ -540,7 +540,7 @@ nextflow run plink-qc.nf -profile pbsDocker
 We assume all the data is visible to all nodes in the swarm. Log into the head node of the Swarm and run your chosed workflow -- for example
 
 
-#$ 8.4 Running on Docker Swarm
+## 8.4 Running on Docker Swarm
 
 We have tested our workflow on different Docker Swarms. How to set up Docker Swarm is beyond the scope of this tutorial, but if you have a Docker Swarm, it is easy to run. From the head node of your Docker swarm, run
 
@@ -548,12 +548,12 @@ We have tested our workflow on different Docker Swarms. How to set up Docker Swa
 nextflow run plink-qc.nf -profile dockerSwarm
 ```
 
-#$ 8.5 Other container services
+## 8.5 Other container services
 
-We hope to support Singularity soon. We are unlikely to support udocker soon [for the reasons discussed here.](https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html).
+We hope to support Singularity soon. We are unlikely to support udocker soon [for the reasons discussed here.](https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html$).
 
 
-#$ 8.6 Running on Amazon EC2
+## 8.6 Running on Amazon EC2
 
 
 Nextflow supports execution on Amazon EC2. Of course, you can do your own custom thing on Amazon EC2, but there is direct support from Nextflow and  we provide an Amazon AMI that allows you to use Amazon very easilyl. This discussion assumes you are familiar with Amazon and EC2 and shows you how to run the workflow on EC2:

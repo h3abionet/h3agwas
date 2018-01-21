@@ -55,7 +55,7 @@ def parseArray(fname):
     f = open(fname)
     for i in range(15):
         line = f.readline()
-        if ",Name," or "Name"+TAB in line: break
+        if ",Name," in line or "Name"+TAB in line: break
     else:
         sys.exit("Cannot find header line in "+fname)
     fields=re.split("[,\t]",line.rstrip())
