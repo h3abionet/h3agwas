@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This script selects those who fail heterozygosity constraints -- previous versions also looked at missingness too
 # hence the name

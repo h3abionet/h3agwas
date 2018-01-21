@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 imissf  = open("$missing")
 
@@ -18,10 +18,10 @@ for line in genomef:
     id1 = fields[0]+" "+fields[1]
     id2 = fields[2]+" "+fields[3]
     if(float(fields[9]) > ${pi_hat}):
-	if imiss[id1] >= imiss[id2] and id1 not in removed:
+        if imiss[id1] >= imiss[id2] and id1 not in removed:
            outf.write("%s%s"%(id1,EOL))
            removed[id1]=1;
-	elif imiss[id1]<imiss[id2] and id2 not in removed:
+        elif imiss[id1]<imiss[id2] and id2 not in removed:
            outf.write("%s%s"%(id2,EOL));
            removed[id2]=1;
 outf.close()

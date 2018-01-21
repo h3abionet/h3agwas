@@ -47,6 +47,8 @@ def gChrom= { x ->
 
   output      = params.output
   samplesheet = Channel.fromPath(params.samplesheet)
+  // array may be the manifest or pref a file with both genetic 
+  // and physical coordinates
   array       = Channel.fromPath(params.chipdescription)
   report       = Channel.fromPath(inpat)
   output_align = params.output_align
@@ -70,7 +72,7 @@ def gChrom= { x ->
 
 
 
-  process bedfiy {
+  process bedify {
     
    input:
      set file(ped), file(map) from ped_ch
@@ -136,7 +138,7 @@ def gChrom= { x ->
     if (refBase=="empty") opt="--keep-allele-order"
     """
     plink --bfile $base $opt --flip $flips --make-bed --out $output
-    grep Impossible $output.log | tr -d . | sed "s/.*variant//"  > $output.badsnps
+    grep Impossible ${output}.log | tr -d . | sed "s/.*variant//"  > ${output}.badsnps
     """
  }
 

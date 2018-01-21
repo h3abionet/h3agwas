@@ -7,7 +7,7 @@ import sys
 import re
 
 f = open(sys.argv[1])
-rem=sys.argv[2]
+rem_name=sys.argv[2]
 rem_inds = rem_snps = rem_maf = rem_hwe =  0
 
 autosome=False
@@ -47,6 +47,6 @@ Using this approach,
 *-item %d SNPs were removed as the MAF was too low.
 *-item %d SNPs were removed as they were out of the specified Hardy-Weinberg equilibrium. 
 *-end{itemize}
-""" %(nonautosome,rem_snps,rem_inds,rem,rem_maf,rem_hwe)
+""" %(nonautosome,rem_snps,rem_inds,rem_name,rem_maf,rem_hwe)
 
 print(text.replace("*-",chr(92)).replace("##",chr(36)))
