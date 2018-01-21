@@ -2,7 +2,6 @@
 .nextflow*
 .idea*
 work/
-input/*
 output/*
 
 /config-gen/nbproject/private/

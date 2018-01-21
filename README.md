@@ -158,7 +158,10 @@ section.
 The sample data to be used is in the _input_ directory (in PLINK
 format as _sampleA.bed_, _sampleA.bim_, _sampleA.fam_). The default
 _nextflow.config_ file uses this, and so you can run the workflow
-through with this example.
+through with this example. Note that this is a very small PLINK data set 
+with no X-chromosome information and no sex checking is done.
+
+
 
 
 ## 3.1 Running on your local computer 
