@@ -411,7 +411,7 @@ else:
 pdict["dockerimages"]=pdict["dockerimages"].replace(chr(36),"")
 
 # changed to support Python 3.5 and before
-pdict["date"]=str(check_output("date").strip(),'ascii')
+pdict["date"]=check_output("date").strip()
 
 
 num_fs = countLines(args.fsex)
