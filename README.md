@@ -30,7 +30,7 @@ There are three separate workflows that make up *h3agwas*
 
 2. `plink-qc.nf`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
 
-   *Sample QC tasks checking:
+   * Sample QC tasks checking:
 
        *  discordant sex information
        *  calculating missingness
@@ -57,7 +57,7 @@ There are three separate workflows that make up *h3agwas*
 
 
 
-## 1.2Design principles
+## 1.2 Design principles
 
 The goal of the H3ABionet GWAS pipeline is to provide a portable and robust pipeline for reproducble genome-wide association studies.
 
@@ -93,9 +93,9 @@ We expect that many of our users will use Docker. However, we recognise that thi
 
 In a later version of the pipeline, we hope to support Singularity.
 
-#2. Installing h3aGWAS
+# 2. Installing h3aGWAS
 
-#2.1 Background
+# 2.1 Background
 
 The h3agwas pipeline can be run in different environments; the requirements differ. The different modes are described in detail below
 * Running on Docker/Singularity. This is the easiest way of running h3agwas. We have a set of Docker containers that have all the required executables and libraries.
@@ -106,7 +106,7 @@ The h3agwas pipeline can be run in different environments; the requirements diff
 
 We now explore these in details
 
-#2.2 Basic requirements
+# 2.2 Basic requirements
 
 **All** modes of h3agwas have the following requirements
 * Java 8
@@ -140,7 +140,7 @@ The following code needs to be installed and placed in a directory on the user's
     ```
 If you want to run the `plink-assoc.nf` pipeline then you should install emmax and gemma if you are using those options.
 
-#3. Quick start example
+# 3. Quick start example
 
 This section shows a simple run of the `plink-qc.nf` pipeline that should run out of the box if you have installed the software or Docker. More details and general configuration will be shown later.
 
@@ -187,7 +187,7 @@ Please note that the _first_ time you run the workflow using Docker,  the Docker
 More options are shown later.
 
 
-#4 The Nextflow configuration file
+# 4 The Nextflow configuration file
 
 Nextflow uses parameters that are passed to it and contents of a
 configuration file to guide its behaviour. By default, the
@@ -221,7 +221,7 @@ You can use the _-c_ option specify another configuration file in addition to th
 This will automatically use the `nextflow.config` file in either the current or parent directory. Note that the the config files are processed in order: if an option is set into two config files, the latter one takes precedence.
 
 
-## 2.2 Creating an auxiliary nextflow .config file
+## 4.2 Creating an auxiliary nextflow .config file
 
 There is a template of a nextflow.config file called aux.config.template. This is a read only file. Make a copy of it, call it _aux.config_ (or some suitable name).  This file contains all the options a user is likely to want to change. It does not specify options like the names of docker containers etc. Of course, you can if you wish modify the nextflow.config file, but we recommend against it. Your auxiliary file should supplement the nextflow.config file.
 
@@ -550,7 +550,7 @@ A PDF report can be found in the output directory. This describes the process as
 Note that one issue that sometimes occurs in analysis is that there may over time be multple copies of the same file, perhaps with minor differences. To help version control, the PDF report captures the md5 checksums of inputs and outputs.
 
 
-#7. Simple association test pipeline: `plink-assoc.nf`
+# 7. Simple association test pipeline: `plink-assoc.nf`
 
 An association study is a complex analysis and each analysis has to consider
 * the disease/phenotype being studied and its mode of inheritance
@@ -664,7 +664,7 @@ Possible ways forward:
 
 
 
-#9. Copyright
+# 9. Copyright and general
 
 ### Authors
 
