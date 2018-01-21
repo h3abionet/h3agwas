@@ -13,7 +13,7 @@ There is one feature of the original workflow that has been omitted. Version 1 s
 
 We have moved all scripts from Python 2 to Python 3, so you will need to have Python 3 installed. We are working on moving away from the use of R and Perl to simplify installation.
 
-*This is a development version -- it has been tested on real data but the containerised workflow has not yet been impemtented*
+*This is a development version -- it has been tested on real data but only in one evnironment. It has been tested running directly on a machine, using pbs, and using docker (only the plink-qc workflow).
 
 ## Documentation 
 
