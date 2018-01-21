@@ -19,7 +19,7 @@ We have moved all scripts from Python 2 to Python 3, so you will need to have Py
 
 # 1. Features
 
-##1.1 Goals of the h3agwas pipeline
+## 1.1 Goals of the h3agwas pipeline
 
 The goals of this pipeline is to have a portable and robust pipeline
 for performing a genome-wide association study
@@ -29,19 +29,24 @@ There are three separate workflows that make up *h3agwas*
 1. `topbottom.nf`.  Conversion of Illumina genotyping reports with TOP/BOTTOM calls into PLINK format, aligning the calls.
 
 2. `plink-qc.nf`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
-  *Sample QC tasks checking:
+
+   *Sample QC tasks checking:
+
        *  discordant sex information
        *  calculating missingness
        *  heterozygosity scores
        *  relatedness
        * discordant sex information
- * SNP QC tasks checking:
-       * batch reports
+       * SNP QC tasks checking:
+
+   * batch reports
+
        * remove duplicates
        * minor allele frequencies
        * SNP missingness
        * differential missingness
        * Hardy Weinberg Equilibrium deviations
+
 3.  `plink-assoc.nf`: Association study. A simple analysis association study is done. The purpose of this is to give users an introduction to their data. Real studies, particularly those of the H3A consortium will have to handle compex co-variates and particular population study. We encourage users of our pipeline to submit thieir analysis for the use of other scientists.
   * Basic PLINK association tests, producing manhattan and qqplots
   * CMH association test - Association analysis, accounting for clusters
@@ -52,7 +57,7 @@ There are three separate workflows that make up *h3agwas*
 
 
 
-##1.2Design principles
+## 1.2Design principles
 
 The goal of the H3ABionet GWAS pipeline is to provide a portable and robust pipeline for reproducble genome-wide association studies.
 
@@ -110,13 +115,13 @@ We now explore these in details
 * Install the scripts
     `git clone https://github.com/h3agwas`
 
-##2.3 Installing with Docker
+## 2.3 Installing with Docker
 
 Install docker on your computer(s). Docker is available on most major platforms.  See [the Docker documentation](https://docs.docker.com/) for installation for your platform. 
     
 That's it. 
 
-##2.4  Installing to run natively
+## 2.4  Installing to run natively
 
 This requires a standard Linux installation or macOS. It requires _bash_ to be available as the shell of the user running the pipeline.
 
@@ -170,7 +175,7 @@ If the data is another directory, and you want to the data to go elsehwere:
 
 There are many other options that can be passed on the the command-line. Options can also be given in the _config_ file (explained below). We recommend putting options in the configuration file since these can be archived, which makes the workflow more portable
 
-##3.2 Running with Docker on your local computer
+## 3.2 Running with Docker on your local computer
 
 Execute 
 
@@ -506,7 +511,7 @@ The QC process consists of:
 * a PCA of the resultant data is computed;
 * a detailed report of the QC process is done.
 
-##6.3 Additional QC Parameters
+## 6.3 Additional QC Parameters
 
 The following parameters control QC
 
@@ -538,7 +543,7 @@ There are three parameters that are important control performance. You probably 
 *  `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
 
 
-##6.5 Output
+## 6.5 Output
 
 A PDF report can be found in the output directory. This describes the process as well as what the inputs and outputs were.
 
