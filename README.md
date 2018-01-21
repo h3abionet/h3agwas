@@ -576,7 +576,7 @@ Nextflow supports execution on Amazon EC2. Of course, you can do your own custom
              ...
              ...
              ... other options
-             imageId = "ami-9ca7b2fa"      // AMI which has cloud-init installed
+             imageId = "ami-0768f27e"      // AMI which has cloud-init installed
              sharedStorageId   = "fs-XXXXXXXXX"   // Set a common mount point for images
              sharedStorageMount = "/mnt/shared 
    	     subnetId = "subnet-XXXXXXX" 
@@ -584,6 +584,8 @@ Nextflow supports execution on Amazon EC2. Of course, you can do your own custom
      ```
 
     Note that the AMI is the H3ABionet AMI ID, which you should use. The other information such as the keys, sharedStorageID and subnetID you have to set to what you have.
+
+The instructions below assume you are using nextflow. If you launch the machine directly, the user will be `ec2-user`; if you use the instructions below, you will be told who the user on Amazon instance is (probably the same userid as your own machine).
 
 2. Create the cloud. For the simple example, you only need to have one machine. If you have many, big files adjust accordingly.
 
@@ -600,12 +602,12 @@ Nextflow supports execution on Amazon EC2. Of course, you can do your own custom
 > Launch configuration:
  - bootStorageSize: '20GB'
  - driver: 'aws'
- - imageId: 'ami-9ca7b2fa'
+ - imageId: 'ami-0768f27e'
  - instanceType: 'm4.xlarge'
  - keyFile: /home/user/.ssh/id_rsa.pub
- - sharedStorageId: 'fs-e27f661c'
+ - sharedStorageId: 'fs-e17f461c'
  - sharedStorageMount: '/mnt/shared'
- - subnetId: 'subnet-a321c9c2'
+ - subnetId: 'subnet-b321c8c2'
  - userName: 'scott'
  - autoscale:
    - enabled: true
@@ -621,6 +623,8 @@ Login in the master node using the following command:
 ```
 
 4. ssh into the head node of your Amazon cluster. The EFS is mounted onto `/mnt/shared`. In our example, we will analyse the files _sampleA.{bed,bim,fam}_ in the /mnt/shared/input directory  The  _nextflow_ binary will be found in your home directory. (Note that you can choose to mount the EFS on another mount point by modifying the nextflow option `sharedStorageMount`;
+
+5. For real runs, upload any data you need. I suggest you put in the /mnt/shared directory, and do not put any data output on the home directory.
 
 5. Run the workflow -- you can run directly from github. The AMI doesn't have any of the bioinformatics software installed. 
 
