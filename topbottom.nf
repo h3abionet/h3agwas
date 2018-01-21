@@ -91,7 +91,7 @@ def gChrom= { x ->
 
 
 
- process combine_bed {
+ process combineBed {
    input:
      file(bed) from bed_ch.toList()
      file(bim) from bim_ch.toList()

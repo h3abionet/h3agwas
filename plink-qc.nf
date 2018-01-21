@@ -519,7 +519,7 @@ process generateMissHetPlot {
 
 
 // Find those who have bad heterozygosity
-process getBadIndivs_Missing_Het {
+process getBadIndivsMissingHet {
   memory other_mem_req
   input:
     set file(het), file(imiss) from hetero_check_ch
