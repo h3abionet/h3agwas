@@ -19,8 +19,8 @@ import re
 from  subprocess import CalledProcessError
 import subprocess
 
-def check_output(x,ourshell=False):
-   ans=subprocess.check_output(x,shell=ourshell)
+def check_output(x,shell=False):
+   ans=subprocess.check_output(x,shell=shell)
    ans=str(ans,'ascii') # encoding option only frmo python 3.6
    return ans
 
