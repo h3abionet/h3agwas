@@ -127,7 +127,7 @@ breaklines=true
 
 *-section{Introduction}
 
-The input file for this analysis was *-url{%(base)s.{bed,bim,fam}}. This data includes:
+The input file for this analysis was *-url{%(orig)s.{bed,bim,fam}}. This data includes:
 *-begin{itemize}
 *-item %(numrsnps)s SNPs
 *-item %(numrfam)s  participants

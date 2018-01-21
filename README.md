@@ -3,6 +3,11 @@
 
 This is currently in draft: Please note that for the _wits_ branch the wiki should be ignored. A shortcoming of GitHub's wiki system is that although the git system can version the wiki, only the master wiki is displayed through the web from end.
 
+This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
+* it is not robust when X chromosome data is not available
+* the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
+
+
 ## Background
 
 h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney Brenner Institute](http://www.wits.ac.za/academic/research/sbimb/20747/wits_bioinformatics.html) for data quality control (QC) and basic association testing, and later refined and extended by H3ABionet. It uses Nextflow as the basis for workflow managment, and has been dockerised.

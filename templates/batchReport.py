@@ -38,16 +38,29 @@ space = chr(92)+"s+"
 EOL = chr(10)
 PCT = chr(37)
 
+null_file = "emptyZ0"
+
 if len(sys.argv)<=1:
     sys.argv = ["batchReport.py","$base","$batch","$batch_col","$phenotype","$pheno_col","$imiss","$sexcheck_report","$eigenvec","$genome","$pkl"]
 
 
 args = parseArguments()
 
+idtypes = dict(map(lambda x: (x,object),["FID","IID","FID1","IID1","FID2","IID2",str(args.pheno_col), str(args.batch_col)]))
+idtypes['PI_HAT']=float
+
 
 blank =     """
   No batch report is done"
 """
+
+def getCsvI(fn,names=None):
+    ''' read a CSV file with IDs as index '''
+    frm = pd.read_csv(fn,delim_whitespace=True,names=names,dtype=idtypes)
+    frm = frm.set_index(['FID','IID'])
+    # nb bug/feature in pandas, if a column is an index then dtype is not applied to it
+    # can have numbers as IDs but want them as string
+    return frm
 
 
 res_template = """
@@ -164,7 +177,7 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
     num_samples = g['N_MISS'].count()
     ave_miss    = 100*g['N_MISS'].sum()/g['N_GENO'].sum()
     num_poor_i  = g[['F_MISS']].agg(poorFn)
-    sxfrm       = pd.read_csv(sexcheck_report,delim_whitespace=True,index_col=[0,1])
+    sxfrm       = getCsvI(sexcheck_report)
     g = sxfrm.groupby(group_fn)
     problems = g[['STATUS']].agg(sexCheckProblem)
     sex_report=EOL+EOL
@@ -286,8 +299,7 @@ def getVClose(gfrm,pfrm,pheno_col):
     return curr
 
 def getRelatedPairs(pfrm,pheno_col,genome):
-    our_types = { 'PI_HAT' : float }
-    gfrm = pd.read_csv(genome,delim_whitespace=True, dtype=our_types)
+    gfrm = pd.read_csv(genome,delim_whitespace=True, dtype=idtypes)
     group = {}
     mixed = {}
     ident = {}
@@ -474,17 +486,17 @@ text = getHeader()+EOL+EOL
 
 
 #if not(args.batch == "0" and args.phenotype == "0"):
-ifrm = pd.read_csv(args.imiss,delim_whitespace=True,index_col=[0,1])
+ifrm = getCsvI(args.imiss)
 
 
-if "emptyZ0" in args.batch:
+if null_file in args.batch:
     args.batch_col = 'all'
     bfrm = DataFrame([1]*len(ifrm),index=ifrm.index,columns=['all'])
     res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
     g=open("nopcs.pdf","w")
     g.close()
 else:
-    bfrm = pd.read_csv(args.batch,delim_whitespace=True,index_col=[0,1])
+    bfrm = getCsvI(args.batch)
     res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error rate as shown by %(bname)s as found in file *-url{%(fname)s}."%({'bname':args.batch_col,'fname':args.batch})
 
 text=text+res_text
@@ -499,22 +511,22 @@ if len(problems)>0:
 result = miss_vals(ifrm,bfrm,args.batch_col,args.sexcheck_report)
 text = text+showResult(args.batch_col,*result)
 
-if  "emptyZ0" in args.phenotype:
+if  null_file in args.phenotype:
     args.pheno_col = 'all'
     pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
-    if "emptyZ0" not in args.batch:
+    if null_file not in args.batch:
         res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
 
 else:
-    pfrm = pd.read_csv(args.phenotype,delim_whitespace=True,index_col=[0,1])
+    pfrm = getCsvI(args.phenotype)
     res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error rate as shown by %(bname)s as found in file *-url{%(fname)s}."%({'bname':args.pheno_col,'fname':args.phenotype})
 
 result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
-if "emptyZ0" not in args.phenotype or "emptyZ0" not in args.batch:
+if null_file not in args.phenotype or null_file not in args.batch:
     text = text+res_text+showResult(args.pheno_col,*result)
 col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 
-eigs=pd.read_csv(args.eigenvec,delim_whitespace=True,header=None,names=col_names,index_col=[0,1])
+eigs=getCsvI(args.eigenvec,names=col_names)
 
 
 text = text + detailedSexAnalysis(pfrm,ifrm,args.sx_pickle,args.pheno_col)
@@ -522,7 +534,7 @@ text = text + detailedSexAnalysis(pfrm,ifrm,args.sx_pickle,args.pheno_col)
 
 m = re.search("(.*).eigenvec",args.eigenvec)
 base = m.group(1)
-if "emptyZ0" not in args.batch:
+if null_file not in args.batch:
     figs = plotPCs(base,eigs,pfrm,args.pheno_col,bfrm,args.batch_col)
     figs_text = showFigs(figs)
 else:

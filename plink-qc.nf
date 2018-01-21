@@ -758,6 +758,8 @@ process batchProc {
 
 repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch"]
 
+
+
 process produceReports {
   input:
     set file(orig), file (dupf) from report["dups"]

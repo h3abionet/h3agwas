@@ -13,11 +13,22 @@ if len(sys.argv)<=1:
 else:
     missingness = [0.01,0.03,0.05]
 
+idtypes = dict(map(lambda x: (x,object),["FID","IID"]))
+
+def getCsvI(fn,cols,names=None):
+    ''' read a CSV file with IDs as index '''
+    frm = pd.read_csv(fn,delim_whitespace=True,usecols=cols,dtype=idtypes)
+    frm = frm.set_index(['FID','IID'])
+    # nb bug/feature in pandas, if a column is an index then dtype is not applied to it
+    # can have numbers as IDs but want them as string
+    return frm
+
 
 def getResForM(base,m):
     out = "%s-%s"%(base,m)
     os.system("plink --bfile %s --mind %s --check-sex --out %s"%(base,m,out))
-    sf = pd.read_csv("%s.sexcheck"%out,delim_whitespace=True,index_col=[0,1],usecols=["FID","IID","STATUS","F"])
+    cols=["FID","IID","STATUS","F"]
+    sf = getCsvI("%s.sexcheck"%out,cols)
     sf[m] = np.where(sf['STATUS']=='OK',"OK", np.where((sf['F']>=0.34) & (sf['F']<=0.66),"S","H"))
     return sf
 
