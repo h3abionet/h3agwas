@@ -630,9 +630,12 @@ Login in the master node using the following command:
 
     Specify the docker profile and nextflow will run using Docker, fetching any necessary images.
 
-    `nextflow run h3abionet/h3agwas --work_dir /mnt/shared --input_pat sampleA --max_plink_cores 2 -profile docker`
+    `nextflow run  h3abionet/h3agwas -profile docker`
 
-6. The output can be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
+   Of course, you can also use other parameters (e.g. -resume or --work_dir). For your own run you will want to use your nextflow.config file.
+
+
+6. The output of the default runcan be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
 
 7. Remember to shutdown the Amazon cluster to avoid unduly boosting Amazon's share price.
 

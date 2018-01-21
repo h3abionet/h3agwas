@@ -49,7 +49,6 @@ blank =     """
   No batch report is done"
 """
 
-res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error rate by %(bname)s as found in file *-url{%(fname)s}."
 
 res_template = """
 
@@ -237,6 +236,7 @@ fig_template= """
 def showFigs(figs):
     num_cols=2
     num_sub_figs_per_fig=6
+    ref = template = ""
     if len(figs)==1:
        inner="*-includegraphics[width=8cm]{%s}"%figs[0][0]
     else:
@@ -263,7 +263,7 @@ def showFigs(figs):
        else:
           ref="*-noindent Figures *-ref{fig:batch:pcaa}--*-ref{fig:batch:pca%s} show a principal component analysis by batch and phenotype."%(caps[curr_cap])
 
-       ref = "*-subsection{Principal component anlysis}"+EOL+EOL+\
+    ref = "*-subsection{Principal component anlysis}"+EOL+EOL+\
              ref+""" In the PC analysis, the principal components were computed from all
              samples in the data together, and in each figure we extract the
              samples for that analysis. The labels and scale of the axes may
@@ -321,8 +321,11 @@ def getRelatedPairs(pfrm,pheno_col,genome):
                 mixed[pair]=[(id1,id2)]
             num_mixed = num_mixed+1
     rows = ""
+    
 
     keys = sorted(group.keys())
+    if len(keys)==2:
+        keys=[" ALL"]
     for k in keys:
         rows = rows + "%s & %d & %d & %d *-*-"%(k,group[k],ident.get(k,0),sib.get(k,0))+EOL
     rel_text=""
@@ -351,7 +354,7 @@ def getRelatedPairs(pfrm,pheno_col,genome):
 det_sex_analysis = """
 *-subsection{Detailed Sex Check Analysis}
 
-This section showa adetailed analysis of sex check errors. The purpose of this analysis is to help
+This section shows a detailed analysis of sex check errors. The purpose of this analysis is to help
 identify trends between sub-groups, as well as possible labelling and sampling errors. In this analysis,
 we use PLINK to analyse the non-recombining regions of the X-chromosome, and in particular its computation 
 of the inbreeding co-efficient of the X-chromosome. If the ##F## statistic is greater than $f_lo_male, PLINK
@@ -453,9 +456,10 @@ def detailedSexAnalysis(pfrm,ifrm,sxAnalysisPkl,pheno_col):
     dumpMissingSexTable(sex_fname,ifrm,sxAnalysis,pfrm[pheno_col])
     header = detSexHeader(sxAnalysis,pheno_col)
     tbl    = detSexGroup(sxAnalysis,"overall")
-    g = sxAnalysis.groupby(group_fn)
-    for grpname, gg in g:
-        tbl = tbl+detSexGroup(gg,grpname)
+    if pheno_col != "all":
+       g = sxAnalysis.groupby(group_fn)
+       for grpname, gg in g:
+           tbl = tbl+detSexGroup(gg,grpname)
 
     return \
         det_sex_analysis%(sex_fname,pheno_col) +\
@@ -472,43 +476,58 @@ text = getHeader()+EOL+EOL
 #if not(args.batch == "0" and args.phenotype == "0"):
 ifrm = pd.read_csv(args.imiss,delim_whitespace=True,index_col=[0,1])
 
-if args.batch != "0":
-    text = text+res_text%({'bname':args.batch_col,'fname':args.batch})
+
+if "emptyZ0" in args.batch:
+    args.batch_col = 'all'
+    bfrm = DataFrame([1]*len(ifrm),index=ifrm.index,columns=['all'])
+    res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
+    g=open("nopcs.pdf","w")
+    g.close()
+else:
     bfrm = pd.read_csv(args.batch,delim_whitespace=True,index_col=[0,1])
-    problems = ifrm.index.difference(bfrm.index).to_series().values
-    if len(problems)>0:
+    res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error rate as shown by %(bname)s as found in file *-url{%(fname)s}."%({'bname':args.batch_col,'fname':args.batch})
+
+text=text+res_text
+problems = ifrm.index.difference(bfrm.index).to_series().values
+if len(problems)>0:
         print("Problem there IDs in the genotype data that are not in the batch data")
         print("You need to fix one way or the other")
         print("The IDs are")
         for p in problems:
             print(p)
         sys.exit(-1)
-    result = miss_vals(ifrm,bfrm,args.batch_col,args.sexcheck_report)
-    text = text+showResult(args.batch_col,*result)
-if args.phenotype !="0":
-    pfrm = pd.read_csv(args.phenotype,delim_whitespace=True,index_col=[0,1])
-    text = text+res_text%({'bname':args.pheno_col,'fname':args.phenotype})
-    result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
-    text = text+showResult(args.pheno_col,*result)
+result = miss_vals(ifrm,bfrm,args.batch_col,args.sexcheck_report)
+text = text+showResult(args.batch_col,*result)
 
+if  "emptyZ0" in args.phenotype:
+    args.pheno_col = 'all'
+    pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
+    if "emptyZ0" not in args.batch:
+        res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
+
+else:
+    pfrm = pd.read_csv(args.phenotype,delim_whitespace=True,index_col=[0,1])
+    res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error rate as shown by %(bname)s as found in file *-url{%(fname)s}."%({'bname':args.pheno_col,'fname':args.phenotype})
+
+result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
+if "emptyZ0" not in args.phenotype or "emptyZ0" not in args.batch:
+    text = text+res_text+showResult(args.pheno_col,*result)
 col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 
 eigs=pd.read_csv(args.eigenvec,delim_whitespace=True,header=None,names=col_names,index_col=[0,1])
 
-if args.batch in ["0",False,"False","FALSE","nil","false",0,None,""]:
-    args.batch_col = 'batch'
-    bfrm = DataFrame([1]*len(eigs),index=eigs.index,columns=['batch'])
-if args.phenotype in ["0",False,"False","FALSE","nil","false",0,None,""]:
-    args.pheno_col = 'all'
-    pfrm = DataFrame([1]*len(eigs),index=eigs.index,columns=['all'])
 
 text = text + detailedSexAnalysis(pfrm,ifrm,args.sx_pickle,args.pheno_col)
 
 
 m = re.search("(.*).eigenvec",args.eigenvec)
 base = m.group(1)
-figs = plotPCs(base,eigs,pfrm,args.pheno_col,bfrm,args.batch_col)
-figs_text = showFigs(figs)
+if "emptyZ0" not in args.batch:
+    figs = plotPCs(base,eigs,pfrm,args.pheno_col,bfrm,args.batch_col)
+    figs_text = showFigs(figs)
+else:
+    figs_text=""
+
 related_text = getRelatedPairs(pfrm,args.pheno_col,args.genome)
 text = backslashify(text+related_text+figs_text)
 g=open("%s-batch.tex"%args.base,"w")

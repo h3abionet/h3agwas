@@ -87,6 +87,16 @@ if (params.help) {
   System.exit(-1)
 }
 
+def getSubChannel = { parm, parm_name ->
+  if ((parm==0) || (parm=="0") || (parm==false) || (parm=="false")) {
+    filename = "emptyZ0${parm_name}.txt";
+    new File(filename).createNewFile()  
+    new_ch = Channel.fromPath(filename);
+  } else {
+    new_ch = Channel.fromPath(parm);
+  }
+  return new_ch;
+}
 
 if (params.case_control) {
   ccfile = params.case_control
@@ -99,8 +109,8 @@ if (params.case_control) {
 }
 
 
-phenotype_ch = Channel.fromPath(params.phenotype)
-batch_ch     = Channel.fromPath(params.batch)
+phenotype_ch = getSubChannel(params.phenotype,"pheno")
+batch_ch     = getSubChannel(params.batch,"batch")
 raw_ch       = Channel.create()
 bim_ch       = Channel.create()
 inpmd5ch     = Channel.create()
