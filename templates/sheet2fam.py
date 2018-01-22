@@ -18,6 +18,7 @@ def parseArguments():
     parser=argparse.ArgumentParser()
     parser.add_argument('samplesheet', type=str, metavar='samplesheet'),
     parser.add_argument('fam', type=str, metavar='report',help="fam file"),
+    parser.add_argument('batch_col', type=str, metavar='batch',help="batch column"),
     parser.add_argument('output', type=str, metavar='fname',help="output base"),
     parser.add_argument('abbrev', type=str, metavar='abbrev',help="abbreviate IDs"),
     args = parser.parse_args()
@@ -27,7 +28,7 @@ def parseArguments():
 # If called with no parameters, we assume using Nexflow's template mechanism and the parameters
 # are substituted in with fixed names
 if len(sys.argv)<=1:
-    sys.argv = ["sheet2fam.py","$samplesheet","$fam", "$output","$abbrev"]
+    sys.argv = ["sheet2fam.py","$samplesheet","$fam", "$batch_col", "$output","$abbrev"]
 
 
 # we avoid backslashes
@@ -38,21 +39,25 @@ def getHeading(allrows):
     heading = list(map(lambda x: x.value, allrows.__next__()))
     col_id=heading.index("Institute Sample Label")
     col_sex=heading.index("Manifest Gender")
-    col_batch=heading.index("Batch Comment")
+    if args.batch_col in ["0",0,False,"false",None]:
+        col_batch=-1
+    else:
+        col_batch=heading.index(args.batch_col)
     return (col_id, col_sex, col_batch)
 
 def sex_code(x):
     if x == "Male":
-        return 1
+        return "1"
     elif x == "Female":
-        return 2
+        return "2"
     else:
-        return 0
+        return "0"
 
 
 def parseSheet(allrows):
     [col_id, col_sex, col_batch]  = getHeading(allrows)
     indivs = {}
+    batch="-9"
     for row in allrows:
        sample_id   = row[col_id].value
        if args.abbrev:
@@ -62,9 +67,11 @@ def parseSheet(allrows):
             else:
                 print("Sample ID <%s> cannot be abbrev"%sample_id)
        sample_sex  = row[col_sex].value
-       batch       = row[col_batch].value
-       m=re.search(".* (.+)",batch)
-       batch = m.group(1)
+       if col_batch>0:
+           batch       = row[col_batch].value
+           m=re.search("Batch (.+)",batch)
+           if m:
+               batch = m.group(1)
        indivs[sample_id] =  [sample_sex,batch]
     return indivs
 
@@ -72,7 +79,8 @@ def produceFam(indivs,origfam):
     g = open("{}.fam".format(args.output),"w")
     for sample_id in origfam:
         [sample_sex,batch] = indivs[sample_id]
-        g.write("{}{}{}{}0{}0{}{}{}{}{}".format(sample_id,TAB,sample_id,TAB,TAB,TAB,sex_code(sample_sex),TAB,batch,EOL))
+        data = TAB.join([sample_id,sample_id,"0","0",sex_code(sample_sex),batch])+EOL
+        g.write(data)
     g.close()
 
 def getFam(fam):

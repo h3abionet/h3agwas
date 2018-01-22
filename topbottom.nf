@@ -65,6 +65,7 @@ def gChrom= { x ->
     output:
        set file("${output}.ped"), file("${output}.map") into ped_ch
     script:
+        samplesize = params.samplesize
         output = report.baseName
         template "topbot2plink.py"
   }
@@ -138,7 +139,7 @@ def gChrom= { x ->
     if (refBase=="empty") opt="--keep-allele-order"
     """
     plink --bfile $base $opt --flip $flips --make-bed --out $output
-    grep Impossible ${output}.log | tr -d . | sed "s/.*variant//"  > ${output}.badsnps
+    grep Impossible ${output}.log | tr -d . | sed 's/.*variant//'  > ${output}.badsnps
     """
  }
 
@@ -152,9 +153,14 @@ def gChrom= { x ->
    output:
      set file("${output}.fam") into fixedfam_ch
    script:
+    batch_col = params.batch_col
     template "sheet2fam.py"
  } 
 
 
+fixedfam_ch.combine(aligned_ch).subscribe { 
+  files =  it.collect { fn -> fn.getName().replace(".*/","") }
+  println "The output can be found in ${params.output_dir}: files are ${files}"
+}
 
 

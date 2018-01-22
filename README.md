@@ -458,6 +458,8 @@ e.g. `params.output = "cvd-rawcalls"`
 
 * `samplesheet`: This is Excel spreadsheet that Illumina provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can make your own. There are three columns that are important: "Institute Sample Label", "Manifest Gender" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
 
+Please note that *we expect all entries in the sample IDs etc to be alphanumeric 0-9, Latin letters (NO accents!), underscore, space, hyphen*. The code may break otherwise.
+
 * `abbrev`. Default is "1" (yes). The Illumina IDs in the sample ID are typically a long string with Illumina relevant IDs followed by an underscore followed by your own ID. If you have abbrev as 1, tthen the script will attempt to remove the Illumina component. YMMV and you  may have to manually change.
 
 * `output_align`. This can be one of three values: _topbottom_, _dbsnp_ and _ref_. If topbot, the SNPs will be aligned to the Illumnia TOP strand. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. In the latter two cases, many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).
@@ -467,6 +469,10 @@ e.g. `params.output = "cvd-rawcalls"`
 * `refererence`: This is the name of a file that gives the reference allele for each SNP on the chip.  This is only useful if the "ref" option is used for `output_align`, and is optional in this case. Note that the difference between aligning and the use of the reference. Aligning will decide which strand of the reference genome as found in the Illumina genotyping teh alleles can be found on. For example, if the genotyping report gives the two options as A and C, aligning checks whether this is A and C on the + strand of the reference genome or (and so will be A and C in the output bim file) or whther this is A and C on the $-$ strand of the reference genome and so should be reported as T and G. This is done using information in the chip manifest file. The second step is to know which allele is the reference allele and which is the alternate allele.
 
 A reference file suitable for the H3A chip can be found here http://www.bioinf.wits.ac.za/data/h3agwas/
+
+* `batch_col`: For this workflow, the `batch_col` parameter is a column in the `samplesheet` that should be used to extract out out the 6-th column of the `fam` file, or the phenotype. This allows you do do batch analysis. Of course, you can choose anything you like to be the "batch". The default value is 0, which means just set the 6-th column of the fam file to -9.  One special case: If the contents of the column is of the form "Batch n", then only the _n_ is returned.
+
+* `samplesize`: This was  included mainly for development purposes but _perhaps_ might be helpful to some users. This allows you sample only the first _n_ people in each genotype report. This allows you to extract out a small subset of the data for testing purposes. The default is 0, which means that *all* individuals will be generated.
 
 ## Output
 

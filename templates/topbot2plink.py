@@ -22,6 +22,7 @@ def parseArguments():
     parser=argparse.ArgumentParser()
     parser.add_argument('array', type=str, metavar='arrat description'),
     parser.add_argument('report', type=str, metavar='report',help="genotypereport"),
+    parser.add_argument('samplesize', type=int, metavar='samplesize',help="how many indivs in each site")
     parser.add_argument('abbrev', type=str, metavar='abbrev',help="abbreviate IDs"),
     parser.add_argument('output', type=str, metavar='fname',help="output base"),
     args = parser.parse_args()
@@ -132,7 +133,9 @@ def parseChipReport(snp_elt,array,fname,abbrev,output):
         sample_id = fields[samp_i]
         if abbrev: sample_id = getAbbrev(sample_id)
         if sample_id != old_sample_id:
-            print(old_sample_id)
+            if num > args.samplesize >  0:
+                generate_line(pedf,old_sample_id,output)
+                break
             if old_sample_id!="xxx":
                 generate_line(pedf,old_sample_id,output)
             output.fill("0")
@@ -151,7 +154,7 @@ def outputMap(snp_elt,array,outname):
     mapf.close()
             
 if len(sys.argv) == 1:
-   sys.argv=["topbot2plink.py","$array","$report","$abbrev", "$output"]
+   sys.argv=["topbot2plink.py","$array","$report","$samplesize", "$abbrev", "$output"]
     
 
 
