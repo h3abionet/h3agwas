@@ -367,6 +367,7 @@ The following parameters control QC
 * `pheno_col` is the column label of the column in  the phenotype file which should be used.
 *  `case_control` : This is the name of a PLINK-style phenotype file with labels in the first line. This is a compulsory parameter. The QC process uses the case/control status of individuals. A principal component analysis is done. We do not expect typically overall that there will be difference between cases and controls. The PC-analysis tests that this is so. Of course, you need to apply your mind to the result as YMMV. If your study has several case/control categories, choose an appropriate one that will give insight. If you only have continuous measures (e.g., BMI), then discretise and make an artificial case-control category. Remember, this is for QC purposes not to find interesting biology.
 * `case_control_col`: this is the label of the column.
+* `high_ld_regions_fname`: you may wish to exclude high LD regions from some analysis (IBD and PCA). Provide either absolute file path or relative to where you are running. In a previous version this was relative to input_dir, which is not right.
 
 Several of the above parameters make reference to a phenotype file. Of course, these can be to the same phenotype file, but probably using different columns.
 
