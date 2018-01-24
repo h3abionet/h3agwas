@@ -459,6 +459,7 @@ process drawPCA {
 
 if (params.high_ld_regions_fname != "")
    ldreg_ch=Channel.fromPath(params.high_ld_regions_fname)
+   ////check
 else
    ldreg_ch=Channel.value("dummy") //If not, create dummy channel
 
