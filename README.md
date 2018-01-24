@@ -9,6 +9,7 @@ h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney
 
 * NB: our pipelines are now  under active development. If you would like to do some beta testing of the new pipeline, please checkout the `wits` branch. * If you do so, please ignore the wiki, the documentation is all in the README.
 
+
 ## Documentation 
 
 Installation, Examples and tutorials for witsGWAS can be found in the wiki
