@@ -332,7 +332,8 @@ Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  T
 * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
 * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
 * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
-* `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id)d)
+* `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id).  Provide either absolute file path or relative to where you are running. In a previous version this was relative to input_dir, which is not right.
+
 * `output`: the base name of the output files. *This cannot be the same as the input!!!*
 
 ## 5.2 Overview of the workflow
@@ -367,7 +368,6 @@ The following parameters control QC
 * `pheno_col` is the column label of the column in  the phenotype file which should be used.
 *  `case_control` : This is the name of a PLINK-style phenotype file with labels in the first line. This is a compulsory parameter. The QC process uses the case/control status of individuals. A principal component analysis is done. We do not expect typically overall that there will be difference between cases and controls. The PC-analysis tests that this is so. Of course, you need to apply your mind to the result as YMMV. If your study has several case/control categories, choose an appropriate one that will give insight. If you only have continuous measures (e.g., BMI), then discretise and make an artificial case-control category. Remember, this is for QC purposes not to find interesting biology.
 * `case_control_col`: this is the label of the column.
-* `high_ld_regions_fname`: you may wish to exclude high LD regions from some analysis (IBD and PCA). Provide either absolute file path or relative to where you are running. In a previous version this was relative to input_dir, which is not right.
 
 Several of the above parameters make reference to a phenotype file. Of course, these can be to the same phenotype file, but probably using different columns.
 
