@@ -655,11 +655,6 @@ Login in the master node using the following command:
    You will need to replace XXXXX with your userid -- the local copy of the repo is found in the `/mnt/shared/XXXXX/projects/h3abionet/h3agwas/` directory. But we want the work directory to be elsewhere.
 
    Of course, you can also use other parameters (e.g. -resume or --work_dir). For your own run you will want to use your nextflow.config file.
-=======
-* NB: our pipelines are now  under active development. If you would like to do some beta testing of the new pipeline, please checkout the `wits` branch. * If you do so, please ignore the wiki, the documentation is all in the README.
-
-## Documentation 
->>>>>>> 4d965eff4fb8653646cc30c9ed6a0a869d4a275a
 
 
 7. The output of the default runcan be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
