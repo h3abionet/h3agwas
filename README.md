@@ -20,6 +20,16 @@ We have moved all scripts from Python 2 to Python 3, so you will need to have Py
 
 This is a development version -- it has been tested on real data but only in one evnironment. It has been tested running directly on a machine, using pbs, and using docker (only the plink-qc workflow).
 
+## Outline of documentation
+
+1. Features
+2. Installing the pipeline
+3. A quick start example
+4. The Nextflow configuration file
+5. The QC pipeline: `plink-qc.nf`
+6. A simple association testing pipeline: `plink-assoc.nf`
+7. Converting Illumina genotyping reports to PLINK: `topbottom.nf`
+8. Advanced options: Docker, PBS, Amazon EC2
 
 
 # 1. Features
@@ -490,7 +500,7 @@ Possible ways forward:
 * if you are doing imputation from the data, it's probably best to remove them unless you have a specific need for a particular SNP.
 
 
-$ 8. Running the workflow in different environment
+# 8. Running the workflow in different environments
 
 In the  quick start we gave an overview of running our workflows in different environments. Here we go through all the options, in a little more detail
 
@@ -693,11 +703,11 @@ The _scott.aws_ file is not shared or put under git control. The _nextflow.confi
 
 
 
-# 10. Copyright and general
+# 9. Copyright and general
 
 ### Authors
 
-Lerato E. Magosi, Shaun Aron, Rob Clucas, Eugene de Beste, Scott Hazelhurst, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
+Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
 
 ### License
 h3agwas offered under the MIT license. See LICENSE.txt.
