@@ -763,6 +763,8 @@ process batchProc {
     file genome    from batch_rel_ch    // pruneForIBD
     file pkl       from x_analy_res_ch  // analyseX
     file rem_indivs from related_indivs_ch2 // findRel
+  publishDir params.output_dir, pattern: "*{csv,pdf}", \
+             overwrite:true, mode:'copy'
   output:
       file("${base}-batch.tex")      into report["batch_report"]
       set file("*.csv"), file("*pdf") into report["batch_aux"] // need to stage

@@ -10,7 +10,7 @@ inpat = "${params.input_dir}/${params.input_pat}"
 params.output         = "chip"
 params.strandreport   = false
 params.manifest       = false
-params.abbrev         = "1"
+params.idmunge         = r"regexp:(\w+)-DNA_(\w+)_.*"
 
 
 abbrev = params.abbrev

@@ -216,18 +216,22 @@ def plotPCs(base,eigs,pfrm,pheno_col,batch,batch_col):
           return 0
     g = eigs.groupby(group_fn)
     matplotlib.rcParams.update({'font.size': 12})
+    batch_values = batch[batch_col].unique()
+    our_colours  = dict(zip(batch_values,colours[1:1+len(batch_values)]))
     allplots=[]
     for site, df in g:
         fig = plt.figure(figsize=(6,6))
         fig, ax = plt.subplots()
         locator = MaxNLocator(nbins=4) 
         ax.xaxis.set_major_locator(locator)
-        ax.scatter(df['PC1'],df['PC2'],s=1,c=list(map(lambda x:colours[x],batch[batch_col])),label=[1,2,3])
+        ax.scatter(df['PC1'],df['PC2'],s=1,\
+                   c=list(map(lambda x:our_colours[x],batch[batch_col])),\
+                   label=[1,2,3])
         ax.legend(scatterpoints=1)
         recs=[]
         classes=[]
         for i in batch[batch_col].unique():
-            recs.append(mpatches.Rectangle((0,0),1,1,fc=colours[i]))
+            recs.append(mpatches.Rectangle((0,0),1,1,fc=our_colours[i]))
             classes.append(batch_col+str(i))
         plt.legend(recs,classes,loc=4)
         plt.xlabel("PC1")
@@ -453,11 +457,11 @@ def xstr(m):
     else:
         return str(m)
 
-def dumpMissingSexTable(fname, ifrm,sxAnalysis,pfrm):
+def dumpMissingSexTable(fname, ifrm,sxAnalysis,pfrm,bfrm):
     g=open(fname,"w")
-    g.write(TAB.join(["FID","IID"])+TAB+TAB.join(map(str,sxAnalysis.columns))+EOL)
+    g.write(TAB.join(["FID","IID",args.batch_col,'F_MISS'])+TAB+TAB.join(map(str,sxAnalysis.columns))+EOL)
     for i, row in ifrm.iterrows():
-        output = TAB.join(map(str, [*i,"%5.3f"%row['F_MISS'],pfrm.loc[i]]))+\
+        output = TAB.join(map(str, [*i,bfrm.loc[i][args.batch_col],"%5.3f"%row['F_MISS'],pfrm.loc[i]]))+\
                  TAB+TAB.join(map(xstr,sxAnalysis.loc[i]))+EOL
         g.write(output)
     g.close()
@@ -469,14 +473,14 @@ There were no X-chromosome SNPs and so this was not possible. Note that in Table
 
 """
 
-def detailedSexAnalysis(pfrm,ifrm,sxAnalysisPkl,pheno_col):
+def detailedSexAnalysis(pfrm,ifrm,sxAnalysisPkl,pheno_col,bfrm):
     def group_fn(x):
         return pfrm.ix[x][pheno_col]
     sex_fname = args.base+"_missing_and_sexcheck.csv"
     sxAnalysis = pd.read_pickle(sxAnalysisPkl)
     if type(sxAnalysis)==str:
         return noX
-    dumpMissingSexTable(sex_fname,ifrm,sxAnalysis,pfrm[pheno_col])
+    dumpMissingSexTable(sex_fname,ifrm,sxAnalysis,pfrm[pheno_col],bfrm)
     header = detSexHeader(sxAnalysis,pheno_col)
     tbl    = detSexGroup(sxAnalysis,"overall")
     if pheno_col != "all":
@@ -540,7 +544,7 @@ col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 eigs=getCsvI(args.eigenvec,names=col_names)
 
 
-text = text + detailedSexAnalysis(pfrm,ifrm,args.sx_pickle,args.pheno_col)
+text = text + detailedSexAnalysis(pfrm,ifrm,args.sx_pickle,args.pheno_col,bfrm)
 
 
 m = re.search("(.*).eigenvec",args.eigenvec)

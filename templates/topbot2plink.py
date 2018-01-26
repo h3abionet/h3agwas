@@ -131,7 +131,7 @@ def parseChipReport(snp_elt,array,fname,abbrev,output):
         if a1 == "-": a1="0"
         if a2 == "-": a2="0"
         sample_id = fields[samp_i]
-        if abbrev: sample_id = getAbbrev(sample_id)
+        if abbrev in  [True,1,"1"]: sample_id = getAbbrev(sample_id)
         if sample_id != old_sample_id:
             if num > args.samplesize >  0:
                 generate_line(pedf,old_sample_id,output)
