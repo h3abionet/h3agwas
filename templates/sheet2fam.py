@@ -95,11 +95,12 @@ def getFam(fam):
     return origfam
 
 args        = parseArguments()
-shutil.copyfile(args.fam,"oldfam.fam")
 xlsxf       = openpyxl.load_workbook(args.samplesheet)
 sheet_names = xlsxf.get_sheet_names()
 allrows     = xlsxf[sheet_names[0]].rows
 indivs      =  parseSheet(allrows)
+shutil.copyfile(args.fam,"oldfam.fam")
+
 origfam     = getFam(args.fam)
 produceFam(indivs,origfam)
 xlsxf.close()
