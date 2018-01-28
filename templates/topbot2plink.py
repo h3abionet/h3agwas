@@ -23,7 +23,7 @@ def parseArguments():
     parser.add_argument('array', type=str, metavar='arrat description'),
     parser.add_argument('report', type=str, metavar='report',help="genotypereport"),
     parser.add_argument('samplesize', type=int, metavar='samplesize',help="how many indivs in each site")
-    parser.add_argument('abbrev', type=str, metavar='abbrev',help="abbreviate IDs"),
+    parser.add_argument('idpat', type=str, metavar='idpat',help="abbreviate IDs"),
     parser.add_argument('output', type=str, metavar='fname',help="output base"),
     args = parser.parse_args()
     return args
@@ -82,7 +82,7 @@ def parseArray(fname):
     return snp_elt, array
 
 def generate_line(pedf,old_sample_id,output):
-    pedf.write(TAB.join([old_sample_id,old_sample_id,"0","0","0","0"]))
+    pedf.write(TAB.join(old_sample_id+("0","0","0","0")))
     pedf.write(TAB)
     pedf.write(TAB.join(output)+EOL)
     pass
@@ -97,15 +97,22 @@ def getReportIndices(line):
     alle_2 = fields.index("Allele2 - Top")
     return name_i, samp_i, alle_1, alle_2
 
-def getAbbrev(sample_id):
-    m = re.search(".*_(.*)",sample_id)
+
+
+def getID(idreg,sample_id):
+    m = idreg.match(sample_id)
     if m:
-       sample_id=m.group(1)
+       if len(m.groups())==2:
+           return m.groups()
+       elif len(m.groups())==1:
+           return (m.group(1),m.group(1))
+       else:
+           sys.exit("Pattern <%s> has wrong number of groups"%args.idpat)
     else:
-       sys.exit("Sample ID <%s> cannot be abbrevd"%sample_id)
+       sys.exit("Sample ID <%s> cannot be parsed by <%s>"%(sample_id,args.idpat))
     return sample_id
 
-def parseChipReport(snp_elt,array,fname,abbrev,output):
+def parseChipReport(snp_elt,array,fname,idpat,output):
     f = gzip.open(fname,"rt")
     for i in range(15):
         line = f.readline()
@@ -119,9 +126,8 @@ def parseChipReport(snp_elt,array,fname,abbrev,output):
     num=0
     output = np.empty([len(snp_elt)*2],dtype='U1')
     output.fill("0")
+    idreg = re.compile(args.idpat)
     for line in f:
-        #line = str(line)
-        #fields   = re.split("[,\t]",line.rstrip())
         fields = line.rstrip().split(",")
         snp_name = fields[name_i]
         if snp_name  not in array:
@@ -130,8 +136,7 @@ def parseChipReport(snp_elt,array,fname,abbrev,output):
         a2       = fields[alle_2]
         if a1 == "-": a1="0"
         if a2 == "-": a2="0"
-        sample_id = fields[samp_i]
-        if abbrev in  [True,1,"1"]: sample_id = getAbbrev(sample_id)
+        sample_id = getID(idreg,fields[samp_i])
         if sample_id != old_sample_id:
             if num > args.samplesize >  0:
                 generate_line(pedf,old_sample_id,output)
@@ -154,14 +159,16 @@ def outputMap(snp_elt,array,outname):
     mapf.close()
             
 if len(sys.argv) == 1:
-   sys.argv=["topbot2plink.py","$array","$report","$samplesize", "$abbrev", "$output"]
+   sys.argv=["topbot2plink.py","$array","$report","$samplesize", "$idpat", "$output"]
     
 
 
 args = parseArguments()
+if args.idpat in [0,"0","",False]:
+    args.idpat=("(.*)")
 
 snp_elt, array = parseArray(args.array)
-parseChipReport(snp_elt,array,args.report,args.abbrev,args.output)
+parseChipReport(snp_elt,array,args.report,args.idpat,args.output)
 outputMap(snp_elt,array,args.output)
 
 

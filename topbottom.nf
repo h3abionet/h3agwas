@@ -10,19 +10,23 @@ inpat = "${params.input_dir}/${params.input_pat}"
 params.output         = "chip"
 params.strandreport   = false
 params.manifest       = false
-params.idmunge         = r"regexp:(\w+)-DNA_(\w+)_.*"
 
 
-abbrev = params.abbrev
+
 
 plink_src = Channel.create()
 
+
+null_values = [0,"0",false,""]
+
+if (! null_values.contains(params.samplesheet))
+  samplesheet = Channel.fromPath(params.samplesheet)
+
 def condChannel = { parm, descr ->
-  if ((parm==0) || (parm=="0") || (parm == false) || (parm=="false")) {
-    println(parm+" "+descr)
-    File empty = new File("empty."+descr)
-    empty.createNewFile()
-    return Channel.fromPath(empty)
+  filename = "/tmp/emptyZ0${descr}.txt";
+  new File(filename).createNewFile()  
+  if ((parm==0) || (parm=="0") || (parm == false) || (parm=="") || (parm=="false")) {
+    return Channel.fromPath(filename)
   }  else {
     return  Channel.fromPath(parm);
   }
@@ -46,7 +50,6 @@ def gChrom= { x ->
 
 
   output      = params.output
-  samplesheet = Channel.fromPath(params.samplesheet)
   // array may be the manifest or pref a file with both genetic 
   // and physical coordinates
   array       = Channel.fromPath(params.chipdescription)
@@ -65,6 +68,7 @@ def gChrom= { x ->
     output:
        set file("${output}.ped"), file("${output}.map") into ped_ch
     script:
+        idpat = params.idpat
         samplesize = params.samplesize
         output = report.baseName
         template "topbot2plink.py"
@@ -144,6 +148,20 @@ def gChrom= { x ->
  }
 
 
+
+
+if (null_values.contains(params.samplesheet)) {
+  process fixFam{
+    input:
+    file(fam) from fix_fam_ch
+   publishDir params.output_dir, pattern: "${output}.fam", \
+             overwrite:true, mode:'copy'
+   output:
+     set file("${output}.fam") into fixedfam_ch
+   script:
+     "cp $fam ${output}.fam"
+  }
+} else {
  process fixFam {
    input:
      file(samplesheet)
@@ -153,10 +171,11 @@ def gChrom= { x ->
    output:
      set file("${output}.fam") into fixedfam_ch
    script:
-    batch_col = params.batch_col
-    template "sheet2fam.py"
+     idpat = params.idpat
+     batch_col = params.batch_col
+     template "sheet2fam.py"
  } 
-
+}
 
 fixedfam_ch.combine(aligned_ch).subscribe { 
   files =  it.collect { fn -> fn.getName().replace(".*/","") }
