@@ -62,7 +62,7 @@ def gChrom= { x ->
   
 
   process illumina2lgen {
-    maxForks 95
+    maxForks params.max_forks
     input:
        set file(report), file(array) from report.combine(array)
     output:

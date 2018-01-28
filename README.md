@@ -710,7 +710,7 @@ These are in the aux directory
 
 ##9.1 updateFam.py
 
-Can be used to update fam files. You probably won't need it, but others might find it useful. The intended application might be that there's been a mix-up of sample IDs and you want to correct.  The program takes four parameters: the original sample sheet, a new sample sheet (only has to include those elements that have changed), the original fam file, and then the new fam file.  The program takes the plate and well as the authorative ID of a sample. For every row in the updated sheet, the program finds the plate and well, looks up the corresponded entry in the original sheet, and then replaces that associated ID in the fam file. For example, if we have
+Can be used to update fam files. You probably won't need it, but others might find it useful. The intended application might be that there's been a mix-up of sample IDs and you want to correct.  The program takes four parameters: the original sample sheet, a new sample sheet (only has to include those elements that have changed), the original fam file, and then the base of a newfam file name.  The program takes the plate and well as the authorative ID of a sample. For every row in the updated sheet, the program finds the plate and well, looks up the corresponded entry in the original sheet, and then replaces that associated ID in the fam file. For example, if we have
 
 _Original sheet_
 ```
@@ -725,6 +725,8 @@ W77888  G01  BBBBBB
 ```
 
 Then the new fam file has the AAAAA entry replaced with the BBBBB entry
+
+Two files are output: a fam file and an error file (the IDs of individuals who are in th e sample sheet but not the fam file are output)
 
 #9.2 getRunsTimes.pl (By Harry Noyes)
 
