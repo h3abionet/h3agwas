@@ -48,13 +48,15 @@ for i, row in update.iterrows():
     pos      = tuple(row[['Institute Plate Label','Well']].values)
     oldid    = getSmplLbl(orig.loc[pos])
     try:
-        fam.loc[oldid]['FID']   = new_lbl
-        fam.loc[oldid]['IID']   = new_lbl
+        if oldid != new_lbl:
+            print("%s --> %s"%(oldid,new_lbl),len(fam))
+        fam.loc[(oldid,oldid)]['FID']   = new_lbl
+        fam.loc[(oldid,oldid)]['IID']   = new_lbl
     except KeyError:
-        print("Where is the data for "+new_lbl+"!!!!")
+        print("No data for "+new_lbl+"!!!!")
         continue
     if oldid != new_lbl:
         count=count+1
 
     
-fam.to_csv("newfam",sep="\t",header=None),
+fam.to_csv(args.newfam,sep="\t",header=None,index=False),

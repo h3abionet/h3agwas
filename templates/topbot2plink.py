@@ -155,6 +155,7 @@ def parseChipReport(snp_elt,array,fname,output):
         ind = array.get(snp_name)
         output[2*ind]=a1
         output[2*ind+1]=a2
+    generate_line(pedf,old_sample_id,output)
     pedf.close()
 
 
