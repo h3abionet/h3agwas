@@ -10,6 +10,7 @@ inpat = "${params.input_dir}/${params.input_pat}"
 params.output         = "chip"
 params.strandreport   = false
 params.manifest       = false
+params.idpat         = "(.*)"
 
 
 
@@ -66,6 +67,7 @@ def gChrom= { x ->
        set file("${output}.ped"), file("${output}.map") into ped_ch
     script:
         samplesize = params.samplesize
+	idpat      = params.idpat
         output = report.baseName
         template "topbot2plink.py"
   }
