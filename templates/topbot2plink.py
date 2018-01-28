@@ -29,6 +29,66 @@ def parseArguments():
     parser.add_argument('samplesize', type=int, metavar='samplesize',\
                         help="how many indivs in each site")
     parser.add_argument('idpat', type=str, metavar='idpat',help="id pattern"),
+
+    parser.add_argument('output', type=str, metavar='fname',help="output base"),
+    args = parser.parse_args()
+    return args
+
+
+TAB=chr(9)
+EOL=chr(10)
+
+# auxiliary defs
+chr2chr = list(map(str,range(0,27)))
+chr2chr[23]="X"
+chr2chr[24]="Y"
+chr2chr[25]="XY"
+chr2chr[26]="MT"
+
+
+
+def conv(x):
+   try:
+      num = int(x)
+   except ValueError:
+      if x == "X": num=23
+      elif x == "Y": num=24
+      elif x == "XY": num =25
+      elif x == "MT": num=26
+      else: num = 0
+   return num
+
+def parseArray(fname):
+    f = open(fname)
+    for i in range(15):
+        line = f.readline()
+        if ",Name," in line or "Name"+TAB in line: break
+    else:
+        sys.exit("Cannot find header line in "+fname)
+    fields=re.split("[,\t]",line.rstrip())
+    name_i = fields.index("Name")
+    indices = [fields.index("Chr"),fields.index("MapInfo")]
+    if "deCODE(cM)" in fields:
+        indices.append(fields.index("deCODE(cM)"))
+    array = {}
+    snp_elt=[]
+    i=0
+    for line in f:
+        fields=re.split("[,\t]",line.rstrip())
+        if "[Controls]" in line: break
+        if len(indices)==3:
+            cm = fields[indices[2]]
+            cm = 0.0 if  "NA" in cm else float(cm)
+        else:
+            cm = 0.0
+        snp_elt.append([conv(fields[indices[0]]), int(fields[indices[1]]), cm, fields[name_i]])
+    snp_elt.sort()
+    for i,content in enumerate(snp_elt):
+        array[content[-1]]=i
+    return snp_elt, array
+
+def generate_line(pedf,old_sample_id,output):
+    pedf.write(TAB.join(old_sample_id+("0","0","0","0")))
     pedf.write(TAB)
     pedf.write(TAB.join(output)+EOL)
     pass
@@ -66,6 +126,7 @@ def parseChipReport(snp_elt,array,fname,output):
     for line in f:
         head=head+1
         if "[Data]" in line: break
+    name_i, samp_i, alle_1, alle_2 = getReportIndices(f.readline())
     pedf = open ("{}.ped".format(output),"w")
     old_sample_id=("xxx","")
     num=0
@@ -76,8 +137,8 @@ def parseChipReport(snp_elt,array,fname,output):
         snp_name = fields[name_i]
         if snp_name  not in array:
             sys.exit("Unknown SNP name in line "+line)
-        a1       = line['Allele1 - Top']
-        a2       = line['Allele2 - Top']
+        a1       = fields[alle_1]
+        a2       = fields[alle_2]
         if a1 == "-": a1="0"
         if a2 == "-": a2="0"
         sample_id = getID(idreg,fields[samp_i])

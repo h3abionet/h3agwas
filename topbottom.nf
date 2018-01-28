@@ -10,11 +10,6 @@ inpat = "${params.input_dir}/${params.input_pat}"
 params.output         = "chip"
 params.strandreport   = false
 params.manifest       = false
-<<<<<<< HEAD
-=======
-params.idpat         = "(.*)"
-
->>>>>>> wits
 
 
 

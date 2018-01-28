@@ -30,7 +30,7 @@ This is a development version -- it has been tested on real data but only in one
 6. A simple association testing pipeline: `plink-assoc.nf`
 7. Converting Illumina genotyping reports to PLINK: `topbottom.nf`
 8. Advanced options: Docker, PBS, Amazon EC2
-
+9. Auxiliary Programs
 
 # 1. Features
 
@@ -704,10 +704,34 @@ The _scott.aws_ file is not shared or put under git control. The _nextflow.confi
 
 
 
+#9. Auxiliary Programs
+
+These are in the aux directory
+
+##9.1 updateFam.py
+
+Can be used to update fam files. You probably won't need it, but others might find it useful. The intended application might be that there's been a mix-up of sample IDs and you want to correct.  The program takes four parameters: the original sample sheet, a new sample sheet (only has to include those elements that have changed), the original fam file, and then the new fam file.  The program takes the plate and well as the authorative ID of a sample. For every row in the updated sheet, the program finds the plate and well, looks up the corresponded entry in the original sheet, and then replaces that associated ID in the fam file. For example, if we have
+
+_Original sheet_
+```
+Plate   Well Sample 
+W77888  G01  AAAAAA
+```
+
+_New sheet_
+```
+Plate   Well Sample 
+W77888  G01  BBBBBB
+```
+
+Then the new fam file has the AAAAA entry replaced with the BBBBB entry
+
+#9.2 getRunsTimes.pl (By Harry Noyes)
+
+Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
 
 
-
-# 9. Copyright and general
+# 10. Copyright and general
 
 ### Authors
 
