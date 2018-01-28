@@ -10,6 +10,11 @@ inpat = "${params.input_dir}/${params.input_pat}"
 params.output         = "chip"
 params.strandreport   = false
 params.manifest       = false
+<<<<<<< HEAD
+=======
+params.idpat         = "(.*)"
+
+>>>>>>> wits
 
 
 
@@ -70,6 +75,7 @@ def gChrom= { x ->
     script:
         idpat = params.idpat
         samplesize = params.samplesize
+	idpat      = params.idpat
         output = report.baseName
         template "topbot2plink.py"
   }
