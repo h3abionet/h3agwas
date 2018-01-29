@@ -143,7 +143,7 @@ configfile   = Channel.create()
 
 println(params.sexinfo_available);
 
-nosexentries = [false,"False","FALSE",0,"","0"]
+nosexentries = [false,"False","false", "FALSE",0,"","0"]
 
 if ( nosexentries.contains(params.sexinfo_available) ) {
   sexinfo = "--allow-no-sex"
