@@ -147,9 +147,10 @@ nosexentries = [false,"False","false", "FALSE",0,"","0"]
 
 if ( nosexentries.contains(params.sexinfo_available) ) {
   sexinfo = "--allow-no-sex"
+  extrasexinfo = ""
   println "Sexinfo not available, command --allow-no-sex\n"
 } else {
-  sexinfo = "--must-have-sex"
+  extrasexinfo = "--must-have-sex"
   println "Sexinfo available command"
 }
 
@@ -273,7 +274,7 @@ process removeDuplicateSNPs {
    base    = bed.baseName
    nodup   = "${base}-nd"
    """
-    plink $K --bfile $base $sexinfo --exclude $dups --missing --make-bed --out $nodup
+    plink $K --bfile $base $sexinfo $extrasexinfo --exclude $dups --missing --make-bed --out $nodup
     wc -l ${base}.bim > ${base}.orig
     wc -l ${base}.fam >> ${base}.orig
    """
