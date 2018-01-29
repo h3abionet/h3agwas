@@ -40,22 +40,39 @@ fam = getFam(args.oldfam)
 
 orig = pd.read_excel(args.samplesheet)
 orig.set_index(["Institute Plate Label","Well"],inplace=True)
+orig['PID']=orig.apply(getSmplLbl,axis=1)
 update = pd.read_excel(args.updatesheet,skiprows=3)
 count=0
 g=open("%s.errs"%args.output,"w")
+h=open("%s.switch"%args.output,"w")
+
 for i, row in update.iterrows():
     if "IlluminaControl" in row["Institute Sample Label"]: continue
     new_lbl=getSmplLbl(row)
     pos      = tuple(row[['Institute Plate Label','Well']].values)
     oldid    = getSmplLbl(orig.loc[pos])
-    try:
-        fam.loc[(oldid,oldid)]['FID']   = new_lbl
-        fam.loc[(oldid,oldid)]['IID']   = new_lbl
-    except KeyError:
+    if fam.index.contains((oldid,oldid)):
+        fam.loc[(oldid,oldid),['FID','IID']]   = new_lbl
+    else:
         g.write(new_lbl+EOL)
         continue
+    if "unknown" in row["Institute Sample Label"]: 
+        print("Pos=<%s>; Old =<%s>; New=<%s>"%(pos,oldid,new_lbl))
+        print(fam.loc[(oldid,oldid)]['IID'])
     if oldid != new_lbl:
+        h.write("%s  -> %s \n"%(oldid,new_lbl))
         count=count+1
 
+
 g.close()    
+h.close()
+all_ids = fam[PIDS].to_records(index=False).tolist()
+uniq =set([])
+orig.set_index('PID',inplace=True)
+for x in all_ids:
+    if x in uniq:
+        print("Duplicated element ",x[0],orig.loc[x[0],"Institute Sample Label"])
+    else:
+        uniq.add(x)
+
 fam.to_csv("%s.fam"%args.output,sep="\t",header=None,index=False),

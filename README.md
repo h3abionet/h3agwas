@@ -726,7 +726,7 @@ W77888  G01  BBBBBB
 
 Then the new fam file has the AAAAA entry replaced with the BBBBB entry
 
-Two files are output: a fam file and an error file (the IDs of individuals who are in th e sample sheet but not the fam file are output)
+Three files are output: a fam file, an error file (the IDs of individuals who are in th e sample sheet but not the fam file are output), and a switch file (containing all the changes that were made). Some problems like duplicate entries are detected.
 
 #9.2 getRunsTimes.pl (By Harry Noyes)
 
