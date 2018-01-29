@@ -333,6 +333,7 @@ Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  T
 * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
 * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
 * `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id).  Provide either absolute file path or relative to where you are running. In a previous version this was relative to input_dir, which is not right.
+See [https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)](https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)) for a discussion.
 
 * `output`: the base name of the output files. *This cannot be the same as the input!!!*
 
@@ -352,7 +353,7 @@ The QC process consists of:
 
 The following parameters control QC
 
-*  `sexinfo_available`: TRUE or FALSE. If we don't have sex information then we cannot do the check for discordant genotype;
+*  `sexinfo_available`: `true` or `false`. If we don't have sex information then we cannot do the check for discordant genotype;
 *  `f_low_male` and `f_hi_female`. Discordant sex genotype is done on the X-chromosome using the non-recombining parts. F, the in-breeding coefficient of the X-chromosome is computed. If F is above `f_low_male`, the individual is predicted to be male; if F is below `f_hi_female`, the individual is predicted to be female. Anyone in between is flagged. These cut-off values are arbitrary and especially in large samples you are likely to find a range of F values. However, a large number of discrepant values probably indicates a sample mishandle error.  The PLINK default values (0.8 and 0.2) are the default parameters of the pipeline.
 *  `cut_het_high`: What is the maximum allowable heterozygosity for individualsl;
 *  `cut_het_low`: minimum
@@ -474,7 +475,7 @@ Please note that *we expect all entries in the sample IDs etc to be alphanumeric
 * `idpat`. Default is "0" or "" (ignore). By default, we use the sample ID as found in the genotype report and sample sheet. PLINK fam files require a double barrelled name (FID IID) -- we just double the ID as found. However, this may not be ideal since
 the Illumina IDs in the sample ID are typically a long string some of  the components of which will not be useful when you are analysing the result. You can change the sample ID by providing a Python-style regular expression which decribes the components. The regex groups describe the components. If there is one group, it is doubled. If there are two groups, then those become the FID and IID. Only one or two groups are permissible. 
 
-For example, suppose the ID as found in the Illumina input data is `WG0680781-DNA_A02_ABCDE`, if you use ".*_(.+)" as the idpat, then the FID IID used would be ABCDE ABCDE. If you used "(\\w+)-DNA-(\\w+)" then the FID IIS used would be "WG0680781 A02". Note how we need to escape the backslash twice.
+For example, suppose the ID as found in the Illumina input data is `WG0680781-DNA_A02_ABCDE`, if you use ".*_(.+)" as the idpat, then the FID IID used would be ABCDE ABCDE. If you used "(\\w+)_DNA_(\\w+)_" then the FID IIS used would be "WG0680781 A02". Note how we need to escape the backslash twice.
 
 * `output_align`. This can be one of three values: _topbottom_, _dbsnp_ and _ref_. If topbot, the SNPs will be aligned to the Illumnia TOP strand. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. In the latter two cases, many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).
 
@@ -578,8 +579,7 @@ nextflow run plink-qc.nf -profile dockerSwarm
 
 ## 8.5 Other container services
 
-We hope to support Singularity soon. We are unlikely to support udocker soon [for the reasons discussed here.](https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html$).
-
+We hope to support Singularity soon. We are unlikely to support udocker unless Nextflow does. See this link for a discussion https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html
 
 ## 8.6 Running on Amazon EC2
 

@@ -138,9 +138,14 @@ configfile   = Channel.create()
 /* Define the command to add for plink depending on whether sexinfo is
  * available or not.
  */
+
+
+
 println(params.sexinfo_available);
 
-if ( params.sexinfo_available == false ) {
+nosexentries = [false,"False","FALSE",0,"","0"]
+
+if ( nosexentries.contains(params.sexinfo_available) ) {
   sexinfo = "--allow-no-sex"
   println "Sexinfo not available, command --allow-no-sex\n"
 } else {
