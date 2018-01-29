@@ -150,6 +150,7 @@ if ( nosexentries.contains(params.sexinfo_available) ) {
   extrasexinfo = ""
   println "Sexinfo not available, command --allow-no-sex\n"
 } else {
+  sexinfo = ""
   extrasexinfo = "--must-have-sex"
   println "Sexinfo available command"
 }
