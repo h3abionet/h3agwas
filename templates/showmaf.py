@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 EOL=chr(10)
 
+
 if len(sys.argv)<=1:
     sys.argv="showmaf.py $freq  $base".split()
 

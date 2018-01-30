@@ -26,7 +26,8 @@ def getFam(famf):
    fam['OFID']=fam['FID']
    fam['OIID']=fam['IID']
    fam.set_index(old, inplace=True)
-   return fam
+   oldfam = fam.copy(deep=True)
+   return oldfam,fam
       
 def getSmplLbl(data):
     m=re.search(".*_(\w+)",data["Institute Sample Label"])
@@ -36,7 +37,7 @@ def getSmplLbl(data):
 
 
 args = parseArguments()
-fam = getFam(args.oldfam)
+oldfam,fam = getFam(args.oldfam)
 
 orig = pd.read_excel(args.samplesheet)
 orig.set_index(["Institute Plate Label","Well"],inplace=True)
@@ -51,17 +52,18 @@ for i, row in update.iterrows():
     new_lbl=getSmplLbl(row)
     pos      = tuple(row[['Institute Plate Label','Well']].values)
     oldid    = getSmplLbl(orig.loc[pos])
-    if fam.index.contains((oldid,oldid)):
-        fam.loc[(oldid,oldid),['FID','IID']]   = new_lbl
-    else:
-        g.write(new_lbl+EOL)
-        continue
-    if "unknown" in row["Institute Sample Label"]: 
-        print("Pos=<%s>; Old =<%s>; New=<%s>"%(pos,oldid,new_lbl))
-        print(fam.loc[(oldid,oldid)]['IID'])
     if oldid != new_lbl:
         h.write("%s  -> %s \n"%(oldid,new_lbl))
         count=count+1
+        if fam.index.contains((new_lbl,new_lbl)):
+            fam.loc[(oldid,oldid),["FID","IID"]]   = new_lbl
+            fam.loc[(oldid,oldid),["FAT","MAT","SEX","PHE"]]   = oldfam.loc[(new_lbl,new_lbl),["FAT","MAT","SEX", "PHE"]]
+        else:
+            g.write(new_lbl+EOL)
+            continue
+    if "unknown" in row["Institute Sample Label"]: 
+        print("Pos=<%s>; Old =<%s>; New=<%s>"%(pos,oldid,new_lbl))
+        print(fam.loc[(oldid,oldid)]['IID'])
 
 
 g.close()    

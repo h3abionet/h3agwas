@@ -360,8 +360,9 @@ process generateSnpMissingnessPlot {
   script:
     input  = lmissf
     base   = lmissf.baseName
+    label  = "SNPs"
     output = "${base}-snpmiss_plot.pdf"
-    template "snpmiss_plot_qcplink.R"
+    template "missPlot.py"
 }
 
 
@@ -375,8 +376,9 @@ process generateIndivMissingnessPlot {
   script:
     input  = imissf
     base   = imissf.baseName
+    label  = "samples"
     output = "${base}-indmiss_plot.pdf"
-    template "imiss_splot.R"
+    template "missPlot.py"
 }
  
 process getInitMAF {
