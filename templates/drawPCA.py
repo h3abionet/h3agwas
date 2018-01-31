@@ -16,7 +16,7 @@ colour_choices=["black","magenta","darkcyan","red","blue","orange"]
 def parseArguments():
    if len(sys.argv)<=1:
       sys.argv=\
-      "drawPCA.py $base $cc $cc_fname $column $eigvals $eigvecs $output".split()
+      "drawPCA.py $base $cc $cc_fname $col $eigvals $eigvecs $output".split()
    parser=argparse.ArgumentParser()
    parser.add_argument('input', type=str, metavar='input'),
    parser.add_argument('cc', type=str, metavar='label'),
