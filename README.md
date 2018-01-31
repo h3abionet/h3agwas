@@ -1,12 +1,13 @@
-# h3agwas
+# h3agwas: version 2
 
 
-This is currently in draft: Please note that for the _wits_ branch the wiki should be ignored. A shortcoming of GitHub's wiki system is that although the git system can version the wiki, only the master wiki is displayed through the web from end.
+The previous version 1 stable branch was commit bfd8c5a
+(https://github.com/h3abionet/h3agwas/commit/bfd8c5a51ef85481e5590b8dfb3d46b5dd0cc77a)
 
-This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
+Version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
 * it is not robust when X chromosome data is not available
 * the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
-
+* we haven't tested with Singularity
 
 ## Background
 
@@ -16,9 +17,8 @@ The original version of the h3aGWAS was published in June 2017 with minor update
 
 There is one feature of the original workflow that has been omitted. Version 1 supported parallel GWAS anaysis of different data files in one Nextflow run. This has been removed. Although, not unuseful, this feature complicated the implementation and made expansion more difficulkt and also this capacity can be simulated easily at the operating system level (see the Wiki).
 
-We have moved all scripts from Python 2 to Python 3, so you will need to have Python 3 installed. We are working on moving away from the use of R and Perl to simplify installation.
+We have moved all scripts from Python 2 to Python 3, so you will need to have Python 3 installed.  R and Perl are no longer needed
 
-This is a development version -- it has been tested on real data but only in one evnironment. It has been tested running directly on a machine, using pbs, and using docker (only the plink-qc workflow).
 
 ## Outline of documentation
 
