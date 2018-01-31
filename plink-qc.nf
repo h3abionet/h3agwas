@@ -115,12 +115,13 @@ def getSubChannel = { parm, parm_name ->
 
 if (params.case_control) {
   ccfile = params.case_control
-  cc_ch  = Channel.fromPath(ccfile)
+  Channel.fromPath(ccfile).into { cc_ch; cc2_ch }
   col    = params.case_control_col
   diffpheno = "--pheno cc.phe --pheno-name $col"
 } else {
   diffpheno = ""
-  cc_ch  = Channel.value("none")
+  col = ""
+  cc_ch  = Channel.value.into("none").into { cc_ch; cc2_ch }
 }
 
 
@@ -453,14 +454,16 @@ process compPCA {
 process drawPCA {
     input:
       set file(EIGVALS), file(EIGVECS) from pcares
+      file cc from cc2_ch
     output:
-      file (OUTPUT) into report["pca"]
-      file "rversion" into rversion
+      file (output) into report["pca"]
     publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
     script:
       base=EIGVALS.baseName
-      OUTPUT="${base}-pca.pdf"
-      template "drawPCA.R"
+      cc_fname = params.case_control
+      // also relies on "col" defined above
+      output="${base}-pca.pdf"
+      template "drawPCA.py"
 
 }
 
@@ -812,7 +815,6 @@ process produceReports {
     set file(qc1), file(irem)  from report["qc1"]
     file(batch_tex)  from report["batch_report"]
     set file(bpdfs), file(bcsvs) from report["batch_aux"]
-    file rversion
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${base}.pdf") into final_ch

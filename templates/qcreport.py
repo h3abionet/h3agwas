@@ -309,7 +309,6 @@ The following tools were used:
 
 *-begin{itemize}
 *-item %(plinkversion)s  [Chang et al 2015]
-*-item R version %(rversion)s [R Core Team, 2016]
 *-item $nextflowversion [Di Tommaso et al, 2017]
 *-item $wflowversion
 *-item The command line below was called [NB: if the command line is long, the linebreak may break oddly after a hyphen or dash so take care.]
@@ -384,9 +383,6 @@ f=open("$ilog")
 pdict['plinkversion']=f.readline()
 f.close()
 
-f=open("rversion")
-pdict['rversion']=f.readline()
-f.close()
 
 pdict['numhetrem'] =  countLines("$misshetremf")
 pdict['numcsnps'] =  countLines(args.cbim)
