@@ -453,13 +453,13 @@ process compPCA {
 
 process drawPCA {
     input:
-      set file(EIGVALS), file(EIGVECS) from pcares
+      set file(eigvals), file(eigvecs) from pcares
       file cc from cc2_ch
     output:
       file (output) into report["pca"]
     publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
     script:
-      base=EIGVALS.baseName
+      base=eigvals.baseName
       cc_fname = params.case_control
       // also relies on "col" defined above
       output="${base}-pca.pdf"
