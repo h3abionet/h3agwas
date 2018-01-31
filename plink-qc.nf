@@ -550,12 +550,12 @@ process generateMissHetPlot {
     set file(het), file(imiss) from plot1_het_ch
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-    file(pairs) into report["misshet"]
+    file(output) into report["misshet"]
   script:
-    base = imiss.baseName
+    base = imiss.baseName+".pdf"
     pairs   = "${base}-imiss-vs-het.pdf"
     meanhet = "${base}-meanhet_plot.pdf"
-    template "miss_het_plot_qcplink.R"
+    template "missHetPlot.py"
 }
 
 

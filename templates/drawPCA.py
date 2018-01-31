@@ -53,7 +53,7 @@ col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 
 
 def draw(pc1,pc2,evecs,labels,the_colours):
-   fig = plt.figure(figsize=(10,10))
+   fig = plt.figure(figsize=(12,12))
    fig, ax = plt.subplots()
    locator = MaxNLocator(nbins=5) 
    ax.xaxis.set_major_locator(locator)
@@ -63,14 +63,12 @@ def draw(pc1,pc2,evecs,labels,the_colours):
    classes=[]
    for (i,label) in labels:
       recs.append(mpatches.Rectangle((0,0),1,1,fc=colour_choices[i]))
-      classes.append(label
-)
+      classes.append(label)
    plt.legend(recs,classes,loc=4)
    plt.xlabel("PC1 (variation %4.1f %%)"%pc1)
    plt.ylabel("PC2 (variation %4.1f %%)"%pc2)
    plt.tight_layout()
    plt.savefig(args.output,type="pdf")
-
 
 
 

@@ -207,7 +207,7 @@ contamination, lower may indicate inbreeding. However, each set of
 data must be treated on its own merits and the analyst must apply
 their mind the problem. Missingness should be low.
 
-*-ourfig{fig:missvhet}{Missingness versus heterozygosity: the lines show the mean heterozygosity plus/minus standard deviations.}{{%(missingvhetpdf)s}}
+*-ourfig{fig:missvhet}{Missingness versus heterozygosity: the lines show the mean heterozygosity plus/minus standard deviations (the brighter the colours, the greater the density). If there is zero missingness, only heterozygosity is shown in a violin  plot.}{{%(missingvhetpdf)s}}
 
 Individuals out of range heterozygosity were removed. Any indviduals with heterozygosity:
 
@@ -226,7 +226,7 @@ Overall %(numhetrem)s individuals were removed. These individuals, if any, can b
 *-section{Minor Allele Frequency Spread}
 
 Figure~*-ref{fig:maf} shows the cumulative distribution of minor
-allele frequency in the data *-textbf{after} quality control (the figures shown in Section *-ref{sec:phasezero} show the MAF before QC. The MAF cut-off should be chosen high enough that one is sure that the variants seen are real (so this would depend on the size of the sample and the quality of the genotyping and whether some of the data is imputed). In this analysis the cut off was ${params.cut_maf}. Again, note that the *-emph{minor} allele is dtermined with respect to the frequency spectrum in this data -- `minor' is not synonym for alternate or non-reference allele, or the allele that has minor frequency in some other data set. Under this definition the MAF is always ##*-leq 0.5##.
+allele frequency in the data *-textbf{after} quality control (the figures shown in Section *-ref{sec:phasezero} show the MAF before QC. The MAF cut-off should be chosen high enough that one is sure that the variants seen are real (so this would depend on the size of the sample and the quality of the genotyping and whether some of the data is imputed). In this analysis the cut off was ${params.cut_maf}. Again, note that the *-emph{minor} allele is determined with respect to the frequency spectrum in this data -- `minor' is not synonym for alternate or non-reference allele, or the allele that has minor frequency in some other data set. Under this definition the MAF is always ##*-leq 0.5##.
 
 
 *-ourfig{fig:maf}{Minor allele frequency distribution}{{%(mafpdf)s}}
