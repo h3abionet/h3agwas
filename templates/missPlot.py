@@ -7,6 +7,7 @@ import sys
 from matplotlib import use
 use('Agg')
 import argparse
+import matplotlib
 import matplotlib.pyplot as plt
 import sys
 
@@ -24,14 +25,17 @@ args = parseArguments()
 
 data = pd.read_csv(args.input,delim_whitespace=True)
 
+fig = plt.figure(figsize=(17,14))
 fig,ax = plt.subplots()
+matplotlib.rcParams['ytick.labelsize']=13
+matplotlib.rcParams['xtick.labelsize']=13
 miss = data["F_MISS"]
 big = min(miss.mean()+2*miss.std(),miss.nlargest(4).iloc[3])
 miss = np.sort(miss[miss<big])
 n = np.arange(1,len(miss)+1) / np.float(len(miss))
 ax.step(miss,n)
-ax.set_xlabel("Missingness")
-ax.set_ylabel("Proportion of %s"%args.label)
-ax.set_title("Cumulative proportion of  %s with given missingness"%args.label)
+ax.set_xlabel("Missingness",fontsize=14)
+ax.set_ylabel("Proportion of %s"%args.label,fontsize=14)
+ax.set_title("Cumulative proportion of  %s with given missingness"%args.label,fontsize=16)
 fig.tight_layout()
 plt.savefig(args.output)

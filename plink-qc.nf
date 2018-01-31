@@ -552,9 +552,8 @@ process generateMissHetPlot {
   output:
     file(output) into report["misshet"]
   script:
-    base = imiss.baseName+".pdf"
+    base = imiss.baseName
     output  = "${base}-imiss-vs-het.pdf"
-    meanhet = "${base}-meanhet_plot.pdf"
     template "missHetPlot.py"
 }
 
@@ -632,7 +631,7 @@ process generateDifferentialMissingnessPlot {
        input = clean_missing
        base  = clean_missing.baseName
        output= "${base}-diff-snpmiss_plot.pdf"
-       template "diffmiss_splot_qcplink.R"
+       template "diffMiss.py"
 
  }
 
@@ -697,15 +696,15 @@ process calculateMaf {
 process generateMafPlot {
   memory other_mem_req
   input:
-    file frqfile from maf_plot_ch
+    file input from maf_plot_ch
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-    file(ofname) into report["mafpdf"]
+    file(output) into report["mafpdf"]
 
   script:
-    base    = frqfile.baseName
-    ofname  = "${base}-maf_plot.pdf"
-    template "maf_plot_qcplink.R"
+    base    = input.baseName
+    output  = "${base}-maf_plot.pdf"
+    template "mafplot.py"
 }
 
 
@@ -740,7 +739,7 @@ process generateHwePlot {
     input  = unaff
     base   = unaff.baseName
     output = "${base}-hwe_plot.pdf"
-    template "hwe_plot_qcplink.R"
+    template "hweplot.py"
 }
 
 

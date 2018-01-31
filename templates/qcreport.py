@@ -246,7 +246,7 @@ many SNPs with very highly significant p-values are found, great care
 should be taken. Figure~*-ref{fig:diffP} plots the differences between
 cases and controls, showing the SNP-wise p-value, unadjusted for multiple testing
 
-*-ourfig{fig:diffP}{The plot shows for each (log) level of significance, the number of SNPs with that p-value}{{$diffmisspdf}}
+*-ourfig{fig:diffP}{The plot shows differential missingness for each (log) level of significance, the number of SNPs with  p-value of at least this significance. The flatter the better.}{$diffmisspdf}
 
 For removal of SNPs, we compute the p-value adjusted for multiple testing, by performing permutation testing (1000 rounds) using the PLINK mperm maxT option.
 SNPs are removed from the data set if their adjusted (EMP2) differential missingness p-value is less than ${params.cut_diff_miss}. The SNPs that are removed can be

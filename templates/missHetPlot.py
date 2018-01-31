@@ -34,8 +34,13 @@ imiss  = pd.read_csv(args.imiss,delim_whitespace=True,usecols=["FID","IID","F_MI
 het    = pd.read_csv(args.het,delim_whitespace=True,index_col=["FID","IID"])
 
 
-fig = plt.figure(figsize=(12,12))
-fig, ax = plt.subplots()
+
+fig, ax = plt.subplots(figsize=(8,6))
+font = {'family' : 'normal','weight' : 'bold','size'   : 14}
+matplotlib.rc('font', **font)
+matplotlib.rcParams['xtick.labelsize']=13
+matplotlib.rcParams['ytick.labelsize']=13
+matplotlib.rcParams['axes.titlesize']=16
 
 het["meanHet"] = (het["N(NM)"] - het["O(HOM)"])/het["N(NM)"]
 het["meanHet"] = np.where(np.isnan(het["meanHet"]), 0,het["meanHet"])
@@ -54,10 +59,10 @@ if not  (imiss["F_MISS"].min() == imiss["F_MISS"].max() == 0):
    dens_colsx = gaussian_kde(xy)(xy)
 
    ax.scatter(x,y,c=dens_colsx,s=1)
-   plt.title("Missingness versus heterozygosity")
-   plt.xlabel("Proportion of missing genotypes")
-   plt.ylabel("Heterozygosity rate")
-   
+   plt.title("Samples plotted by missingness versus heterozygosity")
+   plt.xlabel("Missingness genotypes",fontsize=14)
+   plt.ylabel("Heterozygosity rate",fontsize=14)
+
    ax.set_xticks([-3,-2,-1])
    ax.set_xticklabels([0.001,0.01,0.1])
    yticks=[0,0.05,0.10,0.15,0.2,0.225,0.25,0.275,0.3,0.325,0.35,0.4,0.45,0.5]
