@@ -553,7 +553,7 @@ process generateMissHetPlot {
     file(output) into report["misshet"]
   script:
     base = imiss.baseName+".pdf"
-    pairs   = "${base}-imiss-vs-het.pdf"
+    output  = "${base}-imiss-vs-het.pdf"
     meanhet = "${base}-meanhet_plot.pdf"
     template "missHetPlot.py"
 }
