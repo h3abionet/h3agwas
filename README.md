@@ -11,13 +11,15 @@ Version has been run on real data sets and works. However, not all cases have be
 
 ## Background
 
-h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney Brenner Institute](http://www.wits.ac.za/academic/research/sbimb/20747/wits_bioinformatics.html) for data quality control (QC) and basic association testing, and later refined and extended by H3ABionet. It uses Nextflow as the basis for workflow managment, and has been dockerised.
+h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney Brenner Institutel for Molecular Bioscience](http://www.wits.ac.za/academic/research/sbimb/20747/wits_bioinformatics.html) for data quality control (QC) and basic association testing, and later refined and extended by H3ABionet. It uses Nextflow as the basis for workflow managment, and has been dockerised.
 
 The original version of the h3aGWAS was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.  
 
-There is one feature of the original workflow that has been omitted. Version 1 supported parallel GWAS anaysis of different data files in one Nextflow run. This has been removed. Although, not unuseful, this feature complicated the implementation and made expansion more difficulkt and also this capacity can be simulated easily at the operating system level (see the Wiki).
+There is one feature of the original workflow that has been omitted. Version 1 supported parallel GWAS anaysis of different data files in one Nextflow run. This has been removed. Although, not unuseful, this feature complicated the implementation and made expansion more difficulkt and also this capacity can be simulated easily at the operating system level.
 
-We have moved all scripts from Python 2 to Python 3, so you will need to have Python 3 installed.  R and Perl are no longer needed
+We have moved all scripts from Python 2 to Python 3, so you will need to have Python 3 installed.  
+
+_Please ignore the Wiki in this version which refers to version 1_
 
 
 ## Outline of documentation
