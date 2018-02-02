@@ -51,21 +51,26 @@ public class H3agwasConfig {
         String var_name,def_val, use_val;
         FileInputStream f = new FileInputStream(conffile.toString());
         rows = new XSSFWorkbook(f).getSheetAt(0).rowIterator();
+        System.out.println("params { ");
         while (rows.hasNext()) {
             row = rows.next();
             if (row.getCell(0).getStringCellValue().charAt(0)=='#') {
-                 System.out.println();
+                 if (row.getCell(0).getStringCellValue().equals("#Options for Amazon EC2")) 
+                     System.out.println("}\n\n\ncloud {");
+                 else 
+                     System.out.println();
                  continue;
             }
             var_name = row.getCell(1).getStringCellValue();
             def_val  = row.getCell(2) != null ? row.getCell(2).getStringCellValue() :  "";
             use_val  = (row.getCell(4) != null) ? row.getCell(4).getStringCellValue() : "";
             if (use_val.length() == 0 ) use_val = def_val;
-            if (!(use_val.matches("^[+-]?\\d+\\.?\\d*$"))) 
+            if (!(use_val.matches("^[+-]?\\d+\\.?\\d*$") || use_val.equals("true") || use_val.equals("false"))) 
                 use_val = String.format("\"%s\"", use_val);
             //harg.put(var_name, use_val);
-            System.out.println(String.format("%-20s = %s",var_name, use_val));
+            System.out.println(String.format("    %-20s = %s",var_name, use_val));
         }     
+        System.out.println("}");
     }
     /**
      * @param args the command line arguments
