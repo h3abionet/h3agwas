@@ -636,6 +636,9 @@ You need to edit this part of the _singularity_ stanza
 The two image variables should be set to where you have put your singularity images. The `process.executor` variabel should be set to `local` if you want to run the workflow on the local computer, and to `pbs` if on a cluster using PBS. In the latter case, you should also set the queue variable appropriatelly.
 
 
+## Run the workflow
+
+`nextflow run plink-qc.nf --profile singularity`
 
 
 ## 8.5 Other container services
