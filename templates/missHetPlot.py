@@ -52,7 +52,7 @@ y=het["meanHet"]
 #NOTE: IF F_MISS IS ZERO THEN WE ONLY PLOT MEAN HETEROZYGOSITY
 if not  (imiss["F_MISS"].min() == imiss["F_MISS"].max() == 0):
    imiss["CALL_RATE"]= 1-imiss["F_MISS"]
-   imiss["logF_MISS"] = np.log10(imiss["F_MISS"])
+   imiss["logF_MISS"] = np.where(imiss["F_MISS"]==0,0.00000001,np.log10(imiss["F_MISS"]))
    comb = het.merge(imiss,left_index=True,right_index=True)
    x  = imiss["logF_MISS"]
    xy = np.vstack([x,y])

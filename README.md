@@ -1,13 +1,15 @@
 # h3agwas: version 2
 
 
+
+This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
+* it is not robust when X chromosome data is not available
+* the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
+* we haven't tested fully with Singularity
+
 The previous version 1 stable branch was commit bfd8c5a
 (https://github.com/h3abionet/h3agwas/commit/bfd8c5a51ef85481e5590b8dfb3d46b5dd0cc77a)
 
-Version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
-* it is not robust when X chromosome data is not available
-* the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
-* we haven't tested with Singularity
 
 ## Background
 
@@ -108,7 +110,10 @@ A GWAS requires several software tools to be installed. Using Docker we can simp
 
 We expect that many of our users will use Docker. However, we recognise that this won't be suitable for everyone because many high performance computing centres do not support Docker for security reasons. It is possible to run our pipeline without Docker and will give  instructions about which software needs to be installed.
 
-In a later version of the pipeline, we hope to support Singularity.
+### Singularity
+
+The pipeline should support singularity. This is currently experimental though we hope to support it fully as a first-class citizen in the next release. We have run it through on a data set but we haven't tested all options and workflows.
+
 
 # 2. Installing h3aGWAS
 
@@ -578,6 +583,60 @@ We have tested our workflow on different Docker Swarms. How to set up Docker Swa
 ```
 nextflow run plink-qc.nf -profile dockerSwarm
 ```
+
+## 8.5 Singularity
+
+The workflows run on Singularity thought this is currently experimental and we haven't  tried and tested all options. We don't have first class support for Singularity yet, so you will have do some PT but it's not too bad.
+
+### Get the Singularity images
+
+You need to make get the Singularity images for the workflow you want. There are two options
+
+* running `docker2singularity` (https://github.com/singularityware/docker2singularity)
+
+This is a good option for people who have a computer with docker running (e.g., their desktop) and will then move the Singularity container to another computer which doesn't run cluster.
+
+An example run would be to create a directory _singularity_ somewhere and then run the _docker2singularity_ workflow. The singularity image will be put in the specified directory. For example, I did:
+
+```
+  docker run -v /var/run/docker.sock:/var/run/docker.sock  \  
+           -v  /Users/scott/singularity:/output --privileged -t --rm  \
+           singularityware/docker2singularity quay.io/h3abionet_org/py3plink 
+  docker run -v /var/run/docker.sock:/var/run/docker.sock  \  
+             -v  /Users/scott/singularity:/output --privileged -t --rm  \
+             singularityware/docker2singularity quay.io/h3abionet_org/h3agwas-texlive
+```
+
+* Using `singularity pull`
+
+This is easier, but the images are bigger
+
+```
+singularity pull --size 1880  docker://quay.io/h3abionet_org/py3plink 
+singularity pull --size 1880  docker://quay.io/h3abionet_org/h3agwas-texlive
+
+```
+
+### Copy the images
+
+Move the images to the system you want to run the workflow on. If you're on a cluster, then this must be on a system-wide  file system
+
+### Edit the nextflow.config file
+
+You need to edit this part of the _singularity_ stanza
+
+```
+        sg_py3Image = "/home/scott/py3plink.img"
+        sg_latexImage = "/home/scott/h3agwas-texlive.img"
+
+        process.executor = 'pbs'
+        process.queue = 'batch'
+```
+
+The two image variables should be set to where you have put your singularity images. The `process.executor` variabel should be set to `local` if you want to run the workflow on the local computer, and to `pbs` if on a cluster using PBS. In the latter case, you should also set the queue variable appropriatelly.
+
+
+
 
 ## 8.5 Other container services
 
