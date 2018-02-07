@@ -11,7 +11,7 @@ import numpy as np
 import argparse
 import sys
 
-colour_choices=["black","magenta","darkcyan","red","blue","orange"]
+colour_choices=["black","magenta","darkcyan","red","blue","orange","aqua","beige","chartreuse","darkblue","gold","indigo","ivory","olive","sienna","wheat","salmon","orangered","silver","tan","grey","lightblue","violet","yellow","turquoise", "yellowgreen","khaki","goldenrod","aquamarine","azure","brown","crimson","fuchsia"]
 
 def parseArguments():
    if len(sys.argv)<=1:
@@ -34,12 +34,16 @@ def getColours():
     if len(args.cc_fname)==0:
         return [], "black"
     phe = pd.read_csv(args.cc,delim_whitespace=True)
+    all_labels = phe[args.column].unique()
+    all_labels.sort()
+    colours = colour_choices
+    while len(all_labels) > len(colours):
+       colours=colours+colour_choices
+    the_colour_choices = dict(zip(all_labels,colours[:len(all_labels)]))
     def our_colour(x):
-        return colour_choices[x[args.column]]
+        return the_colour_choices[x[args.column]]
     the_colours = phe.apply(our_colour,axis=1)
-    options = ["missing","control","case"]
-    # There may be no missing items
-    return list(enumerate(options))[phe[args.column].min():], the_colours
+    return list(enumerate(all_labels)), the_colours
 
 
 def getEigens():
