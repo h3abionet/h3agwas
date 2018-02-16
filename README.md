@@ -13,7 +13,10 @@ The previous version 1 stable branch was commit bfd8c5a
 
 ## Background
 
-h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney Brenner Institutel for Molecular Bioscience](http://www.wits.ac.za/academic/research/sbimb/20747/wits_bioinformatics.html) for data quality control (QC) and basic association testing, and later refined and extended by H3ABionet. It uses Nextflow as the basis for workflow managment, and has been dockerised.
+h3aGWAS is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). h3aGWAS uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
+
+
+<!--- h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney Brenner Institutel for Molecular Bioscience](http://www.wits.ac.za/academic/research/sbimb/20747/wits_bioinformatics.html) for data quality control (QC) and basic association testing, and later refined and extended by H3ABionet. It uses Nextflow as the basis for workflow managment, and has been dockerised. -->
 
 The original version of the h3aGWAS was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.  
 
