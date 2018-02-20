@@ -171,7 +171,7 @@ if len(sys.argv) == 1:
 
 
 args = parseArguments()
-if args.idpat in [0,"0","",False,"false","FALSE",false]:
+if args.idpat in [0,"0","",False,"false","FALSE"]:
     args.idpat=("(.*)")
 
 

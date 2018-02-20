@@ -149,7 +149,7 @@ This requires a standard Linux installation or macOS. It requires _bash_ to be a
 
 The following code needs to be installed and placed in a directory on the user's PATH.
 
-* plink 1.9
+* plink 1.9 [Currently, it will not work on plink 2, though it is on our list of things to fix. It probably will work on plink 1.05 but just use plink 1.0]
 * R (3.3 or later)
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
 * python 3.4 or later. pandas, numpy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc

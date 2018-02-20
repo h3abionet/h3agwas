@@ -21,7 +21,8 @@ PIDS = ['FID','IID']
  
 def getFam(famf):
    fam =  pd.read_csv(famf,delim_whitespace=True,header=None,\
-                             names=["FID","IID","FAT","MAT","SEX","PHE"])
+                             names=["FID","IID","FAT","MAT","SEX","PHE"],\
+                             dtype={"FAT":str,"MAT":str,"SEX":str, "PHE":str,"FID":str,"IID":str})
    old = ['OFID','OIID']
    fam['OFID']=fam['FID']
    fam['OIID']=fam['IID']
@@ -39,33 +40,44 @@ def getSmplLbl(data):
 args = parseArguments()
 oldfam,fam = getFam(args.oldfam)
 
-orig = pd.read_excel(args.samplesheet)
+orig = pd.read_excel(args.samplesheet,dtype={"Institute Sample Label":str})
 orig.set_index(["Institute Plate Label","Well"],inplace=True)
 orig['PID']=orig.apply(getSmplLbl,axis=1)
-update = pd.read_excel(args.updatesheet,skiprows=3)
-count=0
+
+
+def performUpdate(g,h, sheet):
+    update = pd.read_excel(sheet,skiprows=3)
+    count=0
+    for i, row in update.iterrows():
+        if "IlluminaControl" in row["Institute Sample Label"]: continue
+        new_lbl=getSmplLbl(row)    # label in the update sheet
+        pos      = tuple(row[['Institute Plate Label','Well']].values) # where it was plate/well
+        oldid    = getSmplLbl(orig.loc[pos])  # What that plate/well was labelled as originally
+        if oldid != new_lbl:  # If there's a change
+            h.write("%s  -> %s \n"%(oldid,new_lbl))
+            count=count+1
+            # Was this in the original FAM file
+            if oldfam.index.contains((oldid,oldid)):
+                fam.loc[(oldid,oldid),["FID","IID"]]   = new_lbl
+                for col in ["FAT","MAT","SEX","PHE"]:
+                    if oldfam.index.contains((new_lbl,new_lbl)):
+                        value = oldfam.loc[(new_lbl,new_lbl),col]
+                    else:
+                        value="0"
+                    if type(value) != str:
+                        value = value.values[0]
+                    fam.loc[(oldid,oldid),col]   = value
+            else:
+                g.write(new_lbl+" unknown in original fam file "+EOL)
+                continue
+        if "unknown" in row["Institute Sample Label"]: 
+           g.write("unknown label at %s (%s %s  %s)"%(pos,oldid,new_lbl,fam.loc[(oldid,oldid)]['IID']))
+
+
 g=open("%s.errs"%args.output,"w")
 h=open("%s.switch"%args.output,"w")
-
-for i, row in update.iterrows():
-    if "IlluminaControl" in row["Institute Sample Label"]: continue
-    new_lbl=getSmplLbl(row)
-    pos      = tuple(row[['Institute Plate Label','Well']].values)
-    oldid    = getSmplLbl(orig.loc[pos])
-    if oldid != new_lbl:
-        h.write("%s  -> %s \n"%(oldid,new_lbl))
-        count=count+1
-        if fam.index.contains((new_lbl,new_lbl)):
-            fam.loc[(oldid,oldid),["FID","IID"]]   = new_lbl
-            fam.loc[(oldid,oldid),["FAT","MAT","SEX","PHE"]]   = oldfam.loc[(new_lbl,new_lbl),["FAT","MAT","SEX", "PHE"]]
-        else:
-            g.write(new_lbl+EOL)
-            continue
-    if "unknown" in row["Institute Sample Label"]: 
-        print("Pos=<%s>; Old =<%s>; New=<%s>"%(pos,oldid,new_lbl))
-        print(fam.loc[(oldid,oldid)]['IID'])
-
-
+for sheet in args.updatesheet.split(","):
+    performUpdate(g,h,sheet)
 g.close()    
 h.close()
 all_ids = fam[PIDS].to_records(index=False).tolist()
@@ -73,7 +85,8 @@ uniq =set([])
 orig.set_index('PID',inplace=True)
 for x in all_ids:
     if x in uniq:
-        print("Duplicated element ",x[0],orig.loc[x[0],"Institute Sample Label"])
+        print("Duplicated element ",x[0])
+        pass
     else:
         uniq.add(x)
 
