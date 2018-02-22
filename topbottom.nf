@@ -37,7 +37,10 @@ ref_ch      = condChannel(params.reference,"ref")
 manifest_ch = condChannel(params.manifest,"man")
 strand_ch   = condChannel(params.strandreport,"strn")
 
+ref1_ch = Channel.create()
+ref2_ch = Channel.create()
 
+ref_ch.separate(ref1_ch, ref2_ch) { a -> [a, a] }
 
 
 
@@ -73,7 +76,7 @@ def gChrom= { x ->
 	idpat      = params.idpat
         output = report.baseName
         template "topbot2plink.py"
-  }
+ }
 
 
 
@@ -128,10 +131,25 @@ def gChrom= { x ->
  }
 
 
+
+ process checkReferenceFormat {
+
+   input:
+     file(ref) from ref1_ch
+   output:
+     stdout       into ref_parm_ch
+   script:
+      refBase = ref.baseName
+      newref = "${refBase}.new"
+      "checkRef.py  $ref $newref"
+   }
+
+
  process alignStrand {
    input:
     set file(bed), file(bim), file(fam), file(logfile) from plink_src
-    file(ref) from ref_ch
+    file(ref) from ref2_ch
+    val(ref_parm) from ref_parm_ch
     file(flips) from flip_ch
     publishDir params.output_dir, pattern: "*.{bed,bim,log,badsnps}", \
         overwrite:true, mode:'copy'
@@ -140,7 +158,8 @@ def gChrom= { x ->
    script:
     base = bed.baseName
     refBase = ref.baseName
-    opt = "--a2-allele $ref"
+    ref_parm = ref_parm.trim()
+    opt = "--a2-allele $ref $ref_parm"
     if (refBase=="empty") opt="--keep-allele-order"
     """
     plink --bfile $base $opt --flip $flips --make-bed --out $output

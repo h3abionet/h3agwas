@@ -144,7 +144,6 @@ def parseChipReport(snp_elt,array,fname,output):
         sample_id = getID(idreg,fields[samp_i])
         if sample_id != old_sample_id:
             if num > args.samplesize >  0:
-                generate_line(pedf,old_sample_id,output)
                 pedf.close()
                 return
             if old_sample_id!=("xxx",""):

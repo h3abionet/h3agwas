@@ -18,6 +18,16 @@ def parseArguments():
 
 EOL=chr(10)
 PIDS = ['FID','IID']
+
+
+def sex_code(x):
+    if x in  ["Male","M"]:
+        return "1"
+    elif x in  ["Female","F"]:
+        return "2"
+    else:
+        return "0"
+
  
 def getFam(famf):
    fam =  pd.read_csv(famf,delim_whitespace=True,header=None,\
@@ -47,6 +57,11 @@ orig['PID']=orig.apply(getSmplLbl,axis=1)
 
 def performUpdate(g,h, sheet):
     update = pd.read_excel(sheet,skiprows=3)
+    m = re.search(r"batch(\d+)",sheet)
+    if m:
+        bnumber = m.group(1)
+    else:
+        sys.exit("Can't get batch number in file name")
     count=0
     for i, row in update.iterrows():
         if "IlluminaControl" in row["Institute Sample Label"]: continue
@@ -59,16 +74,20 @@ def performUpdate(g,h, sheet):
             # Was this in the original FAM file
             if oldfam.index.contains((oldid,oldid)):
                 fam.loc[(oldid,oldid),["FID","IID"]]   = new_lbl
-                for col in ["FAT","MAT","SEX","PHE"]:
-                    if oldfam.index.contains((new_lbl,new_lbl)):
+                if oldfam.index.contains((new_lbl,new_lbl)):
+                    if new_lbl  == "BFW0K": print (1,oldid,new_lbl)
+                    for col in ["FAT","MAT","SEX","PHE"]:
                         value = oldfam.loc[(new_lbl,new_lbl),col]
-                    else:
-                        value="0"
-                    if type(value) != str:
-                        value = value.values[0]
-                    fam.loc[(oldid,oldid),col]   = value
+                        if type(value) != str:
+                            value = value.values[0]
+                        fam.loc[(oldid,oldid),col]   = value
+                else:
+                    fam.loc[(oldid,oldid),"SEX"]=sex_code(row["Sex"])
+                    fam.loc[(oldid,oldid),"MAT"]=0
+                    fam.loc[(oldid,oldid),"FAT"]=0
+                    fam.loc[(oldid,oldid),"PHE"]=bnumber
             else:
-                g.write(new_lbl+" unknown in original fam file "+EOL)
+                g.write(oldid+" unknown in original fam file "+EOL)
                 continue
         if "unknown" in row["Institute Sample Label"]: 
            g.write("unknown label at %s (%s %s  %s)"%(pos,oldid,new_lbl,fam.loc[(oldid,oldid)]['IID']))
