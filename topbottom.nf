@@ -168,7 +168,8 @@ def gChrom= { x ->
 
  process alignStrand {
    input:
-    set file(bed), file(bim), file(fam), file(logfile) from plink_src
+    set file(bed), file(fam), file(logfile) from plink_src
+    file(bim) from filled_bim_ch
     file(ref) from ref2_ch
     val(ref_parm) from ref_parm_ch
     file(flips) from flip_ch
