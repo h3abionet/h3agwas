@@ -34,8 +34,16 @@ def condChannel = { parm, descr ->
 
 
 ref_ch      = condChannel(params.reference,"ref")
-manifest_ch = condChannel(params.manifest,"man")
-strand_ch   = condChannel(params.strandreport,"strn")
+manifest_src_ch = condChannel(params.manifest,"man")
+strand_src_ch   = condChannel(params.strandreport,"strn")
+
+manifest_ch = Channel.create()
+manifest1_ch = Channel.create()
+manifest_src_ch.separate(manifest_ch,manifest1_ch)
+
+strand_ch = Channel.create()
+strand1_ch = Channel.create()
+strand_src_ch.separate(strand_ch,strand1_ch) {a -> [a,a]}
 
 ref1_ch = Channel.create()
 ref2_ch = Channel.create()
@@ -106,7 +114,8 @@ def gChrom= { x ->
      file(bim) from bim_ch.toList()
      file(fam) from fam_ch.toList()
    output:
-     set file("raw.bed"), file("raw.bim"), file("raw.fam"), file("raw.log") into plink_src
+     set file("raw.bed"), file("raw.fam"), file("raw.log") into plink_src
+     set file("rawraw.bim") into fill_in_bim_ch
      file ('raw.fam') into fix_fam_ch
    script:
     """
@@ -115,8 +124,20 @@ def gChrom= { x ->
     ls *.fam | sort >  fams
     paste beds bims fams >  mergelist
     plink --merge-list mergelist --make-bed --out raw
+    mv raw.bim rawraw.bim
     """
  } 
+
+  process fillInBim {  //  Deals with monomorphic or non-called SNPs
+    input:
+     file(inbim) from fill_in_bim_ch
+     file(strand) from strand1_ch
+     file(manifest) from manifest1_ch
+    output:
+     file("raw.bim") into filled_bim_ch
+    script:
+       "fill_in_bim.py $strand $manifest $inbim  raw.bim"
+  }
 
 
  process getFlips {
