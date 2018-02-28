@@ -19,7 +19,7 @@ template = """
 *-paragraph*{Minor allele frequency.} Table *-ref{tab:initmafspec} on page *-pageref{tab:initmafspec} shows the minor allele frequency spectrum for the raw data. The number of monomorphic SNPs is shown in the first row. Note that some of the MAFs with very low MAF are actually monomorphic, with the polymorphisms due to genotyping error. Figure *-ref{fig:initmafspec} on page *-pageref{fig:initmafspec} shows the cumulative distribution of MAF.  This can be used to determine an appropriate MAF cut-off.
 
 
-Note that the *-emph{minor} allele is determined with respect to the frequency spectrum inthis data -- `minor' is not synonym for alternate or non-reference allele, or the allele that has minor frequency in some other data set. Under this definition the MAF is always ##*-leq 0.5##.
+Note that the *-emph{minor} allele is determined with respect to the frequency spectrum in this data -- `minor' is not synonym for alternate or non-reference allele, or the allele that has minor frequency in some other data set. Under this definition the MAF is always ##*-leq 0.5##.
 
 
 *-begin{table}[htb]*-centering
@@ -30,7 +30,7 @@ Note that the *-emph{minor} allele is determined with respect to the frequency s
 
 *-begin{figure}[htb]*-centering
 *-includegraphics[width=10cm]{%s}
-*-caption{Cumulative frequency of SNPs. For a frequency shown on the ##x##-axis, the corresponding ##y##-value shows the proportion of SNPs with frequency *-emph{at least this frequency}; that is, it shows the proportion of SNPs which will *-emph{remain} if the MAF filter of this ##x##-value is chosne.}
+*-caption{Cumulative frequency of SNPs. For a frequency shown on the ##x##-axis, the corresponding ##y##-value shows the proportion of SNPs with frequency *-emph{at least this frequency}; that is, it shows the proportion of SNPs which will *-emph{remain} if the MAF filter of this ##x##-value is chosen.}
 *-label{fig:initmafspec}
 *-end{figure}
 """

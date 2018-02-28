@@ -147,7 +147,7 @@ The pipeline takes an incremental approach to QC, trading extra
 computation time in order to achieve high quality while removing as
 few data as possible. Rather than applying all cut-offs at once, we
 incrementally apply cutoffs (for example, removing really badly
-genotyped SNPs before checking for heterozygosity wil result in fewer individuals
+genotyped SNPs before checking for heterozygosity will result in fewer individuals
 failing heterozygosity checks).
 
 
@@ -324,9 +324,6 @@ ${workflow.commandLine}
 
 *-begin{itemize}
 *-item Chang  CC, Chow CC, Tellier LC, Vattikuti S, Purcell SM, and Lee JJ. (2015). Second-generation PLINK: rising to the challenge of larger and richer datasets. *-emph{GigaScience}, 4(1), 1-16. *-url{http://doi.org/10.1186/s13742-015-0047-8}
-*-item R Core Team (2016). *-emph{R: A language and environment for statistical
-  computing}. R Foundation for Statistical Computing, Vienna, Austria.
-  *-url{https://www.R-project.org/}
 *-item Di Tommaso P, Chatzou M, Prieto Barja P, Palumbo P, Notredame C. Nextflow enables reproducible computational workflows. *-emph{Nature Biotechnology}, 35, 316-319, 2017. Nextflow can be downloaded from *-url{https://www.nextflow.io/}
 *-end{itemize}
 
