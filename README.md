@@ -1,6 +1,6 @@
 # h3agwas: version 2
 
-<img src="aux/H3ABioNetlogo2.tif"/>
+<img src="aux/H3ABioNetlogo2.jpg"/>
 
 This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
 * it is not robust when X chromosome data is not available
