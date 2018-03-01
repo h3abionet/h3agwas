@@ -38,9 +38,9 @@ def getDegrees(remove):
 
 
 
+remove = list(map (tuple,genomef[genomef['PI_HAT']>super_pi_hat][["FID1","IID1"]].to_records(index=False)))\
+         + list(map(tuple,genomef[genomef['PI_HAT']>super_pi_hat][["FID2","IID2"]].to_records(index=False)))
 
-remove = genomef[genomef['PI_HAT']>super_pi_hat][["FID1","IID1"]].to_records(index=False) + \
-         genomef[genomef['PI_HAT']>super_pi_hat][["FID2","IID2"]].to_records(index=False)
 
 rel, deg = getDegrees(remove) 
 
