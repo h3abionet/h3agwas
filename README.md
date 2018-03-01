@@ -15,7 +15,6 @@ h3aGWAS is a simple human GWAS analysis workflow for data quality control (QC) a
 
 The original version of the h3aGWAS was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.  
 
-There is one feature of the original workflow that has been omitted. Version 1 supported parallel GWAS anaysis of different data files in one Nextflow run. This has been removed. Although, not unuseful, this feature complicated the implementation and made expansion more difficulkt and also this capacity can be simulated easily at the operating system level.
 
 We have moved all scripts from Python 2 to Python 3, so you will need to have Python 3 installed.  
 
@@ -30,6 +29,9 @@ This version has been run on real data sets and works. However, not all cases ha
 The previous version 1 stable branch was commit bfd8c5a
 (https://github.com/h3abionet/h3agwas/commit/bfd8c5a51ef85481e5590b8dfb3d46b5dd0cc77a)
 
+There is one feature of the original workflow that has been omitted. Version 1 supported parallel GWAS anaysis of different data files in one Nextflow run. This has been removed. Although, not unuseful, this feature complicated the implementation and made expansion more difficulkt and also this capacity can be simulated easily at the operating system level.
+
+The previous version has dependancies on Perl and R, which have been removed.
 
 ## Outline of documentation
 
@@ -157,16 +159,9 @@ This requires a standard Linux installation or macOS. It requires _bash_ to be a
 The following code needs to be installed and placed in a directory on the user's PATH.
 
 * plink 1.9 [Currently, it will not work on plink 2, though it is on our list of things to fix. It probably will work on plink 1.05 but just use plink 1.0]
-* R (3.3 or later)
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
 * python 3.4 or later. pandas, numpy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
-* Perl 5.10 or later. You need to install several BioPerl libraries
 
-   ```cpan install Bio::DB::Fasta
-         cpan install Bio::DB::Fasta
-         cpan install Text::LevenshteinXS
-         cpan install Data::Printer
-    ```
 If you want to run the `plink-assoc.nf` pipeline then you should install emmax and gemma if you are using those options.
 
 # 3. Quick start example
@@ -799,7 +794,7 @@ Then the new fam file has the AAAAA entry replaced with the BBBBB entry
 
 Three files are output: a fam file, an error file (the IDs of individuals who are in th e sample sheet but not the fam file are output), and a switch file (containing all the changes that were made). Some problems like duplicate entries are detected.
 
-# 9.2 getRunsTimes.pl (By Harry Noyes)
+## 9.2 getRunsTimes.pl (By Harry Noyes)
 
 Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
 
