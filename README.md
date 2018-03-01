@@ -1,14 +1,9 @@
-# h3agwas: version 2
+
 
 <img src="aux/H3ABioNetlogo2.jpg"/>
 
-This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
-* it is not robust when X chromosome data is not available
-* the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
-* we haven't tested fully with Singularity
+# h3agwas Pipeline Version 2
 
-The previous version 1 stable branch was commit bfd8c5a
-(https://github.com/h3abionet/h3agwas/commit/bfd8c5a51ef85481e5590b8dfb3d46b5dd0cc77a)
 
 
 ## Background
@@ -25,6 +20,15 @@ There is one feature of the original workflow that has been omitted. Version 1 s
 We have moved all scripts from Python 2 to Python 3, so you will need to have Python 3 installed.  
 
 _Please ignore the Wiki in this version which refers to version 1_
+
+### Restrictions
+This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
+* it is not robust when X chromosome data is not available
+* the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
+* we haven't tested fully with Singularity
+
+The previous version 1 stable branch was commit bfd8c5a
+(https://github.com/h3abionet/h3agwas/commit/bfd8c5a51ef85481e5590b8dfb3d46b5dd0cc77a)
 
 
 ## Outline of documentation
