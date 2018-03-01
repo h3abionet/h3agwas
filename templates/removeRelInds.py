@@ -14,7 +14,7 @@ imissf = pd.read_csv(sys.argv[1],delim_whitespace=True,index_col=["FID","IID"])
 genomef = pd.read_csv(sys.argv[2],delim_whitespace=True,usecols=["FID1","IID1","FID2","IID2","PI_HAT"])
 
 outf   =open(sys.argv[3],"w")
-super_pi_hat = float(sys.argv[3])
+super_pi_hat = float(sys.argv[4])
 
 def getDegrees(remove):
    elts = set(imissf.index.values)
