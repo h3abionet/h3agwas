@@ -5,7 +5,7 @@ import pandas as pd
 import sys
 
 if len(sys.argv)<=1:
-    sys.argv=["removeRelInds.py","$missing","$ibd_genome","$outfname"]
+    sys.argv=["removeRelInds.py","$missing","$ibd_genome","$outfname","$super_pi_hat"]
 
 
 EOL=chr(10)
@@ -14,9 +14,9 @@ imissf = pd.read_csv(sys.argv[1],delim_whitespace=True,index_col=["FID","IID"])
 genomef = pd.read_csv(sys.argv[2],delim_whitespace=True,usecols=["FID1","IID1","FID2","IID2","PI_HAT"])
 
 outf   =open(sys.argv[3],"w")
+super_pi_hat = sys.argv[3]
 
-
-def getDegrees():
+def getDegrees(remove):
    elts = set(imissf.index.values)
    degd = {}
    rel  = {}
@@ -27,6 +27,7 @@ def getDegrees():
    for i,row in genomef.iterrows():
        x=tuple(row[["FID1","IID1"]].tolist())
        y=tuple(row[["FID2","IID2"]].tolist())
+       if x in remove or y in remove : pass
        deg[x]=deg[x]+1
        deg[y]=deg[y]+1
        rel[x].append(y)
@@ -34,9 +35,15 @@ def getDegrees():
    return rel, deg
 
 
-rel, deg = getDegrees() 
 
-remove=[]
+
+
+
+remove = genomef[genome['PI_HAT']>super_pi_hat][["FID1","IID1"]].to_records(index=False) + \
+         genomef[genome['PI_HAT']>super_pi_hat][["FID2","IID2"]].to_records(index=False)
+
+rel, deg = getDegrees(remove) 
+
 candidates = deg[deg>=1].sort_values(ascending=False)
 for i,c in candidates.iteritems():
     if deg[i]>0:

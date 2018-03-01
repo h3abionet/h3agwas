@@ -66,6 +66,7 @@ max_plink_cores = params.max_plink_cores
 plink_mem_req   = params.plink_mem_req
 other_mem_req   = params.other_mem_req
 pi_hat          = params.pi_hat
+super_pi_hat    = params.super_pi_hat
 cut_diff_miss   = params.cut_diff_miss
 f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
