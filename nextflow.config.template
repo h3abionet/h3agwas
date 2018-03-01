@@ -1,5 +1,5 @@
 
-plinkImage="h3abionet_org/py3plink"
+
 py3Image = "h3abionet_org/py3plink"
 gemmaImage="h3abionet_org/h3agwas-gemma"
 latexImage="h3abionet_org/h3agwas-texlive"
@@ -61,6 +61,7 @@ params {
     cut_geno              = 0.01
     cut_hwe               = 0.008
     pi_hat                = 0.11
+    super_pi_hat 	  = 0.7
     f_lo_male             = 0.8 // default for F-sex check -- >= means male
     f_hi_female           = 0.2 //  <= means female
     case_control         = "${params.input_dir}/sample.phe"
@@ -108,44 +109,10 @@ profiles {
     pbsDocker {
 
         process.executor = 'pbs'
-
+	container = py3Image
         process.executor = 'local'
-	process.$inMD5.container = py3Image
-	process.$getDuplicateMarkers.container = py3Image
-        process.$removeDuplicateSNPs.container = plinkImage
-	process.$getX.container      = plinkImage
-	process.$analyseX.container  = py3Image
-        process.$identifyIndivDiscSexinfo.container = plinkImage
-        process.$generateSnpMissingnessPlot.container = py3Image
-        process.$generateIndivMissingnessPlot.container=py3Image
-	process.$getInitMaf.container  = plinkImage
-	process.$showInitMAF.container = py3Image
-        process.$removeQCPhase1.container = plinkImage
-        process.$compPCA.container = plinkImage
-        process.$drawPCA.container = py3Image
-        process.$pruneForIBD.container = plinkImage
-	process.$findRelatedIndiv.container  = py3Image
-        process.$calculateSampleHeterozygosity.container = plinkImage
-        process.$generateMissHetPlot.container = py3Image
-	process.$getBadIndivsMissingHet.container = py3Image
-        process.$removeQCIndivs.container = plinkImage
-        process.$calculateSnpSkewStatus.container = plinkImage
-        process.$generateDifferentialMissingnessPlot.container = py3Image
-	process.$findSnpExtremeDifferentialMissingness.container = py3Image
-        process.$removeSkewSnps.container = plinkImage
-        process.$calculateMaf.container = plinkImage
-        process.$generateMafPlot.container = py3Image
-        process.$generateHwePlot.container = py3Image
-        process.$batchProc.container = py3Image
         process.$produceReports.container  =latexImage
-
-
-        process.$illumina2lgen.container        = py3Image
-        process.$bedify.container               = py3Image
-        process.$combineBed.container          = py3Image
-        process.$getFlips.container             = py3Image
-        process.$alignStrand.container          = py3Image
-        process.$fixFam.container               = py3Image
+        process.$computeTest.container     = "$gemmaImage"
 
         docker.remove      = true
         docker.runOptions  = '--rm'
@@ -153,54 +120,18 @@ profiles {
         docker.enabled     = true
         docker.temp        = 'auto'
         docker.fixOwnership= true
-
     }
 
     // Execute pipeline with Docker locally
     docker {
-
-
         process.executor = 'local'
-	process.$inMD5.container = py3Image
-	process.$getDuplicateMarkers.container = py3Image
-        process.$removeDuplicateSNPs.container = plinkImage
-	process.$getX.container      = plinkImage
-	process.$analyseX.container  = py3Image
-        process.$identifyIndivDiscSexinfo.container = plinkImage
-        process.$generateSnpMissingnessPlot.container = py3Image
-        process.$generateIndivMissingnessPlot.container=py3Image
-	process.$getInitMaf.container  = plinkImage
-	process.$showInitMAF.container = py3Image
-        process.$removeQCPhase1.container = plinkImage
-        process.$compPCA.container = plinkImage
-        process.$drawPCA.container = py3Image
-        process.$pruneForIBD.container = plinkImage
-	process.$findRelatedIndiv.container  = py3Image
-        process.$calculateSampleHeterozygosity.container = plinkImage
-        process.$generateMissHetPlot.container = py3Image
-	process.$getBadIndivsMissingHet.container = py3Image
-        process.$removeQCIndivs.container = plinkImage
-        process.$calculateSnpSkewStatus.container = plinkImage
-        process.$generateDifferentialMissingnessPlot.container = py3Image
-	process.$findSnpExtremeDifferentialMissingness.container = py3Image
-        process.$removeSkewSnps.container = plinkImage
-        process.$calculateMaf.container = plinkImage
-        process.$generateMafPlot.container = py3Image
-        process.$generateHwePlot.container = py3Image
-        process.$batchProc.container = py3Image
+	container = py3Image
         process.$produceReports.container  =latexImage
-
-
-        process.$illumina2lgen.container        = py3Image
-        process.$bedify.container               = py3Image
-        process.$combineBed.container          = py3Image
-        process.$getFlips.container             = py3Image
-        process.$alignStrand.container          = py3Image
-        process.$fixFam.container               = py3Image
+        process.$computeTest.container     = "$gemmaImage"
 
         docker.remove      = true
         docker.runOptions  = '--rm'
-	      docker.registry    = 'quay.io'
+              docker.registry    = 'quay.io'
         docker.enabled     = true
         docker.temp        = 'auto'
         docker.fixOwnership= true
@@ -209,36 +140,13 @@ profiles {
 
     dockerpbs {
         process.executor = 'pbs'
-        process.$removeDuplicateSNPs.container = plinkImage
-        process.$identifyIndivDiscSexinfo.container = plinkImage
-        process.$calculateSampleMissing.container = plinkImage
-        process.$calculateSampleHetrozygosity.container = plinkImage
-        process.$compPCA.container = plinkImage
-        process.$pruneForIBD.container = plinkImage
-        process.$removeQCIndivs.container = plinkImage
-        process.$calculateMaf.container = plinkImage
-        process.$calculateSnpMissingness.container = plinkImage
-        process.$calculateSnpSkewStatus.container = plinkImage
-        process.$removeQCPhase1.container = plinkImage
-        process.$computePhase0.container = plinkImage
-        process.$drawPCA.container = py3Image
-        process.$generateIndivMissingnessPlot.container=py3Image
-        process.$generateMissHetPlot.container = py3Image
-        process.$generateMafPlot.container = py3Image
-        process.$generateSnpMissingnessPlot.container = py3Image
-        process.$generateDifferentialMissingnessPlot.container = py3Image
-        process.$generateHwePlot.container = py3Image
-        process.$produceReports.container  =latexImage
-        process.$lgen2ped.container        = plinkImage
-        process.$createBed.container      = plinkImage
-        process.$lgen2ped.container        = plinkImage
-        process.$flip.container            = py3Image
-        process.$computePCA.container      = plinkImage
+	container = py3Image
+        process.$produceReports.container  ="$latexImage"
         process.$computeTest.container     = "$gemmaImage"
 
         docker.remove      = true
         docker.runOptions  = '--rm'
-	      docker.registry    = 'quay.io'
+              docker.registry    = 'quay.io'
         docker.enabled     = true
         docker.temp        = 'auto'
         docker.fixOwnership= true
@@ -250,36 +158,14 @@ profiles {
     // Execute pipeline with Docker Swarm setup
     dockerSwarm {
 
-        process.$removeDuplicateSNPs.container = "$plinkImage"
-        process.$identifyIndivDiscSexinfo.container = "$plinkImage"
-        process.$calculateSampleMissing.container = "$plinkImage"
-        process.$calculateSampleHetrozygosity.container = "$plinkImage"
-        process.$compPCA.container = "$plinkImage"
-        process.$pruneForIBD.container = "$plinkImage"
-        process.$removeQCIndivs.container = "$plinkImage"
-        process.$calculateMaf.container = "$plinkImage"
-        process.$calculateSnpMissingness.container = "$plinkImage"
-        process.$calculateSnpSkewStatus.container = "$plinkImage"
-        process.$removeQCPhase1.container = "$plinkImage"
-        process.$computePhase0.container = "$plinkImage"
-        process.$drawPCA.container = "$py3Image"
-        process.$generateIndivMissingnessPlot.container="$py3Image"
-        process.$generateMissHetPlot.container = "$py3Image"
-        process.$generateMafPlot.container = "$py3Image"
-        process.$generateSnpMissingnessPlot.container = "$py3Image"
-        process.$generateDifferentialMissingnessPlot.container = "$py3Image"
-        process.$generateHwePlot.container = py3Image
+	container = py3Image
         process.$produceReports.container  ="$latexImage"
-        process.$lgen2ped.container        = "$plinkImage"
-        process.$createBed.container      = "$plinkImage"
-        process.$lgen2ped.container        = "$plinkImage"
-        process.$flip.container            = py3Image
-        process.$computePCA.container      = "$plinkImage"
         process.$computeTest.container     = "$gemmaImage"
+
 
         docker.remove      = true
         docker.runOptions  = '--rm'
-	      docker.registry    = 'quay.io'
+        docker.registry    = 'quay.io'
         docker.enabled     = true
         docker.temp        = 'auto'
         docker.fixOwnership= true
@@ -288,6 +174,20 @@ profiles {
     }
 
 
+    singularity {
+
+        sg_py3Image = "/home/scott/py3plink.img"
+        sg_latexImage = "/home/scott/h3agwas-texlive.img"
+
+
+        enabled = true
+        process.executor = 'pbs'
+        process.queue = 'batch'
+	
+        container = sg_py3Image
+        process.$produceReports.container  = sg_latexImage
+
+     }
 
 }
 
