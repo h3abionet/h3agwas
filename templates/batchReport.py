@@ -100,7 +100,7 @@ removing first those who are related to multiple people (e.g. if A is a cousin o
 
 *-begin{itemize}
 *-item There were %d pairs of individuals over the cut-off.
-*-item %d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%s}.
+*-item %d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%s}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than $super_pi_hat are removed.)
 *-end{itemize}
 
 
