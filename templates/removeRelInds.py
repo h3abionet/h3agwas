@@ -38,21 +38,25 @@ def getDegrees(remove):
 
 
 
-remove = list(map (tuple,genomef[genomef['PI_HAT']>super_pi_hat][["FID1","IID1"]].to_records(index=False)))\
-         + list(map(tuple,genomef[genomef['PI_HAT']>super_pi_hat][["FID2","IID2"]].to_records(index=False)))
+remove = set(map (tuple,genomef[genomef['PI_HAT']>super_pi_hat][["FID1","IID1"]].to_records(index=False)))\
+         | set(map(tuple,genomef[genomef['PI_HAT']>super_pi_hat][["FID2","IID2"]].to_records(index=False))))
 
 
 rel, deg = getDegrees(remove) 
 
 candidates = deg[deg>=1].sort_values(ascending=False)
+
 for i,c in candidates.iteritems():
     if deg[i]>0:
-        remove.append(i)
+        remove.add(i)
         deg[i]=deg[i]-1
         for other in rel[i]:
             deg[other]=deg[other]-1
+            if deg[other]==0: num_ok_now = num_ok_now + 1
+        if deg[i]==0: num_ok_now = num_ok_now + 1
+                
 
-remove.sort()
+remove = sorted(list(remove))
 outf.write(EOL.join(map (lambda x: "%s %s"%(x[0],x[1]),remove)))
 outf.close()
         
