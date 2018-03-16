@@ -4,4 +4,4 @@
 hostname 
 echo $num_assoc_cores
 
-plink --bfile $base $covariate --threads 1 --logistic $perm $adjust --out $base
+plink --bfile $base $covariate --threads 1 --logistic $perm $adjust --all-pheno --out $base
