@@ -179,25 +179,25 @@ if (params.covariate != "") {
 }
  
 if (params.data != "") {
-    pheno = "--pheno ${params.data} --pheno-name ${params.pheno}"
+
+  data_ch = Channel.fromPath(params.data)
+  
+  process extractPheno {
+    input:
+     file(data) from data_ch
+    output:
+     file(pheno) into pheno_ch
+    script:
+     phenof = "pheno.phe"
+     """
+     extractPheno.py $data ${params.pheno} $pheno 
+     """
+  }
+
+  pheno_parm = "--pheno "
 }
 
 
-process computeTest {
-   echo true
-   cpus num_assoc_cores
-   input:
-    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
-   each test from requested_tests
-   publishDir params.output_dir, overwrite:true, mode:'copy'
-   output:
-      set file("${outfname}.*") into out_ch
-   script:
-    base = "cleaned"
-    perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
-    adjust = (params.adjust ? "--adjust" : "")
-    template "${test}.sh"
-}
 
 
 if (params.gemma == 1) {
@@ -279,6 +279,22 @@ if (params.gemma == 1) {
 
 
 if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
+
+   process computeTest {
+      echo true
+      cpus num_assoc_cores
+      input:
+       set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
+      each test from requested_tests
+      publishDir params.output_dir, overwrite:true, mode:'copy'
+      output:
+	 set file("${outfname}.*") into out_ch
+      script:
+       base = "cleaned"
+       perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
+       adjust = (params.adjust ? "--adjust" : "")
+       template "${test}.sh"
+   }
 
   process drawPlinkResults { 
     input:

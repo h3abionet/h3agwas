@@ -171,9 +171,7 @@ def getAnomSex(pheno_col,gname,gdf):
     return fname
 
 def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
-    def group_fn(x):
-        return pfrm.ix[x][pheno_col]
-    g  = ifrm.groupby(group_fn)
+    g  = pd.merge(pfrm,ifrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
     num_samples = g['N_MISS'].count()
     ave_miss    = 100*g['N_MISS'].sum()/g['N_GENO'].sum()
     num_poor_i  = g[['F_MISS']].agg(poorFn)
@@ -182,7 +180,7 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
         problems =  pd.DataFrame([-999]*len(ifrm),index=ifrm.index,columns=["STATUS"])
 
     else:
-        g = sxfrm.groupby(group_fn)
+        g = pd.merge(pfrm,sxfrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
         problems = g[['STATUS']].agg(sexCheckProblem)
     sex_report=EOL+EOL
     #"Any samples with anomalous sex status can be found in the following files: "
