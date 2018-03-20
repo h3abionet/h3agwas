@@ -11,7 +11,6 @@
 h3aGWAS is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). h3aGWAS uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
 
 
-<!--- h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney Brenner Institutel for Molecular Bioscience](http://www.wits.ac.za/academic/research/sbimb/20747/wits_bioinformatics.html) for data quality control (QC) and basic association testing, and later refined and extended by H3ABionet. It uses Nextflow as the basis for workflow managment, and has been dockerised. -->
 
 The original version of the h3aGWAS was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.  
 
@@ -19,6 +18,12 @@ The original version of the h3aGWAS was published in June 2017 with minor update
 We have moved all scripts from Python 2 to Python 3, so you will need to have Python 3 installed.  
 
 _Please ignore the Wiki in this version which refers to version 1_
+
+
+## Brief introduction
+
+A short video overview of the pipeline can be found at http://www.bioinf.wits.ac.za/h3a/h3agwas.mp4
+
 
 ### Restrictions
 This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
@@ -419,6 +424,9 @@ The pipeline is run: `nextflow run plink-assoc.nf`
 The key options are:
 * `input_dir`, `output_dir`: where input and output goes to and comes from;
 * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+* `data`: a tab-separated file that contains phenotype data for your particpants. The row is a header line, with one participant per line after that. The first two columns should FID IID followed by any phenotype values you want to use for testing or for covariates. It can contain other data too -- as long as the ones that you need are in this file.
+* `pheno`: a comma-separated list of phenotypes that you want to test. Each phenotype is tested separately
+* `covariates`: a comma-separated list of phenotypes that you want to use
 
 By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
 
@@ -427,6 +435,8 @@ By default a chi2 test for association is done. But you can do multiple differen
 *  `linear`: should linear regreession be used?
 *  `logistic`: should linear regression be used?
 *  `gemma`: should gemma be used?
+*  `gemma_plink_cores`: if gemma is used set this up to 8
+*  `gemam_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM
 
 and then for all the tests except _gemma_, do you want to adjust for multiiple testing using Bonferroni correction
 
@@ -728,13 +738,16 @@ Login in the master node using the following command:
 
     This pull is not strictly necessary the first time you run the job, but it's a  good practice to get into to check if there are updates.
 
-6. Then run the 
+6. Then run the workflow
 
-    `nextflow run  h3abionet/h3agwas -profile --input_dir=/mnt/shared/XXXXX/projects/h3abionet/h3agwas/input/ --work_dir=/mnt/shared docker`
+    `nextflow run  h3abionet/h3agwas -profile docker --input_dir=/mnt/shared/XXXXX/projects/h3abionet/h3agwas/input/ --work_dir=/mnt/shared `
 
    You will need to replace XXXXX with your userid -- the local copy of the repo is found in the `/mnt/shared/XXXXX/projects/h3abionet/h3agwas/` directory. But we want the work directory to be elsewhere.
 
    Of course, you can also use other parameters (e.g. -resume or --work_dir). For your own run you will want to use your nextflow.config file.
+
+
+   By default, running the workflow like this runs the `plink-qc.nf` script. If you want to run one of the other scripts you would say `nextflow run  h3abionet/h3agwas/topbottom.nf` etc. 
 
 
 7. The output of the default runcan be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
