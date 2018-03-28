@@ -14,7 +14,7 @@ imissf = pd.read_csv(sys.argv[1],delim_whitespace=True,index_col=["FID","IID"])
 genomef = pd.read_csv(sys.argv[2],delim_whitespace=True,usecols=["FID1","IID1","FID2","IID2","PI_HAT"])
 
 outf   =open(sys.argv[3],"w")
-super_pi_hat = sys.argv[3]
+super_pi_hat = float(sys.argv[4])
 
 def getDegrees(remove):
    elts = set(imissf.index.values)
@@ -38,21 +38,24 @@ def getDegrees(remove):
 
 
 
+remove = set(map (tuple,genomef[genomef['PI_HAT']>super_pi_hat][["FID1","IID1"]].to_records(index=False)))\
+         | set(map(tuple,genomef[genomef['PI_HAT']>super_pi_hat][["FID2","IID2"]].to_records(index=False)))
 
-remove = genomef[genome['PI_HAT']>super_pi_hat][["FID1","IID1"]].to_records(index=False) + \
-         genomef[genome['PI_HAT']>super_pi_hat][["FID2","IID2"]].to_records(index=False)
 
 rel, deg = getDegrees(remove) 
 
 candidates = deg[deg>=1].sort_values(ascending=False)
+
 for i,c in candidates.iteritems():
     if deg[i]>0:
-        remove.append(i)
+        remove.add(i)
         deg[i]=deg[i]-1
         for other in rel[i]:
             deg[other]=deg[other]-1
 
-remove.sort()
+                
+
+remove = sorted(list(remove))
 outf.write(EOL.join(map (lambda x: "%s %s"%(x[0],x[1]),remove)))
 outf.close()
         

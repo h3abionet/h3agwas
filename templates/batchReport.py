@@ -100,7 +100,7 @@ removing first those who are related to multiple people (e.g. if A is a cousin o
 
 *-begin{itemize}
 *-item There were %d pairs of individuals over the cut-off.
-*-item %d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%s}.
+*-item %d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%s}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than $super_pi_hat are removed.)
 *-end{itemize}
 
 
@@ -171,9 +171,7 @@ def getAnomSex(pheno_col,gname,gdf):
     return fname
 
 def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
-    def group_fn(x):
-        return pfrm.ix[x][pheno_col]
-    g  = ifrm.groupby(group_fn)
+    g  = pd.merge(pfrm,ifrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
     num_samples = g['N_MISS'].count()
     ave_miss    = 100*g['N_MISS'].sum()/g['N_GENO'].sum()
     num_poor_i  = g[['F_MISS']].agg(poorFn)
@@ -182,7 +180,7 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
         problems =  pd.DataFrame([-999]*len(ifrm),index=ifrm.index,columns=["STATUS"])
 
     else:
-        g = sxfrm.groupby(group_fn)
+        g = pd.merge(pfrm,sxfrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
         problems = g[['STATUS']].agg(sexCheckProblem)
     sex_report=EOL+EOL
     #"Any samples with anomalous sex status can be found in the following files: "
@@ -374,20 +372,30 @@ def getRelatedPairs(pfrm,pheno_col,genome):
 det_sex_analysis = """
 *-subsection{Detailed Sex Check Analysis}
 
-This section shows a detailed analysis of sex check errors. The purpose of this analysis is to help
-identify trends between sub-groups, as well as possible labelling and sampling errors. In this analysis,
-we use PLINK to analyse the non-recombining regions of the X-chromosome, and in particular its computation 
-of the inbreeding co-efficient of the X-chromosome. If the ##F## statistic is greater than $f_lo_male, PLINK
-infers that the sample is male; if it is less than $f_hi_female, it infers that the sample is female.
+This section shows a detailed analysis of sex check anomalies and/or
+unusual patterns in the X-chromosome. The purpose of this analysis is to help identify
+trends between sub-groups, as well as possible labelling and sample handling
+errors. The term *-emph{anomaly} or *-emph{error} is used to label individuals where the
+sex of the individual as described in the manifest does not *-emph{stricly} match analysis of the X-chromosome and
+so for QC should be considerd further.
 
-There are two types of errors that can happen. *-emph{Soft} errors are
+
+In this analysis, we use PLINK to analyse the non-recombining
+regions of the X-chromosome, and in particular its computation of the
+inbreeding co-efficient of the X-chromosome. If the ##F## statistic is
+greater than $f_lo_male, PLINK infers that the sample is male; if it
+is less than $f_hi_female, it infers that the sample is female.
+
+There are two types of apparent anomaly that can happen. *-emph{Soft} anomalies are
 those cases where an individual is slightly above or below the stated
-threshholds. These may not be errors -- since the ##F## cut-off values are
-arbitrary, a too strict ##F##-value may be chosen, or there may be unusual
+threshholds. These may not be sample handling errors -- since the ##F## cut-off values are
+arbitrary, a too strict ##F##-value may be chosen, or there may be uncommon
 patterns within the individuals studied. How these samples should be
 treated will require some thought, but these are not a sign of
 problems of the experimental protocol, and not by itself probably a sign of problems with
-genotyping or DNA quality errors. We define a soft error as indvidual having an ##F## value beteen 0.34 and 0.66.
+genotyping or DNA quality errors. We define a soft anomaly as an indvidual having an ##F## value between 
+$f_hi_female and $f_lo_male, which is possible but unusual.
+
 
 *-emph{Hard} errors are cases where the sex in the manifest/fam file
 is markedly different from what the F-statistic predicts (e.g., the
@@ -423,7 +431,7 @@ different values *-emph{mind} the maximum per-sample error rate
 tolerated in the X-chromosome (PLINK parameter). *-emph{mind}==1 means
 all SNPs included. *-emph{Tot} shows the number of individuals
 included with the given *-emph{mind} value. *-emph{HErr} is the number of hard errors. 
-*-emph{SErr} is the number of soft errors.}
+*-emph{SAnm} is the number of soft apparent anomalies or unusual results.}
 
 *-label{tab:sxdet:%s} *-end{table}
 
@@ -436,7 +444,7 @@ def detSexHeader(sxAnalysis,pheno_col):
     for n in sxAnalysis.columns:
        header1=header1+" & *-multicolumn{3}{c}{mind=%s}"%str(n)
     header1 = header1+"*-*-"
-    header2 = "& Tot & SErr & HErr"*num_bands+"*-*-*-hline"
+    header2 = "& Tot & SAnm & HErr"*num_bands+"*-*-*-hline"
     return (tab_spec,header1,header2)
 
 # provide the details of a specific group
@@ -459,7 +467,7 @@ def xstr(m):
 
 def dumpMissingSexTable(fname, ifrm,sxAnalysis,pfrm,bfrm):
     g=open(fname,"w")
-    g.write(TAB.join(["FID","IID",args.batch_col,'F_MISS'])+TAB+TAB.join(map(str,sxAnalysis.columns))+EOL)
+    g.write(TAB.join(["FID","IID",args.batch_col,'F_MISS',args.pheno_col])+TAB+TAB.join(map(str,sxAnalysis.columns))+EOL)
     for i, row in ifrm.iterrows():
         output = TAB.join(map(str, [*i,bfrm.loc[i][args.batch_col],"%5.3f"%row['F_MISS'],pfrm.loc[i]]))+\
                  TAB+TAB.join(map(xstr,sxAnalysis.loc[i]))+EOL

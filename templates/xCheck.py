@@ -8,7 +8,7 @@ import os
 import pandas as pd
 import numpy as np
 if len(sys.argv)<=1:
-    sys.argv=["xCheck.py","$x","$out"]
+    sys.argv=["xCheck.py","$x","$f_hi_female", "$f_lo_male","$out"]
     missingness=eval("$missingness")
 else:
     missingness = [0.01,0.03,0.05]
@@ -29,7 +29,7 @@ def getResForM(base,m):
     os.system("plink --bfile %s --mind %s --check-sex --out %s"%(base,m,out))
     cols=["FID","IID","STATUS","F"]
     sf = getCsvI("%s.sexcheck"%out,cols)
-    sf[m] = np.where(sf['STATUS']=='OK',"OK", np.where((sf['F']>=0.34) & (sf['F']<=0.66),"S","H"))
+    sf[m] = np.where(sf['STATUS']=='OK',"OK", np.where((sf['F']>f_hi_female) & (sf['F']<f_lo_male),"S","H"))
     return sf
 
 def checkNoX(base,outfn):
@@ -41,7 +41,9 @@ def checkNoX(base,outfn):
 
 
 base   = sys.argv[1]
-outfn  = sys.argv[2]
+f_hi_female = float(sys.argv[2])
+f_lo_male   = float(sys.argv[3])
+outfn  = sys.argv[4]
 
 checkNoX(base,outfn)
 
