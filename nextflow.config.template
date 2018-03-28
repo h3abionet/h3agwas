@@ -77,6 +77,8 @@ params {
     manifest             =  ""
     idpat                =  0  // or "(\\w+)-DNA_(\\w+)_.*" or ".*_(.*)"
 
+    
+
     accessKey            = ""
     secretKey            = ""
     region               = "eu-west-1"
@@ -88,6 +90,7 @@ params {
     plink_mem_req        = "750MB"
     other_mem_req        = "750MB"
     sharedStorageMount   = "/mnt/shared"
+    gemma_plink_cores     = 24
     max_plink_cores      = "4"
 
 
@@ -125,7 +128,7 @@ profiles {
     // Execute pipeline with Docker locally
     docker {
         process.executor = 'local'
-	container = py3Image
+	process.container = py3Image
         process.$produceReports.container  =latexImage
         process.$computeTest.container     = "$gemmaImage"
 
@@ -140,7 +143,7 @@ profiles {
 
     dockerpbs {
         process.executor = 'pbs'
-	container = py3Image
+	process.container = py3Image
         process.$produceReports.container  ="$latexImage"
         process.$computeTest.container     = "$gemmaImage"
 
@@ -158,7 +161,7 @@ profiles {
     // Execute pipeline with Docker Swarm setup
     dockerSwarm {
 
-	container = py3Image
+	process.container = py3Image
         process.$produceReports.container  ="$latexImage"
         process.$computeTest.container     = "$gemmaImage"
 
