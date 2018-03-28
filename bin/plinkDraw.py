@@ -7,17 +7,24 @@ import glob
 import matplotlib
 matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
+import os
+g = glob.glob
 
 
-assoc = glob.glob("*assoc")
-mperm = glob.glob("*mperm")
-adjt  = glob.glob("*adjusted")
+base    = sys.argv[1]
+test    = sys.argv[2]
+phenos  = sys.argv[3].split(",")
+gotcovar = sys.argv[4]
+gtype    = sys.argv[5]
 
-out_man = sys.argv[1]
-out_qq  = sys.argv[2]
+if len(phenos[0])==0:
+    psep = ""
+else:
+    psep = "."
 
+EOL = chr(10)
 
-def drawManhatten(result):
+def drawManhatten(pheno, result,outf):
     fig, (ax1, ax2) =  plt.subplots(2, 1, sharey=True)
     ax=ax1
     delta=0
@@ -44,53 +51,69 @@ def drawManhatten(result):
            delta=0
     ax.set_xticklabels(xtick_label)
     ax.set_xticks(xtick_pos)
-    plt.savefig(out_man)
+    plt.savefig(outf)
 
-def drawQQ(result):
+def drawQQ(pheno,result,outf):
     plt.figure()
     sort_p = -np.log10(result['P'].sort_values())
     n=len(sort_p)
     expected = -np.log10(np.linspace(1/n,1,n))
     plt.plot(expected,sort_p)
     plt.plot(expected,expected)
-    plt.savefig(out_qq)
+    plt.savefig(outf)
 
 
 qq_template = """
 
-The QQ plot can be 
-found in Figure *-ref{fig:qq}, and  the Manhatten plot in Figure *-ref{fig:man}.
+\section{PLINK Results for phenotype *-protect*-url{%(pheno)s}, test %(test)s}
+
+The QQ plot can be found in Figure *-ref{fig:qq}, and the Manhatten
+plot in Figure *-ref{fig:man}.
 
 *-begin{figure}[ht]
-*-includegraphics[width=10cm]{%s}
-*-caption{QQ plot}
+*-begin{center}
+*-includegraphics[width=10cm]{%(qqfile)s}
+*-end{center}
+*-caption{QQ plot for PLINK testing --  *-protect*-url{%(pheno)s}, test %(test)s -- *-protect*-url{%(testing)s} }
 *-label{fig:qq}
 *-end{figure}
 
 *-begin{figure}[ht]
-*-includegraphics[width=10cm]{%s}
-*-caption{Manhatten plot}
+*-begin{center}
+*-includegraphics[width=10cm]{%(manfile)s}
+*-end{center}
+*-caption{PLINK testing: Manhatten plot for --  *-protect*-url{%(pheno)s}, test %(test)s -- *-protect*-url{%(testing)s}}
 *-label{fig:man}
 *-end{figure}
 """
 
 interesting=r"""
 
-The top ranking SNPs according to %s are
+The top ranking SNPs according to %s are found in Table~\ref{tab:plink:top:%s}
+
+*-begin{table}
+*-begin{center}
 *-begin{tabular}{l l}*-hline
 SNP & P *-*-*-hline
 """
 
+endtab = r"""
+*-end{tabular}
+*-end{center}
+*-caption{Top SNPs found by plink using %s for %s}
+*-label{tab:plink:top:%s}
+*-end{table}
+"""
 
 def showInteresting(frame, p_col, test_name):
-    slist = interesting % "permutation testing"
+    slist = interesting % ("permutation testing",str(p_col)+test_name)
     for row in frame.iterrows():
-        slist = slist+"%s & %6.4f "%(row[1]['SNP'],row[1]['EMP2'])+r"*-*-"+chr(10)
-    slist = slist + r"*-end{tabular}"
+        slist = slist+"%s & %6.4f "%(row[1]['SNP'].replace("_","-"),row[1]['EMP2'])+r"*-*-"+chr(10)
+    slist = slist + endtab%(test_name,p_col,str(p_col)+test_name)
     return slist
 
-def processProbs(frame,p_col,p_name):
-    mf = pd.read_csv(mperm[0],delim_whitespace=True)
+def processProbs(data,p_col,p_name):
+    mf = pd.read_csv(data,delim_whitespace=True)
     mf.sort_values(by=p_col,inplace=True)
     top10= mf.head()
     selected = mf[mf[p_col]<=0.05]
@@ -99,21 +122,30 @@ def processProbs(frame,p_col,p_name):
     slist = showInteresting(selected,p_col,p_name)
     return slist
 
-if len(assoc)> 0:
-    asf   = pd.read_csv(assoc[0],delim_whitespace=True)
-    drawManhatten(asf)
-    drawQQ(asf)
-    out_pics = qq_template%(out_qq,out_man)
-else:
-    out_pics = ""
+def showResults():
+    outpics = ""
+    for pheno in phenos:
+        # first get the result for the straight forward test
+        data = base+psep + pheno.split("/")[0]+".assoc."+test
+        if len(pheno)==0: pheno = "in fam"
+        asf   = pd.read_csv(data,delim_whitespace=True)
+        if gotcovar == "1":
+            asf = asf[asf['TEST']=="ADD"]
+        hashd = {'manfile':("%s-man-%s.%s"%(base,pheno,gtype)).replace("/","-").replace("np.",""), 'testing':data,'test':test, 'pheno':pheno,\
+                 'qqfile':("%s-qq-%s.%s"%(base,pheno,gtype)).replace("/","-").replace("np.","")}
+        drawManhatten(pheno,asf,hashd['manfile'])
+        drawQQ(pheno,asf,hashd['qqfile'])
+        outpics = outpics  + qq_template%hashd
+        for (correct,col,label) in [(".mperm",'EMP2',"permutation testing"),(".adjusted",'BONF',"Bonferroni correction")]:
+            nd = data + correct
+            if os.path.exists(nd):
+                outpics = outpics+processProbs(nd,col,label)
+        return outpics
+        
+out_pics = showResults()
 
-slist =""
-if len(mperm)>0:
-    slist = processProbs(mperm[0],'EMP2',"permutation testing")
-if len(adjt)>0:
-    slist = slist + processProbs(mperm[0],'BONF',"Bonferroni correction")
 
-textf = open(sys.argv[3],"w")
+
+textf = open("C050%s.tex"%test,"w")
 textf.write(out_pics.replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10)))
-textf.write(slist.replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10)))
 textf.close()

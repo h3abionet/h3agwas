@@ -4,16 +4,14 @@
  * Authors       :
  *
  *
+ *      Scott Hazelhurst
  *      Shaun Aron
  *   	Rob Clucas
  *      Eugene de Beste
- *      Scott Hazelhurst
- *      Anmol Kiran
  *      Lerato Magosi
- *      Abayomi Mosaku
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2017
+ *  2015-2018
  *
  *
  * Description  : Nextflow pipeline for Wits GWAS.
@@ -27,10 +25,20 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time"]
+
+
+
+params.each { parm ->
+  if (! allowed_params.contains(parm.key)) {
+    println "Check $parm";
+  }
+}
 
 def params_help = new LinkedHashMap(helps)
 
 
+params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
@@ -41,7 +49,7 @@ outfname = params.output_testing
 /* Defines the path where any scripts to be executed can be found.
  */
 
-println params.gemma_plink_cores
+println params.gemma_num_cores
 
 /* Do permutation testing -- 0 for none, otherwise give number */
 params.mperm = 1000
@@ -69,12 +77,12 @@ params.input_pat  = 'raw-GWA-data'
 params.sexinfo_available = "false"
 
 
-params.plink_process_memory = '750MB' // how much plink needs for this
+params.plink_mem_req = '750MB' // how much plink needs for this
 params.other_process_memory = '750MB' // how much other processed need
 
 max_plink_cores = params.max_plink_cores = 4
 
-plink_mem_req = params.plink_process_memory
+plink_mem_req = params.plink_mem_req
 other_mem_req = params.other_process_memory
 
 params.help = false
@@ -99,6 +107,24 @@ if (params.help) {
 }
 
 //---- Modification of variables for pipeline -------------------------------//
+
+
+def getConfig = {
+  all_files = workflow.configFiles.unique()
+  text = ""
+  all_files.each { fname ->
+      base = fname.baseName
+      curr = "*-subsection{$base}@.@@.@*-footnotesize@.@*-begin{verbatim}"
+      file(fname).eachLine { String line ->
+	if (line.contains("secretKey")) { line = "secretKey='*******'" }
+        if (line.contains("accessKey")) { line = "accessKey='*******'" }
+        curr = curr + "@.@"+line 
+      }
+      curr = curr +"@.@*-end{verbatim}"
+      text = text+curr
+  }
+  return text
+}
 
 /* Define the command to add for plink depending on whether sexinfo is
  * available or not.
@@ -127,6 +153,10 @@ checker = { fn ->
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
 fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+
+
+
+
 
 
 
@@ -165,7 +195,7 @@ process computePCA {
 
 
 
-num_assoc_cores = params.mperm == 0 ? 1 : max_plink_cores
+num_assoc_cores = params.mperm == 0 ? 1 : 4
 
 supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
 
@@ -173,30 +203,52 @@ requested_tests = supported_tests.findAll { entry -> params.get(entry) }
 
 
 covariate = ""
+gotcovar  = 0
 pheno     = ""
-if (params.covariate != "") {
-    covariate = "--covar ${params.data} --covar-name ${params.covariate} "
+if (params.covariates != "") {
+    covariate = "--covar ${params.data} --covar-name ${params.covariates} "
+    gotcovar = 1
 }
+
+
+
  
 if (params.data != "") {
 
-  data_ch = Channel.fromPath(params.data)
+  data_ch1 = Channel.create()
+  data_ch2 = Channel.create()
+  Channel.fromPath(params.data).separate(data_ch1,data_ch2) { a -> [a,a] } 
   
   process extractPheno {
     input:
-     file(data) from data_ch
+     file(data) from data_ch1
     output:
-     file(pheno) into pheno_ch
+     file(phenof) into pheno_ch
     script:
      phenof = "pheno.phe"
      """
-     extractPheno.py $data ${params.pheno} $pheno 
+     extractPheno.py $data ${params.pheno} $phenof
      """
   }
 
-  pheno_parm = "--pheno "
-}
 
+  pheno = "--pheno pheno.phe --all-pheno "
+
+
+
+
+  process showPhenoDistrib {
+    input:
+    file(data) from data_ch2
+    output:
+      file ("B050*") into report_ch
+    script:
+      "phe_distrib.py --pheno ${params.pheno} $data B050 "
+  }
+}  else {
+  report_ch = Channel.empty()
+  pheno_ch  = Channel.from("dummy")
+}
 
 
 
@@ -210,15 +262,17 @@ if (params.gemma == 1) {
   gemma_assoc_ch.separate (rel_ch, gem_ch, fam_ch) { a -> [a, a, a[2]] }
 
   process getGemmaRel {
-    cpus params.gemma_plink_cores
-    memory params.plink_mem_req
+    cpus params.gemma_num_cores
+    memory params.gemma_mem_req
+    time params.big_time
     input:
        file plinks from rel_ch
     output:
-       file("output/$base}.sXX.txt") into rel_mat_ch
+       file("output/${base}.*XX.txt") into rel_mat_ch
     script:
        base = plinks[0].baseName
        """
+       export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        gemma -bfile $base  -gk ${params.gemma_relopt} -o $base
        """
   }
@@ -236,59 +290,72 @@ if (params.gemma == 1) {
       gemma_covariate = "${base}.gemma_cov"
       phef = "${base}_n.phe"
       """
-      export OPENBLAS_NUM_THREADS=${params.gemma_plink_cores}
       gemma_covariate.py --data  $covariates --inp_fam  $fam --cov_list ${params.covariates} \
                           --pheno ${params.pheno} --cov_out $gemma_covariate --phe_out ${phef}
       """
   }
 
+  ind_pheno_cols_ch = Channel.create()
+  check = Channel.create()
+  pheno_cols_ch.flatMap { list_str -> list_str.split() }.tap ( check) .set { ind_pheno_cols_ch }
+
+  check.subscribe { println "Found valuye phe $it" }
+
   process doGemma {
-    cpus params.gemma_plink_cores
+    cpus 2
     memory params.gemma_mem_req
+    time   params.big_time
     input:
       file(plinks) from  gem_ch
-      file(matrix) from  rel_mat_ch
-      set file (covariate), file (new_fam) from gemma_data_ch
-      val(pheno_cols) from pheno_cols_ch
+      file(matrix) from  (rel_mat_ch)
+      set file (covariate), file (phef) from gemma_data_ch
+    each this_pheno from ind_pheno_cols_ch
     publishDir params.output_dir
     output:
-      file("${base}.log.txt")
-      set val(base), file("${base}.assoc.txt") into gemma_manhatten_ch
+      file("output/${base}-${this_pheno}.log.txt")
+      set val(base), val(this_pheno), file("output/${base}-${this_pheno}.assoc.txt") into gemma_manhatten_ch
     script:
-      base = plinks[0]
+      base = plinks[0].baseName
       """
-      export OPENBLAS_NUM_THREADS=${params.gemma_plink_cores}
-      gemma -bfile $base  -c $covariate  -k $matrix -lmm 1  -n ${pheno_cols}  -o $base
+      export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
+      this_pheno_col=`echo ${this_pheno} | sed "s/-.*//"`
+      gemma -bfile $base  -c $covariate  -k $matrix -lmm 1  -n \${this_pheno_col} -p $phef -o $base-$this_pheno
       """
   }
+
+
 
   process showGemmaManhatten { 
     publishDir params.output_dir
     input:
-      set val(base), file(assoc) from gemma_manhatten_ch
+      set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch
     output:
-      file(out)  
+      set file("${out}*")  into report_gemma_ch
     script:
-      out = "${base}.png"
+      out = "C049$this_pheno"
       """
-      gemma_man.py  $assoc $png
+      gemma_man.py  $assoc $this_pheno ${out}
       """
   }
+
+  report_ch = report_ch.flatten().mix(report_gemma_ch.flatten())
     
 } 
+
+    
 
 
 if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
 
    process computeTest {
-      echo true
       cpus num_assoc_cores
       input:
        set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
+       file (phenof) from pheno_ch
       each test from requested_tests
       publishDir params.output_dir, overwrite:true, mode:'copy'
       output:
-	 set file("${outfname}.*") into out_ch
+      set val(test), file("${outfname}.*") into out_ch
       script:
        base = "cleaned"
        perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
@@ -296,25 +363,62 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
        template "${test}.sh"
    }
 
+
+
   process drawPlinkResults { 
     input:
-      file(results) from out_ch
+      set val(test), file(results) from out_ch
     output:
-      set file(man), file (qq), file(tex) into report_ch
+      set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink
     publishDir params.output_dir
     script:
-      base=results[0].baseName
-      man ="${base}-man.png"
-      qq  ="${base}-qq.png"
-      tex ="C050.tex"
+      base="cleaned"
       """
-      plinkDraw.py  $man $qq $tex
+      plinkDraw.py  $base $test "${params.pheno}" $gotcovar png
       """
   }
 
+  report_ch = report_ch.mix(report_plink.flatten())
+  
 }
 
+
+
+
+
+def getres(x) {
+  def  command1 = "$x"
+  def  command2 = "head -n 1"
+  def proc1 = command1.execute()
+  def proc2 = command2.execute()
+  def proc = proc1 | proc2
+  proc.waitFor()              
+  res ="${proc.in.text}"
+  return res.trim()
+}
+
+nextflowversion =getres("nextflow -v")
+if (workflow.repository)
+  wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
+else
+  wflowversion="A local copy of the workflow was used"
+
+
+process doReport {
+  input:
+    file(reports) from report_ch.toList()
+  publishDir params.output_dir
+  output:
+    file("${out}.pdf")
+  script:
+    out = params.output+"-report"
+    config = getConfig()
+    images = workflow.container
+    texf   = "${out}.tex"
+    template "make_assoc_report.py"
+}
+
+
+
+
 pca_out_ch.subscribe { println "Drawn $it" }
-
-
-

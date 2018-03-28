@@ -5,6 +5,7 @@
 import sys
 import pandas as pd
 import argparse
+import numpy as np
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='fill in missing bim values')
@@ -19,7 +20,7 @@ def parseArguments():
 
 
 def check_missing(x):
-    if len(x)<1 or x=="-9" or x==r"\N" or x=="-":
+    if x in ["NA","na","null","-9"]  or ((type(x)==type("x")) and (len(x)<1)) or x==-9 or x==r"\N" or x=="-":
         return "NA"
     else:
         return x
@@ -31,12 +32,27 @@ TAB =chr(9)
 covariates = args.cov_list.split(",")
 use = ["FID","IID"]+covariates
 
-phenos = args.pheno.split(",")
+phenos_0 = args.pheno.split(",")
+phenos = []
+for lab in phenos_0:
+    det = lab.split("/")
+    if len(det)>1:
+        phenos.append(det[0])
+    else:
+        phenos.append(lab)
+
 
 famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEX","CC"])
 
+
 datad = pd.read_csv(args.data,delim_whitespace=True,usecols=phenos+use)
-for phe in phenos:
+
+for phe in phenos_0:
+    det = lab.split("/")
+    phe = det[0]
+    if len(det)>1:
+        fn = eval(det[1])
+        datad[phe]=fn(datad[phe])
     datad[phe]=datad[phe].apply(check_missing)
 
 merge = pd.merge(famd,datad,how="left",on=["FID","IID"])
@@ -45,10 +61,8 @@ merge["intercept"]=1
 
 
 merge.reindex(["FID","IID","intercept"]+covariates)
-merge.to_csv(args.cov_out,sep=TAB,columns=["intercept"]+covariates,header=False,index=False)
+merge.to_csv(args.cov_out,sep=TAB,columns=["intercept"]+covariates,header=False,index=False,na_rep=-9)
 
-merge.to_csv(args.phe_out,sep=TAB,columns=phenos,header=False,index=False)
+merge.to_csv(args.phe_out,sep=TAB,columns=phenos,header=False,index=False,na_rep=-9)
 
-
-phe_cols = [col for col in merge.columns if col in phenos]
-print(" ".join(list(map (lambda a: str(a[0]), enumerate(phe_cols) ))))
+print(" ".join(list(map (lambda a: str(a[0]+1)+"-"+a[1], enumerate(phenos) ))),end="")

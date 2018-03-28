@@ -3,4 +3,4 @@
 hostname
 
 
-plink --bfile $base --threads 1 --linear $perm $adjust --out $base
+plink --bfile $base $covariate $pheno  --linear $perm $adjust --out $base
