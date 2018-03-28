@@ -552,13 +552,15 @@ Nextflow supports execution on clusters using standard resource managers, includ
 
 To run using Torque/PBS, log into the head node. Edit the _nextflow.config_ file (either directly or using our helper script). If you are doing this manually, edit the _nextflow.config_ file by looking for the stanza (around like 85)
 
+
 ```
     pbs {
         process.executor = 'pbs'
 	process.queue = 'long'
     }
 ```
-and change _long_ to whatever queue you are using.
+and change _long_ to whatever queue you are using. Note that in the current version, the only way in which the queue can be changed is by manuall editing the nextflow.config file. You can either change the `process.queue` line, or, better, modify the definition of the queue variable at the top of the `nextflow.config` file.
+
 
 Then you can run by saying
 
