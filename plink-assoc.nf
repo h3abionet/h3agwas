@@ -323,7 +323,7 @@ if (params.gemma == 1) {
   check = Channel.create()
   pheno_cols_ch.flatMap { list_str -> list_str.split() }.tap ( check) .set { ind_pheno_cols_ch }
 
-  check.subscribe { println "Found valuye phe $it" }
+  check.subscribe { println "Found phenotype request $it" }
 
   process doGemma {
     cpus 2

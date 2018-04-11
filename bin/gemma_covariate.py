@@ -46,16 +46,16 @@ famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID",
 
 
 datad = pd.read_csv(args.data,delim_whitespace=True,usecols=phenos+use)
-columns=datad.columns()
-if "FID" not in columns or "IID" not in columns:
-    sys.exit(EOL*3+"It is mandatory for FID IID to be columns of the file %s"%args.data+EOL*3)
+#columns=datad.columns()
+#if "FID" not in columns or "IID" not in columns:
+#    sys.exit(EOL*3+"It is mandatory for FID IID to be columns of the file %s"%args.data+EOL*3)
 
 
 for phe in phenos_0:
     det = lab.split("/")
     phe = det[0]
-    if phe not in columns:
-        sys.exit((EOL*3+"<%s> given as phenotype, but is not a column of the file <%s>"+EOL+EOL)%(phe,args.datad))
+    #if phe not in columns:
+    #    sys.exit((EOL*3+"<%s> given as phenotype, but is not a column of the file <%s>"+EOL+EOL)%(phe,args.datad))
     if len(det)>1:
         fn = eval(det[1])
         datad[phe]=fn(datad[phe])
