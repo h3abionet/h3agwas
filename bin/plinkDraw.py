@@ -89,7 +89,7 @@ plot in Figure *-ref{fig:man}.
 
 interesting=r"""
 
-The top ranking SNPs according to %s are found in Table~\ref{tab:plink:top:%s}
+The top ranking SNPs for %s according to %s are found in Table~\ref{tab:plink:top:%s}
 
 *-begin{table}
 *-begin{center}
@@ -106,9 +106,9 @@ endtab = r"""
 """
 
 def showInteresting(frame, p_col, test_name):
-    slist = interesting % ("permutation testing",str(p_col)+test_name)
+    slist = interesting % (str(p_col),test_name,str(p_col)+test_name)
     for row in frame.iterrows():
-        slist = slist+"%s & %6.4f "%(row[1]['SNP'].replace("_","-"),row[1]['EMP2'])+r"*-*-"+chr(10)
+        slist = slist+"%s & %6.4f "%(row[1]['SNP'].replace("_","-"),row[1][p_col])+r"*-*-"+chr(10)
     slist = slist + endtab%(test_name,p_col,str(p_col)+test_name)
     return slist
 

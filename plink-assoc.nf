@@ -66,7 +66,7 @@ params.cmh     =  0
 params.model   =  0
 params.linear   = 0
 params.logistic = 0
-params.gemma = 1
+params.gemma = 0
 params.gemma_mem_req = "6GB"
 params.gemma_relopt = 1
 params.gemma_lmmopt = 4
@@ -144,7 +144,7 @@ checker = { fn ->
    if (fn.exists())
        return fn;
     else
-       error("\n\n-----------------\nFile $fn does not exist\n\n---\n")
+       error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
 
 
@@ -226,15 +226,17 @@ requested_tests = supported_tests.findAll { entry -> params.get(entry) }
 covariate = ""
 gotcovar  = 0
 pheno     = ""
-if (params.covariates != "") {
-    covariate = "--covar ${params.data} --covar-name ${params.covariates} "
-    gotcovar = 1
-}
 
 
 
  
 if (params.data != "") {
+
+   checker(file(params.data))
+
+   if (params.covariates != "") {
+      gotcovar = 1
+  }
 
   data_ch1 = Channel.create()
   data_ch2 = Channel.create()
@@ -247,8 +249,9 @@ if (params.data != "") {
      file(phenof) into pheno_ch
     script:
      phenof = "pheno.phe"
+     all_phenos = params.covariates.length()>0 ? params.pheno+","+params.covariates : params.pheno
      """
-     extractPheno.py $data ${params.pheno} $phenof
+     extractPheno.py $data ${all_phenos} $phenof
      """
   }
 
@@ -363,6 +366,7 @@ if (params.gemma == 1) {
     
 } 
 
+
     
 
 
@@ -389,9 +393,10 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
            out = base
        } else {
            pheno_cmd = "--pheno $phenof --pheno-name $pheno_name "
+           if (params.covariates) covariate = "--covar ${phenof} --covar-name ${params.covariates} "
            out = pheno
        }
-       template "${test}.sh"
+       template "test.sh"
    }
 
 
