@@ -49,7 +49,7 @@ outfname = params.output_testing
 /* Defines the path where any scripts to be executed can be found.
  */
 
-println params.gemma_num_cores
+
 
 /* Do permutation testing -- 0 for none, otherwise give number */
 params.mperm = 1000
@@ -185,17 +185,38 @@ process computePCA {
   output:
     set file("${outfname}.eigenval"), file("${outfname}.eigenvec")  \
          into pca_out_ch
-
   script:
-  """
-     plink --threads $max_plink_cores --bfile cleaned --pca --out ${outfname}
-  """
+      base = "cleaned"
+      prune= "${base}-prune"
+     """
+     plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
+     plink --bfile ${base} --extract check.prune.in --make-bed --out $prune
+     plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname}
+     """
+}
+
+process drawPCA {
+    input:
+      set file(eigvals), file(eigvecs) from pca_out_ch
+    output:
+      file (output) into report_pca_ch
+    publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
+    script:
+      base=eigvals.baseName
+      cc_fname = 0
+      cc       = 0
+      col      = 0
+      // also relies on "col" defined above
+      output="${base}-pca.pdf"
+      template "drawPCA.py"
+
 }
 
 
 
 
-num_assoc_cores = params.mperm == 0 ? 1 : 4
+
+num_assoc_cores = params.mperm == 0 ? 1 : Math.min(10,params.max_plink_cores)
 
 supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
 
@@ -232,10 +253,7 @@ if (params.data != "") {
   }
 
 
-  pheno = "--pheno pheno.phe --all-pheno "
-
-
-
+  pheno_label_ch = Channel.from(params.pheno.split(","))
 
   process showPhenoDistrib {
     input:
@@ -247,8 +265,11 @@ if (params.data != "") {
   }
 }  else {
   report_ch = Channel.empty()
-  pheno_ch  = Channel.from("dummy")
+  pheno_label = ""
+  pheno_label_ch = Channel.from("")
 }
+
+
 
 
 
@@ -349,17 +370,27 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
 
    process computeTest {
       cpus num_assoc_cores
+      time params.big_time
       input:
        set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
        file (phenof) from pheno_ch
       each test from requested_tests
+      each pheno_name from pheno_label_ch
       publishDir params.output_dir, overwrite:true, mode:'copy'
       output:
       set val(test), file("${outfname}.*") into out_ch
       script:
        base = "cleaned"
+       pheno_name = pheno_name.replaceFirst("/.*","")
        perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
        adjust = (params.adjust ? "--adjust" : "")
+       if (params.data == "") {
+           pheno_cmd = ""
+           out = base
+       } else {
+           pheno_cmd = "--pheno $phenof --pheno-name $pheno_name "
+           out = pheno
+       }
        template "${test}.sh"
    }
 
@@ -403,6 +434,7 @@ if (workflow.repository)
 else
   wflowversion="A local copy of the workflow was used"
 
+report_ch = report_ch.mix(report_pca_ch)
 
 process doReport {
   input:
@@ -412,6 +444,8 @@ process doReport {
     file("${out}.pdf")
   script:
     out = params.output+"-report"
+    these_phenos     = params.pheno
+    these_covariates = params.covariates
     config = getConfig()
     images = workflow.container
     texf   = "${out}.tex"
@@ -421,4 +455,4 @@ process doReport {
 
 
 
-pca_out_ch.subscribe { println "Drawn $it" }
+

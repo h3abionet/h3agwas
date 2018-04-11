@@ -31,7 +31,7 @@ def parseArguments():
 
 
 def getColours():
-    if len(args.cc_fname)==0:
+    if len(args.cc_fname)==0 or args.cc_fname=="0":
         return [], "black"
     phe = pd.read_csv(args.cc,delim_whitespace=True)
     all_labels = phe[args.column].unique()

@@ -126,7 +126,7 @@ def showResults():
     outpics = ""
     for pheno in phenos:
         # first get the result for the straight forward test
-        data = base+psep + pheno.split("/")[0]+".assoc."+test
+        data = base + ".assoc."+test
         if len(pheno)==0: pheno = "in fam"
         asf   = pd.read_csv(data,delim_whitespace=True)
         if gotcovar == "1":
