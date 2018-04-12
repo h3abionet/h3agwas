@@ -11,11 +11,12 @@ import os
 g = glob.glob
 
 
-base    = sys.argv[1]
-test    = sys.argv[2]
-phenos  = sys.argv[3].split(",")
-gotcovar = sys.argv[4]
-gtype    = sys.argv[5]
+label   = sys.argv[1]
+base    = sys.argv[2]
+test    = sys.argv[3]
+phenos  = sys.argv[4].split(",")
+gotcovar = sys.argv[5]
+gtype    = sys.argv[6]
 
 if len(phenos[0])==0:
     psep = ""
@@ -67,6 +68,7 @@ qq_template = """
 
 \section{PLINK Results for phenotype *-protect*-url{%(pheno)s}, test %(test)s}
 
+The raw results can be found in the *-textbf{%(test)s} directory.
 The QQ plot can be found in Figure *-ref{fig:qq}, and the Manhatten
 plot in Figure *-ref{fig:man}.
 
@@ -122,17 +124,21 @@ def processProbs(data,p_col,p_name):
     slist = showInteresting(selected,p_col,p_name)
     return slist
 
+
+def clean(name):
+   return name.replace("/","-").replace("np.","")
+
 def showResults():
     outpics = ""
     for pheno in phenos:
         # first get the result for the straight forward test
-        data = base + ".assoc."+test
+        data = clean(pheno) + ".assoc."+test
         if len(pheno)==0: pheno = "in fam"
         asf   = pd.read_csv(data,delim_whitespace=True)
         if gotcovar == "1":
             asf = asf[asf['TEST']=="ADD"]
-        hashd = {'manfile':("%s-man-%s.%s"%(base,pheno,gtype)).replace("/","-").replace("np.",""), 'testing':data,'test':test, 'pheno':pheno,\
-                 'qqfile':("%s-qq-%s.%s"%(base,pheno,gtype)).replace("/","-").replace("np.","")}
+        hashd = {'manfile':clean("%s-man-%s.%s"%(base,pheno,gtype)), 'testing':data,'test':test, 'pheno':pheno,\
+                 'qqfile':clean("%s-qq-%s.%s"%(base,pheno,gtype))}
         drawManhatten(pheno,asf,hashd['manfile'])
         drawQQ(pheno,asf,hashd['qqfile'])
         outpics = outpics  + qq_template%hashd
@@ -146,6 +152,6 @@ out_pics = showResults()
 
 
 
-textf = open("C050%s.tex"%test,"w")
+textf = open("%s%s%s.tex"%(label,phenos,test),"w")
 textf.write(out_pics.replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10)))
 textf.close()

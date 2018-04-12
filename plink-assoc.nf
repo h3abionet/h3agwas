@@ -25,13 +25,13 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
 
 
 
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
-    println "Check $parm";
+    println "\nUnknown parameter : Check parameter <$parm>\n";
   }
 }
 
@@ -43,7 +43,11 @@ params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
 params.output_testing = "cleaned"
+params.thin       = ""
+params.covariates = ""
+params.chrom      = ""
 outfname = params.output_testing
+
 
 
 /* Defines the path where any scripts to be executed can be found.
@@ -126,17 +130,6 @@ def getConfig = {
   return text
 }
 
-/* Define the command to add for plink depending on whether sexinfo is
- * available or not.
- */
-if ( params.sexinfo_available == "false" ) {
-  sexinfo = "--allow-no-sex"
-  println "Sexinfo not available, command --allow-no-sex\n"
-} else {
-  sexinfo = ""
-  println "Sexinfo available command"
-}
-
 
 
 // Checks if the file exists
@@ -163,13 +156,57 @@ fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
 gemma_assoc_ch = Channel.create()
 
 pca_in_ch = Channel.create()
-assoc_ch = Channel.create()
+assoc_ch  = Channel.create()
+raw_src_ch= Channel.create()
+
 Channel
     .from(file(bed),file(bim),file(fam))
     .buffer(size:3)
     .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
-    .separate( pca_in_ch, assoc_ch, gemma_assoc_ch ) { a -> [a,a,a] }
+    .set { raw_src_ch }
 
+
+println "\nTesting data            : ${params.input_pat}\n"
+println "Testing for phenotypes  : ${params.pheno}\n"
+println "Using covariates        : ${params.covariates}\n\n"
+
+if (params.gemma) println "Doing gemma testing"
+if (params.chi2) println "Doing chi2 testing"
+if (params.linear) println "Doing linear regression testing"
+if (params.logistic) println "Doing logistic regression testing"
+println "\n"
+
+if (params.thin)
+   thin = "--thin ${params.thin}"
+else 
+   thin = ""
+
+if (params.chrom) 
+   chrom = "--chr ${params.chrom}"
+else
+   chrom = ""
+
+if (thin+chrom) {
+
+
+  process thin {
+    input: 
+      set file(bed), file(bim), file(fam) from raw_src_ch
+    output:
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch )
+    script:
+       base = bed.baseName
+       out  = base+"_t"
+       "plink --bfile $base $thin $chrom --make-bed --out $out"
+  }
+
+  println "\nData has been thinned or only some chromosomes used  (is the run for test purposes only?)\n"
+   
+
+
+} else {
+    raw_src_ch.separate( pca_in_ch, assoc_ch, gemma_assoc_ch ) { a -> [a,a,a] }
+}
 
 
 
@@ -302,7 +339,12 @@ if (params.gemma == 1) {
   }
 
    
-  process transformCovariate {
+  if (params.covariates)
+     covariate_option = "--cov_list ${params.covariates}"
+  else
+     covariate_option = ""
+  
+  process  getGemmaPhenosCovar {
     input:
       file(covariates) from data_ch 
       file(fam) from fam_ch
@@ -314,7 +356,7 @@ if (params.gemma == 1) {
       gemma_covariate = "${base}.gemma_cov"
       phef = "${base}_n.phe"
       """
-      gemma_covariate.py --data  $covariates --inp_fam  $fam --cov_list ${params.covariates} \
+      gemma_covariate.py --data  $covariates --inp_fam  $fam $covariate_option \
                           --pheno ${params.pheno} --cov_out $gemma_covariate --phe_out ${phef}
       """
   }
@@ -326,7 +368,7 @@ if (params.gemma == 1) {
   check.subscribe { println "Found phenotype request $it" }
 
   process doGemma {
-    cpus 2
+    cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time   params.big_time
     input:
@@ -336,14 +378,18 @@ if (params.gemma == 1) {
     each this_pheno from ind_pheno_cols_ch
     publishDir params.output_dir
     output:
-      file("output/${base}-${this_pheno}.log.txt")
-      set val(base), val(this_pheno), file("output/${base}-${this_pheno}.assoc.txt") into gemma_manhatten_ch
+      file("gemma/${out}.log.txt")
+      set val(base), val(our_pheno), file("gemma/${out}.assoc.txt") into gemma_manhatten_ch
     script:
       base = plinks[0].baseName
+      covar_opt =  (params.covariates) ?  " -c $covariate" : ""
+      our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+      out = "$base-$our_pheno"
       """
       export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-      this_pheno_col=`echo ${this_pheno} | sed "s/-.*//"`
-      gemma -bfile $base  -c $covariate  -k $matrix -lmm 1  -n \${this_pheno_col} -p $phef -o $base-$this_pheno
+      this_pheno_col=`echo ${this_pheno} | sed 's/-.*//' `
+      gemma -bfile $base ${covar_opt}  -k $matrix -lmm 1  -n \${this_pheno_col} -p $phef -o $out
+      mv output gemma
       """
   }
 
@@ -354,11 +400,12 @@ if (params.gemma == 1) {
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch
     output:
-      set file("${out}*")  into report_gemma_ch
+      file("${out}*")  into report_gemma_ch
     script:
+      our_pheno = this_pheno.replaceAll("_","-")
       out = "C049$this_pheno"
       """
-      gemma_man.py  $assoc $this_pheno ${out}
+      gemma_man.py  $assoc $this_pheno ${out}cd 
       """
   }
 
@@ -380,14 +427,15 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
        file (phenof) from pheno_ch
       each test from requested_tests
       each pheno_name from pheno_label_ch
-      publishDir params.output_dir, overwrite:true, mode:'copy'
+      publishDir "${params.output_dir}/${test}", overwrite:true, mode:'copy'
       output:
-      set val(test), file("${outfname}.*") into out_ch
+        set val(test), val(pheno_name), file("${outfname}.*") into out_ch
       script:
        base = "cleaned"
        pheno_name = pheno_name.replaceFirst("/.*","")
        perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
        adjust = (params.adjust ? "--adjust" : "")
+       outfname = "${pheno_name}"
        if (params.data == "") {
            pheno_cmd = ""
            out = base
@@ -400,17 +448,20 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
    }
 
 
-
+  log_out_ch = Channel.create()
+ 
+  log_out_ch.subscribe { println "Completed plink test ${it[0]}" }
+ 
   process drawPlinkResults { 
     input:
-      set val(test), file(results) from out_ch
+    set val(test), val(pheno_name), file(results) from out_ch.tap(log_out_ch)
     output:
       set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink
     publishDir params.output_dir
     script:
       base="cleaned"
       """
-      plinkDraw.py  $base $test "${params.pheno}" $gotcovar png
+      plinkDraw.py  C050 $base $test ${pheno_name} $gotcovar png
       """
   }
 

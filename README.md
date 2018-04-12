@@ -438,9 +438,10 @@ By default a chi2 test for association is done. But you can do multiple differen
 *  `gemma_plink_cores`: if gemma is used set this up to 8
 *  `gemam_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM
 
-and then for all the tests except _gemma_, do you want to adjust for multiiple testing using Bonferroni correction
+and then for all the tests except _gemma_, do you want to adjust for multiple testing 
 
-* adjust
+* `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
+* `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
 
 For example
 
@@ -448,6 +449,9 @@ For example
 
 analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
 
+Other flags are:
+* `thin`. You can set this to a floating point number in the range (0, 1] and then the PLINK data files are thinned leaving only that proportion of the SNPs. This allows pipeline to be tested with a small proportion of the data This is probably only needed for debugging purposes and usually this should not be be set.
+* `chrom`. Only do testing on this chromosome.
 
 # 7. Converting from Illumina genotyping reports in TOP/BOTTOM format
 

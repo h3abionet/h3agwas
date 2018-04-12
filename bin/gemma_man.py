@@ -10,7 +10,7 @@ import sys
 
 inp     = sys.argv[1]
 phenos  = sys.argv[2].split("-")
-base    = sys.argv[3].replace(".","-")
+base    = sys.argv[3].replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
 out_man = "%s-man.pdf"%base
 out_qq  = "%s-qq.pdf"%base
 out_tex = "%s.tex"%base
@@ -21,6 +21,7 @@ C049 = r"""
 \section{Result of Gemma analysis : phenotype %(pheno)s}
 \label{sec:gemma}
 
+All the results from the GEMMA analysis can be found in the \textbf{gemma} directory.
 The result of the GEMMA analysis is shown for phentoytype \protect\url{%(pheno)s}.  The file with association statistics is found in \protect\url{%(fname)s}. The top 10 results are shown in Table~\ref{tab:top:%(pheno)s}:
 
 \begin{table}[tb]
@@ -105,7 +106,6 @@ plt.figure()
 sort_p = -np.log10(result['p_wald'].sort_values())
 n=len(sort_p)
 expected = -np.log10(np.linspace(1/n,1,n))
-print(n,len(expected))
 plt.plot(expected,sort_p)
 plt.plot(expected,expected)
 plt.savefig(out_qq)

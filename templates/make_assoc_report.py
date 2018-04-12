@@ -86,8 +86,8 @@ breaklines=true
 
 This report gives a brief overview of the run of the association testing pipeline.
 *-begin{itemize}
-*-item You were testing for the following phenotypes ${these_phenos}
-*-item You were using the following covariates [${these_covariates}]
+*-item You were testing for the following phenotypes *-url{${these_phenos}}
+*-item You were using the following covariates [*-url{${these_covariates}}]
 *-end{itemize}
 '''
 
