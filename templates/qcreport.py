@@ -158,7 +158,8 @@ failing heterozygosity checks).
 This phase only removes SNPs which are duplicated (based on SNP name). No other QC is done and so the output of this phase should really be considered as raw data.
 *-begin{enumerate}
 *-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called {*-em %(dupf)s}. Note that duplicate SNPs are determined by the names of the SNPs. SNPs which appear at the same position are probably duplicates but may not be. If you wish to detect such SNPs, you should rename the SNPs using a script like *-emph{bimrs2chrbp.sh}.
-*-item %(numfailedsex)s individuals had discordant sex information -- an extract of the PLINK report can be found can be found in {*-em %(fsex)s}, and a more detailed analysis can be found in Section~*-ref{sec:batch}.
+
+*-item %(numfailedsex)s individuals had discordant sex information -- the full PLINK report can be found in *-url{%(fullsex)s} and an extract of the PLINK report showing only the failed reports can be found can be found in {*-em %(fsex)s}, and a more detailed analysis can be found in Section~*-ref{sec:batch}.
 *-end{enumerate}
 
 Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas Figure *-ref{fig:indmiss} shows the spread of missingness per individual across the sample. Note that this shows missingness before any filtering or cleaning up of the data.
@@ -412,8 +413,7 @@ if num_fs == 1:
     head=open(args.fsex).readline()
     if "No sex" in head: num_fs=0
 pdict['numfailedsex']=num_fs
-
-    
+pdict['fullsex']=re.sub("badsex","sexcheck",args.fsex)
 out=open("%s.tex"%args.base,"w")
 out.write (template%pdict)
 out.close()

@@ -325,14 +325,15 @@ process identifyIndivDiscSexinfo {
      set file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
   script:
     base = plinks[0].baseName
-    logfile= "${base}-failed.badsex"
+    logfile= "${base}.badsex"
     sexcheck_report = "${base}.sexcheck"
     imiss  = "${base}.imiss"
     lmiss  = "${base}.lmiss"
     if (params.sexinfo_available == true)
     """
        plink $K --bfile $base --check-sex $f_hi_female $f_lo_male --missing  --out $base
-       grep  'PROBLEM' ${base}.sexcheck > $logfile
+       head -n 1 ${base}.sexcheck > $logfile
+       grep  'PROBLEM' ${base}.sexcheck >> $logfile
     """
     else
      """
@@ -512,6 +513,7 @@ process findRelatedIndiv {
   output:
      file(outfname) into (related_indivs_ch1,related_indivs_ch2) // removeRel, batchReport
      file(outfname) into report["related"]
+  publishDir params.output_dir, overwrite:true, mode:'copy'
   script:
      base = missing.baseName
      outfname = "${base}-fail_IBD.txt"

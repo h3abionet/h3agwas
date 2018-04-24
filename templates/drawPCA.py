@@ -1,4 +1,4 @@
-#!//usr/bin/env python3
+#! /usr/bin/env python3
 
 
 import matplotlib
@@ -10,6 +10,9 @@ import pandas as pd
 import numpy as np
 import argparse
 import sys
+
+EOL=chr(10)
+gap = EOL*3
 
 colour_choices=["black","magenta","darkcyan","red","blue","orange","aqua","beige","chartreuse","darkblue","gold","indigo","ivory","olive","sienna","wheat","salmon","orangered","silver","tan","grey","lightblue","violet","yellow","turquoise", "yellowgreen","khaki","goldenrod","aquamarine","azure","brown","crimson","fuchsia"]
 
@@ -41,7 +44,11 @@ def getColours():
        colours=colours+colour_choices
     the_colour_choices = dict(zip(all_labels,colours[:len(all_labels)]))
     def our_colour(x):
-        return the_colour_choices[x[args.column]]
+        try:
+           result = the_colour_choices[x[args.column]]
+        except:
+           sys.exit(gap+"There's a problem with the phenotype file <%s>, column <%s>, ID <%s>%s"%(args.cc,args.column,x,gap))
+        return result
     the_colours = phe.apply(our_colour,axis=1)
     return list(enumerate(all_labels)), the_colours
 

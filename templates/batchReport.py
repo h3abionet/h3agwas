@@ -87,6 +87,8 @@ sub_fig_template = "*-subfloat[%s]{*-includegraphics[width=8cm]{%s}}"+EOL
 
 rel_template = """
 
+*-clearpage
+
 *-subsection{Relatedness}
 
 Using PLINK, relatedness is computed on using IBD with
@@ -99,8 +101,9 @@ All pairs of individuals with a
 removing first those who are related to multiple people (e.g. if A is a cousin of B and C, B and C may not be related so it makes sense to remove A rather than B and C).
 
 *-begin{itemize}
-*-item There were %d pairs of individuals over the cut-off.
-*-item %d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%s}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than $super_pi_hat are removed.)
+*-item There were %(numpairs)d pairs of individuals over the cut-off. These can be found in the PLINK report %(all_pi_hat)s.
+*-item %(num_rem)d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{${rem_indivs}}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than $super_pi_hat are removed.)
+*-item The individuals with ##{*-widehat{*-pi} *-geq 0.45 }## can be found in %(vclose)s.
 *-end{itemize}
 
 
@@ -112,11 +115,11 @@ relationship of parent/child or siblingship.
 *-begin{table}[htb]
 *-begin{center}
 *-begin{tabular}{l@{}Q{2cm} r r}*-hline
-%s & Num *-emph{pairs} & ##*-widehat{*-pi}>0.95## &  ##*-widehat{*-pi} *-in [0.45, 0.95]## *-*-*-hline
-%s*-hline
+%(pheno_col)s & Num *-emph{pairs} & ##*-widehat{*-pi}>0.95## &  ##*-widehat{*-pi} *-in [0.45, 0.95]## *-*-*-hline
+%(rows)s*-hline
 *-end{tabular}
 *-end{center}
-*-caption{Overall breakdown of ##*-widehat{*-pi}## anomalies: for the overall dataset and each sub-group we show the number of total number of pairs with ##*-widehat{*-pi} > $pi_hat##, the number of pairs with ##*-widehat{*-pi} > 0.95## (twins or sample duplication perhaps?), and the number of pairs with ##0.95 > *-widehat{*-pi} >0.5## (siblings or parent/child?).}
+*-caption{Overall breakdown of ##*-widehat{*-pi}## anomalies: for the overall dataset and each sub-group we show the number of total number of pairs with ##*-widehat{*-pi} > $pi_hat##, the number of pairs with ##*-widehat{*-pi} > 0.95## (twins or sample duplication perhaps?), and the number of pairs with ##0.95 > *-widehat{*-pi} >0.45## (siblings or parent/child?).}
 *-label{tab:sex:overall}
 *-end{table}
 """
@@ -127,7 +130,7 @@ rel_mixed = "In the row, labelled *-emph{mixed}, we show the number of pairs tha
 duplicate = """
 *-subsubsection*{Duplicates or very closely related individuals}
 
-Table *-ref{table:vclose} on page *-pageref{table:vclose} shows pairs which have a ##{*-widehat{*-pi}}## value greater than 0.49 and are so very closely related. Those pairs with pi-hat values close to 1 are likely to be duplicates or identical twins (or a sample mishandling error). The groups/phenotypes/sites of the individuals are shown in parentheses.
+Table *-ref{table:vclose} on page *-pageref{table:vclose} shows pairs which have a ##{*-widehat{*-pi}}## value greater than 0.45 and are so very closely related. Those pairs with pi-hat values close to 1 are likely to be duplicates or identical twins (or a sample mishandling error). The groups/phenotypes/sites of the individuals are shown in parentheses.
 """
 
 # no longer used --kept in case we decide to add back
@@ -296,7 +299,7 @@ def pstr(p):
     return str(p[0])+":"+str(p[1])
 
 def getVClose(gfrm,pfrm,pheno_col):
-    vclose = gfrm[gfrm['PI_HAT']>0.49][["FID1","IID1","FID2","IID2","PI_HAT"]]
+    vclose = gfrm[gfrm['PI_HAT']>0.45][["FID1","IID1","FID2","IID2","PI_HAT"]]
     curr = TAB.join(["FID1","IID1",pheno_col+"1","FID2","IID2",pheno_col+"2","PI_HAT"])+EOL
     for i,row in vclose.iterrows():
         curr = curr+TAB.join([row[0],row[1],pfrm.loc[(row[0],row[1])][pheno_col],\
@@ -358,7 +361,10 @@ def getRelatedPairs(pfrm,pheno_col,genome):
             rel_text=rel_mixed+rel_text+"}"+EOL
     num_rem = len(open("$rem_indivs").readlines())
     rel_file="%s-reltable.csv"%(args.base)
-    text=rel_template%(group[" ALL"],num_rem,rel_file,pheno_col,rows)+rel_text
+    rdict = { 'numpairs' : group[" ALL"], 'num_rem':num_rem, 'all_pi_hat':genome, 'vclose':rel_file, \
+              'pheno_col':pheno_col, 'rows':rows }
+    text=rel_template%rdict+rel_text
+    # (group[" ALL"],num_rem,grel_file,pheno_col,rows)
     vclose  = getVClose(gfrm,pfrm,pheno_col)
     g=open(rel_file, "w")
     g.write(vclose)
@@ -386,6 +392,8 @@ inbreeding co-efficient of the X-chromosome. If the ##F## statistic is
 greater than $f_lo_male, PLINK infers that the sample is male; if it
 is less than $f_hi_female, it infers that the sample is female.
 
+Reminder: the checking of sex on the raw data before any other QC is shown in Section 1. The rest of this section analyses the data after basic QC on genotype has been done and so differences may be seen.
+
 There are two types of apparent anomaly that can happen. *-emph{Soft} anomalies are
 those cases where an individual is slightly above or below the stated
 threshholds. These may not be sample handling errors -- since the ##F## cut-off values are
@@ -406,12 +414,13 @@ be taken with this.
 
 A summary of the detailed analysis is shown below. In the output, the
 file *-url{%s} is a CSV file that has sample ID, per-individual
-missingness rate in the raw data, the %s status, and whether that
-sample is hard (H) or soft error (S) for given tolerated per-individual
-genotyping error rates on the X-chromosome. A `-' indicates that the indivdual is filtered out
-at that rate of missingness This can be used to assess
-whether anomalous sex results are due to poor genotyping rates in
-individuals.
+missingness rate in the raw data (*-verb!F_MISS! is the individual
+missingness rate *-emph{not} the F-statistic), the %s status, and
+whether that sample is hard (H) or soft error (S) for given tolerated
+per-individual genotyping error rates on the X-chromosome. A `-'
+indicates that the indivdual is filtered out at that rate of
+missingness This can be used to assess whether anomalous sex results
+are due to poor genotyping rates in individuals.
 
 
 """
