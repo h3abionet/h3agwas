@@ -326,7 +326,7 @@ process identifyIndivDiscSexinfo {
      file(logfile) into  report["failedsex"]
      file(logfile) into  failed_sex_ch1
      set file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
-  validExitStatus 0, 171
+  validExitStatus 0, 1
   // 171 means that there were no PROBLEMs as found
   // grep returns an error code 1 in this case which would break the pipelines. We don't want to make
   // 1 valid, since another step could fail with code 1. So we return 171 in this case
