@@ -54,7 +54,7 @@ else
   wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","initmaf","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1"]
+repnames = ["dups","initmaf","inithwe","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1"]
 
 
 repnames.each { report[it] = Channel.create() }
@@ -326,6 +326,7 @@ process identifyIndivDiscSexinfo {
      file(logfile) into  report["failedsex"]
      file(logfile) into  failed_sex_ch1
      set file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
+     file("${base}.hwe") into hwe_stats_ch
   validExitStatus 0, 1
   script:
     base = plinks[0].baseName
@@ -335,7 +336,7 @@ process identifyIndivDiscSexinfo {
     lmiss  = "${base}.lmiss"
     if (params.sexinfo_available == true)
     """
-       plink $K --bfile $base --check-sex $f_hi_female $f_lo_male --missing  --out $base
+       plink $K --bfile $base --hardy --check-sex $f_hi_female $f_lo_male --missing  --out $base
        head -n 1 ${base}.sexcheck > $logfile
        grep  'PROBLEM' ${base}.sexcheck >> $logfile
     """
@@ -406,6 +407,18 @@ process showInitMAF {
     base = freq.baseName+"-initmaf"
     template "showmaf.py"
 }
+
+process showHWEStats {
+  memory other_mem_req
+  input:
+     file(hwe) from hwe_stats_ch
+  output:
+     set file("${base}.pdf"), file("${base}.tex") into report["inithwe"]
+  script:
+    base = hwe.baseName+"-inithwe"
+    template "showhwe.py"
+}
+
 
 process removeQCPhase1 {
   memory plink_mem_req
@@ -812,6 +825,7 @@ process produceReports {
     file(inpmd5)         from report["inpmd5"]
     file(outmd5)         from report["outmd5"]
     set file(initmafpdf), file(initmaftex) from report["initmaf"]
+    set file(inithwepdf), file(inithwetex) from report["inithwe"]
     set file(qc1), file(irem)  from report["qc1"]
     file(batch_tex)  from report["batch_report"]
     set file(bpdfs), file(bcsvs) from report["batch_aux"]

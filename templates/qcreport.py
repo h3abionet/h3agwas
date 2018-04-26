@@ -171,6 +171,8 @@ Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sam
 
 *-input $initmaftex
 
+*-input $inithwetex
+
 *-clearpage
 *-section{QC Phase 1}
 
