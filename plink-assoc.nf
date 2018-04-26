@@ -124,7 +124,7 @@ def getConfig = {
         if (line.contains("accessKey")) { line = "accessKey='*******'" }
         curr = curr + "@.@"+line 
       }
-      curr = curr +"@.@*-end{verbatim}\"
+      curr = curr +"@.@*-end{verbatim}\n"
       text = text+curr
   }
   return text
