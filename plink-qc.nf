@@ -63,6 +63,8 @@ repmd5       = report["inpmd5"]
 orepmd5      = report["outmd5"]
 
 params.queue    = 'batch'
+params.remove_on_bp  = 1
+
 max_plink_cores = params.max_plink_cores 
 plink_mem_req   = params.plink_mem_req
 other_mem_req   = params.other_mem_req
@@ -71,6 +73,7 @@ super_pi_hat    = params.super_pi_hat
 cut_diff_miss   = params.cut_diff_miss
 f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
+remove_on_bp    = params.remove_on_bp
 
 allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sex_info_available", "sharedStorageMount","strandreport","work_dir"]
 
@@ -323,6 +326,10 @@ process identifyIndivDiscSexinfo {
      file(logfile) into  report["failedsex"]
      file(logfile) into  failed_sex_ch1
      set file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
+  validExitStatus 0, 171
+  // 171 means that there were no PROBLEMs as found
+  // grep returns an error code 1 in this case which would break the pipelines. We don't want to make
+  // 1 valid, since another step could fail with code 1. So we return 171 in this case
   script:
     base = plinks[0].baseName
     logfile= "${base}.badsex"
@@ -334,6 +341,11 @@ process identifyIndivDiscSexinfo {
        plink $K --bfile $base --check-sex $f_hi_female $f_lo_male --missing  --out $base
        head -n 1 ${base}.sexcheck > $logfile
        grep  'PROBLEM' ${base}.sexcheck >> $logfile
+       err=\$?
+       if [ "\$err" == "1" ]; then
+          err=171
+       fi
+       return \$err
     """
     else
      """
