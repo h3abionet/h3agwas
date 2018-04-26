@@ -69,6 +69,25 @@ def summary2LaTeX(summary,output,suf,pheno):
         """
      return lat%(pheno,phelab,output,output,pheno,output,suf)
 
+
+def errorMessage10(phe):
+    print("""
+
+    A problem has been detected in file <%s> column <%s>.
+
+    There is some invalid data. I regret I can't tell you which row.
+
+
+    Please check -- the data should be numeric only.
+
+
+    If there is missing data, please use   NA
+
+
+
+    """%(args.input,phe))
+
+
 def showPheno(pname,frm):
     if args.skip_zero:
         data  = frm[frm[pname]>0][pname]
@@ -83,9 +102,13 @@ def showPheno(pname,frm):
             axs[r][c].set_xlabel(transform_names[r][c],fontsize=12)
             axs[r][c].set_ylabel("Frequency",fontsize=12)
             fn = transforms[r][c]
-            pdata = fn(data) if fn != 1 else data
-            pdata = pdata[pdata.notnull()]
-            summary.append((transform_names[r][c],pdata))
+            try:
+                pdata = fn(data) if fn != 1 else data
+                pdata = pdata[pdata.notnull()]
+                summary.append((transform_names[r][c],pdata))
+            except:
+                errorMessage10(pname)
+                sys.exit(10)
             axs[r][c].hist(pdata,bins=100)
     plt.tight_layout()
     output = ("%s-%s"%(args.output,pname)).replace("_","-")

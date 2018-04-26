@@ -43,6 +43,23 @@ def getColNames(label_str):
    return col_names,col_fns
 
 
+def errorMessage10(phe):
+    print("""
+
+    A problem has been detected in file <%s> column <%s>.
+
+    There is some invalid data. I regret I can't tell you which row.
+
+
+    Please check -- the data should be numeric only.
+
+
+    If there is missing data, please use   NA
+
+
+
+    """%(args.data,phe))
+
 args = parseArguments()
 
 TAB =chr(9)
@@ -72,7 +89,11 @@ for (label, transform) in zip(pheno_labels+covar_labels, pheno_transform+cover_t
     if label not in columns:
         sys.exit((EOL*3+"<%s> given as label, but is not a column of the file <%s>"+EOL+EOL)%(label,args.datad))
     if transform:
-        datad[label]=transform(datad[label])
+        try:
+            datad[label]=transform(datad[label])
+        except:
+            errorMessage10(label)
+            sys.exit(10)
     datad[label]=datad[label].apply(check_missing)
 
 famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEX","CC"])

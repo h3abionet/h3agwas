@@ -184,13 +184,13 @@ def getConfig = {
   text = ""
   all_files.each { fname ->
       base = fname.baseName
-      curr = "*-subsection{$base}@.@@.@*-footnotesize@.@*-begin{verbatim}"
+      curr = "\n\n*-subsection{*-protect*-url{$base}}@.@@.@*-footnotesize@.@*-begin{verbatim}"
       file(fname).eachLine { String line ->
 	if (line.contains("secretKey")) { line = "secretKey='*******'" }
         if (line.contains("accessKey")) { line = "accessKey='*******'" }
         curr = curr + "@.@"+line 
       }
-      curr = curr +"@.@*-end{verbatim}"
+      curr = curr +"@.@*-end{verbatim}\n"
       text = text+curr
   }
   return text

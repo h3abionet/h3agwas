@@ -12,6 +12,23 @@ def check_missing(x):
     else:
         return x
 
+def errorMessage10(phe):
+    print("""
+
+    A problem has been detected in file <%s> column <%s>.
+
+    There is some invalid data. I regret I can't tell you which row.
+
+
+    Please check -- the data should be numeric only.
+
+
+    If there is missing data, please use   NA
+
+
+
+    """%(sys.argv[1],phe))
+
 
 dataf = pd.read_csv(sys.argv[1],delim_whitespace=True)
 columns = dataf.columns
@@ -29,7 +46,11 @@ for lab in pheno_labels_0:
         sys.exit((EOL*3+"<%s> given as phenotype, but is not a column of the file <%s>"+EOL+EOL)%(phe,sys.argv[1]))
     if len(det)>1:
         fn = eval(det[1])
-        dataf[det[0]]=fn(dataf[phe])
+        try:
+            dataf[det[0]]=fn(dataf[phe])
+        except:
+            errorMessage10(phe)
+            sys.exit(10)
     pheno_labels.append(phe)
     dataf[phe]=dataf[phe].apply(check_missing)
 
