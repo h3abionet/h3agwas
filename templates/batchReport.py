@@ -85,6 +85,17 @@ res_caption = """
 
 sub_fig_template = "*-subfloat[%s]{*-includegraphics[width=8cm]{%s}}"+EOL
 
+none_rel_template = """
+
+*-clearpage
+
+*-subsection{Relatedness}
+
+There are no related pairs of individuals (##*-widehat{*-pi} > ${pi_hat}##, the parameter of the pipeline).
+
+
+"""
+
 rel_template = """
 
 *-clearpage
@@ -345,6 +356,8 @@ def getRelatedPairs(pfrm,pheno_col,genome):
     
 
     keys = sorted(group.keys())
+    if len(keys) == 0:
+        return none_rel_template
     if len(keys)==2:
         keys=[" ALL"]
     for k in keys:
