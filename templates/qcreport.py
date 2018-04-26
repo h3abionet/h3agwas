@@ -157,7 +157,7 @@ failing heterozygosity checks).
 
 This phase only removes SNPs which are duplicated (based on SNP name). No other QC is done and so the output of this phase should really be considered as raw data.
 *-begin{enumerate}
-*-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called {*-em %(dupf)s}. Note that duplicate SNPs are determined by the names of the SNPs. SNPs which appear at the same position are probably duplicates but may not be. If you wish to detect such SNPs, you should rename the SNPs using a script like *-emph{bimrs2chrbp.sh}.
+*-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called {*-em %(dupf)s}. Note that duplicate SNPs are determined by the names of the SNPs. SNPs which appear at the same position are probably duplicates but may not be. You can control whether you want to detect these using the parameter *-url{remove_on_bp}. *-textbf{It is crucial to examine this file to avoid inadvertently removing SNPs. On some chips there are duplicate SNPs at a position -- you should select what you what want.}
 
 *-item %(numfailedsex)s individuals had discordant sex information -- the full PLINK report can be found in *-url{%(fullsex)s} and an extract of the PLINK report showing only the failed reports can be found can be found in {*-em %(fsex)s}, and a more detailed analysis can be found in Section~*-ref{sec:batch}.
 *-end{enumerate}
