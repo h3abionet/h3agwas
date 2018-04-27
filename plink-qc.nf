@@ -413,7 +413,7 @@ process showHWEStats {
   input:
      file(hwe) from hwe_stats_ch
   output:
-     set file("${base}.pdf"), file("${base}.tex") into report["inithwe"]
+     set file("${base}.pdf"), file("${base}-qq.pdf"), file("${base}.tex") into report["inithwe"]
   script:
     base = hwe.baseName+"-inithwe"
     template "showhwe.py"
@@ -825,7 +825,7 @@ process produceReports {
     file(inpmd5)         from report["inpmd5"]
     file(outmd5)         from report["outmd5"]
     set file(initmafpdf), file(initmaftex) from report["initmaf"]
-    set file(inithwepdf), file(inithwetex) from report["inithwe"]
+    set file(inithwepdf), file(inithweqqpdf), file(inithwetex) from report["inithwe"]
     set file(qc1), file(irem)  from report["qc1"]
     file(batch_tex)  from report["batch_report"]
     set file(bpdfs), file(bcsvs) from report["batch_aux"]
