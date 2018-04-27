@@ -66,8 +66,6 @@ def drawQQ(result,outf):
     expected = -np.log10(np.linspace(1/n,1,n))
     ax.set_xlabel("HWE expected (-log p)",fontsize=14)
     ax.set_ylabel("HWE observed (-log p)",fontsize=14)
-
-    ax.set_title("Cumulative prop. of SNPs with HWE or less",fontsize=16)
     plt.plot(expected,sort_p)
     plt.plot(expected,expected)
     plt.savefig(outf)
