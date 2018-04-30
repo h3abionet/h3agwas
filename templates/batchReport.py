@@ -112,9 +112,9 @@ All pairs of individuals with a
 removing first those who are related to multiple people (e.g. if A is a cousin of B and C, B and C may not be related so it makes sense to remove A rather than B and C).
 
 *-begin{itemize}
-*-item There were %(numpairs)d pairs of individuals over the cut-off. These can be found in the PLINK report %(all_pi_hat)s.
+*-item There were %(numpairs)d pairs of individuals over the cut-off. These can be found in the PLINK report *-url{%(all_pi_hat)s}.
 *-item %(num_rem)d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{${rem_indivs}}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than $super_pi_hat are removed.)
-*-item The individuals with ##{*-widehat{*-pi} *-geq 0.45 }## can be found in %(vclose)s.
+*-item The individuals with ##{*-widehat{*-pi} *-geq 0.45 }## can be found in *-url{%(vclose)s}.
 *-end{itemize}
 
 

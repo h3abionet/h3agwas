@@ -115,7 +115,7 @@ columns=flexible,
 breaklines=true
 }
 *-usepackage{url}
-*-title{Quality control report for %(base)s}
+*-title{Quality control report for *-protect*-url{%(base)s}}
 *-date{%(date)s}
 '''+dateheader+'''
 *-author{H3Agwas QC Pipeline}
@@ -157,9 +157,9 @@ failing heterozygosity checks).
 
 This phase only removes SNPs which are duplicated (based on SNP name). No other QC is done and so the output of this phase should really be considered as raw data.
 *-begin{enumerate}
-*-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called {*-em %(dupf)s}. Note that duplicate SNPs are determined by the names of the SNPs. SNPs which appear at the same position are probably duplicates but may not be. You can control whether you want to detect these using the parameter *-url{remove_on_bp}. *-textbf{It is crucial to examine this file to avoid inadvertently removing SNPs. On some chips there are duplicate SNPs at a position -- you should select what you what want.}
+*-item There were %(numdups)s duplicate SNPs. The file with them (if any) is called *-protect*-url{%(dupf)s}. Note that duplicate SNPs are determined by the names of the SNPs. SNPs which appear at the same position are probably duplicates but may not be. You can control whether you want to detect these using the parameter *-url{remove_on_bp}. *-textbf{It is crucial to examine this file to avoid inadvertently removing SNPs. On some chips there are duplicate SNPs at a position -- you should select what you what want.}
 
-*-item %(numfailedsex)s individuals had discordant sex information -- the full PLINK report can be found in *-url{%(fullsex)s} and an extract of the PLINK report showing only the failed reports can be found can be found in {*-em %(fsex)s}, and a more detailed analysis can be found in Section~*-ref{sec:batch}.
+*-item %(numfailedsex)s individuals had discordant sex information -- the full PLINK report can be found in *-url{%(fullsex)s} and an extract of the PLINK report showing only the failed reports can be found can be found in *-url{%(fsex)s}, and a more detailed analysis can be found in Section~*-ref{sec:batch}.
 *-end{enumerate}
 
 Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas Figure *-ref{fig:indmiss} shows the spread of missingness per individual across the sample. Note that this shows missingness before any filtering or cleaning up of the data.
