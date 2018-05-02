@@ -436,7 +436,7 @@ By default a chi2 test for association is done. But you can do multiple differen
 *  `linear`: should linear regreession be used?
 *  `logistic`: should linear regression be used?
 *  `gemma`: should gemma be used?
-*  `gemma_plink_cores`: if gemma is used set this up to 8
+*  `gemma_num_cores`: if gemma is used set this up to 8
 *  `gemam_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM
 
 and then for all the tests except _gemma_, do you want to adjust for multiple testing 
