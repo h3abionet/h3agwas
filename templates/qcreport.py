@@ -225,7 +225,7 @@ Overall %(numhetrem)s individuals were removed. These individuals, if any, can b
 
 
 
-*-pagebreak[3]
+*-clearpage
 *-section{Minor Allele Frequency Spread}
 
 Figure~*-ref{fig:maf} shows the cumulative distribution of minor
@@ -234,7 +234,7 @@ allele frequency in the data *-textbf{after} quality control (the figures shown 
 
 *-ourfig{fig:maf}{Minor allele frequency distribution}{{%(mafpdf)s}}
 
-
+*-clearpage
 
 *-section{Differences between cases and controls}
 
@@ -266,6 +266,7 @@ be done.
 
 *-ourfig{fig:pca}{Principal Component Analysis of Cases Versus Controls}{{$pcapdf}}
 
+*-clearpage
 *-section{Hardy-Weinberg Equilibrium}
 
 Deviation for Hardy-Weinberg Equilibrium (HWE) may indicate sample contamination. However, this need not apply to cases, nor in a situation where there is admixture. For each SNP, we compute  the probability of the null hypothesis (that  the deviation from HWE is by chance alone).  Figure~*-ref{fig:hwe} shows a plot of the corresponding p-value versus the frequency of occurrence.

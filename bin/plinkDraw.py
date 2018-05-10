@@ -66,7 +66,9 @@ def drawQQ(pheno,result,outf):
 
 qq_template = """
 
-\section{PLINK Results for phenotype *-protect*-url{%(pheno)s}, test %(test)s}
+*-clearpage
+
+*-section{PLINK Results for phenotype *-protect*-url{%(pheno)s}, test %(test)s}
 
 The raw results can be found in the *-textbf{%(test)s} directory.
 The QQ plot can be found in Figure *-ref{fig:qq}, and the Manhatten
