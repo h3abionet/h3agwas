@@ -581,6 +581,7 @@ process getBadIndivsMissingHet {
   output:
     file(outfname) into failed_miss_het
     file(outfname) into report["misshetremf"]
+  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.txt"
   script:
     base = het.baseName
     outfname = "${base}-fail_het.txt"
