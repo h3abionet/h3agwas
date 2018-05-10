@@ -18,7 +18,7 @@ out_tex = "%s.tex"%base
 
 EOL = chr(10)
 C049 = r"""
-*-clearpage
+\clearpage
 \section{Result of Gemma analysis : phenotype %(pheno)s}
 \label{sec:gemma}
 
