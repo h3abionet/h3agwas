@@ -75,7 +75,7 @@ f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
 remove_on_bp    = params.remove_on_bp
 
-allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sex_info_available", "sharedStorageMount","strandreport","work_dir"]
+allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir"]
 
 
 params.each { parm ->
@@ -140,7 +140,6 @@ configfile   = Channel.create()
 
 
 
-println(params.sexinfo_available);
 
 nosexentries = [false,"False","false", "FALSE",0,"","0"]
 
@@ -152,6 +151,9 @@ if ( nosexentries.contains(params.sexinfo_available) ) {
   sexinfo = ""
   extrasexinfo = "--must-have-sex"
   println "Sexinfo available command"
+
+  
+
 }
 
 
@@ -266,7 +268,7 @@ process removeDuplicateSNPs {
 
   output:
     set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
-         into (qc1_ch,qc1B_ch,qc1C_ch,qc1D_ch)
+    into (qc1_ch,qc1B_ch,qc1C_ch,qc1D_ch,qc1E_ch)
     set file("${base}.orig"), file(dups) into report["dups"]
     file ("${nodup}.lmiss") into snp_miss_ch
     file ("${nodup}.imiss") into (ind_miss_ch1, ind_miss_ch2)
@@ -280,40 +282,57 @@ process removeDuplicateSNPs {
    """
 }
 
-
-/* Detailed analysis of X-chromosome */
-process getX {
-  input:
-    file(plink) from qc1D_ch
-   output:
-    file("X*") into X_chr_ch   
-   script:
-   base = plink[0].baseName
-   """
-     if [[ `grep  "^23" *bim`  ]];  then
-        plink --bfile $base --chr 23 --geno 0.04 --make-bed --out X
-     else
-        touch X.bed X.bim X.fam EMPTYX
-     fi
-   """
-}
-
-
 missingness = [0.01,0.03,0.05]
+if (extrasexinfo == "--must-have-sex") {
 
-process analyseX {
-  input:
-    file(xchr) from X_chr_ch
-  output:
-    file(out) into x_analy_res_ch // batchReport 
-  script:
-     x = xchr[0].baseName
-     out = "x.pkl"
-     template "xCheck.py"
+
+   /* Detailed analysis of X-chromosome */
+   process getX {
+     input:
+       file(plink) from qc1D_ch
+      output:
+       file("X*") into X_chr_ch   
+      script:
+      base = plink[0].baseName
+      """
+	if [[ `grep  "^23" *bim`  ]];  then
+	   plink --bfile $base --chr 23 --geno 0.04 --make-bed --out X
+	else
+	   echo ""
+	   echo "----------------------------------------"
+	   echo "There are no X-chromosome SNPs in this data "
+	   echo "it does not make sense to check for sex"
+	   echo "set sexinfo_available to false"
+	   echo "----------------------------------------"
+	   echo ""
+	   exit 23 
+	   touch X.bed X.bim X.fam EMPTYX
+	fi
+      """
+   }
+
+
+
+   process analyseX {
+     input:
+       file(xchr) from X_chr_ch
+     output:
+       file(out) into x_analy_res_ch // batchReport 
+     script:
+	x = xchr[0].baseName
+	out = "x.pkl"
+	template "xCheck.py"
+   }
+} else {
+
+
+  x_analy_res_ch = Channel.from("none")
+   
+
 }
-
 /* Process to identify individual discordant sex information.
  * results are put in the output directory
+ * Also does HWE
  */
 process identifyIndivDiscSexinfo {
   memory plink_mem_req
@@ -342,7 +361,7 @@ process identifyIndivDiscSexinfo {
     """
     else
      """
-     plink --bfile $base  --missing  --out $base
+     plink --bfile $base  --hardy --missing  --out $base
      echo 'FID IID STATUS' > $sexcheck_report
      echo 'No sex information available to check'  > $logfile
      """

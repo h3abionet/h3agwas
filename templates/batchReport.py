@@ -189,13 +189,12 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
     num_samples = g['N_MISS'].count()
     ave_miss    = 100*g['N_MISS'].sum()/g['N_GENO'].sum()
     num_poor_i  = g[['F_MISS']].agg(poorFn)
-    sxfrm       = getCsvI(sexcheck_report)
-    if len(sxfrm)==0:
-        problems =  pd.DataFrame([-999]*len(ifrm),index=ifrm.index,columns=["STATUS"])
-
-    else:
+    if "$extrasexinfo" == "--must-have-sex":
+        sxfrm       = getCsvI(sexcheck_report)
         g = pd.merge(pfrm,sxfrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
         problems = g[['STATUS']].agg(sexCheckProblem)
+    else:
+        problems = None
     sex_report=EOL+EOL
     #"Any samples with anomalous sex status can be found in the following files: "
     #glist = []
@@ -208,9 +207,16 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
 
 def showResult(colname,num_samples,ave_miss,num_poor_i,problems,sex_report):
    t = res_template%(colname,"*-"+PCT)
+   if type(problems) == type(None): 
+       template="%s & %d & %5.2f & %5.2f & n/a *-*-"
+   else:
+       template="%s & %d & %5.2f & %5.2f & %5.2f *-*-"
    for r in ave_miss.index:
-      res = ( r, num_samples.ix[r],ave_miss.ix[r],num_poor_i.ix[r]['F_MISS'],problems.ix[r]['STATUS'])
-      t = t + "%s & %d & %5.2f & %5.2f & %5.2f *-*-"%res + EOL
+      if type(problems) == type(None):
+         res = ( r, num_samples.ix[r],ave_miss.ix[r],num_poor_i.ix[r]['F_MISS'])
+      else:
+         res = ( r, num_samples.ix[r],ave_miss.ix[r],num_poor_i.ix[r]['F_MISS'],problems.ix[r]['STATUS'])
+      t = t + template%res + EOL
    t=t+"*-hline"+EOL+"*-end{tabular}"+(res_caption%colname)
    t=t+sex_report
    return t.replace("*-",chr(92))
@@ -271,7 +277,10 @@ def showFigs(figs):
     num_sub_figs_per_fig=6
     ref = template = ""
     if len(figs)==1:
-       inner="*-includegraphics[width=8cm]{%s}"%figs[0][0]
+       template=fig_template%("*-includegraphics[width=8cm]{%s}"%figs[0][0],"onlypca")+EOL+EOL
+       ref="""In the PC analysis, the principal components were computed from all
+             samples in the data together, and in the figure  we extract the
+             samples for that analysis. See Figure *-ref{fig:batch:pcaonlypca}."""
     else:
        inner=template=""
        caps = list('abcdefghijklmnopqrtuvwxyzABCD')
@@ -296,12 +305,12 @@ def showFigs(figs):
        else:
           ref="*-noindent Figures *-ref{fig:batch:pcaa}--*-ref{fig:batch:pca%s} show a principal component analysis by batch and phenotype."%(caps[curr_cap])
 
-    ref = "*-subsection{Principal component anlysis}"+EOL+EOL+\
-             ref+""" In the PC analysis, the principal components were computed from all
-             samples in the data together, and in each figure we extract the
+       ref = """ In the PC analysis, the principal components were computed from all
+             samples in the data together, and in the figure(s) we extract the
              samples for that analysis. The labels and scale of the axes may
              differ, but the coordinates are the same: the position (0,0) is the
              same in all sub-figures."""
+    ref="*-subsection{Principal component anlysis}"+EOL+EOL+ref
     return (EOL+ref+EOL+template)
 
 
@@ -507,9 +516,11 @@ def detailedSexAnalysis(pfrm,ifrm,sxAnalysisPkl,pheno_col,bfrm):
     def group_fn(x):
         return pfrm.ix[x][pheno_col]
     sex_fname = args.base+"_missing_and_sexcheck.csv"
-    sxAnalysis = pd.read_pickle(sxAnalysisPkl)
-    if type(sxAnalysis)==str:
+    if "$extrasexinfo" != "--must-have-sex":    
+        g=open(sex_fname,"w")
+        g.close()
         return noX
+    sxAnalysis = pd.read_pickle(sxAnalysisPkl)
     dumpMissingSexTable(sex_fname,ifrm,sxAnalysis,pfrm[pheno_col],bfrm)
     header = detSexHeader(sxAnalysis,pheno_col)
     tbl    = detSexGroup(sxAnalysis,"overall")
@@ -526,51 +537,57 @@ def detailedSexAnalysis(pfrm,ifrm,sxAnalysisPkl,pheno_col,bfrm):
 def backslashify(text):
     return text.replace("*-",chr(92)).replace("##",chr(36))
 
-
-text = getHeader()+EOL+EOL
-
-
-#if not(args.batch == "0" and args.phenotype == "0"):
-ifrm = getCsvI(args.imiss)
-
-
-if null_file in args.batch:
-    args.batch_col = 'all'
-    bfrm = DataFrame([1]*len(ifrm),index=ifrm.index,columns=['all'])
-    res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
-    g=open("nopcs.pdf","w")
-    g.close()
-else:
-    bfrm = getCsvI(args.batch)
-    res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error rate as shown by %(bname)s as found in file *-url{%(fname)s}."%({'bname':args.batch_col,'fname':args.batch})
-
-text=text+res_text
-problems = ifrm.index.difference(bfrm.index).to_series().values
-if len(problems)>0:
+def getBatchAnalysis():
+# Show the missingness by batch
+   if "${params.batch}" in no_response:
+       args.batch_col = 'all'
+       bfrm = DataFrame([1]*len(ifrm),index=ifrm.index,columns=['all'])
+       res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
+       g=open("nopcs.pdf","w")
+       g.close()
+   else:
+       bfrm = getCsvI(args.batch)
+       res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error "\
+                  " rate as shown by %(bname)s as found in file *-url{%(fname)s}."\
+                   %({'bname':args.batch_col,'fname':args.batch})
+   problems = ifrm.index.difference(bfrm.index).to_series().values
+   if len(problems)>0:
         print("Problem there IDs in the genotype data that are not in the batch data")
         print("You need to fix one way or the other")
         print("The IDs are")
         for p in problems:
             print(p)
         sys.exit(-1)
-result = miss_vals(ifrm,bfrm,args.batch_col,args.sexcheck_report)
-text = text+showResult(args.batch_col,*result)
+   result = miss_vals(ifrm,bfrm,args.batch_col,args.sexcheck_report)
+   return bfrm, res_text+showResult(args.batch_col,*result)
 
-if  null_file in args.phenotype:
-    args.pheno_col = 'all'
-    pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
-    if null_file not in args.batch:
-        res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
 
-else:
-    pfrm = getCsvI(args.phenotype)
-    res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error rate as shown by %(bname)s as found in file *-url{%(fname)s}."%({'bname':args.pheno_col,'fname':args.phenotype})
+def getPhenoAnalysis():
+    if  "${params.phenotype}" in no_response:
+        if "${params.batch}" not in no_response:
+            args.pheno_col = 'all'
+            pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
+            res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
+    else:
+        pfrm = getCsvI(args.phenotype)
+        res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error"\
+                   " rate as shown by %(bname)s as found in file *-url{%(fname)s}."\
+                     %({'bname':args.pheno_col,'fname':args.phenotype})
+    result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
+    return pfrm, res_text+showResult(args.pheno_col,*result)
 
-result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
-if null_file not in args.phenotype or null_file not in args.batch:
-    text = text+res_text+showResult(args.pheno_col,*result)
+
+
+text = getHeader()+EOL+EOL
+#if not(args.batch == "0" and args.phenotype == "0"):
+ifrm = getCsvI(args.imiss)
+no_response = [0,"0",False,"FALSE","false","False",""]
+
+bfrm, btext = getBatchAnalysis()
+pfrm, ptext = getPhenoAnalysis()
+text = text + ptext + btext
+
 col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
-
 eigs=getCsvI(args.eigenvec,names=col_names)
 
 
