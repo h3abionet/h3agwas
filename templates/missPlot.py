@@ -31,9 +31,10 @@ matplotlib.rcParams['ytick.labelsize']=13
 matplotlib.rcParams['xtick.labelsize']=13
 miss = data["F_MISS"]
 big = min(miss.mean()+2*miss.std(),miss.nlargest(4).iloc[3])
-interesting = np.sort(miss[miss<big])
+interesting = miss[miss<big]
 if len(interesting)>0.9 * len(miss):
     miss = interesting
+miss = np.sort(miss)
 n = np.arange(1,len(miss)+1) / np.float(len(miss))
 ax.step(miss,n)
 ax.set_xlabel("Missingness",fontsize=14)

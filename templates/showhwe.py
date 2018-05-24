@@ -105,7 +105,9 @@ def getPic(frm,test,pdfout):
    matplotlib.rcParams['xtick.labelsize']=13
    hwe = frm[frm["TEST"]==test]["P"]
    big = min(hwe.mean()+2*hwe.std(),hwe.nlargest(4).iloc[3])
-   hwe = np.sort(hwe[hwe<big])
+   if big > max(0.95*len(hwe),100):
+       hwe = hwe[hwe<big]
+   hwe = np.sort(hwe)
    n = np.arange(1,len(hwe)+1) / np.float(len(hwe))
    ax.step(hwe,n)
    ax.set_xlabel("HWE p score",fontsize=14)
