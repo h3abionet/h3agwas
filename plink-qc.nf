@@ -45,6 +45,7 @@ def getres(x) {
   return res.trim()
 }
 
+
 nextflowversion =getres("nextflow -v")
 
 
@@ -382,7 +383,7 @@ process generateSnpMissingnessPlot {
     input  = lmissf
     base   = lmissf.baseName
     label  = "SNPs"
-    output = "${base}-snpmiss_plot.pdf"
+    output = "${base}-snpmiss_plot".replace(".","_")+".pdf"
     template "missPlot.py"
 }
 
@@ -398,7 +399,7 @@ process generateIndivMissingnessPlot {
     input  = imissf
     base   = imissf.baseName
     label  = "samples"
-    output = "${base}-indmiss_plot.pdf"
+    output = "${base}-indmiss_plot".replace(".","_")+".pdf"
     template "missPlot.py"
 }
  
@@ -410,8 +411,9 @@ process getInitMAF {
      file("${base}.frq") into init_freq_ch
   script:
     base = plink[0].baseName
+    newbase = base.replace(".","_")
     """
-    plink --bfile $base --freq --out $base
+    plink --bfile $base --freq --out $newbase
     """
 }
 
@@ -424,6 +426,7 @@ process showInitMAF {
      set file("${base}.pdf"), file("${base}.tex") into report["initmaf"]
   script:
     base = freq.baseName+"-initmaf"
+    base = base.replace(".","_")
     template "showmaf.py"
 }
 
@@ -435,6 +438,7 @@ process showHWEStats {
      set file("${base}.pdf"), file("${base}-qq.pdf"), file("${base}.tex") into report["inithwe"]
   script:
     base = hwe.baseName+"-inithwe"
+    base = base.replace(".","_")
     template "showhwe.py"
 }
 
@@ -449,7 +453,7 @@ process removeQCPhase1 {
      set file("qc1.out"), file("${output}.irem") into report["qc1"]
   script:
      base=bed.baseName
-     output = "${base}-c"
+     output = "${base}-c".replace(".","_")
      """
      # remove really realy bad SNPs and really bad individuals
      plink $K --autosome --bfile $base $sexinfo --mind 0.1 --geno 0.1 --make-bed --out temp1
@@ -475,7 +479,7 @@ process compPCA {
       set file ("${prune}.eigenval"), file("${prune}.eigenvec") into (pcares, pcares1)
    script:
       base = plinks[0].baseName
-      prune= "${base}-prune"
+      prune= "${base}-prune".replace(".","_")
      """
      plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
      plink --bfile ${base} --extract check.prune.in --make-bed --out $prune
@@ -494,7 +498,7 @@ process drawPCA {
       base=eigvals.baseName
       cc_fname = params.case_control
       // also relies on "col" defined above
-      output="${base}-pca.pdf"
+      output="${base}-pca".replace(".","_")+".pdf"
       template "drawPCA.py"
 
 }
@@ -524,7 +528,7 @@ process pruneForIBD {
     file "${outf}.genome" into (find_rel_ch,batch_rel_ch)
   script:
     base   = plinks[0].baseName
-    outf   =  base
+    outf   =  base.replace(".","_")
     if (params.high_ld_regions_fname != "")
       range = " --exclude range $ldreg"
     else
@@ -552,7 +556,7 @@ process findRelatedIndiv {
   publishDir params.output_dir, overwrite:true, mode:'copy'
   script:
      base = missing.baseName
-     outfname = "${base}-fail_IBD.txt"
+     outfname = "${base}-fail_IBD".replace(".","_")+".txt"
      template "removeRelInds.py"
 }
 
@@ -569,7 +573,7 @@ process calculateSampleHeterozygosity {
       file("${hetf}.imiss") into missing_stats_ch
    script:
       base = nodups[0].baseName
-      hetf = "${base}"
+      hetf = "${base}".replace(".","_")
    """
      plink --bfile $base  $sexinfo --het --missing  --out $hetf
    """
@@ -586,7 +590,7 @@ process generateMissHetPlot {
     file(output) into report["misshet"]
   script:
     base = imiss.baseName
-    output  = "${base}-imiss-vs-het.pdf"
+    output  = "${base}-imiss-vs-het".replace(".","_")+".pdf"
     template "missHetPlot.py"
 }
 
@@ -603,7 +607,7 @@ process getBadIndivsMissingHet {
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.txt"
   script:
     base = het.baseName
-    outfname = "${base}-fail_het.txt"
+    outfname = "${base}-fail_het".replace(".","_")+".txt"
     template "select_miss_het_qcplink.py"
 }
 
@@ -623,7 +627,7 @@ process removeQCIndivs {
         (qc3A_ch, qc3B_ch)
   script:
    base = bed.baseName
-   out  = "${base}-c"
+   out  = "${base}-c".replace(".","_")
     """
      cat $f_sex_check_f $rel_indivs $f_miss_het | sort -k1 | uniq > failed_inds
      plink $K --bfile $base $sexinfo --remove failed_inds --make-bed --out $out
@@ -646,11 +650,12 @@ process calculateSnpSkewStatus {
     file "${base}.hwe" into hwe_scores_ch
   script:
    base  = plinks[0].baseName
+   out   = base.replace(".","_")
    mperm = "${base}.missing.mperm"
    phe   = plinks[3]
    """
     cp $phe cc.phe
-    plink --threads ${max_plink_cores} --autosome --bfile $base $sexinfo $diffpheno --test-missing mperm=10000 --hardy --out $base
+    plink --threads ${max_plink_cores} --autosome --bfile $base $sexinfo $diffpheno --test-missing mperm=10000 --hardy --out $out
     if ! [ -e $mperm ]; then
        echo "$mperm_header" > $mperm
     fi
@@ -668,7 +673,7 @@ process generateDifferentialMissingnessPlot {
       file output into report["diffmissP"]
    script:
        input = clean_missing
-       base  = clean_missing.baseName
+       base  = clean_missing.baseName.replace(".","_").replace("-nd","")
        output= "${base}-diff-snpmiss_plot.pdf"
        template "diffMiss.py"
 
@@ -688,7 +693,7 @@ process findSnpExtremeDifferentialMissingness {
   script:
     cut_diff_miss=params.cut_diff_miss
     missing = clean_missing
-    base     = missing.baseName.replace("-.*","")
+    base     = missing.baseName.replace("-.*","").replace(".","_")
     probcol = 'EMP2'  // need to change if we don't use mperm
     failed   = "${base}-failed_diffmiss.snps"
     template "select_diffmiss_qcplink.py"
@@ -706,7 +711,7 @@ process removeSkewSnps {
     set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into report["cleaned"]
   script:
   base = plinks[0].baseName
-  output = params.output
+  output = params.output.replace(".","_")
   """
   plink $K --bfile $base $sexinfo --exclude $failed --make-bed --out $output
   """
@@ -725,8 +730,9 @@ process calculateMaf {
 
   script:
     base = plinks[0].baseName
+    out  = base.replace(".","_")
     """
-      plink --bfile $base $sexinfo  --freq --out $base
+      plink --bfile $base $sexinfo  --freq --out $out
     """
 }
 
@@ -758,7 +764,7 @@ process findHWEofSNPs {
      file output  into unaff_hwe
 
   script:
-    base   = hwe.baseName
+    base   = hwe.baseName.replace(".","_")
     output = "${base}-unaff.hwe"
     """
       head -1 $hwe > $output
