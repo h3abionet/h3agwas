@@ -408,7 +408,7 @@ process getInitMAF {
   input:
      file(plink) from qc1C_ch
   output:
-     file("${base}.frq") into init_freq_ch
+     file("${newbase}.frq") into init_freq_ch
   script:
     base = plink[0].baseName
     newbase = base.replace(".","_")
@@ -782,7 +782,7 @@ process generateHwePlot {
 
   script:
     input  = unaff
-    base   = unaff.baseName
+    base   = unaff.baseName.replace(".","_")
     output = "${base}-hwe_plot.pdf"
     template "hweplot.py"
 }
