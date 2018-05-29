@@ -87,6 +87,27 @@ args = parseArguments()
 pdict = vars(args)
 
 
+diff_miss_text_exists = """
+Figure~*-ref{fig:diffP} plots the differences between
+cases and controls, showing the SNP-wise p-value, unadjusted for multiple testing
+
+*-ourfig{fig:diffP}{The plot shows differential missingness for each
+  (log) level of significance, the number of SNPs with p-value of at
+  least this significance. The flatter the better.}{$diffmisspdf}
+
+For removal of SNPs, we compute the p-value adjusted for multiple
+testing, by performing permutation testing (1000 rounds) using the
+PLINK mperm maxT option.  SNPs are removed from the data set if their
+adjusted (EMP2) differential missingness p-value is less than
+${params.cut_diff_miss}. The SNPs that are removed can be found in the
+file *-url{$diffmiss}
+"""
+
+diff_miss_text_not_exists = """
+There are no SNPs with significant differential missingess in this data set. If your data has been very stringently QCd so
+that there are zero or very few SNPs with *-emph{any} missingness, this is likely. However, in large data with a reasonable amount
+of missing data  this is statistically unlikely and may indicate that something has gone wrong.
+"""
 
 template='''
 *-documentclass[11pt]{article}
@@ -246,15 +267,9 @@ the difference in missingness.
 
 We expect very few SNPs to have highly significant differences. Where
 many SNPs with very highly significant p-values are found, great care
-should be taken. Figure~*-ref{fig:diffP} plots the differences between
-cases and controls, showing the SNP-wise p-value, unadjusted for multiple testing
+should be taken. 
 
-*-ourfig{fig:diffP}{The plot shows differential missingness for each (log) level of significance, the number of SNPs with  p-value of at least this significance. The flatter the better.}{$diffmisspdf}
-
-For removal of SNPs, we compute the p-value adjusted for multiple testing, by performing permutation testing (1000 rounds) using the PLINK mperm maxT option.
-SNPs are removed from the data set if their adjusted (EMP2) differential missingness p-value is less than ${params.cut_diff_miss}. The SNPs that are removed can be
-found in the file *-url{$diffmiss}
-
+%(diff_miss_text)s
 
 
 Figure~*-ref{fig:pca} shows a principal component analysis of the
@@ -374,6 +389,12 @@ def getImages(images):
                   chr(92)+chr(92)
    result = result+chr(92)+"end{tabular}"+chr(92)+"caption{Docker Images Used}" +chr(92)+"label{table:docker}"+chr(92)+"end{table}"
    return result
+
+
+s=os.stat("$diffmisspdf")
+
+diff_miss_text = diff_miss_text_exists if s.st_size>0 else diff_miss_text_not_exists
+pdict["diff_miss_text"] = diff_miss_text
  
 f=open(args.orig)
 pdict['numrsnps'] = f.readline().split()[0]
@@ -417,8 +438,11 @@ if num_fs == 1:
     if "No sex" in head: num_fs=0
 pdict['numfailedsex']=num_fs
 pdict['fullsex']=re.sub("badsex","sexcheck",args.fsex)
+
 out=open("%s.tex"%args.base,"w")
-out.write (template%pdict)
+text = template%pdict
+text=text.replace("*-",chr(92)).replace("##",chr(36))
+out.write (text)
 out.close()
 
 os.system("pdflatex %s >& /dev/null"%args.base)

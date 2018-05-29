@@ -42,5 +42,5 @@ if len(frq) >= 1:
   fig.tight_layout()
   plt.savefig(args.output)
 else:
-    print("No differential missingness info to plot")
-    sys.exit("Should not happen : please tell developer")
+    g=open(args.output,"w")
+    g.close()
