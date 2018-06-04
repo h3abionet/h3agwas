@@ -516,7 +516,7 @@ def detailedSexAnalysis(pfrm,ifrm,sxAnalysisPkl,pheno_col,bfrm):
     def group_fn(x):
         return pfrm.ix[x][pheno_col]
     sex_fname = args.base+"_missing_and_sexcheck.csv"
-    if "$extrasexinfo" != "--must-have-sex":    
+    if type(pfrm)==bool or "$extrasexinfo" != "--must-have-sex":    
         g=open(sex_fname,"w")
         g.close()
         return noX
@@ -563,6 +563,8 @@ def getBatchAnalysis():
 
 
 def getPhenoAnalysis():
+    pfrm = got_frame = False
+    res_text = ""
     if  "${params.phenotype}" in no_response:
         if "${params.batch}" not in no_response:
             args.pheno_col = 'all'
@@ -573,8 +575,10 @@ def getPhenoAnalysis():
         res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error"\
                    " rate as shown by %(bname)s as found in file *-url{%(fname)s}."\
                      %({'bname':args.pheno_col,'fname':args.phenotype})
-    result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
-    return pfrm, res_text+showResult(args.pheno_col,*result)
+    if not got_frame:
+        result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
+        res_text = res_text + showResult(args.pheno_col,*result)
+    return pfrm, res_text
 
 
 
@@ -589,7 +593,6 @@ text = text + ptext + btext
 
 col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 eigs=getCsvI(args.eigenvec,names=col_names)
-
 
 text = text + detailedSexAnalysis(pfrm,ifrm,args.sx_pickle,args.pheno_col,bfrm)
 
