@@ -18,6 +18,7 @@ pheno   = sys.argv[4]
 gotcovar = sys.argv[5]
 gtype    = sys.argv[6]
 
+if len(pheno)==0: pheno = "in fam"
 
 EOL = chr(10)
 
@@ -133,7 +134,6 @@ def showResults():
         data = clean(pheno) + ".assoc"
     else:
         data = clean(pheno) + ".assoc."+test
-    if len(pheno)==0: pheno = "in fam"
     asf   = pd.read_csv(data,delim_whitespace=True)
     if gotcovar == "1" and test != "assoc":
         asf = asf[asf['TEST']=="ADD"]
