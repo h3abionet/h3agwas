@@ -425,7 +425,7 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
       input:
        set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from assoc_ch    
        file (phenof) from pheno_ch
-      each test from requested_tests
+      each test_choice from requested_tests
       each pheno_name from pheno_label_ch
       publishDir "${params.output_dir}/${test}", overwrite:true, mode:'copy'
       output:
@@ -436,6 +436,7 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
        perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
        adjust = (params.adjust ? "--adjust" : "")
        outfname = "${pheno_name}"
+       test = test_choice == "chi2" ? "assoc" : test_choice
        if (params.data == "") {
            pheno_cmd = ""
            out = base
