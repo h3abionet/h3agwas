@@ -14,14 +14,10 @@ g = glob.glob
 label   = sys.argv[1]
 base    = sys.argv[2]
 test    = sys.argv[3]
-phenos  = sys.argv[4].split(",")
+phenos  = sys.argv[4]
 gotcovar = sys.argv[5]
 gtype    = sys.argv[6]
 
-if len(phenos[0])==0:
-    psep = ""
-else:
-    psep = "."
 
 EOL = chr(10)
 
