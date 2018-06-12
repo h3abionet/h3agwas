@@ -140,7 +140,7 @@ def showResults():
             data = clean(pheno) + ".assoc."+test
         if len(pheno)==0: pheno = "in fam"
         asf   = pd.read_csv(data,delim_whitespace=True)
-        if gotcovar == "1":
+        if gotcovar == "1" and test != "assoc":
             asf = asf[asf['TEST']=="ADD"]
         hashd = {'manfile':clean("%s-man-%s.%s"%(base,pheno,gtype)), 'testing':data,'test':test, 'pheno':pheno,\
                  'qqfile':clean("%s-qq-%s.%s"%(base,pheno,gtype))}
