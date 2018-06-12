@@ -814,8 +814,8 @@ process batchProc {
   input:
     set file(eigenval), file(eigenvec) from pcares1
     set file(imiss), file(lmiss), file(sexcheck_report) from batchrep_missing_ch
-    file phenotype from phenotype_ch    // staged input file
-    file batch     from batch_ch        // staged input file
+    file "pheno.phe" from phenotype_ch    // staged input file
+    file "batch.phe" from batch_ch        // staged input file
     file genome    from batch_rel_ch    // pruneForIBD
     file pkl       from x_analy_res_ch  // analyseX
     file rem_indivs from related_indivs_ch2 // findRel
@@ -825,6 +825,8 @@ process batchProc {
       file("${base}-batch.tex")      into report["batch_report"]
       set file("*.csv"), file("*pdf") into report["batch_aux"] // need to stage
   script:
+    phenotype = "pheno.phe"
+    batch = "batch.phe"
     base = eigenval.baseName
     batch_col = params.batch_col
     pheno_col = params.pheno_col
