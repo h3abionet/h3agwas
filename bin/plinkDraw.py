@@ -14,7 +14,7 @@ g = glob.glob
 label   = sys.argv[1]
 base    = sys.argv[2]
 test    = sys.argv[3]
-phenos  = sys.argv[4]
+pheno   = sys.argv[4]
 gotcovar = sys.argv[5]
 gtype    = sys.argv[6]
 
@@ -128,31 +128,30 @@ def clean(name):
 
 def showResults():
     outpics = ""
-    for pheno in phenos:
-        # first get the result for the straight forward test
-        if test=="assoc":
-            data = clean(pheno) + ".assoc"
-        else:
-            data = clean(pheno) + ".assoc."+test
-        if len(pheno)==0: pheno = "in fam"
-        asf   = pd.read_csv(data,delim_whitespace=True)
-        if gotcovar == "1" and test != "assoc":
-            asf = asf[asf['TEST']=="ADD"]
-        hashd = {'manfile':clean("%s-man-%s.%s"%(base,pheno,gtype)), 'testing':data,'test':test, 'pheno':pheno,\
-                 'qqfile':clean("%s-qq-%s.%s"%(base,pheno,gtype))}
-        drawManhatten(pheno,asf,hashd['manfile'])
-        drawQQ(pheno,asf,hashd['qqfile'])
-        outpics = outpics  + qq_template%hashd
-        for (correct,col,label) in [(".mperm",'EMP2',"permutation testing"),(".adjusted",'BONF',"Bonferroni correction")]:
-            nd = data + correct
-            if os.path.exists(nd):
-                outpics = outpics+processProbs(nd,col,label)
-        return outpics
+    # first get the result for the straight forward test
+    if test=="assoc":
+        data = clean(pheno) + ".assoc"
+    else:
+        data = clean(pheno) + ".assoc."+test
+    if len(pheno)==0: pheno = "in fam"
+    asf   = pd.read_csv(data,delim_whitespace=True)
+    if gotcovar == "1" and test != "assoc":
+        asf = asf[asf['TEST']=="ADD"]
+    hashd = {'manfile':clean("%s-man-%s.%s"%(base,pheno,gtype)), 'testing':data,'test':test, 'pheno':pheno,\
+             'qqfile':clean("%s-qq-%s.%s"%(base,pheno,gtype))}
+    drawManhatten(pheno,asf,hashd['manfile'])
+    drawQQ(pheno,asf,hashd['qqfile'])
+    outpics = outpics  + qq_template%hashd
+    for (correct,col,label) in [(".mperm",'EMP2',"permutation testing"),(".adjusted",'BONF',"Bonferroni correction")]:
+        nd = data + correct
+        if os.path.exists(nd):
+            outpics = outpics+processProbs(nd,col,label)
+    return outpics
         
 out_pics = showResults()
 
 
 
-textf = open("%s%s%s.tex"%(label,phenos,test),"w")
+textf = open("%s%s%s.tex"%(label,pheno,test),"w")
 textf.write(out_pics.replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10)))
 textf.close()
