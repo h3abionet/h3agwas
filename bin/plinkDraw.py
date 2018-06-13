@@ -4,8 +4,8 @@ import pandas as pd
 import sys
 import numpy as np
 import glob
-import matplotlib
-matplotlib.use('Agg') 
+import matplotlib as mpl
+mpl.use('Agg') 
 import matplotlib.pyplot as plt
 import os
 g = glob.glob
@@ -24,6 +24,13 @@ EOL = chr(10)
 
 def drawManhatten(pheno, result,outf):
     fig, (ax1, ax2) =  plt.subplots(2, 1, sharey=True)
+    plt.xlabel("Chromosome",fontsize=14)
+    for ax in [ax1,ax2]:
+        ax.set_ylabel("$-\log P$",fontsize=14)
+        ax.xaxis.set_tick_params(labelsize=11)
+        ax.xaxis.set_tick_params(labelsize=11)
+        ax.yaxis.set_tick_params(labelsize=11)
+        ax.yaxis.set_tick_params(labelsize=11)
     ax=ax1
     delta=0
     colours= ['crimson','blue','green']
@@ -57,6 +64,8 @@ def drawQQ(pheno,result,outf):
     n=len(sort_p)
     expected = -np.log10(np.linspace(1/n,1,n))
     plt.plot(expected,sort_p)
+    plt.xlabel("Expected $-\log P$-value",fontsize=14)
+    plt.ylabel("Observed $-\log P$-value",fontsize=14)
     plt.plot(expected,expected)
     plt.savefig(outf)
 
@@ -73,7 +82,7 @@ plot in Figure *-ref{fig:man}.
 
 *-begin{figure}[ht]
 *-begin{center}
-*-includegraphics[width=10cm]{%(qqfile)s}
+*-includegraphics[width=17cm]{%(qqfile)s}
 *-end{center}
 *-caption{QQ plot for PLINK testing --  *-protect*-url{%(pheno)s}, test %(test)s -- *-protect*-url{%(testing)s} }
 *-label{fig:qq}
@@ -81,7 +90,7 @@ plot in Figure *-ref{fig:man}.
 
 *-begin{figure}[ht]
 *-begin{center}
-*-includegraphics[width=10cm]{%(manfile)s}
+*-includegraphics[width=17cm]{%(manfile)s}
 *-end{center}
 *-caption{PLINK testing: Manhatten plot for --  *-protect*-url{%(pheno)s}, test %(test)s -- *-protect*-url{%(testing)s}}
 *-label{fig:man}

@@ -457,12 +457,12 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
     input:
     set val(test), val(pheno_name), file(results) from out_ch.tap(log_out_ch)
     output:
-      set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink
+      set file("${base}*man*pdf"), file ("${base}*qq*pdf"), file("C050*tex") into report_plink
     publishDir params.output_dir
     script:
       base="cleaned"
       """
-      plinkDraw.py  C050 $base $test ${pheno_name} $gotcovar png
+      plinkDraw.py  C050 $base $test ${pheno_name} $gotcovar pdf
       """
   }
 
