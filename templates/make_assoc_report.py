@@ -20,6 +20,15 @@ try:
 except CalledProcessError:
    kpsewhich=""
 
+fancy="""
+*-usepackage{fancyhdr}
+*-usepackage[yyyymmdd,hhmmss]{datetime}
+*-pagestyle{fancy}
+*-rfoot{Completed on *-today*- at *-currenttime}
+*-cfoot{}
+*-lfoot{Page *-thepage}
+"""
+
 dateheader=""
 if len(kpsewhich)>1:
    dfmt = kpsewhich.rstrip()
@@ -28,7 +37,7 @@ if len(kpsewhich)>1:
          for line in f:
             m=re.search("ProvidesPackage.datetime..(..../../..)",line)
             if m and m.group(1) >= "2010/09/21":
-               dateheader='*-usepackage{fancy}'
+               dateheader=fancy
 
 if len(sys.argv)<=1:
    sys.argv = "make_assoc_report.py ${params.pheno} $texf".split()
