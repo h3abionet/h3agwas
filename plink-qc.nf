@@ -58,6 +58,18 @@ report = new LinkedHashMap()
 repnames = ["dups","initmaf","inithwe","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1"]
 
 
+
+
+// Checks if the file exists
+checker = { fn ->
+   if (fn.exists())
+       return fn;
+    else
+       error("\n\n-----------------\nFile $fn does not exist\n\n---\n")
+}
+
+
+
 repnames.each { report[it] = Channel.create() }
 
 repmd5       = report["inpmd5"]
@@ -101,12 +113,21 @@ if (params.help) {
   System.exit(-1)
 }
 
-def getSubChannel = { parm, parm_name ->
+def getSubChannel = { parm, parm_name, col_name ->
   if ((parm==0) || (parm=="0") || (parm==false) || (parm=="false")) {
     filename = "emptyZ0${parm_name}.txt";
     new File(filename).createNewFile()  
     new_ch = Channel.fromPath(filename);
   } else {
+    if (! file(parm).exists()) {
+     error("\n\nThe file <$parm> given for <params.${parm_name}> does not exist")
+    } else {
+      def line  
+      new File(parm).withReader { line = it.readLine() }  
+      fields = line.split()
+      if (! fields.contains(col_name))
+	  error("\n\nThe file <$parm> given for <params.${parm_name}> does not have a column <${col_name}>\n")
+    }
     new_ch = Channel.fromPath(parm);
   }
   return new_ch;
@@ -117,6 +138,16 @@ if (params.case_control) {
   Channel.fromPath(ccfile).into { cc_ch; cc2_ch }
   col    = params.case_control_col
   diffpheno = "--pheno cc.phe --pheno-name $col"
+  if (! file(params.case_control).exists()) {
+     error("\n\nThe file <${params.case_control}> given for <params.case_control> does not exist")
+    } else {
+      def line  
+      new File(params.case_control).withReader { line = it.readLine() }  
+      fields = line.split()
+      if (! fields.contains(params.case_control_col))
+	  error("\n\nThe file <${params.case_control}> given for <params.case_control> does not have a column <${params.case_control_col}>\n")
+    }
+
 } else {
   diffpheno = ""
   col = ""
@@ -124,8 +155,8 @@ if (params.case_control) {
 }
 
 
-phenotype_ch = getSubChannel(params.phenotype,"pheno")
-batch_ch     = getSubChannel(params.batch,"batch")
+phenotype_ch = getSubChannel(params.phenotype,"pheno",params.pheno_col)
+batch_ch     = getSubChannel(params.batch,"batch",params.batch_col)
 raw_ch       = Channel.create()
 bim_ch       = Channel.create()
 inpmd5ch     = Channel.create()
@@ -157,14 +188,6 @@ if ( nosexentries.contains(params.sexinfo_available) ) {
 
 }
 
-
-// Checks if the file exists
-checker = { fn ->
-   if (fn.exists())
-       return fn;
-    else
-       error("\n\n-----------------\nFile $fn does not exist\n\n---\n")
-}
 
 
 

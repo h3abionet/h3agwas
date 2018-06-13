@@ -8,6 +8,7 @@ import matplotlib as mpl
 mpl.use('Agg') 
 import matplotlib.pyplot as plt
 import os
+import re
 g = glob.glob
 
 
@@ -18,7 +19,7 @@ pheno   = sys.argv[4]
 gotcovar = sys.argv[5]
 gtype    = sys.argv[6]
 
-if len(pheno)==0: pheno = "in fam"
+if len(pheno)==0: pheno = "infam"
 
 EOL = chr(10)
 
@@ -72,20 +73,23 @@ def drawQQ(pheno,result,outf):
 
 qq_template = """
 
-*-clearpage
 
 *-section{PLINK Results for phenotype *-protect*-url{%(pheno)s}, test %(test)s}
 
 The raw results can be found in the *-textbf{%(test)s} directory.
-The QQ plot can be found in Figure *-ref{fig:qq}, and the Manhatten
-plot in Figure *-ref{fig:man}.
+The QQ plot can be found in Figure *-ref{fig:qq:%(pheno)s:%(test)s}, and the Manhatten
+plot in Figure *-ref{fig:man:%(pheno)s:%(test)s}.
 
-*-begin{figure}[ht]
+"""
+
+
+qq_figs = """
+*-begin{figure}[hb]
 *-begin{center}
 *-includegraphics[width=17cm]{%(qqfile)s}
 *-end{center}
 *-caption{QQ plot for PLINK testing --  *-protect*-url{%(pheno)s}, test %(test)s -- *-protect*-url{%(testing)s} }
-*-label{fig:qq}
+*-label{fig:qq:%(pheno)s:%(test)s}
 *-end{figure}
 
 *-begin{figure}[ht]
@@ -93,13 +97,14 @@ plot in Figure *-ref{fig:man}.
 *-includegraphics[width=17cm]{%(manfile)s}
 *-end{center}
 *-caption{PLINK testing: Manhatten plot for --  *-protect*-url{%(pheno)s}, test %(test)s -- *-protect*-url{%(testing)s}}
-*-label{fig:man}
+*-label{fig:man:%(pheno)s:%(test)s}
 *-end{figure}
 """
 
 interesting=r"""
 
-The top ranking SNPs for %s according to %s are found in Table~\ref{tab:plink:top:%s}
+
+*-item The top ranking SNPs for %s according to %s are found in Table~\ref{tab:plink:top:%s}
 
 *-begin{table}
 *-begin{center}
@@ -110,16 +115,29 @@ SNP & P *-*-*-hline
 endtab = r"""
 *-end{tabular}
 *-end{center}
-*-caption{Top SNPs found by plink using %s for %s}
+*-caption{Top SNPs found by plink using %s for %s test *-protect*-url{%s}}
 *-label{tab:plink:top:%s}
 *-end{table}
 """
 
+def lambdaGC(log):
+    if not os.path.exists(log): return ""
+    res = ""
+    f = open(log)
+    for line in f:
+        m = re.search("Genomic inflation est. lambda(.*)", line)
+        if m:
+            res = "*-paragraph*{Genomic inflation: }: The estimate of genomic inflation ##*-lambda## "+m.group(1)+EOL+EOL
+            break
+    return res
+
+
 def showInteresting(frame, p_col, test_name):
-    slist = interesting % (str(p_col),test_name,str(p_col)+test_name)
+    cpheno = pheno.replace("_","-")
+    slist = interesting % (str(p_col),test_name,str(p_col)+cpheno)
     for row in frame.iterrows():
         slist = slist+"%s & %6.4f "%(row[1]['SNP'].replace("_","-"),row[1][p_col])+r"*-*-"+chr(10)
-    slist = slist + endtab%(test_name,p_col,str(p_col)+test_name)
+    slist = slist + endtab%(test_name,p_col,pheno,str(p_col)+cpheno)
     return slist
 
 def processProbs(data,p_col,p_name):
@@ -137,7 +155,6 @@ def clean(name):
    return name.replace("/","-").replace("np.","")
 
 def showResults():
-    outpics = ""
     # first get the result for the straight forward test
     if test=="assoc":
         data = clean(pheno) + ".assoc"
@@ -146,21 +163,23 @@ def showResults():
     asf   = pd.read_csv(data,delim_whitespace=True)
     if gotcovar == "1" and test != "assoc":
         asf = asf[asf['TEST']=="ADD"]
-    hashd = {'manfile':clean("%s-man-%s.%s"%(base,pheno,gtype)), 'testing':data,'test':test, 'pheno':pheno,\
-             'qqfile':clean("%s-qq-%s.%s"%(base,pheno,gtype))}
-    drawManhatten(pheno,asf,hashd['manfile'])
-    drawQQ(pheno,asf,hashd['qqfile'])
-    outpics = outpics  + qq_template%hashd
+    cpheno  = pheno.replace("_","-")
+    hashd = {'manfile':clean("%s-man-%s.%s"%(base,cpheno,gtype)), 'testing':data,'test':test, 'pheno':cpheno,
+             'qqfile':clean("%s-qq-%s.%s"%(base,cpheno,gtype))}
+    drawManhatten(pheno.replace("_","-"),asf,hashd['manfile'])
+    drawQQ(pheno.replace("_","-"),asf,hashd['qqfile'])
+    outpics = qq_template%hashd + lambdaGC(clean(pheno)+".log")+EOL+EOL+"*-begin{itemize}"+EOL
     for (correct,col,label) in [(".mperm",'EMP2',"permutation testing"),(".adjusted",'BONF',"Bonferroni correction")]:
         nd = data + correct
         if os.path.exists(nd):
             outpics = outpics+processProbs(nd,col,label)
+    outpics =outpics+"*-end{itemize}"+EOL+EOL+qq_figs%hashd+EOL+"*-clearpage"+EOL
     return outpics
         
 out_pics = showResults()
 
 
 
-textf = open("%s%s%s.tex"%(label,pheno,test),"w")
+textf = open("%s%s%s.tex"%(label,pheno.replace("_","-"),test),"w")
 textf.write(out_pics.replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10)))
 textf.close()

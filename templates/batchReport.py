@@ -569,15 +569,19 @@ def getPhenoAnalysis():
         if "${params.batch}" not in no_response:
             args.pheno_col = 'all'
             pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
+            got_frame = True
             res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
     else:
         pfrm = getCsvI(args.phenotype)
+        got_frame = True
         res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error"\
                    " rate as shown by %(bname)s as found in file *-url{%(fname)s}."\
                      %({'bname':args.pheno_col,'fname':args.phenotype})
-    if not got_frame:
+    if got_frame:
         result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
         res_text = res_text + showResult(args.pheno_col,*result)
+    else:
+        pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['0'])
     return pfrm, res_text
 
 

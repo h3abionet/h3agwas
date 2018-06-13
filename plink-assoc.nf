@@ -25,7 +25,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin","adjust","mperm"]
 
 
 
@@ -109,6 +109,38 @@ if (params.help) {
   }
   System.exit(-1)
 }
+
+
+def fileColExists = { fname, pname, cname ->
+  f = new File(fname)
+  if (! f.exists()) {
+     error("\n\nThe file <${fname}> given for <${pname}> does not exist")
+    } else {
+      def line  
+      f.withReader { line = it.readLine() }  
+      fields = line.split()
+      cols = cname.split(",")
+      cols.each { col -> 
+	det = col.split("/")
+	if (! fields.contains(det[0]))
+	  error("\n\nThe file <${fname}> given for <$pname> does not have a column <${det}>\n")
+      }
+    }
+}
+
+fileColExists(params.data,"${params.data} - covariates", params.covariates)
+fileColExists(params.data,"${params.data} - phenotypes", params.pheno)
+
+covs =  params.covariates.split(",")
+params.pheno.split(",").each { p ->
+  if (covs.contains(p)) {
+    println("\n\nThe phenotype <$p> is also given as a covariate -- this seems like a very bad idea")
+    sleep(10)
+  }
+}
+
+
+
 
 //---- Modification of variables for pipeline -------------------------------//
 
@@ -498,7 +530,7 @@ process doReport {
     file(reports) from report_ch.toList()
   publishDir params.output_dir
   output:
-    file("${out}.pdf")
+    file("${out}.pdf") into final_report_ch
   script:
     out = params.output+"-report"
     these_phenos     = params.pheno
@@ -510,6 +542,13 @@ process doReport {
 }
 
 
-
+final_report_ch.subscribe { 
+     b=it.baseName; println "The output report is called ${params.output_dir}/${b}.pdf"
+     params.pheno.split(",").each { p ->
+       if (covs.contains(p)) {
+         println("\n\nThe phenotype <$p> is also given as a covariate -- this seems like a very bad idea")
+       }
+     }
+}
 
 
