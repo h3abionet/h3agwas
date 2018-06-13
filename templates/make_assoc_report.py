@@ -158,7 +158,7 @@ def getImages(images):
    for img in images:
       (proc,dimg)=img.split(":")
       result = result +  \
-                  proc.lstrip(ord(36)) + "&" + chr(92) + "url{%s}"%dimg+\
+                  proc.lstrip(chr(36)) + "&" + chr(92) + "url{%s}"%dimg+\
                   chr(92)+chr(92)
    result = result+chr(92)+"end{tabular}"+chr(92)+"caption{Docker Images Used}" +chr(92)+"label{table:docker}"+chr(92)+"end{table}"
    return result
