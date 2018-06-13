@@ -28,7 +28,7 @@ if len(kpsewhich)>1:
          for line in f:
             m=re.search("ProvidesPackage.datetime..(..../../..)",line)
             if m and m.group(1) >= "2010/09/21":
-               dateheader='fancy'
+               dateheader='*-usepackage{fancy}'
 
 if len(sys.argv)<=1:
    sys.argv = "make_assoc_report.py ${params.pheno} $texf".split()
