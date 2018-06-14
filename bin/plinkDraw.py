@@ -145,7 +145,7 @@ def processProbs(data,p_col,p_name):
     mf.sort_values(by=p_col,inplace=True)
     top10= mf.head()
     selected = mf[mf[p_col]<=0.05]
-    if len(selected)<10:
+    if len(selected)>10:
         selected = top10
     slist = showInteresting(selected,p_col,p_name)
     return slist
