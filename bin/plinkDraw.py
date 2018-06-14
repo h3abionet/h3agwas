@@ -143,7 +143,7 @@ def showInteresting(frame, p_col, test_name):
 def processProbs(data,p_col,p_name):
     mf = pd.read_csv(data,delim_whitespace=True)
     mf.sort_values(by=p_col,inplace=True)
-    top10= mf.head()
+    top10= mf.head(n=10)
     selected = mf[mf[p_col]<=0.05]
     if len(selected)>10:
         selected = top10
