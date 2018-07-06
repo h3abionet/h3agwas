@@ -118,7 +118,9 @@ def fileColExists = { fname, pname, cname ->
     } else {
       def line  
       f.withReader { line = it.readLine() }  
+      // now get the column headers
       fields = line.split()
+      // now separate the column
       cols = cname.split(",")
       cols.each { col -> 
 	det = col.split("/")
