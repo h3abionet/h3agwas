@@ -89,7 +89,6 @@ readfam.close()
 
 readdata=open(args.data)
 EnteteFile=readdata.readline().split()
-print(EnteteFile)
 UsePos=[]
 ## search position of interest
 useAll=use+phenos
