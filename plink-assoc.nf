@@ -403,9 +403,7 @@ if (params.fastlmm == 1) {
 	   """
 	   export OPENBLAS_NUM_THREADS=${params.fastlmm_num_cores}
 	   gemma -bfile $base  -gk ${params.gemma_relopt} -o $base
-	   awk '{print \$1" "\$2}' $fam > nom.temp
-	   perl -00 -lpe 's/\\n/\\t/g' nom.temp|head -1|awk '{print "var\\t"\$0}'> ${rel_fastllmm}
-	   paste nom.temp  output/${base}.*XX.txt |awk '{a=\$1" "\$2;for(Cmt=3;Cmt<=NF;Cmt++){a=a"\\t"\$Cmt};print a}' >> ${rel_fastllmm}
+	   cvt_rel_gemma_fastlmm.py $fam output/${base}.*XX.txt $rel_fastlmm
 	   """
 	 }
 
