@@ -216,7 +216,7 @@ if (thin+chrom) {
     script:
        base = bed.baseName
        out  = base+"_t"
-       "plink --bfile $base $thin $chrom --make-bed --out $out"
+       "plink --keep-allele-order --bfile $base $thin $chrom --make-bed --out $out"
   }
 
   println "\nData has been thinned or only some chromosomes used  (is the run for test purposes only?)\n"
@@ -247,7 +247,7 @@ process computePCA {
       prune= "${base}-prune"
      """
      plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
-     plink --bfile ${base} --extract check.prune.in --make-bed --out $prune
+     plink --keep-allele-order --bfile ${base} --extract check.prune.in --make-bed --out $prune
      plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname}
      """
 }
@@ -424,7 +424,7 @@ if (params.fastlmm == 1) {
 	 out = "$base-$our_pheno"+"-"+chro+".stat"
 	 """
 	 this_pheno_col=`echo ${this_pheno} | sed 's/-.*//' `
-	 plink --bfile $base --chr $chro --make-bed --out $newbase
+	 plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase
 	 $fastlmmc -REML -simType RRM -verboseOut -sim $rel -bfile $newbase -pheno ${phef} -simLearnType Full -out $out -maxThreads $params.fastlmm_num_cores \
 	          $covar_opt_fast  -mpheno \${this_pheno_col} -bfileSim $base
 	 """
@@ -718,7 +718,7 @@ if (params.gemma == 1) {
        """
        list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout  $data_nomissing --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
-       plink --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase 
+       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase 
        all_covariate.py --data  $data_nomissing --inp_fam  $newbase".fam" $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
 
