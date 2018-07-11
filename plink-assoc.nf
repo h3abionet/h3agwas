@@ -616,8 +616,9 @@ if (params.boltlmm == 1) {
     script:
       base = plinksbed.baseName
       our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
-      out     = "$base-$our_pheno"+".stat"
-      outReml = "$base-$our_pheno"+".reml"
+      our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+      out     = "$base-$our_pheno2"+".stat"
+      outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
       model_snp = (nb_snp.toInteger() > 1000000) ? "--modelSnps=.sample.snp" : ""
       """
