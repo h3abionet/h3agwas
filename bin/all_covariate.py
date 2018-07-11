@@ -77,6 +77,8 @@ if args.form_out==1 :
    MissingOut="NA"
 elif  args.form_out==2:
     MissingOut="-9" 
+elif  args.form_out==3:
+    MissingOut="-9" 
 else :
     print("--form_out : "+str(args.form_out)+" not define")
     sys.exit(11)
@@ -115,6 +117,10 @@ if args.form_out == 1 :
 elif  args.form_out == 2 :
    merge.reindex(["FID","IID"])
    merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels+covariates,header=True,index=False,na_rep=MissingOut)
+elif  args.form_out == 3 :
+   merge.reindex(["FID","IID"])
+   merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels,header=False,index=False,na_rep=MissingOut)
+   merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covariates,header=False,index=False,na_rep=MissingOut)
 
 
 

@@ -351,20 +351,15 @@ if (params.fastlmm == 1) {
       file(covariates) from data_ch_fastlmm
       file(fam) from fam_ch_fast
     output:
-      set file(fastlmm_covariate), file(phef) into fastlmm_data_ch
+      set file(phef), file(covfile) into fastlmm_data_ch
       stdout into pheno_cols_ch_fastlmm
     script:
       base = fam.baseName
-      fastlmm_covariate = "${base}.fastlmm_cov"
       phef = "${base}_fastlmm_n.phe"
+      covfile = "${base}_fastlmm_n.cov"
       """
-      gemma_covariate.py --data  $covariates --inp_fam  $fam $covariate_option \
-                          --pheno ${params.pheno} --cov_out $fastlmm_covariate".tmp" --phe_out ${phef}".tmp"
-      awk '{print \$1" "\$2}' $fam > tmp.fam.name
-      sed 's/NA/-9/g' $fastlmm_covariate".tmp" |awk '{\$1="";print \$0}' > $fastlmm_covariate".tmp2"
-      sed 's/NA/-9/g' ${phef}".tmp" > ${phef}".tmp2"
-      paste  tmp.fam.name ${phef}".tmp2" >> ${phef}
-      paste  tmp.fam.name $fastlmm_covariate".tmp2" > $fastlmm_covariate
+      all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option \
+                          --pheno ${params.pheno} --phe_out ${phef}  --cov_out $covfile --form_out 3
       """
   }
 
@@ -382,7 +377,7 @@ if (params.fastlmm == 1) {
 	   file plinks from rel_ch_fastlmm
 	output:
 	   file("output/${base}.*XX.txt")
-	   file("${rel_fastllmm}") into rel_mat_ch_fastlmm
+	   file("${rel_fastlmm}") into rel_mat_ch_fastlmm
 	script:
 	   base = plinks[0].baseName
 	   fam = plinks[2]
@@ -414,7 +409,7 @@ if (params.fastlmm == 1) {
        cpus params.fastlmm_num_cores
        time   params.big_time
        input:
-	 set (file (covariate), file (phef)) from fastlmm_data_ch
+	 set file (phef), file(covariate) from fastlmm_data_ch
 	 file(rel) from rel_mat_ch_fastlmm
 	 file(plinks) from  gem_ch_fast
        each this_pheno from ind_pheno_cols_ch
@@ -448,10 +443,11 @@ if (params.fastlmm == 1) {
 	    /*file(plinks) from  gem_ch_fast2*/
 	 publishDir "${params.output_dir}/fastlmm", overwrite:true, mode:'copy'
 	 output :
-	     set val(base), val(our_pheno), file("$out") into fastlmm_manhatten_ch
+	     set val(base), val(our_pheno2), file("$out") into fastlmm_manhatten_ch
 	 script :
 	     base=base_list[0]
 	     our_pheno = this_pheno.replace(/_|\/np.\w+/,"-").replace(/-$/,"")
+	     our_pheno2 = this_pheno.replace(/_|\/np.\w+/,"-").replace(/-$/,"").replaceAll(/^[0-9]+-/,"")
 	     out = "$base-${our_pheno}.stat"
 	     fnames = list_file.join(" ")
 	     file1  = list_file[0]
@@ -466,7 +462,7 @@ if (params.fastlmm == 1) {
        cpus params.fastlmm_num_cores
        time   params.big_time
        input:
-	 set file (covariate), file (phef) from fastlmm_data_ch
+	 set file(phef), file (covariate) from fastlmm_data_ch
 	 file(plinks) from  gem_ch_fast
        publishDir "${params.output_dir}/fastlmm", overwrite:true, mode:'copy'
        each this_pheno from ind_pheno_cols_ch
