@@ -95,8 +95,9 @@ for lines in lirestat :
           for possim in pos_sim[chro] :
               if pos2>=possim[4] and pos2<=possim[5] :
                  BalIsSim=True
-                 InfoPosS=chro+"-"+str(pos)
-                 resbychro_sim.append([chro,int(pos), pos2,pval, InfoPosS])
+                 BalSamePos=int(possim[3])==int(pos)
+                 InfoPosS=chro+"-"+str(possim[3])
+                 resbychro_sim.append([chro,int(pos), pos2,pval, InfoPosS, BalSamePos])
        if BalIsSim==False :
           resbychro_nosim.append([chro,int(pos), pos2,pval])
        #find in bim position
@@ -105,14 +106,15 @@ for lines in lirestat :
 ent=""
 listres=""
 for pvalue in listepvalue:
-    ent+="nsig_sim_"+str(pvalue)+"\t"+"nsig_simaround_"+str(pvalue)+"\t"+"nsig_nosim_"+str(pvalue)+"\t"
+    ent+="nsig_simall_"+str(pvalue)+"\tnsig_sim_"+str(pvalue)+"\t"+"nsig_simaround_"+str(pvalue)+"\t"+"nsig_nosim_"+str(pvalue)+"\t"
     nbresbychro_simpval=len(set([x[4] for x in resbychro_sim if x[3]<=pvalue ]))
-    nbresbychro_simpval2=len(set([x[4] for x in resbychro_sim if x[3]<=pvalue and x[4]!=x[0]+"-"+str(x[1])]))
+    nbresbychro_simpval2=len(set([x[4] for x in resbychro_sim if x[3]<=pvalue and x[5]]))
+    nbresbychro_simpvalall=len([x[4] for x in resbychro_sim if x[3]<=pvalue])
     nbresbychro_nosimpval=len([x[0] for x in resbychro_nosim if x[3]<=pvalue])
-    listres+=str(nbresbychro_simpval)+"\t"+str(nbresbychro_simpval2)+"\t"+str(nbresbychro_nosimpval)+"\t"
+    listres+=str(nbresbychro_simpvalall)+"\t"+str(nbresbychro_simpval)+"\t"+str(nbresbychro_simpval2)+"\t"+str(nbresbychro_nosimpval)+"\t"
 
 ent+="nsnp\tnsnpsim"
-listres+=str(sum([len(pos_all[x]) for x in pos_all]))+"\t"+str(sum([len(pos_all[x]) for x in pos_all]))
+listres+=str(sum([len(pos_all[x]) for x in pos_all]))+"\t"+str(sum([len(pos_sim[x]) for x in pos_sim]))
 
 writeout=open(args.out,"w")
 writeout.write(ent+"\n")

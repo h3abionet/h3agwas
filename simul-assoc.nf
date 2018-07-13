@@ -289,21 +289,32 @@ if(params.gemma==1){
    }
    alpha_lim=params.ph_alpha_lim
    process doGemmaStat{
-
     input:
       set sim, file(file_causal), file(stat), file(bim) from res_gem
     output :
-      set sim, file(out) into res_stat_gem
+     file(out) into res_stat_gem
     script :
       base=bim.baseName
-      out=base+"."+sim+".res.stat"
+      out=base+".gem."+sim+".res.stat"
       """
       compute_stat_phenosim.py --stat $stat --bim  $bim --header_pval p_wald --header_chro chr --header_pos ps --windows_size $params.ph_windows_size --alpha_lim $params.ph_alpha_lim --out $out --pos_simul $file_causal
       """
   }
-  process MergeStatGemma{
-
-
+  res_stat_gemmac=res_stat_gem.collect()
+  process doMergeStatGemma{
+    input :
+     val(liste_file) from res_stat_gemmac
+    publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
+    output :
+     file(output_gemma)
+    script :
+      output_gemma="res_gemma.stat"
+      listefiles=liste_file.join(" ")
+      file = liste_file[0]
+      """
+      head -1 $file > $output_gemma
+      cat $listefiles|grep -v "nsig" >> $output_gemma
+      """
   }
 
 
@@ -353,14 +364,30 @@ if(params.boltlmm==1){
     input:
       set sim, file(file_causal), file(stat), file(bim) from res_bolt
     output :
-      set sim, file(out) into res_stat_bolt
+      file(out) into res_stat_bolt
     script :
       base=bim.baseName
-      out=base+"."+sim+".res.stat"
+      out=base+"."+sim+".bolt.res.stat"
       """
       compute_stat_phenosim.py --stat $stat --bim  $bim --header_pval P_BOLT_LMM_INF --header_chro CHR --header_pos BP --windows_size $params.ph_windows_size --alpha_lim $params.ph_alpha_lim --out $out --pos_simul $file_causal
       """
 
+  }
+   res_stat_boltc=res_stat_bolt.collect()
+  process doMergeStatBolt{
+    input :
+      val(liste_file) from res_stat_boltc
+    publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
+    output :
+       file(output_bolt) 
+    script :
+      output_bolt="res_boltlmm.stat"
+      listefiles=liste_file.join(" ")
+      file = liste_file[0]
+      """
+      head -1 $file > $output_bolt
+      cat $listefiles|grep -v "nsig" >> $output_bolt
+      """ 
   }
 }
 
