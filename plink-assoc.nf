@@ -432,8 +432,6 @@ if (params.fastlmm == 1) {
 
      fastlmm_manhatten_chroM=fastlmm_manhatten_chro.groupTuple()
      fastlmm_manhatten_chroM1=fastlmm_manhatten_chro2.groupTuple()
-     /*fastlmm_manhatten_chroM1.println{ "Foo emit: " + it }
-     */
 
 
      process doMergeFastlmm{
