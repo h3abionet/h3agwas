@@ -183,6 +183,7 @@ Channel
 bed_all_file_ms=Channel.create()
 if (thin+chrom) {
   process thin {
+    time params.big_time
     input:
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
@@ -207,6 +208,7 @@ if(params.ph_cov_norm || params.covariates){
   liste_cov=liste_cov.replaceAll(/,$/,"")
   data_ch = Channel.fromPath(params.data)
   process GetDataNoMissing{
+     time params.big_time
      input :
        set file(bed), file(bim), file(fam) from bed_all_file_msI
        file(data) from data_ch
@@ -228,6 +230,7 @@ if(params.ph_cov_norm || params.covariates){
 }
 /*transform data in ms for phenosim*/
 process ChangeMsFormat{
+   time params.big_time
    cpus params.num_cores
    memory params.mem_req
    input :
@@ -263,6 +266,7 @@ phs_qual_param="-n ${params.phs_nb_qtl} -v $LQTL"
 process SimulPheno{
    cpus params.num_cores
    memory params.mem_req
+   time params.big_time
    input :
      set sim, file(ms), file(ped),file(bed), file(bim), file(fam) from phenosim_data_all
    output :
@@ -292,6 +296,7 @@ raw_pheno_data= Channel.fromPath(params.data).combine(raw_pheno)
 process NormaliseData{
    cpus params.num_cores
    memory params.mem_req
+   time params.big_time
    input :
      set file(data), sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from raw_pheno_data
    output :
@@ -332,6 +337,7 @@ if(params.gemma==1){
   process doGemma{
     cpus params.num_cores
     memory params.mem_req
+    time params.big_time
     input:
       set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam), file(rel) from sim_data_gemma2
     output :
@@ -428,6 +434,7 @@ if(params.boltlmm==1){
   process doBoltlmmm{
     cpus params.num_cores
     memory params.mem_req
+    time params.big_time
     input:
       set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from sim_data_bolt
     output :
