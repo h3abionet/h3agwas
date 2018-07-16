@@ -32,7 +32,7 @@ param_bolt=["bolt_ld_scores_col","bolt_ld_score_file","boltlmm", "bolt_covariate
 allowed_params+=param_bolt
 param_fastlmm=["fastlmm"]
 allowed_params+=param_fastlmm
-param_phenosim=["ph_cov_range","ph_intercept","phs_nb_qtl","phs_list_qtl","phs_nb_sim", "phs_qual", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
+param_phenosim=["ph_mem_req","ph_cov_range","ph_intercept","phs_nb_qtl","phs_list_qtl","phs_nb_sim", "phs_qual", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
 allowed_params+=param_phenosim
 
 
@@ -110,6 +110,7 @@ params.ph_eq_norm=""
 params.ph_cov_norm=""
 params.ph_intercept=""
 params.ph_cov_range=""
+params.ph_mem_req="20GB"
 
 params.help = false
 if (params.help) {
@@ -264,8 +265,7 @@ else LQTL=params.phs_list_qtl
 phs_qual_param="-n ${params.phs_nb_qtl} -v $LQTL"
 }
 process SimulPheno{
-   cpus params.num_cores
-   memory params.mem_req
+   memory params.ph_mem_req
    time params.big_time
    input :
      set sim, file(ms), file(ped),file(bed), file(bim), file(fam) from phenosim_data_all
