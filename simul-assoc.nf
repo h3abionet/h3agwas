@@ -26,13 +26,13 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","num_cores","mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",  "big_time","thin"]
+allowed_params = ["data","covariates","fastlmm_multi","max_plink_cores","gemma_num_cores","other_mem_req","plink_mem_req","input_dir","input_pat","output","output_dir","num_cores","mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",  "big_time","thin"]
 
 param_bolt=["bolt_ld_scores_col","bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov"]
 allowed_params+=param_bolt
 param_fastlmm=["fastlmm"]
 allowed_params+=param_fastlmm
-param_phenosim=["phs_nb_sim", "phs_qual", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size"]
+param_phenosim=["ph_cov_range","ph_intercept","phs_nb_qtl","phs_list_qtl","phs_nb_sim", "phs_qual", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
 allowed_params+=param_phenosim
 
 
@@ -82,6 +82,7 @@ params.fastlmm_multi = 0
 params.input_pat  = 'raw-GWA-data'
 
 params.sexinfo_available = "false"
+params.data=""
 
 /*param for phenosim*/
 /*Number simulation*/
@@ -93,8 +94,6 @@ params.phs_qual=1
 /*Nb qtl*/
 params.phs_nb_qtl=2
 /*qtl : number be as phs_nb_qtl, separate by ","*/
-/*params.phs_list_qtl=([0.05]*params.phs_nb_qtl).join(",")
-*/
 params.phs_list_qtl=""
 /*ph_qual_dom Quantitative : adititve : 0 dominant 1 */
 params.ph_qual_dom=0
@@ -102,6 +101,15 @@ params.ph_qual_dom=0
 params.ph_maf_r="0.05,1.0"
 params.ph_alpha_lim="0.05,0.000001"
 params.ph_windows_size="1000000bp"
+/*balise for normalisation */
+/* used variable pheno, covar to normalise with specific */
+params.ph_normalise = 0
+/*need to be used if params normalised */
+/*cov1=x,cov2=y*/
+params.ph_eq_norm=""
+params.ph_cov_norm=""
+params.ph_intercept=""
+params.ph_cov_range=""
 
 params.help = false
 if (params.help) {
@@ -178,20 +186,47 @@ if (thin+chrom) {
     input:
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
-      /*JT Append initialisation boltlmm_assoc_ch */
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into (bed_all_file_ms)
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into (bed_all_file_msI)
     script:
        base = bed.baseName
        out  = base+"_t"
        "plink --keep-allele-order --bfile $base $thin $chrom --make-bed --out $out"
   }
   }else{
-        raw_src_ch.into(bed_all_file_ms)
+        bed_all_file_msI=Channel.create()
+        raw_src_ch.into(bed_all_file_msI)
  }
-
-
+if(params.ph_cov_norm || params.covariates){
+  liste_cov=""
+  if(params.ph_cov_norm!=""){
+   liste_cov=params.ph_cov_norm.replaceAll(/=[0-9.-]+,/,",").replaceAll(/=[0-9.-]+$/,"")+","
+  }
+  if(params.covariates!=""){
+    liste_cov+=params.covariates
+  }
+  liste_cov=liste_cov.replaceAll(/,$/,"")
+  data_ch = Channel.fromPath(params.data)
+  process GetDataNoMissing{
+     input :
+       set file(bed), file(bim), file(fam) from bed_all_file_msI
+       file(data) from data_ch
+     output :
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into (bed_all_file_ms)
+     script :
+       base = bed.baseName
+       out = base+"nona"
+       data_nomissing=".temp"
+       list_ind_nomissing="listeInd"
+       """
+       list_ind_nomissing.py --data $data --inp_fam $fam --cov_list FID --pheno FID --dataout  $data_nomissing --lindout $list_ind_nomissing 
+       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $out
+       """
+}
+}else{
+  bed_all_file_ms=Channel.create()
+  bed_all_file_msI.into(bed_all_file_ms)
+}
 /*transform data in ms for phenosim*/
-
 process ChangeMsFormat{
    cpus params.num_cores
    memory params.mem_req
@@ -209,7 +244,6 @@ process ChangeMsFormat{
      data_ms_fam=data_ms+".fam"
      data_ms_bim=data_ms+".bim"
      data_ms_bed=data_ms+".bed"
-     
      """
      plink --keep-allele-order --bfile $base --threads ${params.num_cores} --recode tab --out $base_ped
      convert_plink_ms.py $base_ped".ped" $bim $data_ms $data_ms_ped
@@ -232,7 +266,7 @@ process SimulPheno{
    input :
      set sim, file(ms), file(ped),file(bed), file(bim), file(fam) from phenosim_data_all
    output :
-     set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) into (sim_data_gemma,sim_data_bolt, sim_data_plink)
+     set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) into raw_pheno
    script :
      base=bed.baseName
      ent_out_phen=base+"."+sim+".pheno"
@@ -247,8 +281,34 @@ process SimulPheno{
      paste ${file_causal}"tmp" ${ent_out_phen}0.causal > $file_causal
      """
 }
+if(params.data!=""){
+normal_cov_param=""
+if(params.ph_cov_norm){
+normal_cov_param+="--cov_info="+params.ph_cov_norm
+normal_cov_param+=" --rangenorm="+params.ph_cov_range
+if(params.ph_intercept)normal_cov_param+=" --intercept="+params.ph_intercept
+}
+raw_pheno_data= Channel.fromPath(params.data).combine(raw_pheno)
+process NormaliseData{
+   cpus params.num_cores
+   memory params.mem_req
+   input :
+     set file(data), sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from raw_pheno_data
+   output :
+     set sim, file(file_causal), file(file_pheno_new), file(bed), file(bim), file(fam) into (sim_data_gemma,sim_data_bolt, sim_data_plink)
+   script :
+     file_pheno_new=file_pheno+".norm"
+    """
+    ph_normalise_variable.py --data $data $normal_cov_param --data_sim $file_pheno --out $file_pheno_new
+    """
+}
+}else{
+sim_data_gemma=Channel.create()
+sim_data_bolt=Channel.create()
+sim_data_plink=Channel.create()
+raw_pheno.into(sim_data_gemma,sim_data_bolt, sim_data_plink)
+}
 if(params.gemma==1){
-
   process getGemmaRel {
     cpus params.num_cores
     memory params.mem_req
@@ -265,7 +325,10 @@ if(params.gemma==1){
        """
   }
   sim_data_gemma2=sim_data_gemma.combine(rel_mat_ch)
-  covariate_option=""
+  if (params.covariates)
+     covariate_option = "--cov_list ${params.covariates}"
+  else
+     covariate_option = ""
   process doGemma{
     cpus params.num_cores
     memory params.mem_req
@@ -278,8 +341,7 @@ if(params.gemma==1){
        gemma_covariate=base+"."+sim+".cov"
        gemma_pheno=base+"."+sim+".phe"
        out=base+"."+sim+".gem"
-       /*covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""*/
-       covar_opt_gemma    = ""
+       covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
        """
        all_covariate.py --data  $file_pheno --inp_fam  $fam $covariate_option --cov_out $gemma_covariate \
                           --pheno PhenoS --phe_out $gemma_pheno --form_out 1
@@ -319,6 +381,34 @@ if(params.gemma==1){
 
 
 }
+   /*JT Fonction to transforme argument for cofactor in gemma
+   @Input
+   args: cofactor args separate by a comma
+   infoargs: type of cofactor separate by a comma : 0 for qualitative, 1 for quantitative
+   output : cofactor for boltlmm was formating to take account qualitative and quantitative
+   */
+   def boltlmmCofact(args,infoargs) {
+      //Method code
+      splargs=args.split(",")
+      splinfoargs=infoargs.split(",")
+      if(splargs.size() != splinfoargs.size()){
+         System.err.println("args and args type for Boltlmm was not same size : "+args+" "+infoargs)
+         System.exit(-11)
+      }
+      CofactStr=""
+      for (i = 0; i <splargs.size(); i++) {
+          /*0 : for quantitatif */
+          /* 1 for qualitatif*/
+          if     (splinfoargs[i]=='1')  CofactStr +=" --qCovarCol="+splargs[i]
+          else if(splinfoargs[i]=='0')  CofactStr+=" --covarCol="+splargs[i]
+          else{
+             System.err.println("type args for "+splargs[i]+" doesn't know "+ splinfoargs[i]+"\n 1 for quantitatif arguments\n 0 for qualitatif arguments")
+             System.exit(-10)
+          }
+      }
+      return(CofactStr)
+   }
+
 
 if(params.boltlmm==1){
    if(params.bolt_ld_score_file){
@@ -328,10 +418,10 @@ if(params.boltlmm==1){
       ld_score_cmd = "--LDscoresUseChip"
 
    if (params.covariates)
-      bolt_covariate= boltlmmCofact(params.covariates,params.bolt_covariates_type)
+      bolt_covparam= boltlmmCofact(params.covariates,params.bolt_covariates_type)
    else
-      bolt_covariate= ""
-  bolt_covariate=""
+      bolt_covparam= ""
+
   type_lmm="--lmm"
   
 
@@ -347,15 +437,13 @@ if(params.boltlmm==1){
        bolt_covariate=base+"."+sim+".cov"
        bolt_pheno=base+"."+sim+".phe"
        out=base+"."+sim+".bolt"
-       /*covar_opt_bolt    =  (params.covariates) ?  " -c $bolt_covariate " : ""*/
-       covar_opt_bolt    = ""
+       covar_file_bolt =  (params.covariates) ?  " --covarFile ${bolt_pheno} " : ""
        """
        shuf -n 950000 $bim | awk '{print \$2}' > .sample.snp
        all_covariate.py --data  $file_pheno --inp_fam  $fam $covariate_option --cov_out $bolt_covariate \
                           --pheno PhenoS --phe_out $bolt_pheno --form_out 2
-       bolt $type_lmm --bfile=$base  --phenoFile=$bolt_pheno --phenoCol=PhenoS --numThreads=$params.num_cores    --statsFile=$out\
-           $ld_score_cmd  --lmmForceNonInf  --modelSnps=.sample.snp
-
+       bolt $type_lmm --bfile=$base  --phenoFile=$bolt_pheno --phenoCol=PhenoS --numThreads=$params.num_cores  $covar_file_bolt --statsFile=$out\
+           $ld_score_cmd  --lmmForceNonInf  --modelSnps=.sample.snp $bolt_covparam
        """
    }
    alpha_lim=params.ph_alpha_lim
