@@ -23,7 +23,7 @@ f.close()
 
 
 for curr in my_ids:
-    rel = rel_base.readline()
+    rel = rel_base.readline().replace('\n','')
     rel.replace(" ","\t")
     outf.write(curr+"\t"+rel+"\n")
 rel_base.close()

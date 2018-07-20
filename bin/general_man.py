@@ -13,8 +13,9 @@ import pandas as pd
 import sys
 
 inp     = sys.argv[1]
-if("-" in sys.argv[2]): phenos=sys.argv[2].split("-")
-else:phenos  = sys.argv[2]
+#if("-" in sys.argv[2]): phenos=sys.argv[2].split("-")
+#else:phenos  = sys.argv[2]
+phenos=sys.argv[2]
 base    = sys.argv[3].replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
 ChroEnt=sys.argv[4]
 PosEnt=sys.argv[5]
@@ -28,7 +29,7 @@ out_tex = "%s.tex"%base
 
 
 EOL = chr(10)
-latex_text = r"""
+latex_tex = r"""
 \clearpage
 \section{Result of %(NameProg)s analysis : phenotype %(pheno)s}
 \label{sec:%(NameProg)s}
@@ -125,7 +126,8 @@ plt.savefig(out_qq)
 
 
 tex_file=""
-pheno=phenos[1]
+#pheno=phenos[1]
+pheno=phenos
 best = get10Best(result,pheno)
 hashd = { 'pheno':pheno.replace("_","-"), 'man':out_man, 'qq':out_qq, 'best':best, 'fname':inp, 'NameProg':NameProg}
 tex_file = tex_file + latex_tex%hashd

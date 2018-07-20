@@ -77,7 +77,7 @@ EOL=chr(10)
 phenos     = [args.pheno]
 use        = ["FID","IID"]
 if args.cov_list:
-    phenos+= args.cov_list.split(",")
+    phenos+= list(set(args.cov_list.split(",")))
 
 #read of fam 
 readfam=open(args.inp_fam)
@@ -89,7 +89,6 @@ readfam.close()
 
 readdata=open(args.data)
 EnteteFile=readdata.readline().split()
-print(EnteteFile)
 UsePos=[]
 ## search position of interest
 useAll=use+phenos
