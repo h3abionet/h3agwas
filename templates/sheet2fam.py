@@ -38,7 +38,15 @@ EOL=chr(10)
 def getHeading(allrows):
     heading = list(map(lambda x: x.value, allrows.__next__()))
     col_id=heading.index("Institute Sample Label")
-    col_sex=heading.index("Manifest Gender")
+    # Now we get the sex -- used to be labelled "Gender" but we asked Illumina to change but old sheets will
+    # have this
+    if "Manifest Gender" in heading:
+        sex_colname = "Manifest Gender"
+    elif "Manifest Sex" in heading:
+        sex_colname = "Manifest Sex"
+    else:
+        sys.exit("Can't find manifest sex column in sample sheet <%s>"%args.samplesheet)
+    col_sex=heading.index(sex_colname)
     if args.batch_col in ["0",0,False,"false",None,""]:
         col_batch=-1
     else:

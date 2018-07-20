@@ -141,15 +141,27 @@ for i,snp in strand.iterrows():
     coord      = snp["Coord"]-1
     build      = int(snp['Build'])
     snp_name   = snp["SNP_Name"]
-    the_snp    = mf.loc[i]["SNP"]
     chrom_num  = snp["Chr"]
+    the_snp    = mf.loc[i]["SNP"]     
     if genome[build] == None:
+        i_strand   = mf.loc[i]["IlmnStrand"]
+        r_strand   = mf.loc[i]["RefStrand"]
+        flip       = (i_strand == "BOT") ^ (r_strand == '-')
+        if flip : base = comp.get(base,base)
+        if snp_name == "rs204704":
+            print(snp_name,the_snp,i_strand,r_strand,flip,base,mf.loc[i]["Name"])
         output = TAB.join(map(str, [snp_name,chrom_num,str(coord+1),base, build,"build err"]))+EOL
         errf.write(output)
         output = TAB.join(map(str, [snp["SNP_Name"],chrom_num,coord+1,base,align]))+EOL
         g.write(output)
         continue
     if chrom_num not in genome[build]:
+        i_strand   = mf.loc[i]["IlmnStrand"]
+        r_strand   = mf.loc[i]["RefStrand"]
+        flip       = (i_strand == "BOT") ^ (r_strand == '-')
+        if flip : base = comp.get(base,base)
+        if snp_name == "rs204704":
+            print(snp_name,the_snp,i_strand,r_strand,flip,base,mf.loc[i]["Name"])
         output = TAB.join(map(str, [snp_name,chrom_num,str(coord+1),base, build,"chrom_num_err"]))+EOL
         errf.write(output)
         output = TAB.join(map(str,[snp_name,chrom_num,coord+1,base,align]))+EOL

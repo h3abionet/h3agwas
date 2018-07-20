@@ -97,10 +97,23 @@ def getReportIndices(line):
     #SNP NameSample IDAllele1 - TopAllele2 - Top
     #fields=re.split("[,\t]",line.rstrip())
     fields = line.rstrip().split(",")
+    if "Sample Name" in fields:
+        sample = "Sample Name"
+    elif "Sample ID" in fields:
+        sample = "Sample ID"
+    else:
+        sys.exit("Can't find sample id as a field in <%s>"%line)
+    if "Allele1 - Top" in fields:
+        allele1 = "Allele1 - Top"
+        allele2 = "Allele2 - Top"
+    elif "Allele1 - Forward" in fields:
+        allele1, allele2 = "Allele1 - Forward","Allele2 - Forward"
+    else:
+        sys.exit("Can't find field labels to mark alleles in <%s>"%line)
     name_i = fields.index("SNP Name")
-    samp_i = fields.index("Sample ID")
-    alle_1 = fields.index("Allele1 - Top")
-    alle_2 = fields.index("Allele2 - Top")
+    samp_i = fields.index(sample)
+    alle_1 = fields.index(allele1)
+    alle_2 = fields.index(allele2)
     return name_i, samp_i, alle_1, alle_2
 
 def getID(idreg,sample_id):

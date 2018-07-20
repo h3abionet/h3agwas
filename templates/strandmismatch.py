@@ -9,7 +9,7 @@ from operator import xor
 def parseArguments():
     parser=argparse.ArgumentParser()
     parser.add_argument('strandreport', type=str, metavar='strandreport'),
-    parser.add_argument('manifest', type=str, metavar=''),
+    parser.add_argument('manifest', type=str, metavar='manifest'),
     parser.add_argument('output_align', type=str, metavar='output_align'),
     parser.add_argument('flips', type=str, metavar='flips',help="flips"),
     args = parser.parse_args()
@@ -44,6 +44,15 @@ elif args.output_align == "ref":
                      dtype={"Chr":str},\
                      usecols=["Name","IlmnStrand","RefStrand","Chr","MapInfo"])
     snps_to_flip = mf[(mf["IlmnStrand"]=="BOT")^(mf["RefStrand"]=="-")]["Name"]
+elif args.output_align == "db2ref":
+    strand = pd.read_csv(args.strandreport,delim_whitespace=True,comment="#",\
+                     dtype={"Chr":str},\
+                     usecols=["SNP_Name","Chr","Coord","Top_AlleleA","Forward_Allele1"])
+    mf = pd.read_csv(args.manifest,skiprows=7,delimiter=",",\
+                     dtype={"Chr":str},\
+                     usecols=["Name","IlmnStrand","RefStrand","Chr","MapInfo"])
+    res=strand.merge(mf,left_on="SNP_Name",right_on="Name",suffixes=["","+r"])
+    snps_to_flip = res[((res["IlmnStrand"]=="BOT")^(res["RefStrand"]=="-"))^(res["Top_AlleleA"]!=res["Forward_Allele1"])]["Name"]
 else:
     g.close()
     sys.exit(args.output_align+" is not a supported output format")
