@@ -59,7 +59,7 @@ for performing a genome-wide association study
 
 There are three separate workflows that make up *h3agwas*
 
-1. `topbottom.nf`.  Conversion of Illumina genotyping reports with TOP/BOTTOM calls into PLINK format, aligning the calls.
+1. `topbottom.nf`.  Conversion of Illumina genotyping reports with TOP/BOTTOM or FORWARD/REVERSE  calls into PLINK format, aligning the calls.
 
 2. `plink-qc.nf`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
 
@@ -454,18 +454,26 @@ Other flags are:
 * `thin`. You can set this to a floating point number in the range (0, 1] and then the PLINK data files are thinned leaving only that proportion of the SNPs. This allows pipeline to be tested with a small proportion of the data This is probably only needed for debugging purposes and usually this should not be be set.
 * `chrom`. Only do testing on this chromosome.
 
-# 7. Converting from Illumina genotyping reports in TOP/BOTTOM format
+# 7. Converting from Illumina genotyping reports in TOP/BOTTOM or Forward foramtformat
 
 This workflow is run by 
 
 ```nextflow run topbottom.nf```
 
-and converts from an Illumina TOP/BOTTOM call file. Together with auxiliary input data, this file is first converted into a raw PLINK file and then the PLINK file is aligned to a strand, and then convered into binary PLINK format. This process can take a very long time.
+and converts from an Illumina TOP/BOTTOM or FORWARD call file. Together with auxiliary input data, this file is first converted into a raw PLINK file and then the PLINK file is aligned to a strand, and then convered into binary PLINK format. This process can take a very long time.
 
+If you don't understand these formats, the bad news is that you really should. See  S. C. Nelson, K. F. Doheny, C. C. Laurie, and D. B. Mirel, "Is 'forward' the same as 'plus'?...and other adventures in SNP allele nomenclature." Trends in Genetics, vol. 28, no. 8, pp. 361-363, 2012. http://dx.doi.org/10.1016/j.tig.2012.05.002  The good news is that you are no talone
 
+Essentially the problem since the reference genome changes over time, what is on the forward strand of one reference could become the reverse in the next. Not likely but could and does happen. Thus what someone sees as a SNP with A/C alleles could become a SNP with T/G alleles etc. For SNPs with A/C alleles we can easily see when something's flipped but if the allele is an A/T or C/G allele we can't differentiate between alternate alleles and reverse complements.
+
+Two common methods that are used to disambiguuate this are to call
+* with respect to the entry in dbSNP -- usually the way in which the discoverer reported it. This submission to dbSNP will contain the flanking regions of the SNP. Usually this is will be in the smae orientation as the reference genome, but often is not 
+* Illumina's TOP/BOTTOM format which uses the SNP and/or flanking region (see the reference given)
+
+ 
 This process is expensive because:
 
-* the top/bottom file is a very bulky and inefficient format
+* the top/bottom or forward file is a very bulky and inefficient format
 * we convert first to PLINK using the inefficenct PED format
 
 As an example, on a 2.5m SNP-chip with 10k individuals, you are looking at over 200 CPU-hours.
@@ -501,7 +509,7 @@ the Illumina IDs in the sample ID are typically a long string some of  the compo
 
 For example, suppose the ID as found in the Illumina input data is `WG0680781-DNA_A02_ABCDE`, if you use ".*_(.+)" as the idpat, then the FID IID used would be ABCDE ABCDE. If you used "(\\w+)_DNA_(\\w+)_" then the FID IIS used would be "WG0680781 A02". Note how we need to escape the backslash twice.
 
-* `output_align`. This can be one of three values: _topbottom_, _dbsnp_ and _ref_. If topbot, the SNPs will be aligned to the Illumnia TOP strand. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. In the latter two cases, many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).
+* `output_align`. This can be one of three values: _dbsnp_, _ref_, and _db2ref_. dnsnp and ref assume that the input is in TOP/BOT format. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. Many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).   _db2ref_ assumes the input is in FORWARD format and aligns to to the given reference genome.
 
 * `strandreport`: This is an Illumina-style strand report. It is not needed if you choose "tobot" above, but it is needed for "dbsnp" or "ref"
 
