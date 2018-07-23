@@ -18,13 +18,14 @@ def parseArguments():
     parser.add_argument('--pheno',type=str,required=True,help="comma separated list of  pheno column")
     parser.add_argument('--phe_out', type=str,help="output fam file")
     parser.add_argument('--cov_out', type=str,help="output covariate file")
+    parser.add_argument('--form_out', type=int,help="format output : 1:Gemma; 2:boltlmm", required=True)
     args = parser.parse_args()
     return args
 
 
-def check_missing(x):
+def check_missing(x, MissingOut):
     if x in ["NA","na","null","-9"]  or ((type(x)==type("x")) and (len(x)<1)) or x==-9 or x==r"\N" or x=="-":
-        return "NA"
+        return MissingOut
     else:
         return x
 
@@ -71,6 +72,16 @@ if args.cov_list:
     use = use+covariates
 else:
     covariates = []
+
+if args.form_out==1 :
+   MissingOut="NA"
+elif  args.form_out==2:
+    MissingOut="-9" 
+elif  args.form_out==3:
+    MissingOut="-9" 
+else :
+    print("--form_out : "+str(args.form_out)+" not define")
+    sys.exit(11)
     
 
 
@@ -94,12 +105,23 @@ for (label, transform) in zip(pheno_labels+covar_labels, pheno_transform+cover_t
         except:
             errorMessage10(label)
             sys.exit(10)
-    datad[label]=datad[label].apply(check_missing)
+    datad[label]=datad[label].apply(check_missing, MissingOut=MissingOut)
 
 famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEX","CC"])
 merge = pd.merge(famd,datad,how="left",on=["FID","IID"])
-merge["intercept"]=1
-merge.reindex(["FID","IID","intercept"]+covariates)
-merge.to_csv(args.cov_out,sep=TAB,columns=["intercept"]+covariates,header=False,index=False,na_rep="NA")
-merge.to_csv(args.phe_out,sep=TAB,columns=pheno_labels,header=False,index=False,na_rep="NA")
+if args.form_out == 1 : 
+   merge["intercept"]=1
+   merge.reindex(["FID","IID","intercept"]+covariates)
+   merge.to_csv(args.cov_out,sep=TAB,columns=["intercept"]+covariates,header=False,index=False,na_rep=MissingOut)
+   merge.to_csv(args.phe_out,sep=TAB,columns=pheno_labels,header=False,index=False,na_rep=MissingOut)
+elif  args.form_out == 2 :
+   merge.reindex(["FID","IID"])
+   merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels+covariates,header=True,index=False,na_rep=MissingOut)
+elif  args.form_out == 3 :
+   merge.reindex(["FID","IID"])
+   merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels,header=False,index=False,na_rep=MissingOut)
+   merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covariates,header=False,index=False,na_rep=MissingOut)
+
+
+
 print(" ".join(list(map (lambda a: str(a[0]+1)+"-"+a[1], enumerate(phenos) ))),end="")

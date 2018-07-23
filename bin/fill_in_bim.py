@@ -12,6 +12,7 @@ import sys
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='fill in missing bim values')
+    parser.add_argument('align',type=str)
     parser.add_argument('strand',type=str)
     parser.add_argument('manifest',type=str)
     parser.add_argument('bim', type=str)
@@ -44,14 +45,20 @@ def manifestProc(bdata):
 args = parseArguments()
 
 
+if args.align == "db2ref":
+    all1_col, all2_col  =   "Forward_Allele1", "Forward_Allele2"
+else:
+    all1_col, all2_col  =   "Top_AlleleA", "Top_AlleleB"
+
 if args.strand == "emptyZ0strn.txt": # we have a dummy strand file and  the manifest file is given
     mf = pd.read_csv(args.manifest,delimiter=",",skiprows=7,\
                      usecols=["SNP","IlmnStrand","Name"])
     name='Name'
     extractValues = manifestProc
 else:
+    print("am here",all1_col)
     mf = pd.read_csv(args.strand,delim_whitespace=True,\
-                     usecols=["SNP_Name","Top_AlleleA", "Top_AlleleB"],comment="#")
+                     usecols=["SNP_Name",all1_col,all2_col],comment="#")
     name = "SNP_Name"
     extractValues = strandProc
 mf.set_index(name,inplace=True)
@@ -62,6 +69,10 @@ bf = open(args.bim)
 out=open(args.output,"w")
 for line in bf:
     bdata = line.rstrip().split()
+    if "rs99365" in bdata[1]: 
+        print(bdata)
+        alleles = extractValues(bdata)
+        print(alleles)
     if bdata[4] == '0':
         alleles = extractValues(bdata)
         if bdata[5]   == alleles[0]:

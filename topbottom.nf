@@ -11,7 +11,7 @@ params.output         = "chip"
 params.strandreport   = false
 params.manifest       = false
 params.queue          = 'batch'
-
+params.output_align   = 'ref'
 
 
 plink_src = Channel.create()
@@ -128,6 +128,9 @@ def gChrom= { x ->
     """
  } 
 
+
+
+
   process fillInBim {  //  Deals with monomorphic or non-called SNPs
     input:
      file(inbim) from fill_in_bim_ch
@@ -136,7 +139,7 @@ def gChrom= { x ->
     output:
      file("raw.bim") into filled_bim_ch
     script:
-       "fill_in_bim.py $strand $manifest $inbim  raw.bim"
+       "fill_in_bim.py ${params.output_align} $strand $manifest $inbim  raw.bim"
   }
 
 
