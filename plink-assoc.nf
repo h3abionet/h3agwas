@@ -32,7 +32,7 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_me
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
 ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type", "bolt_num_cores", "bolt_use_missing_cov", "bolt_num_cores"]
 allowed_params+=ParamBolt
-ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi"]
+ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin"]
 allowed_params+=ParamFast
 
 
@@ -94,6 +94,7 @@ params.fastlmm = 0
 params.fastlmm_num_cores=params.gemma_num_cores
 params.fastlmm_mem_req="15GB"
 params.fastlmm_multi = 0 
+params.fastlmmc_bin =""
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -332,7 +333,9 @@ if (params.data != "") {
 /*JT : Case fastlmm => if yes*/
 if (params.fastlmm == 1) {
   data_ch_fastlmm = Channel.fromPath(params.data)
-  fastlmmc="/home/jeantristan/.local/lib/python2.7/site-packages/fastlmm/association/Fastlmm_autoselect/fastlmmc"
+  #.local/lib/python2.7/site-packages/fastlmm/association/Fastlmm_autoselect/fastlmmc
+  if(params.fastlmmc_bin=="")fastlmmc="fastlmmc"
+  else fastlmmc=params.fastlmmc_bin
 
   fam_ch_fast = Channel.create()
   gem_ch_fast2 = Channel.create()
