@@ -333,7 +333,6 @@ if (params.data != "") {
 /*JT : Case fastlmm => if yes*/
 if (params.fastlmm == 1) {
   data_ch_fastlmm = Channel.fromPath(params.data)
-  #.local/lib/python2.7/site-packages/fastlmm/association/Fastlmm_autoselect/fastlmmc
   if(params.fastlmmc_bin=="")fastlmmc="fastlmmc"
   else fastlmmc=params.fastlmmc_bin
 
