@@ -530,7 +530,7 @@ if (params.fastlmm == 1) {
 	  /*0 : for quantitatif */
 	  /* 1 for qualitatif*/
 	  if     (splinfoargs[i]=='1')  CofactStr +=" --qCovarCol="+splargs[i]
-	  else if(splinfoargs[i]=='0')  CofactStr+=" --covarCol="+splargs[i]
+	  else if(splinfoargs[i]=='0')  CofactStr +=" --covarCol="+splargs[i]
 	  else{
 	     System.err.println("type args for "+splargs[i]+" doesn't know "+ splinfoargs[i]+"\n 1 for quantitatif arguments\n 0 for qualitatif arguments")
 	     System.exit(-10)
