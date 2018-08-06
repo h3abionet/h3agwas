@@ -674,9 +674,12 @@ if (params.gemma == 1) {
        file("output/${base}.*XX.txt") into rel_mat_ch
     script:
        base = plinks[0].baseName
+       famfile=base".fam"
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       gemma -bfile $base  -gk ${params.gemma_relopt} -o $base
+       echo -e "IID\tFID\tPheno" > pheno
+       cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' >> pheno
+       gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3
        """
   }
 
