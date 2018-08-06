@@ -385,8 +385,7 @@ if (params.fastlmm == 1) {
 	   fam = plinks[2]
 	   rel_fastlmm="rel_fastlmm.txt"
 	   """
-           echo -e "IID\tFID\tPheno" > pheno
-           cat $fam |awk '{print \$1"\t"\$2"\t"0.2}' >> pheno
+           cat $fam |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
 	   export OPENBLAS_NUM_THREADS=${params.fastlmm_num_cores}
 	   gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3
 	   cvt_rel_gemma_fastlmm.py $fam output/${base}.*XX.txt $rel_fastlmm
@@ -679,8 +678,7 @@ if (params.gemma == 1) {
        famfile=base+".fam"
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       echo -e "IID\tFID\tPheno" > pheno
-       cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' >> pheno
+       cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
        gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3
        """
   }
