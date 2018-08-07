@@ -269,6 +269,7 @@ process SimulPheno{
    time params.big_time
    input :
      set sim, file(ms), file(ped),file(bed), file(bim), file(fam) from phenosim_data_all
+   publishDir "${params.output_dir}/simul/", pattern: "$file_causal", overwrite:true, mode:'copy'
    output :
      set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) into raw_pheno
    script :
@@ -304,7 +305,7 @@ process NormaliseData{
    script :
      file_pheno_new=file_pheno+".norm"
     """
-    ph_normalise_variable.py --data $data $normal_cov_param --data_sim $file_pheno --out $file_pheno_new
+    ph_normalise_variable.py --data $data $normal_cov_param --data_sim $file_pheno --out $file_pheno_new --na_out "NA"
     """
 }
 }else{
@@ -340,6 +341,7 @@ if(params.gemma==1){
     time params.big_time
     input:
       set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam), file(rel) from sim_data_gemma2
+    publishDir "${params.output_dir}/gemma/simul/", pattern: "output/${out}.assoc.txt", overwrite:true, mode:'copy'
     output :
       set sim, file(file_causal), file("output/${out}.assoc.txt"), file(bim) into res_gem
     script :
@@ -437,6 +439,7 @@ if(params.boltlmm==1){
     time params.big_time
     input:
       set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from sim_data_bolt
+    publishDir "${params.output_dir}/boltlmm/simul/", pattern: "${out}", overwrite:true, mode:'copy'
     output :
       set sim, file(file_causal), file(out), file(bim) into res_bolt
     script :
