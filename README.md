@@ -511,7 +511,7 @@ For example, suppose the ID as found in the Illumina input data is `WG0680781-DN
 
 * `output_align`. This can be one of three values: _dbsnp_, _ref_, and _db2ref_. dnsnp and ref assume that the input is in TOP/BOT format. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. Many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).   _db2ref_ assumes the input is in FORWARD format and aligns to to the given reference genome.
 
-* `strandreport`: This is an Illumina-style strand report. It is not needed if you choose "tobot" above, but it is needed for "dbsnp" or "ref"
+* `strandreport`: This is an Illumina-style strand report. It is not needed if you choose "ref" above, but it is needed for the others.
 
 * `refererence`: This is the name of a file that gives the reference allele for each SNP on the chip.  This is only useful if the "ref" option is used for `output_align`, and is optional in this case. Note that the difference between aligning and the use of the reference. Aligning will decide which strand of the reference genome as found in the Illumina genotyping teh alleles can be found on. For example, if the genotyping report gives the two options as A and C, aligning checks whether this is A and C on the + strand of the reference genome or (and so will be A and C in the output bim file) or whther this is A and C on the $-$ strand of the reference genome and so should be reported as T and G. This is done using information in the chip manifest file. The second step is to know which allele is the reference allele and which is the alternate allele.
 
@@ -520,6 +520,11 @@ A reference file suitable for the H3A chip can be found here http://www.bioinf.w
 * `batch_col`: For this workflow, the `batch_col` parameter is a column in the `samplesheet` that should be used to extract out out the 6-th column of the `fam` file, or the phenotype. This allows you do do batch analysis. Of course, you can choose anything you like to be the "batch". The default value is 0, which means just set the 6-th column of the fam file to -9.  One special case: If the contents of the column is of the form "Batch n", then only the _n_ is returned.
 
 * `samplesize`: This was  included mainly for development purposes but _perhaps_ might be helpful to some users. This allows you sample only the first _n_ people in each genotype report. This allows you to extract out a small subset of the data for testing purposes. The default is 0, which means that *all* individuals will be generated.
+
+* `mask`: This is a file of sample IDs that you want excluded from your data. These should be IDs given in the _Institute Sample Label_ of the sample sheet. The file should contain at least one column, possibly with other columns white-space delimited. Only the first column is used the other columns are ignored.
+
+* `replicates`: This is a file of sample IDs that are biological replicates. You will often include biological replicates for genotyping -- the label as given in the _Institute Sample Label_ column will of course be different, but once you have extracted out the sample ID using the _idpat_ field above, all the replicates for the same individual will then have the same sample id. For samples that have replicates you should choose one of the samples to be the canonical one and then identify the others as being the replicates with the labels 
+
 
 ## Output
 
