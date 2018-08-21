@@ -1,5 +1,6 @@
 
 
+
 <img src="aux/H3ABioNetlogo2.jpg"/>
 
 # h3agwas Pipeline Version 2
@@ -939,11 +940,18 @@ Three files are output: a fam file, an error file (the IDs of individuals who ar
 Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
 
 
-# 10. Copyright and general
+# 10. Acknowledgement, Copyright and general
+
+## Acknowledgement
+
+We acknowledge funding by the National Institutes of Health through the NHGRI (U41HG006941). The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.
+
+* We thank Sumir Panji and Nicola Mulder for their support and leadership
+* We thank Fourie Joubert at the University of Pretoria for hosting our initital hackathon.
 
 ### Authors
 
-Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
+Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Jean-Tristan BrandenburgEugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
 
 We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
 
