@@ -141,22 +141,24 @@ The h3agwas pipeline can be run in different environments; the requirements diff
 
 We now explore these in details
 
-## 2.2 Basic requirements
+## 2.2 Pre-requisites
 
 **All** modes of h3agwas have the following requirements
 * Java 8
 * Nextflow. To install Nextflow, run the command below. It creates a _nextflow_ executable in the directory you ran the command. Move the executable to a directory on the system or user PATH and make it executable. You need to be running Nextflow 27 (January 2018) or later.
     `curl -fsSL get.nextflow.io | bash`
-* Install the scripts
-    `git clone https://github.com/h3agwas`
 
-## 2.3 Installing with Docker
+  If you don't have curl (you can use wget)
 
-Install docker on your computer(s). Docker is available on most major platforms.  See [the Docker documentation](https://docs.docker.com/) for installation for your platform. 
+* Git 
+
+## 2.3 Installing with Docker or Singularity
+
+If you install Docker or Singularity, you do not need to install all the other dependencies. Docker is available on most major platforms.  See [the Docker documentation](https://docs.docker.com/) for installation for your platform.  Singularity works very well on Linux.
     
 That's it. 
 
-## 2.4  Installing to run natively
+## 2.4  Installing software dependencies to run natively
 
 This requires a standard Linux installation or macOS. It requires _bash_ to be available as the shell of the user running the pipeline.
 
@@ -164,19 +166,57 @@ The following code needs to be installed and placed in a directory on the user's
 
 * plink 1.9 [Currently, it will not work on plink 2, though it is on our list of things to fix. It probably will work on plink 1.05 but just use plink 1.0]
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
-* python 3.4 or later. pandas, numpy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
+* python 3.6 or later. pandas, numpy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
-If you want to run the `plink-assoc.nf` pipeline then you should install emmax and gemma if you are using those options.
+If you want to run the `plink-assoc.nf` pipeline then you should install gemma if you are using those options.
+
+##2.5 Installing the workflow
+
+There are two approaches: let Nextflow manage this for you; or download using Git. The former is easier; you need to use Git if you want to change the workflow
+
+###2.5.1 Managing using Nextflow
+
+To download the workflow you can say
+
+`nextflow pull h3abionet/h3agwas`
+
+If we update the workflow, the next time you run it, you will get a warning message. You can do another pull to bring it up to date.
+
+If you manage the workflow this way, you will run the scripts, as follows
+* `nextflow run h3abionet/h3agwas/topbottom.nf ..... `
+* `nextflow run h3abionet/h3agwas/plink-qc.nf ..... `
+* `nextflow run h3abionet/h3agwas/plink-assoc.nf ..... `
+
+### 2.5.2 Managig with Git
+
+Change directory where you want to install the software and say
+
+    `git clone https://github.com/h3agwas`
+
+This will create a directory called _h3agwas_ with all the necesssary code.
+If you manage the workflow this way, you will run the scripts this way:
+* `nextflow run SOME-PATH/topbottom.nf ..... `
+* `nextflow run SOME-PATH/plink-qc.nf ..... `
+* `nextflow run SOME-PATH/plink-assoc.nf ..... `
+
+where _SOME-PATH_ is a relative or absolute path to where the workflow was downloaded.
+
+
 
 # 3. Quick start example
 
-This section shows a simple run of the `plink-qc.nf` pipeline that should run out of the box if you have installed the software or Docker. More details and general configuration will be shown later.
+This section shows a simple run of the `plink-qc.nf` pipeline that
+should run out of the box if you have installed the software or
+Docker. More details and general configuration will be shown later.
 
 This section illustrates how to run the pipeline on a small sample data
 file with default parameters.  For real runs, the data to be analysed
 and the various parameters to be used are specified in the
 _nextflow.config_ file.  The details will be explained in another
 section.
+
+If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.sip and unzip
+
 
 The sample data to be used is in the _input_ directory (in PLINK
 format as _sampleA.bed_, _sampleA.bim_, _sampleA.fam_). The default
@@ -189,9 +229,22 @@ with no X-chromosome information and no sex checking is done.
 
 ## 3.1 Running on your local computer 
 
-This requires that all software dependancies have been installed.
+This requires that all software dependancies have been installed. 
+
+### 3.1.1 If you downloaded using Nextflow
+
+We also assume the _sample_ directory with data is in the current working directory
+
+`nextflow run h3abionet/h3agwas/plink-qc.nf`
+
+
+### 3.1.2 If you downloaded using Git
+
+Change directory to the directory in which the workflow was downloaded
 
 `nextflow run  plink-qc.nf`
+
+## 3.2 Remarks
 
 The workflow runs and output goes to the _output_ directory. In the
 _sampleA.pdf_ file, a record of the analysis can be found.
@@ -200,13 +253,15 @@ In order, to run the workflow on another PLINK data set, say _mydata.{bed,bim,fa
 
 `nextflow run  plink-qc.nf --input_pat mydata`
 
+(or `nextflow run  h3abionet/h3agwas/plink-qc.nf --input_pat mydata` : **for simplicity for the rest of the tutorial we'll only present the one way of running the workflow -- you should use the method that is appropriate for you**)
+
 If the data is another directory, and you want to the data to go elsehwere:
 
 `nextflow run  plink-qc.nf --input_pat mydata --input_dir /data/project10/ --output_dir ~/results `
 
 There are many other options that can be passed on the the command-line. Options can also be given in the _config_ file (explained below). We recommend putting options in the configuration file since these can be archived, which makes the workflow more portable
 
-## 3.2 Running with Docker on your local computer
+## 3.3 Running with Docker on your local computer
 
 Execute 
 
@@ -449,7 +504,7 @@ and then for all the tests except _gemma_, do you want to adjust for multiple te
 
 For example
 
-```nextflow run plink-assoc --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
+```nextflow run plink-assoc.nf --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
 
 analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
 
@@ -889,7 +944,6 @@ Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Eugene de Beste, Abo
 We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
 
 ### License
-h3agwas offered under the
 This software is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence.
 
 
