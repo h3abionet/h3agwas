@@ -526,7 +526,7 @@ sample_label=Institute Sample Label
 plate=Sample Plate
 well=Well
 batch=Batch Comment
-```
+````
 
 * `output_align`. This can be one of three values: _dbsnp_, _ref_, and _db2ref_. dnsnp and ref assume that the input is in TOP/BOT format. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. Many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).   _db2ref_ assumes the input is in FORWARD format and aligns to to the given reference genome.
 
@@ -576,9 +576,9 @@ In the  quick start we gave an overview of running our workflows in different en
 
 This option requires that all dependancies have been installed. You run the code by saying
 
-```
+````
 nextflow run plink-qc.nf
-```
+````
 
 You can add that any extra parameters at the end.
 
