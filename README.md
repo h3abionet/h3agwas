@@ -272,6 +272,10 @@ Please note that the _first_ time you run the workflow using Docker,  the Docker
 
 More options are shown later.
 
+##3.4 Running multiple workflows at the same time
+
+You may at some point want to run multiple, _independent_ workflows at the same time (e.g. different data). This is possible. However, each run should be started in a different working directory. You can refer to the scripts and even the data in the same diretory, but the directories from which you run the `nextflow run` command should be different.
+
 
 # 4 The Nextflow configuration file
 
