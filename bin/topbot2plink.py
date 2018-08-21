@@ -8,6 +8,10 @@
 #  - the base name of the PLINK output files
 #  The output l
 
+# (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
+# 2016-2018
+# Licensed under the Creative Commons Attribution 4.0 International Licence. 
+# See the "LICENSE" file for details
 
 from __future__ import print_function
 

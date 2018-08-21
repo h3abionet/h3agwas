@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
+# 2016-2018
+# Licensed under the Creative Commons Attribution 4.0 International Licence. 
+# See the "LICENSE" file for details
 
 import argparse
 import openpyxl
@@ -42,9 +46,9 @@ def parseArguments():
 TAB=chr(9)
 EOL=chr(10)
 
+legal_columns = ['Institute Sample Label','Sample Plate','Well','Manifest Sex',"Batch Comment"]
+column_index  = ['sample_label','plate','well','sex','batch']
 
-legal_columns = ['sex_column_name','Institute Sample Label','Sample Plate','Well',0]
-column_index  = ['sex','sample_label','plate','well','batch']
 
 def getSheetColumnMaps(fname):
     column = dict(zip(column_index,legal_columns))
@@ -67,7 +71,7 @@ def getSheetColumnMaps(fname):
 
 def extractCol(heading,col):
     try:
-        if ".xls" in args.samplesheet == "excel":
+        if ".xls" in args.samplesheet:
             result = heading.index(column[col])
         else:
             result = column[col]
@@ -77,7 +81,7 @@ def extractCol(heading,col):
 
 def getHeading(allrows):
     # refactor to use pandas instead of openpyxl
-    if ".xls" in args.samplesheet == "excel":
+    if ".xls" in args.samplesheet:
         heading = list(map(lambda x: x.value, allrows.__next__()))
     else:
         heading = allrows
@@ -131,18 +135,20 @@ def parseSheet(allrows):
     problems = {}
     indivs = {}
     batch="-9"
-    if ".xls" in args.samplesheet:
-        def getVal(row,col):
-            return row[col].value.replace(" ","")
-    else:
-        def getVal(row,col):
-            return row[col].replace(" ","")
+    def getVal(row,col):
+       try:
+          if ".xls" in args.samplesheet:
+             return row[col].value.replace(" ","")
+          else:
+             return row[col].replace(" ","")
+       except KeyError as e:
+          print(EOL+"<%s> is not a column of the sample sheet"%col+EOL)
     for row in allrows:
        raw_id = getVal(row,col_id)
        (fid,iid)= getID(args.idpat, raw_id)
        if (fid,iid) in masks: continue
-       if args.newpat not in null_values and (fid != getVal(row[col_plate]) or iid != getVal(row[col_well])):
-           sys.exit("Unhappy about this row ",raw_id,fid,iid,getVal(row[col_plate]),getVal(row[col_well]))
+       if args.newpat not in null_values and (fid != getVal(row,col_plate) or iid != getVal(row,col_well)):
+           sys.exit("Unhappy about this row ",raw_id,fid,iid,getVal(row,col_plate),getVal(row,col_well))
        (real_fid, real_iid) = getID(args.newpat, raw_id)
        if (fid,iid)  in replicates:
            real_fid = real_fid + "_replicate_" + replicates[(fid,iid)]
@@ -152,12 +158,14 @@ def parseSheet(allrows):
            else:
                problems[real_fid] = sofar[real_fid]+","+raw_id
        sofar[real_fid]=raw_id
-       sample_sex  = getVal(row[col_sex])
-       if col_batch>0:
-           batch       = getVal(row[col_batch])
+       sample_sex  = getVal(row,col_sex)
+       if col_batch not in null_values:
+           batch       = getVal(row,col_batch)
            m=re.search("Batch (.+)",batch)
            if m:
                batch = m.group(1)
+           else:
+               batch=batch.replace(" ","")
        indivs[(fid,iid)] =  [real_fid,real_iid,sample_sex,batch]
     if len(problems)>0:
         print(EOL+EOL+"==============================================="+EOL+EOL)
@@ -176,7 +184,10 @@ def produceFam(indivs,problems,origfam):
     for sample_id in origfam:
         try:
             (fid,iid) = getID(args.idpat, sample_id)
+            ofid,oiid = fid,iid
             [fid,real_id,sample_sex,batch] = indivs[(fid,iid)]
+            if (ofid,oiid) != (fid,real_id):
+               print("<%s,%s> --->  <%s,%s>"%(ofid,oiid,fid,real_id))
             if real_id in problems:
                 print("The ID <%s> with fid, iid, real_id <%s> <%s> <%s> is a duplicate"%(sample_id,fid,iid,real_id))
                 sys.exit(124)

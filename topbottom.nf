@@ -1,5 +1,8 @@
-/* (C) H3ABionet
- GPL
+/* 
+
+(C) University of the Witwatersrand, Johannesburg, 2016-2018 on behalf of the H3ABioNet Consortium
+
+ This is licensed under the Creative Commons Attribution 4.0 International Licence. See the "LICENSE" file for details
 
  Scott Hazelhust, 2017-2018
 */
@@ -55,7 +58,7 @@ strand_src_ch   = condChannel(params.strandreport,"strn")
 
 manifest_ch = Channel.create()
 manifest1_ch = Channel.create()
-manifest_src_ch.separate(manifest_ch,manifest1_ch)
+manifest_src_ch.separate(manifest_ch,manifest1_ch) { a-> [a,a] }
 
 strand_ch = Channel.create()
 strand1_ch = Channel.create()
@@ -135,7 +138,7 @@ def gChrom= { x ->
      file(fam) from fam_ch.toList()
    output:
      set file("raw.bed"), file("raw.fam"), file("raw.log") into plink_src
-     set file("rawraw.bim") into fill_in_bim_ch
+     file("rawraw.bim") into fill_in_bim_ch
    script:
     """
     ls *.bed | sort > beds
@@ -212,8 +215,8 @@ def gChrom= { x ->
     publishDir params.output_dir, pattern: "*.{bed,bim,log,badsnps}", \
         overwrite:true, mode:'copy'
    output:
-    set file("*.{bed,bim,log,badsnps}") into aligned_ch
-    file ("aligned.fam") into fix_fam_ch
+     file("*.{bed,bim,log,badsnps}") into aligned_ch
+     file ("aligned.fam") into fix_fam_ch
    script:
     base = bed.baseName
     refBase = ref.baseName
@@ -242,13 +245,13 @@ def gChrom= { x ->
 if (null_values.contains(params.samplesheet)) {
   process fixFam{
     input:
-    file(fam) from fix_fam_ch
-   publishDir params.output_dir, pattern: "${output}.fam", \
+       file(fam) from fix_fam_ch
+     publishDir params.output_dir, pattern: "${output}.fam", \
              overwrite:true, mode:'copy'
-   output:
-     set file("${output}.fam") into fixedfam_ch
-   script:
-     "cp $fam ${output}.fam"
+     output:
+        file("${output}.fam") into fixedfam_ch
+     script:
+       "cp $fam ${output}.fam"
   }
 } else {
 
@@ -274,7 +277,7 @@ if (null_values.contains(params.samplesheet)) {
    publishDir params.output_dir, pattern: "${output}.fam", \
              overwrite:true, mode:'copy'
    output:
-     set file("${output}.fam") into fixedfam_ch
+     file("${output}.fam") into fixedfam_ch
    script:
      idpat = params.idpat
      if (null_values.contains(params.replicates))

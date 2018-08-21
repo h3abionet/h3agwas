@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
+# 2016-2018
+# Licensed under the Creative Commons Attribution 4.0 International Licence. 
+# See the "LICENSE" file for details
 
 # we allow  the reference file to be in multiple format 
 # 1. Simple: 

@@ -5,6 +5,7 @@
  *
  *
  *      Scott Hazelhurst
+ *      Jean-Tristan Brandenburg
  *      Shaun Aron
  *   	Rob Clucas
  *      Eugene de Beste
@@ -13,6 +14,8 @@
  *  On behalf of the H3ABionet Consortium
  *  2015-2018
  *
+ *(C) University of the Witwatersrand, Johannesburg, 2016-2018 on behalf of the H3ABioNet Consortium
+ *This is licensed under the Creative Commons Attribution 4.0 International Licence. See the "LICENSE" file for details
  *
  * Description  : Nextflow pipeline for Wits GWAS.
  *
@@ -528,6 +531,7 @@ else
 report_ch = report_ch.mix(report_pca_ch)
 
 process doReport {
+  label 'latex'
   input:
     file(reports) from report_ch.toList()
   publishDir params.output_dir

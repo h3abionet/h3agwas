@@ -18,6 +18,8 @@
  *
  * Description  : Nextflow pipeline for Wits GWAS.
  *
+ *(C) University of the Witwatersrand, Johannesburg, 2016-2018 on behalf of the H3ABioNet Consortium
+ *This is licensed under the Creative Commons Attribution 4.0 International Licence. See the "LICENSE" file for details
  */
 
 //---- General definitions --------------------------------------------------//
@@ -88,13 +90,13 @@ f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
 remove_on_bp    = params.remove_on_bp
 
-allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir"]
+allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue"]
 
 
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
-    //	println "Check $parm";
-      }
+    	println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
+  }
 }
 
 if (params.help) {
@@ -864,6 +866,7 @@ repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedse
 
 
 process produceReports {
+  label 'latex'
   input:
     set file(orig), file (dupf) from report["dups"]
     set file(cbed), file(cbim), file(cfam), file(ilog) from report["cleaned"]

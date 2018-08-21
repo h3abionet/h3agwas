@@ -22,21 +22,19 @@ _Please ignore the Wiki in this version which refers to version 1_
 
 ## Brief introduction
 
-A short video overview of the pipeline can be found at http://www.bioinf.wits.ac.za/h3a/h3agwas.mp4
-
+In addition to this README we have the following material available
+* A short video overview of the pipeline can be found at http://www.bioinf.wits.ac.za/gwas/h3agwas.mp4
+* A handout from a lecture can be found at http://www.bioinf.wits.ac.za/gwas/gwas-comp-handout.pdf
 
 ### Restrictions
 This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
 * it is not robust when X chromosome data is not available
 * the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
-* we haven't tested fully with Singularity
+
 
 The previous version 1 stable branch was commit bfd8c5a
 (https://github.com/h3abionet/h3agwas/commit/bfd8c5a51ef85481e5590b8dfb3d46b5dd0cc77a)
 
-There is one feature of the original workflow that has been omitted. Version 1 supported parallel GWAS anaysis of different data files in one Nextflow run. This has been removed. Although, not unuseful, this feature complicated the implementation and made expansion more difficulkt and also this capacity can be simulated easily at the operating system level.
-
-The previous version has dependancies on Perl and R, which have been removed.
 
 ## Outline of documentation
 
@@ -47,8 +45,9 @@ The previous version has dependancies on Perl and R, which have been removed.
 5. The QC pipeline: `plink-qc.nf`
 6. A simple association testing pipeline: `plink-assoc.nf`
 7. Converting Illumina genotyping reports to PLINK: `topbottom.nf`
-8. Advanced options: Docker, PBS, Amazon EC2
-9. Auxiliary Programs
+8. Advanced options: Docker, PBS, Singularity, Amazon EC2
+9. Dealing with errors
+10. Auxiliary Programs
 
 # 1. Features
 
@@ -260,6 +259,10 @@ There is a template of a nextflow.config file called aux.config.template. This i
 Then fill in the details in the config that are required for your run. These are expained in more detail below.
 
 ## 4.3 Using the Excel spreadsheet template
+
+**We plan on removing this -- it doesn't look like many people use this feature and it is very hard to keep in sync with the development of the workflow. If you think we are wrong and this is a useful feature please let us know by registering this an an issuse.**
+
+_Use of this is deprecated_
 
 For many users it may be convenient to use the Excel spreadsheet (config.xlsx and a read-only template file config.xlsx.template). This can be used just as an _aide-memoire_, but we also have an auxiliary program that converts the Excel spreadsheet into a config file. The program _config-gen/dist/config-gen.jar_ takes the spreadsheet and produces a config file.
 
@@ -500,7 +503,10 @@ e.g. `params.output = "cvd-rawcalls"`
 
 * `chipdescription`: this is a standard file produced by Illumina for your chip which contains not only the chromosome/coordinate of each SNP but also the genomic position (measured in centimorgans). If you don't have this -- give the manifest file. All will work except your bim files will not contain genonomic positoin
 
-* `samplesheet`: This is Excel spreadsheet that Illumina provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can set this variable to 0 or the empty string, in which case the output PLINK fam file will have unknown values for sex and phenotype.  Alternatively, ifyou don't have it, you can make your own. There are three columns that are important: "Institute Sample Label", "Manifest Gender" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
+* `samplesheet`: This is Excel spreadsheet or CSV (comma-separated only) that Illumina or a genotyping centre provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can set this variable to 0 or the empty string, in which case the output PLINK fam file will have unknown values for sex and phenotype.  Alternatively, if you don't have it, you can make your own. 
+
+There are three columns that are important: "Institute Sample Label", "Manifest Sex" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
+
 
 Please note that *we expect all entries in the sample IDs etc to be alphanumeric 0-9, Latin letters (NO accents!), underscore, space, hyphen*. The code may break otherwise.
 
@@ -508,6 +514,19 @@ Please note that *we expect all entries in the sample IDs etc to be alphanumeric
 the Illumina IDs in the sample ID are typically a long string some of  the components of which will not be useful when you are analysing the result. You can change the sample ID by providing a Python-style regular expression which decribes the components. The regex groups describe the components. If there is one group, it is doubled. If there are two groups, then those become the FID and IID. Only one or two groups are permissible. 
 
 For example, suppose the ID as found in the Illumina input data is `WG0680781-DNA_A02_ABCDE`, if you use ".*_(.+)" as the idpat, then the FID IID used would be ABCDE ABCDE. If you used "(\\w+)_DNA_(\\w+)_" then the FID IIS used would be "WG0680781 A02". Note how we need to escape the backslash twice.
+
+
+Unfortunately we experience that genotyping centres have different formats and that you can even get the same centre changing the labels of columns of the report. Using the `sheet_columns` parameter you can make adjustmens.
+
+* `params.sheet_columns`: this should be a file name. The file should explain what the column labels in your sample sheet are. The format is shown in the example below, where the default values are given (if you are happy with all of them you don't need the `sheet_columns` parameter -- if you are happy with some of them only put the ones you want to change). Here we are saying that the _sex_ as provided by the manifest is found in a column called "Manifest Sex", the sample is found in a column "Institute Sample Label" and so on. The first four are required by the workflow. If you don't have batch information, you can define `batch` as 0
+
+````
+sex=Manifest Sex
+sample_label=Institute Sample Label
+plate=Sample Plate
+well=Well
+batch=Batch Comment
+```
 
 * `output_align`. This can be one of three values: _dbsnp_, _ref_, and _db2ref_. dnsnp and ref assume that the input is in TOP/BOT format. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. Many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).   _db2ref_ assumes the input is in FORWARD format and aligns to to the given reference genome.
 
@@ -521,9 +540,16 @@ A reference file suitable for the H3A chip can be found here http://www.bioinf.w
 
 * `samplesize`: This was  included mainly for development purposes but _perhaps_ might be helpful to some users. This allows you sample only the first _n_ people in each genotype report. This allows you to extract out a small subset of the data for testing purposes. The default is 0, which means that *all* individuals will be generated.
 
+
+### Advanced features for sample handling
+
 * `mask`: This is a file of sample IDs that you want excluded from your data. These should be IDs given in the _Institute Sample Label_ of the sample sheet. The file should contain at least one column, possibly with other columns white-space delimited. Only the first column is used the other columns are ignored.
 
 * `replicates`: This is a file of sample IDs that are biological replicates. You will often include biological replicates for genotyping -- the label as given in the _Institute Sample Label_ column will of course be different, but once you have extracted out the sample ID using the _idpat_ field above, all the replicates for the same individual will then have the same sample id. For samples that have replicates you should choose one of the samples to be the canonical one and then identify the others as being the replicates with the labels 
+
+* `newpat`: This is experimental and only should be used with care. Suppose, completely hypothetically, there's a sample mix-up. The person you called "X3RTY" is actually "UYT0AV" who is actually "R2D2" and so on. You can fix the sample-sheet but the genotyping calls still have the same (wrong values). If you have chosen your _Institute Sample_Label_ so that it contains both the ID and the plate and well then our scripts can help you. If not, good luck to you.
+    * set _idpat_ to a regular expression that gives as the plate ID as the FID and well as the IID. This will give you the id uniquely determined by the plate and the well.
+    * fix your sample sheet -- just fix the _Institute Sample Label_ field. Choose your _newpat_ as a regular expression that extracts out the correct ID from this. Our workflow will use the plate and well in your sample sheet to produce to match the plate/well from the genotype calling phase to the correct ID. (If you look in the working directory of the fixFam process the .command.out file will show you all the matches)
 
 
 ## Output
@@ -618,64 +644,21 @@ nextflow run plink-qc.nf -profile dockerSwarm
 
 ## 8.5 Singularity
 
-The workflows run on Singularity thought this is currently experimental and we haven't  tried and tested all options. We don't have first class support for Singularity yet, so you will have do some PT but it's not too bad.
 
-### Get the Singularity images
+Our workflows should now run easily with Singularity.
 
-You need to make get the Singularity images for the workflow you want. There are two options
+`nextflow run plink-qc.nf -profile singularity`
 
-* running `docker2singularity` (https://github.com/singularityware/docker2singularity)
+or
 
-This is a good option for people who have a computer with docker running (e.g., their desktop) and will then move the Singularity container to another computer which doesn't run cluster.
+`nextflow run plink-qc.nf -profile singularityPBS`
 
-An example run would be to create a directory _singularity_ somewhere and then run the _docker2singularity_ workflow. The singularity image will be put in the specified directory. For example, I did:
-
-```
-  docker run -v /var/run/docker.sock:/var/run/docker.sock  \  
-           -v  /Users/scott/singularity:/output --privileged -t --rm  \
-           singularityware/docker2singularity quay.io/h3abionet_org/py3plink 
-  docker run -v /var/run/docker.sock:/var/run/docker.sock  \  
-             -v  /Users/scott/singularity:/output --privileged -t --rm  \
-             singularityware/docker2singularity quay.io/h3abionet_org/h3agwas-texlive
-```
-
-* Using `singularity pull`
-
-This is easier, but the images are bigger
-
-```
-singularity pull --size 1880  docker://quay.io/h3abionet_org/py3plink 
-singularity pull --size 1880  docker://quay.io/h3abionet_org/h3agwas-texlive
-
-```
-
-### Copy the images
-
-Move the images to the system you want to run the workflow on. If you're on a cluster, then this must be on a system-wide  file system
-
-### Edit the nextflow.config file
-
-You need to edit this part of the _singularity_ stanza
-
-```
-        sg_py3Image = "/home/scott/py3plink.img"
-        sg_latexImage = "/home/scott/h3agwas-texlive.img"
-
-        process.executor = 'pbs'
-        process.queue = 'batch'
-```
-
-The two image variables should be set to where you have put your singularity images. The `process.executor` variabel should be set to `local` if you want to run the workflow on the local computer, and to `pbs` if on a cluster using PBS. In the latter case, you should also set the queue variable appropriatelly.
-
-
-## Run the workflow
-
-`nextflow run plink-qc.nf --profile singularity`
+By default the user's ${HOME}/.singularity will be used as the cache for Singularity images. If you want to use something else, change the `singularity.cacheDir` parameter in the config file.
 
 
 ## 8.5 Other container services
 
-We hope to support Singularity soon. We are unlikely to support udocker unless Nextflow does. See this link for a discussion https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html
+We are unlikely to support udocker unless Nextflow does. See this link for a discussion https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html
 
 ## 8.6 Running on Amazon EC2
 
@@ -801,9 +784,74 @@ Note there are two uses of `-c`. The positions of these arguments are crucial. T
 The _scott.aws_ file is not shared or put under git control. The _nextflow.config_ and _run10.config_ files can be archived, put under git control and so on because you _want_ to share and archive this information with o thers.
 
 
+#9. Dealing with errors
+
+One problem with our current workflow is that error messages can be obscure. Errors can be caused by
+* bugs in our code
+* you doing something odd
+
+There are two related problems. When a Nextflow script fails for some reason, Nextflow prints out in _great_ detail what went wrong. Second, we don't always catch mistakes that the user makes gracefully.
+
+First, don't panic. Take a breath and read through the error message to see if you can find a sensible error message there. 
+
+A typical error message looks something like this
+
+```
+Command exit status:
+  1
+
+Command output:
+  (empty)
+
+Command error:
+  Traceback (most recent call last):
+    File ".command.sh", line 577, in <module>
+      bfrm, btext = getBatchAnalysis()
+    File ".command.sh", line 550, in getBatchAnalysis
+      result = miss_vals(ifrm,bfrm,args.batch_col,args.sexcheck_report)
+    File ".command.sh", line 188, in miss_vals
+      g  = pd.merge(pfrm,ifrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
+    File "/usr/local/python36/lib/python3.6/site-packages/pandas/core/generic.py", line 5162, in groupby
+      **kwargs)
+    File "/usr/local/python36/lib/python3.6/site-packages/pandas/core/groupby.py", line 1848, in groupby
+      return klass(obj, by, **kwds)
+    File "/usr/local/python36/lib/python3.6/site-packages/pandas/core/groupby.py", line 516, in __init__
+      mutated=self.mutated)
+    File "/usr/local/python36/lib/python3.6/site-packages/pandas/core/groupby.py", line 2934, in _get_grouper
+      raise KeyError(gpr)
+
+Column 'batches' unknown
+
+Work dir:
+  /project/h3abionet/h3agwas/test/work/cf/335b6d21ad75841e1e806178933d3d
+
+Tip: when you have fixed the problem you can continue the execution appending to the nextflow command line the option `-resume`
+
+ -- Check '.nextflow.log' file for details
+WARN: Killing pending tasks (1)
+
+```
+
+Buried in this is an error message that might help (did you say there was a column _batches_ in the manifest?) If you're comfortable, you can change directory to the specified directory and explore. There'll you find
+* Any input files for the process that failed
+* Any output files that might have been created
+* The script that was executed can be found in `.command.sh`
+* Output and error can be found as `.command.out` and `.command.err`
+
+If you spot the error, you can re-run the workflow (from the original directory), appending `-resume`.  Nextflow will re-run your workflow as needed -- any steps that finished successfully will not need to be re-run.
+
+If you are still stuck you can ask for help at two places
 
 
-# 9. Auxiliary Programs
+* H3ABioNet Help desk --- https://www.h3abionet.org/support
+
+
+* On GitHub -- need a GitHub account if you have a GitHub account
+
+   https://github.com/h3abionet/h3agwas/issues
+
+
+# 10. Auxiliary Programs
 
 These are in the aux directory
 
@@ -841,7 +889,9 @@ Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Eugene de Beste, Abo
 We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
 
 ### License
-h3agwas offered under the MIT license. See LICENSE.txt.
+h3agwas offered under the
+This software is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence.
+
 
 ### Download
 

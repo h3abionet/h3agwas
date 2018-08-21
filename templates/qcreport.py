@@ -2,12 +2,12 @@
 
 # Scott Hazelhurst, 2016
 # Creates a PDF report for QC
-
-# Tested under both Python 2.7 and 3.5.2
 # 
-# Scott Hazelhurst on behalf of the H3ABioinformatics Network Consortium
-# December 2016
-# (c) Released under GPL v.2
+# (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
+# 2016-2018
+# Licensed under the Creative Commons Attribution 4.0 International Licence. 
+# See the "LICENSE" file for details
+# 
 
 
 from __future__ import print_function
@@ -383,7 +383,11 @@ def getImages(images):
    images =images.replace("[","").replace("]","").replace(",","").split()
    result = "Table "+chr(92)+"ref{table:docker}"+chr(10)+chr(92)+"begin{table}"+chr(92)+"begin{tabular}{ll}"+chr(92)+"textbf{Nextflow process} &" + chr(92)+"textbf{Docker Image}"+chr(92)+chr(92)+chr(92)+"hline"+chr(10)
    for img in images:
-      (proc,dimg)=img.split(":")
+      dets = img.split(":",1)
+      if len(dets)==1:
+         (proc,dimg)=("default",dets[0])
+      else:
+         (proc,dimg)==img.split(":",1)
       result = result +  \
                   proc + "&" + chr(92) + "url{%s}"%dimg+\
                   chr(92)+chr(92)
