@@ -27,6 +27,8 @@ import java.nio.file.Paths
 def helps = [ 'help' : 'help' ]
 
 allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
+GxE_params=['gxe']
+allowed_params+=GxE_params
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -41,6 +43,8 @@ params.each { parm ->
     println "\nUnknown parameter : Check parameter <$parm>\n";
   }
 }
+
+
 
 def params_help = new LinkedHashMap(helps)
 
@@ -95,6 +99,8 @@ params.fastlmm_num_cores=params.gemma_num_cores
 params.fastlmm_mem_req="15GB"
 params.fastlmm_multi = 0 
 params.fastlmmc_bin =""
+/*gxe param*/
+param.GxE=""
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -129,6 +135,14 @@ if (params.help) {
       }
   }
   System.exit(-1)
+}
+
+if(param.GxE!=''){
+for(model in c("boltlmm", "fastlmm")){
+if(param[model]==1){
+print "GxE and "+model+" not compatible"
+System.exit(1)
+}
 }
 
 //---- Modification of variables for pipeline -------------------------------//
