@@ -744,7 +744,7 @@ if (params.gemma == 1) {
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
 
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
-       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out 
+       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 
        mv output gemma
        """
   } 
