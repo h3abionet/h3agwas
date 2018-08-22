@@ -833,6 +833,7 @@ Three files are output: a fam file, an error file (the IDs of individuals who ar
 Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
 
 # 10 Simulation pipeline: `simul-assoc.nf`
+
 This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *simul-assoc.nf* takes as input PLINK files that have been through quality control and
   * Simulate quantitative phenotypes with [phenosim]{https://www.ncbi.nlm.nih.gov/pubmed/21714868} based on genetics data 
   * perform a GWAS on  phenotype simulated using gemma, boltlmm.
@@ -860,29 +861,29 @@ The key options are:
         * `ph_maf_r` :  MAF range for causal markers (upper and lower bound, separated by a comma, no space) (default: 0.05,1.0, -maf_r in phenosim)
         * option to do a linear transformation of phenotype with co factor of external data and normatisation:
            * each phenotype i be normalise using newpheno = norm(pheno)+var0i*a+var1i*b+ ... + intercept
-           * ph_cov_norm : contains coefficients for relation separed by a comma (ex "sex=0.2,age=-0.1)
-           * data : contains cofactor () data for each individuals used to normalise with 
-           * ph_cov_range : normalisation range for initial phenotype
-           * ph_intercept : intercept
+           * `ph_cov_norm` : contains coefficients for relation separed by a comma (ex "sex=0.2,age=-0.1)
+           * `data` : contains cofactor () data for each individuals used to normalise with 
+           * `ph_cov_range` : normalisation range for initial phenotype
+           * `ph_intercept` : intercept
   * Association option :
-     * boltlmm : 1 perform boltlmm (default 0), see boltlmm option in _plink-assoc.nf_
-     * gemma : 1 perform gemma (default 0)  see gemma option in _plink-assoc.nf_
-     * covariates : covariates to include in model (if linear model was done)
+     * `boltlmm` : 1 perform boltlmm (default 0), see boltlmm option in _plink-assoc.nf_
+     * `gemma` : 1 perform gemma (default 0)  see gemma option in _plink-assoc.nf_
+     * `covariates` : covariates to include in model (if linear model was done)
   * Statistics option :
-     * ph_alpha_lim : list of alpha used to computed significance (separated by comma)  
-     * ph_windows_size : windows size around position used to simulate phenotype to define if was detected, in bp ex 1000bp in CM ex 0.1CM
+     * `ph_alpha_lim` : list of alpha used to computed significance (separated by comma)  
+     * `ph_windows_size` : windows size around position used to simulate phenotype to define if was detected, in bp ex 1000bp in CM ex 0.1CM
 
 ## output 
 different output was provided :
    * simul folder : contains position used to defined phenotype 
    * in boltlmm/gemma folder,  res_boltlmm/gemma.stat  contains summary stat for each alpha:
-      * we defined windows true as the windows around snp used to build phenotype (size is defined previously)
-      * nsig_simall_alpha : number significant snp in all windows true 
-      * nsig_sim_alpha :   number windows true where at least one snps is significant
-      * nsig_simaround_alpha : number significant windows true where one snp is significant and has been excluded snps used to build pheno
-      * nsig_nosim_alpha : snp significant snp not in windows true
-      * nsnp : snp number total  in dataset
-      * nsnpsima: snp number used to build phenotype (see ph_nb_qtl)
+      * we defined `windows true` as the windows around snp used to build phenotype (size is defined previously)
+      * `nsig_simall_alpha` : number significant snp in all windows true 
+      * `nsig_sim_alpha` :   number windows true where at least one snps is significant
+      * `nsig_simaround_alpha` : number significant windows true where one snp is significant and has been excluded snps used to build pheno
+      * `nsig_nosim_alpha` : snp significant snp not in windows true
+      * `nsnp` : snp number total  in dataset
+      * `nsnpsima` : snp number used to build phenotype (see ph_nb_qtl)
    * in boltlmm/gemma/simul/ : contains p.value compute for each simulation
 
 #Note 
@@ -892,7 +893,7 @@ different output was provided :
 
 
 
-# 10. Copyright and general
+# 11. Copyright and general
 
 ### Authors
 
