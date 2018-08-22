@@ -32,7 +32,7 @@ allowed_params+=GxE_params
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
-ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type", "bolt_num_cores", "bolt_use_missing_cov", "bolt_num_cores"]
+ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req"]
 allowed_params+=ParamBolt
 ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin"]
 allowed_params+=ParamFast
@@ -91,7 +91,8 @@ params.bolt_covariates_type = ""
 params.bolt_ld_score_file= ""
 params.bolt_ld_scores_col=""
 params.boltlmm = 0
-params.bolt_num_cores=params.gemma_num_cores
+params.bolt_num_cores=8
+params.bolt_mem_req="6GB"
 params.bolt_use_missing_cov=0
 /*fastlmm param*/
 params.fastlmm = 0
@@ -618,6 +619,7 @@ if (params.boltlmm == 1) {
   /*    nb_snp= CountLinesFile(base+".bim") */
   process doBoltmm{
     cpus params.bolt_num_cores
+    memory params.gemma_mem_req
     time   params.big_time
     input:
       set file(plinksbed), file(plinksbim), file(plinksfam) from plink_ch_bolt
@@ -708,6 +710,7 @@ if (params.gemma == 1) {
   process doGemma{
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
+    time   params.big_time
     input:
       file(covariates) from data_ch
       file(rel) from rel_mat_ch
