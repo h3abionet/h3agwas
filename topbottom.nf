@@ -104,6 +104,7 @@ def gChrom= { x ->
 	idpat      = params.idpat
         output = report.baseName
         """
+        hostname
         topbot2plink.py $array $report $samplesize '$idpat' $output
         """
  }

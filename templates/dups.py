@@ -56,7 +56,7 @@ for line in f:
     data=line.strip().split()
     snp_name = data[1]
     if snp_name in s_name:
-        out.write( "%s\\n"%snp)
+        out.write( "%s\\n"%snp_name)
     else:
         s_name.add(data[1])
 f.close()

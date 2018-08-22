@@ -43,7 +43,7 @@ def getFam(famf):
 def getSmplLbl(data):
     m=re.search(".*_(\w+)",data["Institute Sample Label"])
     if not m: sys.exit("Failed parsing "+data)
-    return m.group(1)
+    return m.group(1).replace(" ","")
 
 
 

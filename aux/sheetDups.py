@@ -85,13 +85,13 @@ def parseSheet(allrows,indivs,sofar,problems):
     [col_id, col_sex, col_geno_sex, col_batch,call,plate,well]  = getHeading(allrows)
     batch="-9"
     for row in allrows:
-       sample_id   = raw_id = row[col_id].value
+       sample_id   = raw_id = row[col_id].value.replace(" ","")
        if sample_id in exclusions : pass
        if col_batch>0:
            batch       = row[col_batch].value
            m=re.search("Batch (.+)",batch)
            if m:
-               batch = m.group(1)
+               batch = int(m.group(1))
        m = re.search(args.out_idpat,sample_id)
        if m:
            outid  = m.group(1)
@@ -135,7 +135,7 @@ def createReplicates(fname,fd,problems):
         rate=0
         for i, v in enumerate(problems[k]):
             sex_ok = (fam_sex==sex_code(v[3])) or  (sex_code(v[3])==sex_code(v[2])) and ("0"==fam_sex)
-            if (v[5]>rate) and sex_ok :
+            if (v[4]>rate) and sex_ok :
                 rate=v[5]
                 best=i
         dup=edup=1
