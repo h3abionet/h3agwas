@@ -175,7 +175,7 @@ If you want to run the `plink-assoc.nf` pipeline then you should install gemma i
 
 There are two approaches: let Nextflow manage this for you; or download using Git. The former is easier; you need to use Git if you want to change the workflow
 
-###2.5.1 Managing using Nextflow
+### 2.5.1 Managing using Nextflow
 
 To download the workflow you can say
 
@@ -188,7 +188,7 @@ If you manage the workflow this way, you will run the scripts, as follows
 * `nextflow run h3abionet/h3agwas/plink-qc.nf ..... `
 * `nextflow run h3abionet/h3agwas/plink-assoc.nf ..... `
 
-### 2.5.2 Managig with Git
+### 2.5.2 Managing with Git
 
 Change directory where you want to install the software and say
 
@@ -911,7 +911,7 @@ If you are still stuck you can ask for help at two places
    https://github.com/h3abionet/h3agwas/issues
 
 
-# 10. Auxiliary Programs
+# 9. Auxiliary Programs
 
 These are in the aux directory
 
@@ -951,7 +951,7 @@ We acknowledge funding by the National Institutes of Health through the NHGRI (U
 
 ### Authors
 
-Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Jean-Tristan BrandenburgEugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
+Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Jean-Tristan Brandenburg, Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
 
 We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
 
