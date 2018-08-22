@@ -436,15 +436,15 @@ By default a chi2 test for association is done. But you can do multiple differen
 *  `linear`: should linear regreession be used?
 *  `logistic`: should linear regression be used?
 *  `gemma`: should gemma be used?
-*  `gemma_num_cores`: if gemma is used set this up to 8
-*  `gemam_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM (default : 6GB)
+  *  `gemma_num_cores`: if gemma is used set this up to 8
+  *  `gemam_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM (default : 6GB)
 *  `boltlmm`: should boltlmm be used? 
-** if SNPs number is more than 950,000, 950,000 SNPs are chosen randomly to build the model (see --modelSnps option in bolt)
-** `bolt_covariates_type` : for bolt need to define if covariate is binary (0) or continue (1), a comma-separated list as same order than covariates 
-** `bolt_ld_score_file` : A table of reference LD scores for boltlmm is needed to calibrate the BOLT-LMM statistic (option in boltlmm --LDscoresFile),  if not provided option --LDscoresUseChip used. to define, column to use in file option bolt_ld_scores_col could be used (by default : LDSCORE)
-** `bolt_use_missing_cov` : option to "missing indicator method", by default no activate (0), to activate (1) (--covarUseMissingIndic option in boltlmm), which adds indicator variables demarcating missing status as additional covariates.
-** `bolt_num_cores` if bolt is used set this up to 8
-** `bolt_mem_req` memory required for bolt, (default : 6GB)
+  * if SNPs number is more than 950,000, 950,000 SNPs are chosen randomly to build the model (see --modelSnps option in bolt)
+  * `bolt_covariates_type` : for bolt need to define if covariate is binary (0) or continue (1), a comma-separated list as same order than covariates 
+  * `bolt_ld_score_file` : A table of reference LD scores for boltlmm is needed to calibrate the BOLT-LMM statistic (option in boltlmm --LDscoresFile),  if not provided option --LDscoresUseChip used. to define, column to use in file option bolt_ld_scores_col could be used (by default : LDSCORE)
+  * `bolt_use_missing_cov` : option to "missing indicator method", by default no activate (0), to activate (1) (--covarUseMissingIndic option in boltlmm), which adds indicator variables demarcating missing status as additional covariates.
+  * `bolt_num_cores` if bolt is used set this up to 8
+  * `bolt_mem_req` memory required for bolt, (default : 6GB)
 *  `fastlmm`: should fastlmm be used?
 
 and then for all the tests except _gemma_, do you want to adjust for multiple testing 
