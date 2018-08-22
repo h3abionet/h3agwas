@@ -30,9 +30,7 @@ allowed_params = ["data","covariates","fastlmm_multi","max_plink_cores","gemma_n
 
 param_bolt=["bolt_ld_scores_col","bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov"]
 allowed_params+=param_bolt
-param_fastlmm=["fastlmm"]
-allowed_params+=param_fastlmm
-param_phenosim=["ph_mem_req","ph_cov_range","ph_intercept","phs_nb_qtl","phs_list_qtl","phs_nb_sim", "phs_qual", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
+param_phenosim=["ph_mem_req","ph_cov_range","ph_intercept","ph_nb_qtl","ph_list_qtl","ph_nb_sim", "ph_quant_trait", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
 allowed_params+=param_phenosim
 
 
@@ -76,8 +74,6 @@ params.boltlmm = 0
 params.bolt_use_missing_cov=0
 params.num_cores=1
 /*fastlmm param*/
-params.fastlmm = 0
-params.fastlmm_multi = 0
 
 params.input_pat  = 'raw-GWA-data'
 
@@ -86,15 +82,15 @@ params.data=""
 
 /*param for phenosim*/
 /*Number simulation*/
-params.phs_nb_sim=5
+params.ph_nb_sim=5
 /*quantitative traits => 1
 qualitative traits 0*/
-params.phs_qual=1
+params.ph_quant_trait=1
 /*Qualitative */
 /*Nb qtl*/
-params.phs_nb_qtl=2
-/*qtl : number be as phs_nb_qtl, separate by ","*/
-params.phs_list_qtl=""
+params.ph_nb_qtl=2
+/*qtl : number be as ph_nb_qtl, separate by ","*/
+params.ph_list_qtl=""
 /*ph_qual_dom Quantitative : adititve : 0 dominant 1 */
 params.ph_qual_dom=0
 /*freq for each snps*/
@@ -258,11 +254,11 @@ process ChangeMsFormat{
      """
 }
 
-phenosim_data_all=Channel.from(1..params.phs_nb_sim).combine(phenosim_data)
-if(params.phs_qual==1){
-if(!params.phs_list_qtl)LQTL=([0.05]*params.phs_nb_qtl).join(",")
-else LQTL=params.phs_list_qtl
-phs_qual_param="-n ${params.phs_nb_qtl} -v $LQTL"
+phenosim_data_all=Channel.from(1..params.ph_nb_sim).combine(phenosim_data)
+if(params.ph_quant_trait==1){
+if(!params.ph_list_qtl)LQTL=([0.05]*params.ph_nb_qtl).join(",")
+else LQTL=params.ph_list_qtl
+ph_quant_trait_param="-n ${params.ph_nb_qtl} -v $LQTL"
 }
 process SimulPheno{
    memory params.ph_mem_req
@@ -278,7 +274,7 @@ process SimulPheno{
      file_pheno=ent_out_phen+".pheno"
      file_causal=ent_out_phen+".causal"
      """
-     phenosim.py -d 1 -f $ms -i M -o N -q ${params.phs_qual} $phs_qual_param --maf_c 0 --outfile $ent_out_phen
+     phenosim.py -d 1 -f $ms -i M -o N -q ${params.ph_quant_trait} $ph_quant_trait_param --maf_c 0 --outfile $ent_out_phen
      echo -e "FID\\tIID\\tPhenoS" > $file_pheno
      paste $fam $ent_out_phen"0.pheno"|awk '{print \$1"\\t"\$2"\\t"\$NF}' >> $file_pheno
      ListePos=`awk 'BEGIN{AA=""}{AA=AA\$2","}END{print AA}' ${ent_out_phen}0.causal`

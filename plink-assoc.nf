@@ -96,7 +96,7 @@ params.bolt_mem_req="6GB"
 params.bolt_use_missing_cov=0
 /*fastlmm param*/
 params.fastlmm = 0
-params.fastlmm_num_cores=params.gemma_num_cores
+params.fastlmm_num_cores=8
 params.fastlmm_mem_req="15GB"
 params.fastlmm_multi = 0 
 params.fastlmmc_bin =""
@@ -209,7 +209,8 @@ if (params.gemma) println "Doing gemma testing"
 if (params.chi2) println "Doing chi2 testing"
 if (params.linear) println "Doing linear regression testing"
 if (params.logistic) println "Doing logistic regression testing"
-if (params.fastlmm == 1) println "Doing linear regression with fastlmm "
+if (params.fastlmm == 1) println "Doing mixed model with fastlmm "
+if (params.boltlmm == 1) println "Doing mixed model with boltlmm "
 println "\n"
 
 if (params.thin)
