@@ -860,15 +860,16 @@ The key options are:
         * `ph_list_qtl` : proportion of variance explained by each QTNs, separate the values by commas (default : 0.05 -q in phenosim)
         * `ph_maf_r` :  MAF range for causal markers (upper and lower bound, separated by a comma, no space) (default: 0.05,1.0, -maf_r in phenosim)
         * option to do a linear transformation of phenotype with co factor of external data and normatisation:
+           * ph_normalise : perform a normalisation (1) or not 0 (Default)
            * each phenotype i be normalise using newpheno = norm(pheno)+var0i*a+var1i*b+ ... + intercept
            * `ph_cov_norm` : contains coefficients for relation separed by a comma (ex "sex=0.2,age=-0.1)
-           * `data` : contains cofactor () data for each individuals used to normalise with 
+           * `data` : contains cofactor data for each individuals used to normalise with 
            * `ph_cov_range` : normalisation range for initial phenotype
            * `ph_intercept` : intercept
   * Association option :
      * `boltlmm` : 1 perform boltlmm (default 0), see boltlmm option in _plink-assoc.nf_
      * `gemma` : 1 perform gemma (default 0)  see gemma option in _plink-assoc.nf_
-     * `covariates` : covariates to include in model (if linear model was done)
+     * `covariates` : covariates to include in model (if ph_normalise is 1)
   * Statistics option :
      * `ph_alpha_lim` : list of alpha used to computed significance (separated by comma)  
      * `ph_windows_size` : windows size around position used to simulate phenotype to define if was detected, in bp ex 1000bp in CM ex 0.1CM

@@ -162,8 +162,12 @@ if (params.chrom)
 else
    chrom = ""
 
+if(params.ph_normalise==1){
+if(params.data=="")error("ph_normalise must be have a data file")
+}
 /*Initialisation of bed data, check files exist*/
 raw_src_ch= Channel.create()
+
 
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
@@ -194,7 +198,7 @@ if (thin+chrom) {
         bed_all_file_msI=Channel.create()
         raw_src_ch.into(bed_all_file_msI)
  }
-if(params.ph_cov_norm || params.covariates){
+if(params.ph_normalise){
   liste_cov=""
   if(params.ph_cov_norm!=""){
    liste_cov=params.ph_cov_norm.replaceAll(/=[0-9.-]+,/,",").replaceAll(/=[0-9.-]+$/,"")+","
@@ -204,6 +208,7 @@ if(params.ph_cov_norm || params.covariates){
   }
   liste_cov=liste_cov.replaceAll(/,$/,"")
   data_ch = Channel.fromPath(params.data)
+  if(liste_cov=="")liste_cov="FID"
   process GetDataNoMissing{
      time params.big_time
      input :
@@ -217,7 +222,7 @@ if(params.ph_cov_norm || params.covariates){
        data_nomissing=".temp"
        list_ind_nomissing="listeInd"
        """
-       list_ind_nomissing.py --data $data --inp_fam $fam --cov_list FID --pheno FID --dataout  $data_nomissing --lindout $list_ind_nomissing 
+       list_ind_nomissing.py --data $data --inp_fam $fam --cov_list $liste_cov --pheno FID --dataout  $data_nomissing --lindout $list_ind_nomissing 
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $out
        """
 }
@@ -282,33 +287,33 @@ process SimulPheno{
      paste ${file_causal}"tmp" ${ent_out_phen}0.causal > $file_causal
      """
 }
-if(params.data!=""){
-normal_cov_param=""
-if(params.ph_cov_norm){
-normal_cov_param+="--cov_info="+params.ph_cov_norm
-normal_cov_param+=" --rangenorm="+params.ph_cov_range
-if(params.ph_intercept)normal_cov_param+=" --intercept="+params.ph_intercept
-}
-raw_pheno_data= Channel.fromPath(params.data).combine(raw_pheno)
-process NormaliseData{
-   cpus params.num_cores
-   memory params.mem_req
-   time params.big_time
-   input :
-     set file(data), sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from raw_pheno_data
-   output :
-     set sim, file(file_causal), file(file_pheno_new), file(bed), file(bim), file(fam) into (sim_data_gemma,sim_data_bolt, sim_data_plink)
-   script :
-     file_pheno_new=file_pheno+".norm"
-    """
-    ph_normalise_variable.py --data $data $normal_cov_param --data_sim $file_pheno --out $file_pheno_new --na_out "NA"
-    """
-}
+if(params.ph_normalise && params.data){
+   normal_cov_param=""
+   if(params.ph_cov_norm){
+      normal_cov_param+="--cov_info="+params.ph_cov_norm
+      normal_cov_param+=" --rangenorm="+params.ph_cov_range
+      if(params.ph_intercept)normal_cov_param+=" --intercept="+params.ph_intercept
+   }
+   raw_pheno_data= Channel.fromPath(params.data).combine(raw_pheno)
+   process NormaliseDataph_normalise{
+     cpus params.num_cores
+     memory params.mem_req
+     time params.big_time
+     input :
+       set file(data), sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from raw_pheno_data
+     output :
+       set sim, file(file_causal), file(file_pheno_new), file(bed), file(bim), file(fam) into (sim_data_gemma,sim_data_bolt, sim_data_plink)
+     script :
+       file_pheno_new=file_pheno+".norm"
+       """
+       ph_normalise_variable.py --data $data $normal_cov_param --data_sim $file_pheno --out $file_pheno_new --na_out "NA"
+       """
+   }
 }else{
-sim_data_gemma=Channel.create()
-sim_data_bolt=Channel.create()
-sim_data_plink=Channel.create()
-raw_pheno.into(sim_data_gemma,sim_data_bolt, sim_data_plink)
+  sim_data_gemma=Channel.create()
+  sim_data_bolt=Channel.create()
+  sim_data_plink=Channel.create()
+  raw_pheno.into(sim_data_gemma,sim_data_bolt, sim_data_plink)
 }
 if(params.gemma==1){
   process getGemmaRel {

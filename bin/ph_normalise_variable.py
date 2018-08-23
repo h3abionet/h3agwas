@@ -25,7 +25,7 @@ def normalise(x, minx, maxx, newmin, newmax, na_out):
 def parseArguments():
     parser = argparse.ArgumentParser(description='Normalise variable in function of data and parameters, if not --cov_info, merge file together data and pheno')
     parser.add_argument('--data',type=str, required=True, help="phenotype files contains pheno initial, and covariable")
-    parser.add_argument("--data_sim", required=True, help="")
+    parser.add_argument("--data_sim", required=True, help="phenotype simulate with FID and IID")
     parser.add_argument('--cov_info',type=str, required=False, help="info of covariable cov1=x,cov2=y...")
     parser.add_argument('--out',type=str, required=True, help="file out data")
     parser.add_argument('--rangenorm',type=str, required=False, help="values to normarlise (use min,max of residual)")
