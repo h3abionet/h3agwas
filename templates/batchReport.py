@@ -500,7 +500,10 @@ def dumpMissingSexTable(fname, ifrm,sxAnalysis,pfrm,bfrm):
     g=open(fname,"w")
     g.write(TAB.join(["FID","IID",args.batch_col,'F_MISS',args.pheno_col])+TAB+TAB.join(map(str,sxAnalysis.columns))+EOL)
     for i, row in ifrm.iterrows():
-        output = TAB.join(map(str, [*i,bfrm.loc[i][args.batch_col].values[0],"%5.3f"%row['F_MISS'],'C',pfrm.loc[i]]))+\
+        bres = bfrm.loc[i][args.batch_col]
+        if type(bres)==pd.Series:
+            bres=bres.values[0]
+        output = TAB.join(map(str, [*i,bres,"%5.3f"%row['F_MISS'],'C',pfrm.loc[i]]))+\
                  TAB+TAB.join(map(xstr,sxAnalysis.loc[i]))+EOL
         g.write(output)
     g.close()
@@ -581,7 +584,7 @@ def getPhenoAnalysis():
         result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
         res_text = res_text + showResult(args.pheno_col,*result)
     else:
-        pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['0'])
+        pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
     return pfrm, res_text
 
 
