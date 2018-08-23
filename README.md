@@ -835,7 +835,7 @@ Nextflow has great options for showing resourc usage. However, you have to remem
 # 10 Simulation pipeline: `simul-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *simul-assoc.nf* takes as input PLINK files that have been through quality control and
-  * Simulate quantitative phenotypes with [phenosim]{https://www.ncbi.nlm.nih.gov/pubmed/21714868} based on genetics data 
+  * Simulate quantitative phenotypes with [phenosim](https://www.ncbi.nlm.nih.gov/pubmed/21714868) based on genetics data 
   * perform a GWAS on  phenotype simulated using gemma, boltlmm.
   * Perform summary statistics.
 

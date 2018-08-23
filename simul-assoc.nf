@@ -30,7 +30,7 @@ allowed_params = ["data","covariates","fastlmm_multi","max_plink_cores","gemma_n
 
 param_bolt=["bolt_ld_scores_col","bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov"]
 allowed_params+=param_bolt
-param_phenosim=["ph_mem_req","ph_cov_range","ph_intercept","ph_nb_qtl","ph_list_qtl","ph_nb_sim", "ph_quant_trait", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
+param_phenosim=["ph_cov_norm","ph_mem_req","ph_cov_range","ph_intercept","ph_nb_qtl","ph_list_qtl","ph_nb_sim", "ph_quant_trait", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
 allowed_params+=param_phenosim
 
 
