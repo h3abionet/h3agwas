@@ -771,10 +771,6 @@ if (params.gemma == 1){
 if (params.gemma_gxe == 1){
   data_ch_gxe = Channel.fromPath(params.data)
    
-  if (params.covariates)
-     covariate_option = "--cov_list ${params.covariates}"
-  else
-     covariate_option = ""
   if (params.gemma_gxe) 
     gxe_option = "--gxe ${params.gxe}"
   else 
@@ -814,7 +810,7 @@ if (params.gemma_gxe == 1){
        out                = "$base-$our_pheno"
        dir_gemma          =  (params.gemma_gxe) ? "gemma_gxe" : "gemma"
        """
-       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option,${params.gxe} --pheno $our_pheno3 --dataout $data_nomissing \
+       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam --cov_list ${params.covariates},${params.gxe} --pheno $our_pheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase 
