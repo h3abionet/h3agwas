@@ -201,14 +201,15 @@ Channel
 println "\nTesting data            : ${params.input_pat}\n"
 println "Testing for phenotypes  : ${params.pheno}\n"
 println "Using covariates        : ${params.covariates}\n\n"
-println "Using GxE for gemma        : ${params.gemma_gxe}\n\n"
 
-if (params.gemma) println "Doing gemma testing"
 if (params.chi2) println "Doing chi2 testing"
 if (params.linear) println "Doing linear regression testing"
 if (params.logistic) println "Doing logistic regression testing"
 if (params.fastlmm == 1) println "Doing mixed model with fastlmm "
 if (params.boltlmm == 1) println "Doing mixed model with boltlmm "
+if (params.gemma) println "Doing gemma testing"
+if(params.gemma_gxe==1)println "Doing mixed model with gemma and gxe with "+params.gxe
+if(params.plink_gxe==1)println "Doing with plink gxe with "+params.gxe
 println "\n"
 
 if (params.thin)
@@ -510,7 +511,7 @@ if (params.fastlmm == 1) {
       our_pheno = this_pheno.replaceAll("_","-")
       out = "C051-fastlmm-"+this_pheno
       """
-      general_man.py  $assoc $this_pheno ${out} Chromosome Position SNP Pvalue SNPWeight FastLmm
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header Chromosome --pos_header Position --rs_header SNP --pval_header Pvalue --beta_header SNPWeight --info_prog FastLmm
       """
   }
 
@@ -656,7 +657,7 @@ if (params.boltlmm == 1) {
       our_pheno = this_pheno.replaceAll("_","-")
       out = "C052-boltlmmm-"+this_pheno
       """
-      general_man.py  $assoc $this_pheno ${out} CHR BP SNP $pval_head BETA BoltLMM
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header BP --rs_header SNP --pval_header $pval_head --beta_header BETA --info_prog BoltLMM
       """
   }
    report_ch = report_ch.flatten().mix(report_bolt_ch.flatten())
@@ -835,7 +836,7 @@ if (params.gemma_gxe == 1){
       our_pheno = this_pheno.replaceAll("_","-")
       out = "C056$this_pheno"
       """
-      general_man.py  $assoc $this_pheno ${out} chr ps rs p_wald beta gemma:GxE,${params.gxe}
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header chr --pos_header ps --rs_header rs --pval_header p_wald --beta_header beta --info_prog "Gemma,GxE: ${params.gxe}"
       """
   }
 
@@ -932,7 +933,7 @@ if (params.plink_gxe==1) {
       our_pheno = this_pheno.replaceAll("_","-")
       out = "C057$this_pheno"
       """
-      general_man.py  $assoc $this_pheno ${out} CHR POS SNP P_GXE Z_GXE Plink:GxE,${params.gxe}
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNP --pval_header P_GXE --beta_header Z_GXE --info_prog "Plink,GxE : ${params.gxe}"
       """
   }
   report_ch = report_ch.flatten().mix(report_plink_gxe.flatten())

@@ -73,7 +73,6 @@ params.bolt_ld_scores_col=""
 params.boltlmm = 0
 params.bolt_use_missing_cov=0
 params.num_cores=1
-/*fastlmm param*/
 
 params.input_pat  = 'raw-GWA-data'
 

@@ -85,7 +85,7 @@ else :
 if args.form_out==1 :
    MissingOut="NA"
 elif  args.form_out==2:
-    MissingOut="-9" 
+    MissingOut="NA" 
 elif  args.form_out==3:
     MissingOut="-9" 
 else :
