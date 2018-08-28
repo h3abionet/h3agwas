@@ -68,6 +68,7 @@ args = parseArguments()
 TAB =chr(9)
 
 phenos     = args.pheno.split(",")
+use= ["FID","IID"]
 useI        = ["FID","IID"]
 if args.cov_list:
     covariates = args.cov_list.split(",")

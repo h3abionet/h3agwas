@@ -913,7 +913,7 @@ if (params.plink_gxe==1) {
        out        = "$base-${pheno_name}"
        outf       = "${out}.qassoc.final.gxe"
        """
-       PosCol=`head -1 $phenof|sed 's/[\\t ]/\\n/g'|grep -n $params.gxe|awk -F':' '{print \$1}'`
+       PosCol=`head -1 $phenof|sed 's/[\\t ]/\\n/g'|grep -n $params.gxe|awk -F':' '{print \$1-2}'`
        plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof
        merge_bim_gxeplink.py --plgxe ${out}.qassoc.gxe --bim $filebim --out $outf
        """
