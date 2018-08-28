@@ -161,6 +161,11 @@ def getImages(images):
    images =images.replace("[","").replace("]","").replace(",","").split()
    result = "Table "+chr(92)+"ref{table:docker}"+chr(10)+chr(92)+"begin{table}"+chr(92)+"begin{tabular}{ll}"+chr(92)+"textbf{Nextflow process} &" + chr(92)+"textbf{Docker Image}"+chr(92)+chr(92)+chr(92)+"hline"+chr(10)
    for img in images:
+      dets = img.split(":",1)
+      if len(dets)==1:
+         (proc,dimg)=("default",dets[0])
+      else:
+         (proc,dimg)==img.split(":",1)
       (proc,dimg)=img.split(":")
       result = result +  \
                   proc.lstrip(chr(36)) + "&" + chr(92) + "url{%s}"%dimg+\
