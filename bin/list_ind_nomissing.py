@@ -77,7 +77,7 @@ EOL=chr(10)
 phenos     = [args.pheno]
 use        = ["FID","IID"]
 if args.cov_list:
-    phenos+= list(set(args.cov_list.split(",")))
+    phenos+= list(set([x for x in args.cov_list.split(",") if len(x)>0]))
 
 #read of fam 
 readfam=open(args.inp_fam)

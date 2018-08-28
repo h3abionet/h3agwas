@@ -458,6 +458,10 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
 * `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
 * `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
 
+with pipeline, do a GxE interaction with Gemma and Plink, arguments :
+  * `gxe` : environmental variables to do gxe analysis with `pheno`, must be coded in 1 and 2 for plink
+  * `gemma_gxe` : GxE interation with gemma [default : 0], see  `covariate` to add covariate in gemma models
+  * `plink_gxe` : GxE interation with plink (see option -gxe, in [plink manual](http://zzz.bwh.harvard.edu/plink/anal.shtml#qtgxe)) [default : 0], no covariate could be provided.
 For example
 
 ```nextflow run plink-assoc --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
@@ -875,7 +879,7 @@ The key options are:
      * `ph_windows_size` : windows size around position used to simulate phenotype to define if was detected, in bp ex 1000bp in CM ex 0.1CM
 
 ## output 
-different output was provided :
+different output is provided :
    * simul folder : contains position used to defined phenotype 
    * in boltlmm/gemma folder,  res_boltlmm/gemma.stat  contains summary stat for each alpha:
       * we defined `windows true` as the windows around snp used to build phenotype (size is defined previously)

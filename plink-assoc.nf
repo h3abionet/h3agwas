@@ -27,8 +27,6 @@ import java.nio.file.Paths
 def helps = [ 'help' : 'help' ]
 
 allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
-GxE_params=['gxe']
-allowed_params+=GxE_params
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -36,6 +34,9 @@ ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariate
 allowed_params+=ParamBolt
 ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin"]
 allowed_params+=ParamFast
+/*Gxe : */
+GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
+allowed_params+=GxE_params
 
 
 params.each { parm ->
@@ -72,7 +73,7 @@ params.mperm = 1000
 /* Adjust for multiple correcttion */
 params.adjust = 0
 
-supported_tests = ["chi2","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm"]
+supported_tests = ["chi2","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma"]
 
 
 params.chi2     = 0
@@ -100,8 +101,10 @@ params.fastlmm_num_cores=8
 params.fastlmm_mem_req="15GB"
 params.fastlmm_multi = 0 
 params.fastlmmc_bin =""
-/*gxe param*/
-param.GxE=""
+/*gxe param : contains column of gxe*/
+params.gemma_gxe=0
+params.plink_gxe=0
+params.gxe=""
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -138,13 +141,6 @@ if (params.help) {
   System.exit(-1)
 }
 
-if(param.GxE!=''){
-for(model in c("boltlmm", "fastlmm")){
-if(param[model]==1){
-print "GxE and "+model+" not compatible"
-System.exit(1)
-}
-}
 
 //---- Modification of variables for pipeline -------------------------------//
 
@@ -192,6 +188,7 @@ rel_ch_fastlmm = Channel.create()
 
 pca_in_ch = Channel.create()
 assoc_ch  = Channel.create()
+assoc_ch_gxe  = Channel.create()
 raw_src_ch= Channel.create()
 
 Channel
@@ -204,6 +201,7 @@ Channel
 println "\nTesting data            : ${params.input_pat}\n"
 println "Testing for phenotypes  : ${params.pheno}\n"
 println "Using covariates        : ${params.covariates}\n\n"
+println "Using GxE for gemma        : ${params.gemma_gxe}\n\n"
 
 if (params.gemma) println "Doing gemma testing"
 if (params.chi2) println "Doing chi2 testing"
@@ -242,7 +240,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm) { a -> [a,a,a,a,a,a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe, gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm) { a -> [a,a,a,a,a,a,a] }
 }
 
 
@@ -620,7 +618,7 @@ if (params.boltlmm == 1) {
   /*    nb_snp= CountLinesFile(base+".bim") */
   process doBoltmm{
     cpus params.bolt_num_cores
-    memory params.gemma_mem_req
+    memory params.bolt_mem_req
     time   params.big_time
     input:
       set file(plinksbed), file(plinksbim), file(plinksfam) from plink_ch_bolt
@@ -676,11 +674,12 @@ if (params.boltlmm == 1) {
 
 
 
-if (params.gemma == 1) {
+if (params.gemma == 1 || params.gemma_gxe!='') {
 
   rel_ch_gemma = Channel.create()
   gem_ch_gemma = Channel.create()
-  gemma_assoc_ch.separate (rel_ch_gemma, gem_ch_gemma) { a -> [a, a] }
+  gem_ch_gemma_gxe = Channel.create()
+  gemma_assoc_ch.separate (rel_ch_gemma, gem_ch_gemma, gem_ch_gemma_gxe) { a -> [a, a, a] }
 
   process getGemmaRel {
     cpus params.gemma_num_cores
@@ -689,7 +688,7 @@ if (params.gemma == 1) {
     input:
        file plinks from rel_ch_gemma
     output:
-       file("output/${base}.*XX.txt") into rel_mat_ch
+       file("output/${base}.*XX.txt") into (rel_mat_ch, rel_mat_ch_gxe)
     script:
        base = plinks[0].baseName
        famfile=base+".fam"
@@ -699,13 +698,14 @@ if (params.gemma == 1) {
        gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3
        """
   }
+}
 
-   
+if (params.gemma == 1){
+
   if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
   else
      covariate_option = ""
-
   ind_pheno_cols_ch = newNamePheno(params.pheno)
 
   process doGemma{
@@ -718,9 +718,82 @@ if (params.gemma == 1) {
       file(plinks) from  gem_ch_gemma
     each this_pheno from ind_pheno_cols_ch
     publishDir params.output_dir, overwrite:true, mode:'copy'
+    output:
+      file("${dir_gemma}/${out}.log.txt")
+      set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch
+    script:
+       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+       our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
+       our_pheno3         = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+       data_nomissing     = "pheno-"+our_pheno+".pheno"
+       list_ind_nomissing = "lind-"+our_pheno+".lind"
+       rel_matrix         = "newrel-"+our_pheno+".rel"
+       base               =  plinks[0].baseName
+       inp_fam            =  base+".fam"
+       newbase            =  base+"-"+our_pheno
+       newfam             =  newbase+".fam"
+       gemma_covariate    = "${newbase}.gemma_cov"
+       phef               = "${newbase}_n.phe"
+       covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
+       out                = "$base-$our_pheno"
+       dir_gemma          =  "gemma"
+       """
+       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
+                             --lindout $list_ind_nomissing
+       gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
+       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase
+       all_covariate.py --data  $data_nomissing --inp_fam  $newbase".fam" $covariate_option --cov_out $gemma_covariate \
+                          --pheno $our_pheno2 --phe_out ${phef} --form_out 1
+       export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
+       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001
+       mv output ${dir_gemma}
+       """
+  }
+  process showGemmaManhatten {
+    publishDir params.output_dir
+    input:
+      set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch
+    output:
+      file("${out}*")  into report_gemma_ch
+    script:
+      our_pheno = this_pheno.replaceAll("_","-")
+      out = "C053$this_pheno"
+      """
+      gemma_man.py  $assoc $this_pheno ${out}
+      """
+  }
+
+  report_ch = report_ch.flatten().mix(report_gemma_ch.flatten())
+}
+
+
+if (params.gemma_gxe == 1){
+  data_ch_gxe = Channel.fromPath(params.data)
+   
+  if (params.covariates)
+     covariate_option = "--cov_list ${params.covariates}"
+  else
+     covariate_option = ""
+  if (params.gemma_gxe) 
+    gxe_option = "--gxe ${params.gxe}"
+  else 
+    gxe_option = ""
+  
+  ind_pheno_cols_ch = newNamePheno(params.pheno)
+
+  process doGemmaGxE{
+    cpus params.gemma_num_cores
+    memory params.gemma_mem_req
+    time   params.big_time
+    input:
+      file(covariates) from data_ch_gxe
+      file(rel) from rel_mat_ch_gxe
+      file(plinks) from  gem_ch_gemma_gxe
+    each this_pheno from ind_pheno_cols_ch
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     output: 
-      file("gemma/${out}.log.txt")
-      set val(newbase), val(our_pheno), file("gemma/${out}.assoc.txt") into gemma_manhatten_ch
+      file("${dir_gemma}/${out}.log.txt")
+      set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch_gxe
     script:
        our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
@@ -733,42 +806,42 @@ if (params.gemma == 1) {
        newbase            =  base+"-"+our_pheno
        newfam             =  newbase+".fam"
        gemma_covariate    = "${newbase}.gemma_cov"
+       gemma_gxe          = "${newbase}.gemma_gxe"
        phef               = "${newbase}_n.phe"
        covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
+       gxe_opt_gemma      =  (params.gemma_gxe) ? " -gxe $gemma_gxe " : ""
        out                = "$base-$our_pheno"
+       dir_gemma          =  (params.gemma_gxe) ? "gemma_gxe" : "gemma"
        """
-       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout  $data_nomissing --lindout $list_ind_nomissing
+       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option,${params.gxe} --pheno $our_pheno3 --dataout $data_nomissing \
+                             --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase 
        all_covariate.py --data  $data_nomissing --inp_fam  $newbase".fam" $covariate_option --cov_out $gemma_covariate \
-                          --pheno $our_pheno2 --phe_out ${phef} --form_out 1
-
+                          --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
-       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 
-       mv output gemma
+       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
+       mv output ${dir_gemma}
        """
   } 
 
-  process showGemmaManhatten { 
+  process showGemmaManhattenGxE { 
     publishDir params.output_dir
     input:
-      set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch
+      set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch_gxe
     output:
-      file("${out}*")  into report_gemma_ch
+      file("${out}*")  into report_gemma_ch_GxE
     script:
       our_pheno = this_pheno.replaceAll("_","-")
-      out = "C049$this_pheno"
+      out = "C056$this_pheno"
       """
-      gemma_man.py  $assoc $this_pheno ${out} 
+      general_man.py  $assoc $this_pheno ${out} chr ps rs p_wald beta gemma:GxE,${params.gxe}
       """
   }
 
-  report_ch = report_ch.flatten().mix(report_gemma_ch.flatten())
+  report_ch = report_ch.flatten().mix(report_gemma_ch_GxE.flatten())
     
 } 
-
-
-    
 
 
 if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
@@ -823,6 +896,47 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
   
 }
 
+if (params.plink_gxe==1) {
+  data_ch_plk_gxe = Channel.fromPath(params.data)
+  pheno_label_ch_gxe = Channel.from(params.pheno.split(","))
+  process computePlinkGxE {
+    cpus num_assoc_cores
+    time params.big_time
+    input:
+       set file(filebed),file(filebim),file(filefam) from assoc_ch_gxe
+       file (phenof) from data_ch_plk_gxe
+    each pheno_name from pheno_label_ch_gxe
+    publishDir "${params.output_dir}/plink_gxe", overwrite:true, mode:'copy'
+    output:
+       set file("${out}.qassoc.gxe"),file("${outf}.notfind")
+       set val(base),val(pheno_name), file("$outf")  into res_plink_gxe
+    script:
+       pheno_name = pheno_name.replaceFirst("/.*","")
+       base       = filebed.baseName
+       out        = "$base-${pheno_name}"
+       outf       = "${out}.qassoc.final.gxe"
+       """
+       PosCol=`head -1 $phenof|sed 's/[\\t ]/\\n/g'|grep -n $params.gxe|awk -F':' '{print \$1}'`
+       plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof
+       merge_bim_gxeplink.py --plgxe ${out}.qassoc.gxe --bim $filebim --out $outf
+       """
+ }
+
+  process showPlinkManhattenGxE {
+    publishDir params.output_dir
+    input:
+      set val(base), val(this_pheno), file(assoc) from res_plink_gxe
+    output:
+      file("${out}*")  into report_plink_gxe
+    script:
+      our_pheno = this_pheno.replaceAll("_","-")
+      out = "C057$this_pheno"
+      """
+      general_man.py  $assoc $this_pheno ${out} CHR POS SNP P_GXE Z_GXE Plink:GxE,${params.gxe}
+      """
+  }
+  report_ch = report_ch.flatten().mix(report_plink_gxe.flatten())
+}
 
 
 
