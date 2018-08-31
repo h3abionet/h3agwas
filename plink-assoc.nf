@@ -8,6 +8,7 @@
  *   	Rob Clucas
  *      Eugene de Beste
  *      Lerato Magosi
+ *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
  *  2015-2018
