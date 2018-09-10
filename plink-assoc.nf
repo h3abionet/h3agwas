@@ -776,6 +776,11 @@ if (params.gemma_gxe == 1){
     gxe_option = "--gxe ${params.gxe}"
   else 
     gxe_option = ""
+   if (params.covariates)
+     covariate_option = "--cov_list ${params.covariates}"
+  else
+     covariate_option = ""
+
   
   ind_pheno_cols_ch = newNamePheno(params.pheno)
 
