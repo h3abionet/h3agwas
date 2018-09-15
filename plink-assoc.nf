@@ -641,9 +641,9 @@ if (params.boltlmm == 1) {
       model_snp = (nb_snp.toInteger() > 1000000) ? "--modelSnps=.sample.snp" : ""
       """
       shuf -n 950000 $plinksbim | awk '{print \$2}' > .sample.snp 
-      bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
+      bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${this_pheno} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
            $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp
-      bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp |\
+      bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${this_pheno} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp |\
              grep -B 1 -E "^[ ]+h2" > $outReml 
       """
   }
