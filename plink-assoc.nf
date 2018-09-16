@@ -635,7 +635,8 @@ if (params.boltlmm == 1) {
       base = plinksbed.baseName
       our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
-      our_pheno3=this_pheno.replaceAll(/^[0-9]+-/,"")
+      our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+      #our_pheno3=this_pheno.replaceAll(/^[0-9]+-/,"")
 
       out     = "$base-$our_pheno2"+".stat"
       outReml = "$base-$our_pheno2"+".reml"
@@ -728,7 +729,7 @@ if (params.gemma == 1){
     script:
        our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
-       our_pheno3         = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+       our_pheno3         = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
        data_nomissing     = "pheno-"+our_pheno+".pheno"
        list_ind_nomissing = "lind-"+our_pheno+".lind"
        rel_matrix         = "newrel-"+our_pheno+".rel"
