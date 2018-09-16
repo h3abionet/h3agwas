@@ -636,7 +636,7 @@ if (params.boltlmm == 1) {
       our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
       our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
-      #our_pheno3=this_pheno.replaceAll(/^[0-9]+-/,"")
+      //our_pheno3=this_pheno.replaceAll(/^[0-9]+-/,"")
 
       out     = "$base-$our_pheno2"+".stat"
       outReml = "$base-$our_pheno2"+".reml"
