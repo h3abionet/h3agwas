@@ -15,7 +15,7 @@
  *  2015-2018
  *
  *(C) University of the Witwatersrand, Johannesburg, 2016-2018 on behalf of the H3ABioNet Consortium
- *This is licensed under the Creative Commons Attribution 4.0 International Licence. See the "LICENSE" file for details
+ *This is licensed under the MIT Licence. See the "LICENSE" file for details
  *
  * Description  : Nextflow pipeline for Wits GWAS.
  *

@@ -956,7 +956,7 @@ Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Jean-Tristan Branden
 We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
 
 ### License
-This software is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence.
+This software is licensed under the MIT Licence.
 
 
 ### Download
