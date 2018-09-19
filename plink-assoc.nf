@@ -31,7 +31,7 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_me
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
-ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req"]
+ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps"]
 allowed_params+=ParamBolt
 ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin"]
 allowed_params+=ParamFast
@@ -96,6 +96,7 @@ params.boltlmm = 0
 params.bolt_num_cores=8
 params.bolt_mem_req="6GB"
 params.bolt_use_missing_cov=0
+params.exclude_snps=""
 /*fastlmm param*/
 params.fastlmm = 0
 params.fastlmm_num_cores=8
@@ -591,6 +592,9 @@ if (params.boltlmm == 1) {
       cov_bolt = boltlmmCofact(params.covariates,params.bolt_covariates_type)
    else
       cov_bolt= ""
+   //bolt_exclude=""
+   //if (params.exclude_snps)bolt_exclude=" --exclude $params.exclude_snps"
+   
 
    missing_cov=""
    if(params.bolt_use_missing_cov==1)
@@ -618,6 +622,8 @@ if (params.boltlmm == 1) {
       """
   }
   /*    nb_snp= CountLinesFile(base+".bim") */
+  if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps)
+  else rs_ch_exclude_bolt=Channel.fromPath(params.data)
   process doBoltmm{
     cpus params.bolt_num_cores
     memory params.bolt_mem_req
@@ -626,6 +632,7 @@ if (params.boltlmm == 1) {
       set file(plinksbed), file(plinksbim), file(plinksfam) from plink_ch_bolt
       val nb_snp from nbsnp_ch_bolt
       file(phef) from newdata_ch_bolt
+      file(rs_exclude) from rs_ch_exclude_bolt
     publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
     each this_pheno from ind_pheno_cols_ch_bolt
     output:
@@ -642,12 +649,13 @@ if (params.boltlmm == 1) {
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
       model_snp = (nb_snp.toInteger() > 1000000) ? "--modelSnps=.sample.snp" : ""
+      exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       """
       shuf -n 950000 $plinksbim | awk '{print \$2}' > .sample.snp 
       bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
-           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp
+           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp
       bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp |\
-             grep -B 1 -E "^[ ]+h2" > $outReml 
+             grep -B 1 -E "^[ ]+h2" $exclude_snp > $outReml 
       """
   }
 
