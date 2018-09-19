@@ -118,7 +118,7 @@ for (label, transform) in zip(pheno_labels+covar_labels, pheno_transform+cover_t
             sys.exit(10)
     datad[label]=datad[label].apply(check_missing, MissingOut=MissingOut)
 
-famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEX","CC"])
+famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEXFAM","CC"])
 merge = pd.merge(famd,datad,how="left",on=["FID","IID"])
 # for gemma
 if args.form_out == 1 : 
