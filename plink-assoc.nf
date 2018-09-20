@@ -952,7 +952,7 @@ if (params.plink_gxe==1) {
       file("${out}*")  into report_plink_gxe
     script:
       our_pheno = this_pheno.replaceAll("_","-")
-      out = "C057$this_pheno"
+      out = "C057$our_pheno"
       """
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNP --pval_header P_GXE --beta_header Z_GXE --info_prog "Plink,GxE : ${params.gxe}"
       """
