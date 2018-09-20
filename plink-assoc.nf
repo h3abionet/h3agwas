@@ -27,7 +27,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca"]
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -59,6 +59,7 @@ params.output_testing = "cleaned"
 params.thin       = ""
 params.covariates = ""
 params.chrom      = ""
+params.print_pca = 1
 outfname = params.output_testing
 
 
@@ -87,6 +88,7 @@ params.gemma = 0
 params.gemma_mem_req = "6GB"
 params.gemma_relopt = 1
 params.gemma_lmmopt = 4
+params.gemma_mat_rel = ""
 
 /*JT Append initialisation variable*/
 params.bolt_covariates_type = ""
@@ -106,6 +108,7 @@ params.fastlmmc_bin =""
 /*gxe param : contains column of gxe*/
 params.gemma_gxe=0
 params.plink_gxe=0
+params.max_plink_cores = 4
 params.gxe=""
 
 
@@ -117,10 +120,10 @@ params.sexinfo_available = "false"
 params.plink_mem_req = '750MB' // how much plink needs for this
 params.other_process_memory = '750MB' // how much other processed need
 
-max_plink_cores = params.max_plink_cores = 4
 
 plink_mem_req = params.plink_mem_req
 other_mem_req = params.other_process_memory
+max_plink_cores = params.max_plink_cores 
 
 params.help = false
 
@@ -249,7 +252,7 @@ if (thin+chrom) {
 
 
 
-
+if(params.print_pca!=0){
 process computePCA {
   cpus max_plink_cores
   memory plink_mem_req
@@ -285,6 +288,7 @@ process drawPCA {
       output="${base}-pca.pdf"
       template "drawPCA.py"
 
+}
 }
 
 
@@ -693,7 +697,7 @@ if (params.gemma == 1 || params.gemma_gxe==1) {
   gem_ch_gemma = Channel.create()
   gem_ch_gemma_gxe = Channel.create()
   gemma_assoc_ch.separate (rel_ch_gemma, gem_ch_gemma, gem_ch_gemma_gxe) { a -> [a, a, a] }
-
+  if(params.gemma_mat_rel==""){
   process getGemmaRel {
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
@@ -710,6 +714,10 @@ if (params.gemma == 1 || params.gemma_gxe==1) {
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
        gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3
        """
+  }
+  }else{
+   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel) 
+   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel) 
   }
 }
 
@@ -972,7 +980,9 @@ if (workflow.repository)
 else
   wflowversion="A local copy of the workflow was used"
 
+if(params.print_pca!=0){
 report_ch = report_ch.mix(report_pca_ch)
+}
 
 process doReport {
   input:
