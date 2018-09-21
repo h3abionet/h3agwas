@@ -691,7 +691,7 @@ if (params.boltlmm == 1) {
 
 
 
-if (params.gemma == 1 || params.gemma_gxe==1) {
+if (params.gemma+params.gemma_gxe>0) {
 
   rel_ch_gemma = Channel.create()
   gem_ch_gemma = Channel.create()
