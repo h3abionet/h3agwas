@@ -743,9 +743,9 @@ if (params.gemma == 1){
       file("${dir_gemma}/${out}.log.txt")
       set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch
     script:
-       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
        our_pheno3         = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
        data_nomissing     = "pheno-"+our_pheno+".pheno"
        list_ind_nomissing = "lind-"+our_pheno+".lind"
        rel_matrix         = "newrel-"+our_pheno+".rel"
