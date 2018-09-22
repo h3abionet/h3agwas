@@ -744,7 +744,7 @@ if (params.gemma == 1){
       set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch
     script:
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
-       our_pheno3         = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+       ourpheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
        our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
        data_nomissing     = "pheno-"+our_pheno+".pheno"
        list_ind_nomissing = "lind-"+our_pheno+".lind"
@@ -759,7 +759,7 @@ if (params.gemma == 1){
        out                = "$base-$our_pheno"
        dir_gemma          =  "gemma"
        """
-       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
+       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $ourpheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase
@@ -819,7 +819,7 @@ if (params.gemma_gxe == 1){
     script:
        our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
-       our_pheno3         = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+       our_pheno3         = this_pheno.replaceAll(/_|\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
        data_nomissing     = "pheno-"+our_pheno+".pheno" 
        list_ind_nomissing = "lind-"+our_pheno+".lind"
        rel_matrix         = "newrel-"+our_pheno+".rel"
