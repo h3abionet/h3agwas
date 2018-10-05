@@ -429,6 +429,7 @@ The key options are:
 * `pheno`: a comma-separated list of phenotypes that you want to test. Each phenotype is tested separately. If you wish to do a transform to the phenottype, you can suffix the phenotype with _/function_ where function is a numpy function. For example you might say `--pheno bmi/np.log` which will apply the log function to the phenotype. Any numpy function can be used, typical uses being np.log and np.sqrt. We plan to support user provision of a user-given function.
 * `covariates`: a comma-separated list of phenotypes that you want to use
 * `exclude_snps` option to exclude some snps active just for boltlmm (see `--exclude` in boltlmm manual) : SNP ID must be first column (default none)
+*  `print_pca` : by default pipeline compute and print pca (`print_pca`=1), if you want avoid this step (`print_pca` = 0)
 
 By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
 
@@ -440,6 +441,7 @@ By default a chi2 test for association is done. But you can do multiple differen
     *  see [manual](www.xzlab.org/software/GEMMAmanual.pdf)
     *  `gemma_num_cores`: if gemma is used set this up to 8
     *  `gemma_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM (default : 6GB)
+    *  `gemma_mat_rel` : file contains in gemma format matrix relatdness used by gemma  (format 1, see manual), matrix must be in same order than fam file. Avoid computation of relatdness by pipeline. 
  *  `boltlmm`: should boltlmm be used? 
     *  see [manual](https://data.broadinstitute.org/alkesgroup/BOLT-LMM/)
     * if SNPs is higher than 950,000, 950,000 SNPs are chosen randomly to build the model (see --modelSnps option in bolt)
