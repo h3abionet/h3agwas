@@ -27,7 +27,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat"]
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -60,6 +60,7 @@ params.thin       = ""
 params.covariates = ""
 params.chrom      = ""
 params.print_pca = 1
+params.file_rs_buildrelat = ""
 outfname = params.output_testing
 
 
@@ -258,7 +259,6 @@ process computePCA {
   memory plink_mem_req
   input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from pca_in_ch
-
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     set file("${outfname}.eigenval"), file("${outfname}.eigenvec")  \
@@ -391,6 +391,11 @@ if (params.fastlmm == 1) {
   pheno_cols_ch_fastlmm.flatMap { list_str -> list_str.split() }.tap ( check) .set { ind_pheno_cols_ch }
 
   if(params.fastlmm_multi==1){
+     if(params.file_rs_buildrelat==""){
+        filers_matrel_mat_fast=Channel.fromPath(params.data)
+     }else{
+        filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat)
+     }
 
      process getRelForFastLMM {
 	cpus params.fastlmm_num_cores
@@ -398,6 +403,7 @@ if (params.fastlmm == 1) {
 	time params.big_time
 	input:
 	   file plinks from rel_ch_fastlmm
+           file file_rs from filers_matrel_mat_fast
 	output:
 	   file("output/${base}.*XX.txt")
 	   file("${rel_fastlmm}") into rel_mat_ch_fastlmm
@@ -405,10 +411,11 @@ if (params.fastlmm == 1) {
 	   base = plinks[0].baseName
 	   fam = plinks[2]
 	   rel_fastlmm="rel_fastlmm.txt"
+           rs_list = params.file_rs_buildrelat!="" ? " -snps $file_rs " : ""
 	   """
            cat $fam |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
 	   export OPENBLAS_NUM_THREADS=${params.fastlmm_num_cores}
-	   gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3
+	   gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
 	   cvt_rel_gemma_fastlmm.py $fam output/${base}.*XX.txt $rel_fastlmm
 	   """
 	 }
@@ -560,12 +567,20 @@ if (params.fastlmm == 1) {
       return(CofactStr)
    }
 
+  def CountLinesFile(File){
+     BufferedReader reader = new BufferedReader(new FileReader(File));
+     int lines = 0;
+     while (reader.readLine() != null) lines++;
+     reader.close();
+     return(lines)
+  }
 if (params.boltlmm == 1) {
 
   plink_ch_bolt = Channel.create()
+  bim_ch_bolt_snpchoice = Channel.create()
   fam_ch_bolt = Channel.create()
   bim_ch_bolt = Channel.create()
-  boltlmm_assoc_ch.separate (plink_ch_bolt, fam_ch_bolt, bim_ch_bolt) { a -> [ a, a[2], a[1]] }
+  boltlmm_assoc_ch.separate (plink_ch_bolt, fam_ch_bolt, bim_ch_bolt, bim_ch_bolt_snpchoice) { a -> [ a, a[2], a[1],a[1]] }
   data_ch_bolt = Channel.fromPath(params.data)
   if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
@@ -628,6 +643,26 @@ if (params.boltlmm == 1) {
   /*    nb_snp= CountLinesFile(base+".bim") */
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps)
   else rs_ch_exclude_bolt=Channel.fromPath(params.data)
+  if(params.file_rs_buildrelat!=""){
+      filers_matrel=Channel.fromPath(params.file_rs_buildrelat)
+      BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
+  }else{
+      BoltNbMaxSnps=1000000
+      process buildBoltFileSnpRel{
+         memory params.bolt_mem_req
+         time   params.big_time
+         input:
+           file(plinksbim) from bim_ch_bolt_snpchoice
+         output :
+           file(output) into filers_matrel
+         script :
+           output=plinksbim.baseName+".rs.choice"
+           """
+           shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
+           """
+      }
+
+  } 
   process doBoltmm{
     cpus params.bolt_num_cores
     memory params.bolt_mem_req
@@ -637,6 +672,7 @@ if (params.boltlmm == 1) {
       val nb_snp from nbsnp_ch_bolt
       file(phef) from newdata_ch_bolt
       file(rs_exclude) from rs_ch_exclude_bolt
+      file(SnpChoiceMod) from filers_matrel
     publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
     each this_pheno from ind_pheno_cols_ch_bolt
     output:
@@ -648,14 +684,13 @@ if (params.boltlmm == 1) {
       our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
       our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       //our_pheno3=this_pheno.replaceAll(/^[0-9]+-/,"")
-
       out     = "$base-$our_pheno2"+".stat"
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
-      model_snp = (nb_snp.toInteger() > 1000000) ? "--modelSnps=.sample.snp" : ""
+      //model_snp = (nb_snp.toInteger() > 1000000) ? "--modelSnps=.sample.snp" : ""
+      model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       """
-      shuf -n 950000 $plinksbim | awk '{print \$2}' > .sample.snp 
       bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
            $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp
       bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp |\
@@ -692,6 +727,11 @@ if (params.boltlmm == 1) {
 
 
 if (params.gemma+params.gemma_gxe>0) {
+   if(params.file_rs_buildrelat==""){
+        filers_matrel_mat_gem=Channel.fromPath(params.data)
+     }else{
+        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
+   }
 
   rel_ch_gemma = Channel.create()
   gem_ch_gemma = Channel.create()
@@ -704,15 +744,17 @@ if (params.gemma+params.gemma_gxe>0) {
     time params.big_time
     input:
        file plinks from rel_ch_gemma
+       file file_rs from filers_matrel_mat_gem
     output:
        file("output/${base}.*XX.txt") into (rel_mat_ch, rel_mat_ch_gxe)
     script:
        base = plinks[0].baseName
        famfile=base+".fam"
+       rs_list = params.file_rs_buildrelat!="" ? " -snps $file_rs " : ""
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
-       gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3
+       gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
        """
   }
   }else{
