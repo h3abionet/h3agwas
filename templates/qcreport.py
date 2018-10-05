@@ -5,7 +5,7 @@
 # 
 # (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
 # 2016-2018
-# Licensed under the Creative Commons Attribution 4.0 International Licence. 
+# Licensed under the MIT Licence.
 # See the "LICENSE" file for details
 # 
 
@@ -387,7 +387,7 @@ def getImages(images):
       if len(dets)==1:
          (proc,dimg)=("default",dets[0])
       else:
-         (proc,dimg)==img.split(":",1)
+         (proc,dimg)=img.split(":",1)
       result = result +  \
                   proc + "&" + chr(92) + "url{%s}"%dimg+\
                   chr(92)+chr(92)
