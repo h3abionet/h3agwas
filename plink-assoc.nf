@@ -31,7 +31,7 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_me
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
-ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps"]
+ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid"]
 allowed_params+=ParamBolt
 ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin"]
 allowed_params+=ParamFast
@@ -100,6 +100,8 @@ params.bolt_num_cores=8
 params.bolt_mem_req="6GB"
 params.bolt_use_missing_cov=0
 params.exclude_snps=""
+params.bolt_impute2filelist=""
+params.bolt_impute2fidiid=""
 /*fastlmm param*/
 params.fastlmm = 0
 params.fastlmm_num_cores=8
@@ -611,9 +613,6 @@ if (params.boltlmm == 1) {
       cov_bolt = boltlmmCofact(params.covariates,params.bolt_covariates_type)
    else
       cov_bolt= ""
-   //bolt_exclude=""
-   //if (params.exclude_snps)bolt_exclude=" --exclude $params.exclude_snps"
-   
 
    missing_cov=""
    if(params.bolt_use_missing_cov==1)
@@ -663,6 +662,17 @@ if (params.boltlmm == 1) {
       }
 
   } 
+  if(params.bolt_impute2filelist!=""){
+  Impute2FileList=Channel.fromPath(params.bolt_impute2filelist)
+  Impute2FID = Channel.fromPath(params.bolt_impute2fidiid)
+  }else{
+  def newFile = new File(".tmpfilenone")
+  newFile.createNewFile() 
+  Impute2FileList=Channel.fromPath(".tmpfilenone")
+  def newFile2 = new File(".tmpfidnone")
+  newFile2.createNewFile() 
+  Impute2FID = Channel.fromPath(".tmpfidnone")
+  }
   process doBoltmm{
     cpus params.bolt_num_cores
     memory params.bolt_mem_req
@@ -673,26 +683,32 @@ if (params.boltlmm == 1) {
       file(phef) from newdata_ch_bolt
       file(rs_exclude) from rs_ch_exclude_bolt
       file(SnpChoiceMod) from filers_matrel
+      file(imp2_filelist) from Impute2FileList 
+      file(imp2_fid) from Impute2FID
     publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
     each this_pheno from ind_pheno_cols_ch_bolt
     output:
+      file(out)
       file(outReml) into bolt_reml_out
-      set val(base), val(our_pheno), file("$out") into bolt_manhatten_ch
+      set val(base), val(our_pheno), file("$outf") into bolt_manhatten_ch
     script:
       base = plinksbed.baseName
       our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
       our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       //our_pheno3=this_pheno.replaceAll(/^[0-9]+-/,"")
-      out     = "$base-$our_pheno2"+".stat"
+      outimp  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
+      out     = "$base-${our_pheno2}.stat" 
+      outf    = (params.bolt_impute2filelist!="") ? outimp : out
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
       //model_snp = (nb_snp.toInteger() > 1000000) ? "--modelSnps=.sample.snp" : ""
       model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
+      boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp  " : ""
       """
       bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
-           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp
+           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute
       bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp |\
              grep -B 1 -E "^[ ]+h2" $exclude_snp > $outReml 
       """

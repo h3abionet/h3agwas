@@ -430,6 +430,7 @@ The key options are:
 * `covariates`: a comma-separated list of phenotypes that you want to use
 * `exclude_snps` option to exclude some snps active just for boltlmm (see `--exclude` in boltlmm manual) : SNP ID must be first column (default none)
 *  `print_pca` : by default pipeline compute and print pca (`print_pca`=1), if you want avoid this step (`print_pca` = 0)
+*  `file_rs_buildrelat` : file with rs list (one by lines) to build genetics models (relatdness), for gemma `-snps` for boltlmm `--modelSnps`
 
 By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
 
@@ -450,6 +451,9 @@ By default a chi2 test for association is done. But you can do multiple differen
     * `bolt_use_missing_cov` : option to "missing indicator method", by default no activate (0), to activate (1) (--covarUseMissingIndic option in boltlmm), which adds indicator variables demarcating missing status as additional covariates.
     * `bolt_num_cores` if bolt is used set this up to 8
     * `bolt_mem_req` memory required for boltlmm, (default : 6GB)
+    * impute2 data in bolt  :
+      * bolt_impute2filelist : list of impute2 files, each line contains : `chronumber` `file`, file must be in full pattern
+      *`bolt_impute2fidiid` : list of individual in same order than bolt_impute2filelist
  *  `fastlmm`: should fastlmm be used?
     *  see [manual](https://github.com/MicrosoftGenomics/FaST-LMM)
     * `fastlmm_num_cores`: if fastmll is used set this up to 8
