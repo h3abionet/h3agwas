@@ -387,7 +387,7 @@ def getImages(images):
       if len(dets)==1:
          (proc,dimg)=("default",dets[0])
       else:
-         (proc,dimg)=img.split(":",1)
+         (proc,dimg)=dets
       result = result +  \
                   proc + "&" + chr(92) + "url{%s}"%dimg+\
                   chr(92)+chr(92)

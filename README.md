@@ -126,8 +126,7 @@ We expect that many of our users will use Docker. However, we recognise that thi
 
 ### Singularity
 
-The pipeline should support singularity. This is currently experimental though we hope to support it fully as a first-class citizen in the next release. We have run it through on a data set but we haven't tested all options and workflows.
-
+Similarily we support Singularity. Although it's a new feature, we've tested it two different organisaitons and it's worked flawlessly
 
 # 2. Installing h3aGWAS
 
@@ -654,42 +653,28 @@ Run by `nextlow run plink-qc.nf -profile docker`
 
 Nextflow supports execution on clusters using standard resource managers, including Torque/PBS, SLURM and SGE. Log on to the head node of the cluster, and execute the workflow as shown below. Nextflow submits the jobs to the cluster on your behalf, taking care of any dependancies. If your job is likely to run for a long time because you've got really large data sets, use a tool like _screen_ to allow you to control your session without timing out.
 
-To run using Torque/PBS, log into the head node. Edit the _nextflow.config_ file (either directly or using our helper script). If you are doing this manually, edit the _nextflow.config_ file by looking for the stanza (around like 85)
+Our workflow has pre-built configuration for SLURM and Torque/PBS. If you use another scheduler that Nextflow supports you'll need to do a _little_ more (see later): see https://www.nextflow.io/docs/latest/executor.html for details
+
+To run using Torque/PBS, log into the head node. Edit the _nextflow.config_ file, and change the `queue` variable to be the queue you will run jobs on (if you're not sure of this, ask your friendly sysadmin). Then when you run, our workflow, use the `-profile pbs` option -- typically you would say something like `nextflow run -c my.config plink-qc -profile pbs`. Note that the `-profile pbs` only uses a single "-".
+
+Similarily, if you run SLURM, set the _queue_ variable, and use the `-profile slurm` option.
+
+To use only of the other schedulers supported by Nextflow, add the following sub-stanza to your nextflow.config file inside of the _profile_ stanza:
+
 
 
 ```
-    pbs {
-        process.executor = 'pbs'
-	process.queue = 'long'
+    myscheduler {
+        process.executor = 'myscheduler'
+	process.queue = queue
     }
 ```
-and change _long_ to whatever queue you are using. Note that in the current version, the only way in which the queue can be changed is by manuall editing the nextflow.config file. You can either change the `process.queue` line, or, better, modify the definition of the queue variable at the top of the `nextflow.config` file.
 
+where `myscheduler` is one of: nqsii, htcondor, sge, lsf.  
 
-Then you can run by saying
-
-```
-nextflow run plink-qc.nf -profile pbs
-```
-
-If you are using another scheduler, the changes should be straight-forward. For example, to run using SLURM, add a stanza like within the _profile_environment of the _nextflow.config_ file 
-
-```
-    slurm {
-        process.executor = 'slurm'
-	process.queue = 'long'
-    }
-```
 
 and  then use this as the profile.
 
-## Running on a cluster with Docker
-
-If you have a cluster which runs Docker, you can get the best of both worlds by editing the queue variable in the _pbsDocker_ stanza, and then running
-
-```
-nextflow run plink-qc.nf -profile pbsDocker
-```
 
 We assume all the data is visible to all nodes in the swarm. Log into the head node of the Swarm and run your chosed workflow -- for example
 
@@ -705,16 +690,25 @@ nextflow run plink-qc.nf -profile dockerSwarm
 ## 8.5 Singularity
 
 
-Our workflows should now run easily with Singularity.
+Our workflows now run easily with Singularity.
 
 `nextflow run plink-qc.nf -profile singularity`
 
 or
 
-`nextflow run plink-qc.nf -profile singularityPBS`
+`nextflow run plink-qc.nf -profile pbsSingularity`
 
 By default the user's ${HOME}/.singularity will be used as the cache for Singularity images. If you want to use something else, change the `singularity.cacheDir` parameter in the config file.
 
+## Running on a cluster with Docker or Singularity
+
+If you have a cluster which runs Docker, you can get the best of both worlds by editing the queue variable in the _pbsDocker_ stanza, and then running
+
+```
+nextflow run plink-qc.nf -profile option
+```
+
+where _option_ is one of _pbsDocker_, _pbsSingularity_, _slurmDocker_ or _slurmSingularity_. If you use a different scheduler, read the Nextflow documentation on schedulers, and then use what we have in the _nextflow.config_ file as a template to tweak.
 
 ## 8.5 Other container services
 
