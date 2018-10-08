@@ -360,6 +360,7 @@ if (params.gemma == 1) {
   gemma_assoc_ch.separate (rel_ch, gem_ch, fam_ch) { a -> [a, a, a[2]] }
 
   process getGemmaRel {
+    label 'gemma'
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time params.big_time
