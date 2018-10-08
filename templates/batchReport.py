@@ -120,13 +120,12 @@ removing first those who are related to multiple people (e.g. if A is a cousin o
 
 The overall relationship analysis is shown in the Table *-ref{tab:sex:overall} on page *-pageref{tab:sex:overall}. For each group (or if there is only one group, the group as a whole), we show the group and the number of pairs of related individuals. We also show the number of pairs with 
 ##*-widehat{*-pi}>0.95##, which prima facie indicates identical individuals or twins, and 
-the number of pairs of individuals with ##*-widehat{*-pi}## between 0.45 and 0.95 which prima facie indicates
-relationship of parent/child or siblingship.
+the number of pairs of individuals with ##*-widehat{*-pi}## between 0.45 and 0.95 which prima facie indicates relationship of parent/child or siblingship.
 
 *-begin{table}[htb]
 *-begin{center}
-*-begin{tabular}{l@{}Q{2cm} r r}*-hline
-%(pheno_col)s & Num *-emph{pairs} & ##*-widehat{*-pi}>0.95## &  ##*-widehat{*-pi} *-in [0.45, 0.95]## *-*-*-hline
+*-begin{tabular}{l@{}Q{2cm} r r r}*-hline
+%(pheno_col)s & Num *-emph{pairs} & ##*-widehat{*-pi}>0.95## &  ##*-widehat{*-pi} *-in [0.45, 0.95]## & ##<0.45## *-*-*-hline
 %(rows)s*-hline
 *-end{tabular}
 *-end{center}
@@ -370,10 +369,12 @@ def getRelatedPairs(pfrm,pheno_col,genome):
     if len(keys)==2:
         keys=[" ALL"]
     for k in keys:
-        rows = rows + "%s & %d & %d & %d *-*-"%(k,group[k],ident.get(k,0),sib.get(k,0))+EOL
+        rest = group[k]-ident.get(k,0)-sib.get(k,0)
+        rows = rows + "%s & %d & %d & %d & %d*-*-"%(k,group[k],ident.get(k,0),sib.get(k,0),rest)+EOL
     rel_text=""
     if num_mixed > 0:
-        rows = rows + "mixed & %d & %d & %d*-*-"%(num_mixed,ident_mixed,sib_mixed)+EOL
+        rest = num_mixed-ident_mixed-sib_mixed
+        rows = rows + "mixed & %d & %d & %d & %d*-*-"%(num_mixed,ident_mixed,sib_mixed,rest)+EOL
         if num_mixed < 10:
             rel_text = "{*-footnotesize"
             for k, prs in mixed.items():

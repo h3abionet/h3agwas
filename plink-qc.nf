@@ -314,6 +314,7 @@ if (extrasexinfo == "--must-have-sex") {
 
    /* Detailed analysis of X-chromosome */
    process getX {
+     memory other_mem_req
      input:
        file(plink) from qc1D_ch
       output:
@@ -340,6 +341,7 @@ if (extrasexinfo == "--must-have-sex") {
 
 
    process analyseX {
+     memory other_mem_req
      input:
        file(xchr) from X_chr_ch
      output:
@@ -498,6 +500,7 @@ process removeQCPhase1 {
 // this is an expensive operation so we start early. Similarly for computing relatedness
 process compPCA {
    cpus max_plink_cores
+   memory plink_mem_req
    input:
       file plinks from qc2A_ch
    output:
@@ -513,6 +516,7 @@ process compPCA {
 }
 
 process drawPCA {
+    memory other_mem_req
     input:
       set file(eigvals), file(eigvecs) from pcares
       file cc from cc2_ch
@@ -549,6 +553,7 @@ process pruneForIBD {
   input:
     file plinks from qc2B_ch
     file ldreg  from ldreg_ch
+  publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file "${outf}.genome" into (find_rel_ch,batch_rel_ch)
   script:
@@ -817,6 +822,7 @@ process generateHwePlot {
 
 // Generate MD5 sums of output files
 process outMD5 {
+  memory other_mem_req
   input:
      file plink from qc4B_ch
   output:
@@ -866,6 +872,7 @@ repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedse
 
 
 process produceReports {
+  memory other_mem_req
   label 'latex'
   input:
     set file(orig), file (dupf) from report["dups"]
