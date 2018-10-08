@@ -85,12 +85,12 @@ params.sexinfo_available = "false"
 
 
 params.plink_mem_req = '750MB' // how much plink needs for this
-params.other_process_memory = '750MB' // how much other processed need
+params.other_mem_req = '750MB' // how much other processed need
 
 max_plink_cores = params.max_plink_cores = 4
 
 plink_mem_req = params.plink_mem_req
-other_mem_req = params.other_process_memory
+other_mem_req = params.other_mem_req
 
 params.help = false
 
@@ -406,6 +406,7 @@ if (params.gemma == 1) {
   check.subscribe { println "Found phenotype request $it" }
 
   process doGemma {
+    label 'gemma'
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time   params.big_time

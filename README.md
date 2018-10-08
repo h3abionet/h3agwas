@@ -170,7 +170,7 @@ The following code needs to be installed and placed in a directory on the user's
 
 If you want to run the `plink-assoc.nf` pipeline then you should install gemma if you are using those options.
 
-##2.5 Installing the workflow
+## 2.5 Installing the workflow
 
 There are two approaches: let Nextflow manage this for you; or download using Git. The former is easier; you need to use Git if you want to change the workflow
 
@@ -453,8 +453,8 @@ Several of the above parameters make reference to a phenotype file. Of course, t
 
 There are three parameters that are important control performance. You probably won't need to change this, but feel free.
 
-* `plink_process_memory` : specify in MB or GB how much memory your processes that use PLINK require;
-*  ` other_process_memory` : specify how much other processes need;
+* `plink_mem_req` : specify in MB or GB how much memory your processes that use PLINK require;
+*  `other_mem_req` : specify how much other processes need;
 *  `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
 
 
