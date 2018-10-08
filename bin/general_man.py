@@ -136,7 +136,10 @@ plt.savefig(out_man)
 plt.figure()
 sort_p = -np.log10(result[PvalueEnt].sort_values())
 n=len(sort_p)
-expected = -np.log10(np.linspace(1/n,1,n))
+if n==0 :
+   expected=[]
+else :
+   expected = -np.log10(np.linspace(1/n,1,n))
 plt.plot(expected,sort_p)
 plt.plot(expected,expected)
 plt.savefig(out_qq)
