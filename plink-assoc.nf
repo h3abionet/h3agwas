@@ -127,7 +127,7 @@ def fileColExists = { fname, pname, cname ->
       cols = cname.split(",")
       cols.each { col -> 
 	det = col.split("/")
-	if (! fields.contains(det[0]))
+	if ((det[0].length()>0) && (! fields.contains(det[0])))
 	  error("\n\nThe file <${fname}> given for <$pname> does not have a column <${det}>\n")
       }
     }
