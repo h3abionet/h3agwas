@@ -27,7 +27,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file"]
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -61,6 +61,7 @@ params.covariates = ""
 params.chrom      = ""
 params.print_pca = 1
 params.file_rs_buildrelat = ""
+params.genetic_map_file = ""
 outfname = params.output_testing
 
 
@@ -620,14 +621,7 @@ if (params.boltlmm == 1) {
 
    pval_head = "P_BOLT_LMM"
 
-   if(params.bolt_ld_score_file){
-      ld_score_cmd="--LDscoresFile=$params.bolt_ld_score_file"
-      if(params.bolt_ld_scores_col) ld_score_cmd = ld_score_cmd + " --LDscoresCol="+params.bolt_ld_scores_col
-   } else 
-      ld_score_cmd = "--LDscoresUseChip"
-
   type_lmm="--lmm"
-  
   process doCountNbSnp{
     time   params.big_time
     input :
@@ -673,6 +667,22 @@ if (params.boltlmm == 1) {
   newFile2.createNewFile() 
   Impute2FID = Channel.fromPath(".tmpfidnone")
   }
+  if(params.bolt_ld_score_file!=""){
+     Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file)
+  }else{
+     def File_bolt_ld_score= new File(".bolt_ld_score_file")
+     File_bolt_ld_score.createNewFile() 
+     Bolt_ld_score = Channel.fromPath(".bolt_ld_score_file")
+  }
+//genetic_map_file
+  if(params.genetic_map_file!=""){
+     Bolt_genetic_map= Channel.fromPath(params.genetic_map_file)
+  }else{
+     def File_bolt_genetic_map= new File(".genetic_map_file")
+     File_bolt_genetic_map.createNewFile()
+     Bolt_genetic_map = Channel.fromPath(".genetic_map_file")
+  }
+
   process doBoltmm{
     cpus params.bolt_num_cores
     memory params.bolt_mem_req
@@ -685,6 +695,8 @@ if (params.boltlmm == 1) {
       file(SnpChoiceMod) from filers_matrel
       file(imp2_filelist) from Impute2FileList 
       file(imp2_fid) from Impute2FID
+      file(bolt_ld_score) from Bolt_ld_score
+      file(bolt_genetic_map) from Bolt_genetic_map
     publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
     each this_pheno from ind_pheno_cols_ch_bolt
     output:
@@ -696,20 +708,21 @@ if (params.boltlmm == 1) {
       our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
       our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
-      //our_pheno3=this_pheno.replaceAll(/^[0-9]+-/,"")
       outimp  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
       out     = "$base-${our_pheno2}.stat" 
       outf    = (params.bolt_impute2filelist!="") ? outimp : out
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
-      //model_snp = (nb_snp.toInteger() > 1000000) ? "--modelSnps=.sample.snp" : ""
       model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
+      ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
+      ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp  " : ""
+      geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
       bolt.py bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
-           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute
-      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp |\
+           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap
+      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap |\
              grep -B 1 -E "^[ ]+h2" $exclude_snp > $outReml 
       """
   }
