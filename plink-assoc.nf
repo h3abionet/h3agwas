@@ -260,6 +260,7 @@ if(params.print_pca!=0){
 process computePCA {
   cpus max_plink_cores
   memory plink_mem_req
+  time   params.big_time
   input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from pca_in_ch
   publishDir params.output_dir, overwrite:true, mode:'copy'
