@@ -193,6 +193,7 @@ fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
 gemma_assoc_ch = Channel.create()
 
 pca_in_ch = Channel.create()
+prune_in_ch = Channel.create()
 assoc_ch  = Channel.create()
 raw_src_ch= Channel.create()
 
@@ -230,7 +231,7 @@ if (thin+chrom) {
     input: 
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch )
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( prune_in_ch, pca_in_ch, assoc_ch, gemma_assoc_ch )
     script:
        base = bed.baseName
        out  = base+"_t"
@@ -242,11 +243,24 @@ if (thin+chrom) {
 
 
 } else {
-    raw_src_ch.separate( pca_in_ch, assoc_ch, gemma_assoc_ch ) { a -> [a,a,a] }
+  raw_src_ch.separate( prune_in_ch, pca_in_ch, assoc_ch, gemma_assoc_ch ) { a -> [a,a,a,a] }
 }
 
 
 
+process pruneData {
+  cpus 1
+  memory plink_mem_req
+  input:
+    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from prune_in_ch
+  output:
+    file("check.prune.in") into list_prune_ch
+  script:
+      base = "cleaned"
+     """
+     plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
+     """
+}
 
 
 process computePCA {
@@ -254,7 +268,7 @@ process computePCA {
   memory plink_mem_req
   input:
     set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from pca_in_ch
-
+    file("check.prune.in") from list_prune_ch
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     set file("${outfname}.eigenval"), file("${outfname}.eigenvec")  \
@@ -263,7 +277,6 @@ process computePCA {
       base = "cleaned"
       prune= "${base}-prune"
      """
-     plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
      plink --bfile ${base} --extract check.prune.in --make-bed --out $prune
      plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname}
      """
