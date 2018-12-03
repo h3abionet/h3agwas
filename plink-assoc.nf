@@ -396,7 +396,7 @@ if (params.fastlmm == 1) {
 
   if(params.fastlmm_multi==1){
      if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_fast=Channel.fromPath(params.data)
+        filers_matrel_mat_fast=file('NO_FILE')
      }else{
         filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat)
      }
@@ -636,7 +636,7 @@ if (params.boltlmm == 1) {
   }
   /*    nb_snp= CountLinesFile(base+".bim") */
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps)
-  else rs_ch_exclude_bolt=Channel.fromPath(params.data)
+  else rs_ch_exclude_bolt=file('NO_FILE')
   if(params.file_rs_buildrelat!=""){
       filers_matrel=Channel.fromPath(params.file_rs_buildrelat)
       BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
@@ -661,27 +661,29 @@ if (params.boltlmm == 1) {
   Impute2FileList=Channel.fromPath(params.bolt_impute2filelist)
   Impute2FID = Channel.fromPath(params.bolt_impute2fidiid)
   }else{
-  def newFile = new File(".tmpfilenone")
-  newFile.createNewFile() 
-  Impute2FileList=Channel.fromPath(".tmpfilenone")
-  def newFile2 = new File(".tmpfidnone")
-  newFile2.createNewFile() 
-  Impute2FID = Channel.fromPath(".tmpfidnone")
+  //def newFile = new File(".tmpfilenone")
+  //newFile.createNewFile() 
+  Impute2FileList=file('NO_FILE1')
+  //def newFile2 = new File(".tmpfidnone")
+  //newFile2.createNewFile() 
+  Impute2FID = file('NO_FILE2')
   }
   if(params.bolt_ld_score_file!=""){
      Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file)
   }else{
-     def File_bolt_ld_score= new File(".bolt_ld_score_file")
-     File_bolt_ld_score.createNewFile() 
-     Bolt_ld_score = Channel.fromPath(".bolt_ld_score_file")
+     //def File_bolt_ld_score= new File(".bolt_ld_score_file")
+     //File_bolt_ld_score.createNewFile() 
+     //Bolt_ld_score = Channel.fromPath(".bolt_ld_score_file")
+     Bolt_ld_score = file('NO_FILE3')
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
      Bolt_genetic_map= Channel.fromPath(params.genetic_map_file)
   }else{
-     def File_bolt_genetic_map= new File(".genetic_map_file")
-     File_bolt_genetic_map.createNewFile()
-     Bolt_genetic_map = Channel.fromPath(".genetic_map_file")
+     //def File_bolt_genetic_map= new File(".genetic_map_file")
+     //File_bolt_genetic_map.createNewFile()
+     //Bolt_genetic_map = Channel.fromPath(".genetic_map_file")
+     Bolt_genetic_map = file('NO_FILE4')
   }
 
   process doBoltmm{
@@ -758,7 +760,7 @@ if (params.boltlmm == 1) {
 
 if (params.gemma+params.gemma_gxe>0) {
    if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_gem=Channel.fromPath(params.data)
+        filers_matrel_mat_gem=file('NO_FILE')
      }else{
         filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
    }
