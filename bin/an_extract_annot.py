@@ -172,6 +172,7 @@ if args.info_file_annot :
            nbrow=round(CmtFreq/nbcol+0.5)
            print(nbrow,nbcol,numline)
            cmtfigline=1
+           plt.ioff()
            plt.figure(1)
            for pop in DicFreq[DB]['FREQ'].keys() :
               PosFig=numline*100+nbcol*10+cmtfigline
