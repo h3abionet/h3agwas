@@ -146,7 +146,6 @@ head_beta="BETA"
 head_se="SE"
 head_A1="ALLELE1"
 head_A2="ALLELE0"
-}else if(params.gemma==1){
 
 }else{
 head_pval=params.head_pval 
@@ -245,6 +244,8 @@ Channel
 fileplotgeno_ch = infors_rs2.join(Channel.from(list_rs).combine(plink_src_ch)).join(Channel.from(list_rs).combine(Channel.fromPath(params.data)))
 if(params.covariates)cov_plot_geno="--cov ${params.covariates}"
 else  cov_plot_geno=""
+if(params.gxe!="")gxe_cov_geno="--gxe ${params.gxe}"
+else gxe_cov_geno=""
 process PlotByGenotype{
     input :
         set val(rs),file(file_rs), file(bed), file(bim), file(fam), file(data)  from fileplotgeno_ch
@@ -257,7 +258,7 @@ process PlotByGenotype{
         outpdf="geno-"+rs+".pdf"
         """
         plink -bfile $plinkbase --extract $file_rs  --recode tab --out $out
-        an_plotboxplot.r --ped $out".ped" --data $data --out $outpdf --pheno ${params.pheno} $cov_plot_geno
+        an_plotboxplot.r --ped $out".ped" --data $data --out $outpdf --pheno ${params.pheno} $cov_plot_geno $gxe_cov_geno
         """
 }
 all_info_rs_ch=report_lz_ch.join(infors_gwas).join(report_info_rs).join(report_plot_rs_ch)

@@ -1,6 +1,10 @@
 #!/usr/bin/Rscript
+if("ggpubr" %in% rownames(installed.packages()) == FALSE) {install.packages("ggpubr", lib=.libPaths()[2], repos='http://cran.us.r-project.org')}
+library("ggpubr")
+library("optparse")
+require(gridExtra)
 
-#if("ggpubr" %in% rownames(installed.packages()) == FALSE) {install.packages("ggpubr", lib=.libPaths()[2])}
+
 #!/usr/bin/Rscript
 as.characterspe<-function(x,round=2){
 y<-rep(NA, length(x))
@@ -10,9 +14,25 @@ y[!bal]<-as.character(format(x[!bal], scientific=T,digits=round))
 y
 }
 
-library("ggpubr")
-library("optparse")
-require(gridExtra)
+GetGPlotBox<-function(datamerg, pheno, title){
+UnRes<-unique(datamerg$GENO)
+if(length(UnRes)==3){
+my_comparisons <- list(c(UnRes[1], UnRes[3]), c(UnRes[2], UnRes[3]), c(UnRes[1], UnRes[2]) )
+reskr<-kruskal.test(as.formula(paste(pheno,"~ GENO")), data = datamerg)
+p <- ggboxplot(datamerg, x = "GENO", y = pheno, color = "GENO", palette = "jco", title=title,subtitle=paste("Kruskal-Wallis test, p = ", as.characterspe(reskr$p.value),sep="")) + stat_compare_means(comparisons=my_comparisons)
+}else{
+my_comparisons <- list(c(UnRes[1], UnRes[2]))
+p <- ggboxplot(datamerg, x = "GENO", y = pheno, color = "GENO", palette = "jco") + stat_compare_means(comparisons=my_comparisons)
+}
+p
+}
+getresidual<-function(datamerge, pheno, cov){
+datamerg$FIDIID<-paste(datamerg[,1], datamerg[,2])
+rownames(datamerg)<-datamerg$FIDIID
+Res<-glm(as.formula(paste(pheno,"~", paste(cov, collapse="+"))), data=datamerg)$residuals
+datamergres=merge(datamerg, data.frame(FIDIID=names(Res), residuals=Res), by="FIDIID")
+return(datamergres)
+}
 
 
 option_list = list(
@@ -25,6 +45,8 @@ option_list = list(
   make_option(c("-c", "--cov"), type="character", 
               help="ped file contains genotype for each ", metavar="character"),
   make_option(c("-t", "--type_out"), type="character", default="pdf",
+              help="type output file name [default= %default]", metavar="character"),
+  make_option(c("-g", "--gxe"), type="character", default="pdf",
               help="type output file name [default= %default]", metavar="character"),
   make_option(c("-o", "--out"), type="character", default="out",
               help="output file name [default= %default]", metavar="character")
@@ -43,46 +65,37 @@ data_ped<-data_ped[, c(1,2,ncol(data_ped))]
 names(data_ped)<-c("FID","IID","GENO")
 pheno<-opt[['pheno']]
 cov<-c()
+gxe<-c()
+if(!is.null(opt[['gxe']]))gxe=opt[['gxe']]
 if(!is.null(opt[['cov']]))cov=gsub(" ","",strsplit(opt[['cov']],split=",")[[1]]) 
-datamerg<-merge(data_pheno[,c(names(data_pheno)[1:2],pheno,cov)], data_ped)
+
+datamerg<-merge(data_pheno[,c(names(data_pheno)[1:2],pheno,cov, gxe)], data_ped)
 datamerg<-na.omit(datamerg)
-UnRes<-unique(datamerg$GENO)
-if(length(UnRes)==3){
-my_comparisons <- list(c(UnRes[1], UnRes[3]), c(UnRes[2], UnRes[3]), c(UnRes[1], UnRes[2]) )
-#datamerg$GENO<-as.character(datamerg$GENO)
-reskr<-kruskal.test(as.formula(paste(pheno,"~ GENO")), data = datamerg)
-p <- ggboxplot(datamerg, x = "GENO", y = pheno, color = "GENO", palette = "jco", title=pheno,subtitle=paste("Kruskal-Wallis test, p = ", as.characterspe(reskr$p.value),sep="")) + stat_compare_means(comparisons=my_comparisons) 
-}else{
-my_comparisons <- list(c(UnRes[1], UnRes[2]))
-p <- ggboxplot(datamerg, x = "GENO", y = pheno, color = "GENO", palette = "jco") + stat_compare_means(comparisons=my_comparisons)
-}
-#  Add p-value
+
+if(length(cov)>0)datamergres<-getresidual(datamerge, pheno, cov)
+
+if(length(gxe)==0){
+p<-GetGPlotBox(datamerg,pheno, pheno)
 if(length(cov)>0){
-datamerg$FIDIID<-paste(datamerg[,1], datamerg[,2])
-rownames(datamerg)<-datamerg$FIDIID
-Res<-glm(as.formula(paste(pheno,"~", paste(cov, collapse="+"))), data=datamerg)$residuals
-datamergres=merge(datamerg, data.frame(FIDIID=names(Res), residuals=Res), by="FIDIID")
-
-if(length(UnRes)==3){
-my_comparisons <- list(c(UnRes[1], UnRes[3]), c(UnRes[2], UnRes[3]), c(UnRes[1], UnRes[2]) )
-reskr<-kruskal.test(as.formula(paste(pheno,"~ residuals")), data = datamergres)
-#datamerg$GENO<-as.character(datamerg$GENO)
-p2 <- ggboxplot(datamergres, x = "GENO", y = "residuals", color = "GENO", palette = "jco", title=paste(paste(pheno,"~", paste(cov, collapse="+"))) ,subtitle=paste("Kruskal-Wallis test, p = ", as.characterspe(reskr$p.value))) + stat_compare_means(comparisons=my_comparisons)
+p2<-GetGPlotBox(datamergres,pheno, paste("res ",paste(pheno,"~", paste(cov, collapse="+"))))
+gg<-arrangeGrob(p, p2, ncol=2)
 }else{
-my_comparisons <- list(UnRes)
-p2 <- ggboxplot(datamergres, x = "GENO", y = "residuals", color = "GENO", palette = "jco", title=paste("res ",paste(pheno,"~", paste(cov, collapse="+")))) + stat_compare_means(comparisons=my_comparisons)
+gg<-p
 }
-#pdf(opt[['out']],width=7, height=7)
-grid.arrange(p, p2, ncol=2)
-ggsave(opt[['out']],width=7, height=7)
-#dev.off()
 }else{
-
-#pdf(opt[['out']])
-p
-ggsave(opt[['out']],width=7, height=7)
-
-#dev.off()
+stat1=unique(datamerg[,gxe])[1]
+stat2=unique(datamerg[,gxe])[2]
+p<-GetGPlotBox(datamerg[datamerg[, gxe]==stat1,],pheno, paste(pheno,", ", gxe, ": ", stat1,sep=""))
+p2<-GetGPlotBox(datamerg[datamerg[, gxe]==stat2,],pheno, paste(pheno,", ", gxe, ": ", stat2,sep=""))
+if(length(cov)>0){
+p3<-GetGPlotBox(datamergres[datamergres[, gxe]==stat1,],pheno, paste("res ",pheno,", ", gxe, ": ", stat1,sep=""))
+p4<-GetGPlotBox(datamergres[datamergres[, gxe]==stat2,],pheno, paste("res ",pheno,", ", gxe, ": ", stat2,sep=""))
+gg<-arrangeGrob(p, p2, p3,p4, ncol=2, nrow=2)
+}else{
+gg<-arrangeGrob(p, p2, ncol=2)
 }
+}
+ggsave(opt[['out']],gg,width=7, height=7)
+
 
 
