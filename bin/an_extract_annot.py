@@ -103,7 +103,7 @@ def GetInfoHead(File) :
 EOL=chr(10)
 
 def parseArguments():
-    parser = argparse.ArgumentParser(description='fill in missing bim values')
+    parser = argparse.ArgumentParser(description='extract annotation for specific position')
     parser.add_argument('--list_file_annot',type=str,required=True, help="file contains chro and list of files with annotation")
     parser.add_argument('--info_file_annot',type=str,required=False, help="file contains chro and list of files with annotation", default=None)
     parser.add_argument('--info_pos',type=str,required=True,help="file contain one position : rs chro pos")
@@ -157,8 +157,8 @@ if args.info_file_annot :
       """
       for DB in DicFreq.keys() :
           ## we count number frequencies
-           if 'FILTER' in DB and ((DicFreq[DB] in head) and InfoAnnotPos[head.index(DicFreq[DB])].upper()!="NA"):
-              latex_tex+="Filter found in vcf file for position was " + InfoAnnotPos[head.index(DicFreq[DB])]+"\n"
+           if 'FILTER' in DicFreq[DB] and ((DicFreq[DB]['FILTER'] in head) and InfoAnnotPos[head.index(DicFreq[DB]['FILTER'])].upper()!="NA"):
+              latex_tex+="Filter found in vcf file for position was " + InfoAnnotPos[head.index(DicFreq[DB]['FILTER'])]+"\n"
            CmtFreq=0
            for pop in DicFreq[DB]['FREQ'].keys() :
              headfreq=DicFreq[DB]['FREQ'][pop][0]
@@ -172,6 +172,7 @@ if args.info_file_annot :
            nbrow=round(CmtFreq/nbcol+0.5)
            print(nbrow,nbcol,numline)
            cmtfigline=1
+           plt.figure(1)
            for pop in DicFreq[DB]['FREQ'].keys() :
               PosFig=numline*100+nbcol*10+cmtfigline
               headfreq=DicFreq[DB]['FREQ'][pop][0]
@@ -180,15 +181,17 @@ if args.info_file_annot :
                  headN=DicFreq[DB]['FREQ'][pop][1]
                  title=DB+": "+pop
                  plt.subplot(nbrow,nbcol,cmtfigline)
-                 plt.title(title, fontsize=10)
                  if headN and InfoAnnotPos[head.index(headN)].upper()!="NA":
                     title+="(N: "+str(int(float(InfoAnnotPos[head.index(headN)])))+")"
+                 plt.title(title, fontsize=10)
                  pi=float(InfoAnnotPos[head.index(headfreq)])
                  sizes=[pi, 1-pi]
                  plt.pie(sizes, autopct='%1.1f%%', colors=colors,shadow=True,startangle=90)
                  cmtfigline+=1
-           plt.savefig(DB+"-"+rs_initname+'.pdf') 
-           figlatex=r"""
+           if cmtfigline>1:
+              plt.savefig(DB+"-"+rs_initname+'.pdf') 
+              plt.close()
+              figlatex=r"""
 \subsubsection{%(DB)s}
 \begin{figure}[ht]
 \begin{center}

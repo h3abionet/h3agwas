@@ -10,7 +10,7 @@ import numpy as np
 EOL=chr(10)
 
 def parseArguments():
-    parser = argparse.ArgumentParser(description='extract for XX value around rs')
+    parser = argparse.ArgumentParser(description='extract rs in gwas file')
     parser.add_argument('--inp_resgwas',type=str,required=True)
     parser.add_argument('--inp_rs',type=str,required=False, help="file contains rs", default="")
     parser.add_argument('--list_rs',type=str,required=False, help="list rs", default="")
