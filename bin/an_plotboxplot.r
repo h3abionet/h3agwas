@@ -72,14 +72,17 @@ p2 <- ggboxplot(datamergres, x = "GENO", y = "residuals", color = "GENO", palett
 my_comparisons <- list(UnRes)
 p2 <- ggboxplot(datamergres, x = "GENO", y = "residuals", color = "GENO", palette = "jco", title=paste("res ",paste(pheno,"~", paste(cov, collapse="+")))) + stat_compare_means(comparisons=my_comparisons)
 }
-pdf(opt[['out']],width=7, height=7)
-par(mfrow=c(2,1))
+#pdf(opt[['out']],width=7, height=7)
 grid.arrange(p, p2, ncol=2)
-dev.off()
+ggsave(opt[['out']],width=7, height=7)
+#dev.off()
 }else{
-pdf(opt[['out']])
+
+#pdf(opt[['out']])
 p
-dev.off()
+ggsave(opt[['out']],width=7, height=7)
+
+#dev.off()
 }
 
 

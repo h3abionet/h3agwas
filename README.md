@@ -905,6 +905,15 @@ different output is provided :
   * for phenotype simulation all missing values is discarded and replaced by more frequent allele
   * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
 
+# 11 annotation pipeline: `simul-assoc.nf`
+The pipeline is run: `nextflow run annot-assoc.nf`
+
+## Installation
+need locuszoom, _R_ : (ggplot2, knitr, xtable and )
+
+    
+
+
 
 
 

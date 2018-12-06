@@ -80,7 +80,7 @@ params.loczm_build = "hg19"
 params.loczm_source ="1000G_March2012"
 params.loczm_gwascat = ""
 
-
+list_rs=params.list_rs.split(",")
 
 
 /* Do permutation testing -- 0 for none, otherwise give number */
@@ -171,17 +171,18 @@ println "Testing for gwas file : ${params.file_gwas}\n"
 println "Using covariates        : ${params.covariates}\n"
 println "Around rs : ${params.around_rs}\n\n"
 
-rs_label_ch = Channel.from(params.list_rs.split(","))
 gwas_ch = Channel.fromPath(params.file_gwas)
+
+rs_label_ch=Channel.from(list_rs)
 
 process ExtractInfoRs{
     input:
        file(gwas_file) from gwas_ch
     each rs from rs_label_ch
     output :
-      set rs, file(out_locus_rs) into locuszoom_ch
-      set rs, file(out_info_rs) into infors_rs
-      set rs, file(out_gwas_rs) into infors_gwas
+      set val(rs), file(out_locus_rs) into locuszoom_ch
+      set val(rs), file(out_info_rs) into infors_rs, infors_rs2
+      set val(rs), file(out_gwas_rs) into infors_gwas
     script:
       out="sub"
       out_locus_rs=out+"_"+rs+"_around.stat"
@@ -203,25 +204,77 @@ process PlotLocusZoom{
        set rs, file(filegwas) from locuszoom_ch
     publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
     output :
-       file("out_$rs/*.svg") into report_rs_ch
+       file("out_$rs/*.svg")
+       set rs, file("out_$rs/*.pdf") into report_lz_ch
     script :
        """
        ${params.loczm_bin} --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} --gwas-cat whole-cat_significant-only --svg  -p out --no-date 
        """
 }
 
-fileannot_ch = Channel.fromPath(params.list_file_annot).mix(infors_rs)
-
+fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot)))
 process ExtractAnnotation{
       input :
-        set file(infoannot),rs, file(file_rs) from fileannot_ch
+        set val(rs),file(file_rs),file(annot_file), file(annot_info) from fileannot_ch
+        //set val(rs), file(file_rs) from infors_rs
+      publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
+      output :
+        file("${out}*") 
+        set rs, file("${out}.pdf") into report_info_rs
       script :    
+         out="annot-"+rs
          """  
+         an_extract_annot.py --list_file_annot $annot_file --info_pos $file_rs --out $out --info_file_annot $annot_info
+         pdflatex $out 
+         pdflatex $out 
          """
 }
 
+bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
+bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
+fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+
+plink_src_ch= Channel.create()
+Channel
+    .from(file(bed),file(bim),file(fam))
+    .buffer(size:3)
+    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
+    .set { plink_src_ch }
+
+
+fileplotgeno_ch = infors_rs2.join(Channel.from(list_rs).combine(plink_src_ch)).join(Channel.from(list_rs).combine(Channel.fromPath(params.data)))
+if(params.covariates)cov_plot_geno="--cov ${params.covariates}"
+else  cov_plot_geno=""
 process PlotByGenotype{
-
-
+    input :
+        set val(rs),file(file_rs), file(bed), file(bim), file(fam), file(data)  from fileplotgeno_ch
+    publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
+    output :
+       set rs, file(outpdf) into report_plot_rs_ch
+    script :
+        plinkbase=bed.baseName
+        out="plk_"+rs
+        outpdf="geno-"+rs+".pdf"
+        """
+        plink -bfile $plinkbase --extract $file_rs  --recode tab --out $out
+        an_plotboxplot.r --ped $out".ped" --data $data --out $outpdf --pheno ${params.pheno} $cov_plot_geno
+        """
 }
-
+all_info_rs_ch=report_lz_ch.join(infors_gwas).join(report_info_rs).join(report_plot_rs_ch)
+if(params.covariates)covrep="--cov ${params.covariates}"
+else  covrep=""
+process WriteReportRsFile{
+    input :
+       set val(rs), file(locuszoom), file(gwasres),file(annotpdf) ,file(plotgeno) from all_info_rs_ch 
+    publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
+    output :
+       file(out)
+    script :
+       outtex=rs+".tex"
+       out=rs+".pdf"
+       """
+       an_general_man.py --inp_asso $gwasres --rsname $rs --pheno ${params.pheno} $covrep --out $outtex --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --freq_header  $head_freq --locuszoom_plot $locuszoom --geno_plot $plotgeno --inp_asso $gwasres --annot_pdf $annotpdf
+       pdflatex $rs
+       pdflatex $rs
+       """ 
+}
