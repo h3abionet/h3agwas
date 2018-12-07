@@ -906,12 +906,21 @@ different output is provided :
   * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
 
 # 11 annotation pipeline: `simul-assoc.nf`
-The pipeline is run: `nextflow run annot-assoc.nf`
+This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype 
 
 ## Installation
-need locuszoom, _R_ : (ggplot2, knitr, xtable and )
+need locuszoom, _R_ : (ggplot2, ), python3
 
-    
+## Running
+The pipeline is run: `nextflow run annot-assoc.nf`
+
+
+The key options are:
+  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
+  * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
+  * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
+
+
 
 
 

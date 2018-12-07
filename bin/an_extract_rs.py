@@ -57,6 +57,8 @@ for x in sub_result[args.rs_header] :
     chro=infors[args.chro_header].tolist()[0]
     pos=infors[args.pos_header].tolist()[0]
     small=result[(result[args.chro_header]==chro) & (result[args.pos_header]>(args.around_rs-pos)) & (result[args.pos_header]<(args.around_rs+pos))]
+    maf=args.maf
+    small=small[(small[args.rs_header]==x) | ((small[args.freq_header]>maf) & (small[args.freq_header]<(1-maf)))]
     # chrom, start, end, marker ID, and p-value 
     verysmall=infors[[args.rs_header,args.chro_header, args.pos_header]]
     verysmall.to_csv(out_info, sep=TAB, header=False, index=False,na_rep="NA")
