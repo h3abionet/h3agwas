@@ -96,7 +96,7 @@ params.sexinfo_available = "false"
 
 
 params.plink_mem_req = '750MB' // how much plink needs for this
-params.other_process_memory = '750MB' // how much other processed need
+params.other_process_memory = '8GB' // how much other processed need
 
 
 plink_mem_req = params.plink_mem_req
@@ -175,6 +175,7 @@ gwas_ch = Channel.fromPath(params.file_gwas)
 rs_label_ch=Channel.from(list_rs)
 
 process ExtractInfoRs{
+    memory other_mem_req
     input:
        file(gwas_file) from gwas_ch
     each rs from rs_label_ch
@@ -199,6 +200,7 @@ loczm_gwascat=""
 }
 
 process PlotLocusZoom{
+    memory plink_mem_req
     input : 
        set rs, file(filegwas) from locuszoom_ch
     publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
@@ -213,6 +215,7 @@ process PlotLocusZoom{
 
 fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot)))
 process ExtractAnnotation{
+      memory plink_mem_req
       input :
         set val(rs),file(file_rs),file(annot_file), file(annot_info) from fileannot_ch
         //set val(rs), file(file_rs) from infors_rs
@@ -247,6 +250,7 @@ else  cov_plot_geno=""
 if(params.gxe!="")gxe_cov_geno="--gxe ${params.gxe}"
 else gxe_cov_geno=""
 process PlotByGenotype{
+    memory plink_mem_req
     input :
         set val(rs),file(file_rs), file(bed), file(bim), file(fam), file(data)  from fileplotgeno_ch
     publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
@@ -265,6 +269,7 @@ all_info_rs_ch=report_lz_ch.join(infors_gwas).join(report_info_rs).join(report_p
 if(params.covariates)covrep="--cov ${params.covariates}"
 else  covrep=""
 process WriteReportRsFile{
+    memory plink_mem_req
     input :
        set val(rs), file(locuszoom), file(gwasres),file(annotpdf) ,file(plotgeno) from all_info_rs_ch 
     publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
