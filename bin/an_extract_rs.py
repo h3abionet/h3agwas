@@ -19,9 +19,9 @@ def parseArguments():
     parser.add_argument('--rs_header',type=str,required=True,help="rs header in inp files")
     parser.add_argument('--pval_header',type=str,required=True,help="pvalue header in inp files")
     parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
-    parser.add_argument('--freq_header',type=str,required=True,help="beta header in inp files")
+    parser.add_argument('--freq_header',type=str,required=True,help="frequencies header in inp files")
     parser.add_argument('--around_rs',type=float,required=True,help="around rs (pb)")
-    parser.add_argument('--maf',type=float,default=0.0,help="around rs (pb)")
+    parser.add_argument('--maf',type=float,default=0.0,help="minor allele frequencies")
     parser.add_argument('--out_head',type=str,default="out",help="around rs (pb)")
     args = parser.parse_args()
     return args
