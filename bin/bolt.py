@@ -27,7 +27,7 @@ if BaliseEr:
             Lire=open(File,'w')
             Lire.write("\t".join(["SNP","CHR","BP","GENPOS","ALLELE1","ALLELE0","A1FREQ","F_MISS","BETA","SE","P_BOLT_LMM_INF","P_BOLT_LMM"])+"\n")
             Lire.close()
-   if "--reml" in sys.argv :
+   if "--reml" in " ".join(sys.argv) :
       FileOut=sys.argv[-1].replace(">","")
       Ecrire=open(FileOut,'w')
       Ecrire.write(AllLines)

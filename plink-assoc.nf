@@ -661,28 +661,18 @@ if (params.boltlmm == 1) {
   Impute2FileList=Channel.fromPath(params.bolt_impute2filelist)
   Impute2FID = Channel.fromPath(params.bolt_impute2fidiid)
   }else{
-  //def newFile = new File(".tmpfilenone")
-  //newFile.createNewFile() 
   Impute2FileList=file('NO_FILE1')
-  //def newFile2 = new File(".tmpfidnone")
-  //newFile2.createNewFile() 
   Impute2FID = file('NO_FILE2')
   }
   if(params.bolt_ld_score_file!=""){
      Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file)
   }else{
-     //def File_bolt_ld_score= new File(".bolt_ld_score_file")
-     //File_bolt_ld_score.createNewFile() 
-     //Bolt_ld_score = Channel.fromPath(".bolt_ld_score_file")
      Bolt_ld_score = file('NO_FILE3')
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
      Bolt_genetic_map= Channel.fromPath(params.genetic_map_file)
   }else{
-     //def File_bolt_genetic_map= new File(".genetic_map_file")
-     //File_bolt_genetic_map.createNewFile()
-     //Bolt_genetic_map = Channel.fromPath(".genetic_map_file")
      Bolt_genetic_map = file('NO_FILE4')
   }
 
@@ -726,7 +716,7 @@ if (params.boltlmm == 1) {
       bolt.py bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
            $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap
       bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap |\
-             grep -B 1 -E "^[ ]+h2" $exclude_snp > $outReml 
+             grep -B 1 -E "^[ ]+h2" $exclude_snp 1> $outReml 
       """
   }
 
