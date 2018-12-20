@@ -49,21 +49,30 @@ def getColours():
         except:
            sys.exit(gap+"There's a problem with the phenotype file <%s>, column <%s>, ID <%s>%s"%(args.cc,args.column,x,gap))
         return result
-    the_colours = phe.apply(our_colour,axis=1)
-    return list(enumerate(all_labels)), the_colours
+    phe['colour'] = phe.apply(our_colour,axis=1)
+    return list(enumerate(all_labels)), phe
 
 
 def getEigens():
     evals = np.loadtxt(args.eigvals)
+    fig, ax = plt.subplots(figsize=(10,8))
+    ax.plot(range(len(evals)),evals)
+    plt.xlabel("Principal component",fontsize=15)
+    plt.ylabel("Eigenvalue",fontsize=15)
+    plt.xticks(range(len(evals)+1), list(map(lambda x : x+1, range(len(evals))) )+[""])
+    plt.tight_layout()
+    plt.savefig("eigenvalue.pdf",type="pdf")
     pc1 = 100*evals[0]/evals[:10].sum()
     pc2 = 100*evals[1]/evals[:10].sum()
-    evecs  = pd.read_csv(args.eigvecs, delim_whitespace=True, header=None)
+    pcs = list(map(lambda x: "PC%d"%(x+1),range(len(evals))))
+    evecs  = pd.read_csv(args.eigvecs, delim_whitespace=True, header=None,names=["FID","IID"]+pcs)
     return pc1, pc2, evecs
 
 col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 
 
-def draw(pc1,pc2,evecs,labels,the_colours):
+def draw(pc1,pc2,evecs,labels,phe):
+   evecs=evecs.merge(phe,how='inner',on=["FID","IID"])
    fig, ax = plt.subplots(figsize=(10,8))
    font = {'family' : 'normal','weight' : 'bold','size'   : 14}
    matplotlib.rc('font', **font)
@@ -71,7 +80,7 @@ def draw(pc1,pc2,evecs,labels,the_colours):
    matplotlib.rcParams['ytick.labelsize']=13
    locator = MaxNLocator(nbins=5) 
    ax.xaxis.set_major_locator(locator)
-   ax.scatter(evecs[2],evecs[3],s=1,c=the_colours)
+   ax.scatter(evecs['PC1'],evecs['PC2'],s=1,c=evecs['colour'])
    ax.legend(scatterpoints=1)
    recs=[]
    classes=[]
@@ -83,10 +92,11 @@ def draw(pc1,pc2,evecs,labels,the_colours):
    plt.ylabel("PC2 (variation %4.1f %%)"%pc2,fontsize=15)
    plt.tight_layout()
    plt.savefig(args.output,type="pdf")
+   fig, ax = plt.subplots(figsize=(10,8))
 
 
 
 args = parseArguments()
-labels, the_colours =  getColours()
+labels, phe =  getColours()
 evecs =  getEigens()
-draw(*evecs,labels,the_colours)
+draw(*evecs,labels,phe)

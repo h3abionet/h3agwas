@@ -138,7 +138,12 @@ def parseSheet(allrows):
     def getVal(row,col):
        try:
           if ".xls" in args.samplesheet:
-             return row[col].value.replace(" ","")
+             the_val=row[col].value
+             if the_val is None: # if the cell is empy
+                 the_val = ""
+             elif type(the_val) in [int,float]:
+                 the_val=str(the_val)
+             return the_val.replace(" ","")
           else:
              return row[col].replace(" ","")
        except KeyError as e:
@@ -148,8 +153,9 @@ def parseSheet(allrows):
        (fid,iid)= getID(args.idpat, raw_id)
        if (fid,iid) in masks: continue
        if args.newpat not in null_values and (fid != getVal(row,col_plate) or iid != getVal(row,col_well)):
-           sys.exit("Unhappy about this row ",raw_id,fid,iid,getVal(row,col_plate),getVal(row,col_well))
+           print("mismatch in this row <%s %s %s %s %s>"%(raw_id,fid,iid,getVal(row,col_plate),getVal(row,col_well)))
        (real_fid, real_iid) = getID(args.newpat, raw_id)
+       print(raw_id,fid,iid,real_fid,real_iid)
        if (fid,iid)  in replicates:
            real_fid = real_fid + "_replicate_" + replicates[(fid,iid)]
        if real_fid in sofar:

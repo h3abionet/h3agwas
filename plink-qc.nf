@@ -521,7 +521,7 @@ process drawPCA {
       set file(eigvals), file(eigvecs) from pcares
       file cc from cc2_ch
     output:
-      file (output) into report["pca"]
+      set  file ("eigenvalue.pdf"), file(output) into report["pca"]
     publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
     script:
       base=eigvals.baseName
@@ -885,7 +885,7 @@ process produceReports {
     file(misshetremf)    from report["misshetremf"]
     file(diffmisspdf)    from report["diffmissP"]
     file(diffmiss)       from report["diffmiss"]
-    file(pcapdf)         from report["pca"]
+    set file(eigenvalpdf),file(pcapdf)         from report["pca"]
     file(hwepdf)         from report["hwepdf"]
     file(rel_indivs)     from report["related"]
     file(inpmd5)         from report["inpmd5"]

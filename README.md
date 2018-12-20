@@ -166,7 +166,7 @@ The following code needs to be installed and placed in a directory on the user's
 
 * plink 1.9 [Currently, it will not work on plink 2, though it is on our list of things to fix. It probably will work on plink 1.05 but just use plink 1.0]
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
-* python 3.6 or later. pandas, numpy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
+* python 3.6 or later. pandas, numpy, scipy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
 If you want to run the `plink-assoc.nf` pipeline then you should install gemma if you are using those options.
 
@@ -932,6 +932,37 @@ Three files are output: a fam file, an error file (the IDs of individuals who ar
 ## 9.2 getRunsTimes.pl (By Harry Noyes)
 
 Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
+
+
+## 9.3 make_ref.py 
+
+Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
+
+
+`python3 make_ref.py aux/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
+
+
+The program checks each SNP given in the manifest file by the chromosome and position number and then checks that the probe given in the manifest file actually matches the reference genome at that point. Minor slippage is acceptable because of indels.
+
+The wrn file are SNPs which are probably OK but have high slippage (these are in the ref file)
+The err file are the SNPs which don't match.
+
+## 9.6 plates.py
+
+This is used to depict where on the plates particular samples are. This is very useful for looking at problems in the data. If for example you find a bunch of sex mismatches this is most likely due to misplating. This script is a quick way of looking at the problem and seeing whether the errors are close together or spread out. There are two input arguments
+
+* A file with the IDs of the individuals -- assuming that the first token on each line is an individual
+* A sample sheet that gives the plating of each sample
+
+There is one output parameter -- the name of a directory where output should go. The directory should exist.
+
+You may need to change this line
+
+```
+batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
+```
+
+In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
 
 
 # 10. Acknowledgement, Copyright and general

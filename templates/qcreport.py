@@ -277,9 +277,11 @@ data, identifying the cases and controls. Should the cases and
 controls cluster differ signficantly, something is likely wrong.
 Moreover should there be any significant clusters or outliers, association
 testing should take into account stratification. Statistical testing could also
-be done.
+be done. Figure~*-ref{fig:pcaeigen} shows for each principal component what the corresponding eigenvalue is. The shape of the curve may indicate if there is any structure in the data. Informally, the ``broken stick" model sees two processes generating PCs -- population structure and random fluctuation. The eigenvalue is a function of both -- the former has a major impact but drops relatively rapidly; the latter has less effect but drops more slowly. If (!) the model is correct then you will see an inflection point in the graph, where the random effects become the leading factor in the change.  More formal analysis may be desirable, e.g., using the Tracy-Widom statistic or Velicer's MAP test.
 
 *-ourfig{fig:pca}{Principal Component Analysis of Cases Versus Controls}{{$pcapdf}}
+
+*-ourfig{fig:pcaeigen}{Eigenvalues for each principal component: the shape of the curve gives some indication of how many PCs are important}{{$eigenvalpdf}}
 
 *-clearpage
 *-section{Hardy-Weinberg Equilibrium}
