@@ -502,7 +502,11 @@ def xstr(m):
         return str(m)
 
 def dumpMissingSexTable(fname, pfrm, sex_missing_cols):
-    cols = ["FID","IID",args.batch_col+"_b",'F_MISS',args.pheno_col]+sex_missing_cols
+    if args.batch_col+"-b" in pfrm.columns.values: # could have same col in batch and pheno file
+        bcol = args.batch_col+"-b"
+    else:
+        bcol = args.batch_col
+    cols = [bcol,'F_MISS',args.pheno_col]+sex_missing_cols
     pfrm.to_csv(fname,columns=cols)
 
 
@@ -591,9 +595,12 @@ no_response = [0,"0",False,"FALSE","false","False",""]
 bfrm, btext = getBatchAnalysis()
 pfrm, ptext = getPhenoAnalysis()
 sxAnalysis = pd.read_pickle(args.sx_pickle)
-missing_sex_columns = list(map(int,sxAnalysis.columns.values))
+missing_sex_columns = list(map(str,sxAnalysis.columns.values))
+rdict = dict(zip(sxAnalysis.columns.values,missing_sex_columns))
+sxAnalysis.rename(columns=rdict,inplace=True)
+
 text = text + ptext + btext
-pfrm = pfrm.join(bfrm,rsuffix="b",lsuffix="",how='inner')
+pfrm = pfrm.join(bfrm,rsuffix="-b",lsuffix="",how='inner')
 pfrm = pfrm.join(ifrm,how='inner')
 pfrm = pfrm.join(sxAnalysis,how='inner')
 
