@@ -1,5 +1,9 @@
 #!//usr/bin/env python3
 
+# (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
+# 2016-2018
+# Licensed under the MIT Licence
+# See the "LICENSE" file for details
 
 import matplotlib
 matplotlib.use('Agg')

@@ -18,6 +18,8 @@
  *
  * Description  : Nextflow pipeline for Wits GWAS.
  *
+ *(C) University of the Witwatersrand, Johannesburg, 2016-2018 on behalf of the H3ABioNet Consortium
+ *This is licensed under the MIT Licence. See the "LICENSE" file for details
  */
 
 //---- General definitions --------------------------------------------------//
@@ -88,13 +90,13 @@ f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
 remove_on_bp    = params.remove_on_bp
 
-allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir"]
+allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue"]
 
 
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
-    //	println "Check $parm";
-      }
+    	println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
+  }
 }
 
 if (params.help) {
@@ -132,6 +134,17 @@ def getSubChannel = { parm, parm_name, col_name ->
   }
   return new_ch;
 }
+
+/* This takes one file and makes multiple channels */
+def fromPathReplicas = { fname, num ->
+      src = Channel.fromPath (fname);
+      trgs = (1..num).collect { Channel.create() }
+      src.separate(*trgs) { it -> (1..num).collect { it } }
+      return trgs
+}
+
+
+
 
 if (params.case_control) {
   ccfile = params.case_control
@@ -312,6 +325,7 @@ if (extrasexinfo == "--must-have-sex") {
 
    /* Detailed analysis of X-chromosome */
    process getX {
+     memory other_mem_req
      input:
        file(plink) from qc1D_ch
       output:
@@ -338,6 +352,7 @@ if (extrasexinfo == "--must-have-sex") {
 
 
    process analyseX {
+     memory other_mem_req
      input:
        file(xchr) from X_chr_ch
      output:
@@ -496,6 +511,7 @@ process removeQCPhase1 {
 // this is an expensive operation so we start early. Similarly for computing relatedness
 process compPCA {
    cpus max_plink_cores
+   memory plink_mem_req
    input:
       file plinks from qc2A_ch
    output:
@@ -511,11 +527,12 @@ process compPCA {
 }
 
 process drawPCA {
+    memory other_mem_req
     input:
       set file(eigvals), file(eigvecs) from pcares
       file cc from cc2_ch
     output:
-      file (output) into report["pca"]
+      set  file ("eigenvalue.pdf"), file(output) into report["pca"]
     publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
     script:
       base=eigvals.baseName
@@ -547,6 +564,7 @@ process pruneForIBD {
   input:
     file plinks from qc2B_ch
     file ldreg  from ldreg_ch
+  publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file "${outf}.genome" into (find_rel_ch,batch_rel_ch)
   script:
@@ -815,6 +833,7 @@ process generateHwePlot {
 
 // Generate MD5 sums of output files
 process outMD5 {
+  memory other_mem_req
   input:
      file plink from qc4B_ch
   output:
@@ -864,6 +883,8 @@ repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedse
 
 
 process produceReports {
+  memory other_mem_req
+  label 'latex'
   input:
     set file(orig), file (dupf) from report["dups"]
     set file(cbed), file(cbim), file(cfam), file(ilog) from report["cleaned"]
@@ -875,7 +896,7 @@ process produceReports {
     file(misshetremf)    from report["misshetremf"]
     file(diffmisspdf)    from report["diffmissP"]
     file(diffmiss)       from report["diffmiss"]
-    file(pcapdf)         from report["pca"]
+    set file(eigenvalpdf),file(pcapdf)         from report["pca"]
     file(hwepdf)         from report["hwepdf"]
     file(rel_indivs)     from report["related"]
     file(inpmd5)         from report["inpmd5"]

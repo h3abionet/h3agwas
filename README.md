@@ -1,5 +1,6 @@
 
 
+
 <img src="aux/H3ABioNetlogo2.jpg"/>
 
 # h3agwas Pipeline Version 2
@@ -22,21 +23,16 @@ _Please ignore the Wiki in this version which refers to version 1_
 
 ## Brief introduction
 
-A short video overview of the pipeline can be found at http://www.bioinf.wits.ac.za/h3a/h3agwas.mp4
-
+In addition to this README we have the following material available
+* A short video overview of the pipeline can be found at http://www.bioinf.wits.ac.za/gwas/h3agwas.mp4
+* A handout from a lecture can be found at http://www.bioinf.wits.ac.za/gwas/gwas-comp-handout.pdf
 
 ### Restrictions
 This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
 * it is not robust when X chromosome data is not available
 * the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
-* we haven't tested fully with Singularity
 
-The previous version 1 stable branch was commit bfd8c5a
-(https://github.com/h3abionet/h3agwas/commit/bfd8c5a51ef85481e5590b8dfb3d46b5dd0cc77a)
 
-There is one feature of the original workflow that has been omitted. Version 1 supported parallel GWAS anaysis of different data files in one Nextflow run. This has been removed. Although, not unuseful, this feature complicated the implementation and made expansion more difficulkt and also this capacity can be simulated easily at the operating system level.
-
-The previous version has dependancies on Perl and R, which have been removed.
 
 ## Outline of documentation
 
@@ -47,8 +43,9 @@ The previous version has dependancies on Perl and R, which have been removed.
 5. The QC pipeline: `plink-qc.nf`
 6. A simple association testing pipeline: `plink-assoc.nf`
 7. Converting Illumina genotyping reports to PLINK: `topbottom.nf`
-8. Advanced options: Docker, PBS, Amazon EC2
-9. Auxiliary Programs
+8. Advanced options: Docker, PBS, Singularity, Amazon EC2
+9. Dealing with errors
+10. Auxiliary Programs
 
 # 1. Features
 
@@ -59,7 +56,7 @@ for performing a genome-wide association study
 
 There are three separate workflows that make up *h3agwas*
 
-1. `topbottom.nf`.  Conversion of Illumina genotyping reports with TOP/BOTTOM calls into PLINK format, aligning the calls.
+1. `topbottom.nf`.  Conversion of Illumina genotyping reports with TOP/BOTTOM or FORWARD/REVERSE  calls into PLINK format, aligning the calls.
 
 2. `plink-qc.nf`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
 
@@ -126,8 +123,7 @@ We expect that many of our users will use Docker. However, we recognise that thi
 
 ### Singularity
 
-The pipeline should support singularity. This is currently experimental though we hope to support it fully as a first-class citizen in the next release. We have run it through on a data set but we haven't tested all options and workflows.
-
+Similarily we support Singularity. Although it's a new feature, we've tested it two different organisaitons and it's worked flawlessly
 
 # 2. Installing h3aGWAS
 
@@ -142,22 +138,24 @@ The h3agwas pipeline can be run in different environments; the requirements diff
 
 We now explore these in details
 
-## 2.2 Basic requirements
+## 2.2 Pre-requisites
 
 **All** modes of h3agwas have the following requirements
 * Java 8
 * Nextflow. To install Nextflow, run the command below. It creates a _nextflow_ executable in the directory you ran the command. Move the executable to a directory on the system or user PATH and make it executable. You need to be running Nextflow 27 (January 2018) or later.
     `curl -fsSL get.nextflow.io | bash`
-* Install the scripts
-    `git clone https://github.com/h3agwas`
 
-## 2.3 Installing with Docker
+  If you don't have curl (you can use wget)
 
-Install docker on your computer(s). Docker is available on most major platforms.  See [the Docker documentation](https://docs.docker.com/) for installation for your platform. 
+* Git 
+
+## 2.3 Installing with Docker or Singularity
+
+If you install Docker or Singularity, you do not need to install all the other dependencies. Docker is available on most major platforms.  See [the Docker documentation](https://docs.docker.com/) for installation for your platform.  Singularity works very well on Linux.
     
 That's it. 
 
-## 2.4  Installing to run natively
+## 2.4  Installing software dependencies to run natively
 
 This requires a standard Linux installation or macOS. It requires _bash_ to be available as the shell of the user running the pipeline.
 
@@ -165,19 +163,57 @@ The following code needs to be installed and placed in a directory on the user's
 
 * plink 1.9 [Currently, it will not work on plink 2, though it is on our list of things to fix. It probably will work on plink 1.05 but just use plink 1.0]
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
-* python 3.4 or later. pandas, numpy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
+* python 3.6 or later. pandas, numpy, scipy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
-If you want to run the `plink-assoc.nf` pipeline then you should install emmax and gemma if you are using those options.
+If you want to run the `plink-assoc.nf` pipeline then you should install gemma if you are using those options.
+
+## 2.5 Installing the workflow
+
+There are two approaches: let Nextflow manage this for you; or download using Git. The former is easier; you need to use Git if you want to change the workflow
+
+### 2.5.1 Managing using Nextflow
+
+To download the workflow you can say
+
+`nextflow pull h3abionet/h3agwas`
+
+If we update the workflow, the next time you run it, you will get a warning message. You can do another pull to bring it up to date.
+
+If you manage the workflow this way, you will run the scripts, as follows
+* `nextflow run h3abionet/h3agwas/topbottom.nf ..... `
+* `nextflow run h3abionet/h3agwas/plink-qc.nf ..... `
+* `nextflow run h3abionet/h3agwas/plink-assoc.nf ..... `
+
+### 2.5.2 Managing with Git
+
+Change directory where you want to install the software and say
+
+    `git clone https://github.com/h3agwas`
+
+This will create a directory called _h3agwas_ with all the necesssary code.
+If you manage the workflow this way, you will run the scripts this way:
+* `nextflow run SOME-PATH/topbottom.nf ..... `
+* `nextflow run SOME-PATH/plink-qc.nf ..... `
+* `nextflow run SOME-PATH/plink-assoc.nf ..... `
+
+where _SOME-PATH_ is a relative or absolute path to where the workflow was downloaded.
+
+
 
 # 3. Quick start example
 
-This section shows a simple run of the `plink-qc.nf` pipeline that should run out of the box if you have installed the software or Docker. More details and general configuration will be shown later.
+This section shows a simple run of the `plink-qc.nf` pipeline that
+should run out of the box if you have installed the software or
+Docker. More details and general configuration will be shown later.
 
 This section illustrates how to run the pipeline on a small sample data
 file with default parameters.  For real runs, the data to be analysed
 and the various parameters to be used are specified in the
 _nextflow.config_ file.  The details will be explained in another
 section.
+
+If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.sip and unzip
+
 
 The sample data to be used is in the _input_ directory (in PLINK
 format as _sampleA.bed_, _sampleA.bim_, _sampleA.fam_). The default
@@ -190,9 +226,22 @@ with no X-chromosome information and no sex checking is done.
 
 ## 3.1 Running on your local computer 
 
-This requires that all software dependancies have been installed.
+This requires that all software dependancies have been installed. 
+
+### 3.1.1 If you downloaded using Nextflow
+
+We also assume the _sample_ directory with data is in the current working directory
+
+`nextflow run h3abionet/h3agwas/plink-qc.nf`
+
+
+### 3.1.2 If you downloaded using Git
+
+Change directory to the directory in which the workflow was downloaded
 
 `nextflow run  plink-qc.nf`
+
+## 3.2 Remarks
 
 The workflow runs and output goes to the _output_ directory. In the
 _sampleA.pdf_ file, a record of the analysis can be found.
@@ -201,13 +250,15 @@ In order, to run the workflow on another PLINK data set, say _mydata.{bed,bim,fa
 
 `nextflow run  plink-qc.nf --input_pat mydata`
 
+(or `nextflow run  h3abionet/h3agwas/plink-qc.nf --input_pat mydata` : **for simplicity for the rest of the tutorial we'll only present the one way of running the workflow -- you should use the method that is appropriate for you**)
+
 If the data is another directory, and you want to the data to go elsehwere:
 
 `nextflow run  plink-qc.nf --input_pat mydata --input_dir /data/project10/ --output_dir ~/results `
 
 There are many other options that can be passed on the the command-line. Options can also be given in the _config_ file (explained below). We recommend putting options in the configuration file since these can be archived, which makes the workflow more portable
 
-## 3.2 Running with Docker on your local computer
+## 3.3 Running with Docker on your local computer
 
 Execute 
 
@@ -217,6 +268,10 @@ Please note that the _first_ time you run the workflow using Docker,  the Docker
 
 
 More options are shown later.
+
+##3.4 Running multiple workflows at the same time
+
+You may at some point want to run multiple, _independent_ workflows at the same time (e.g. different data). This is possible. However, each run should be started in a different working directory. You can refer to the scripts and even the data in the same diretory, but the directories from which you run the `nextflow run` command should be different.
 
 
 # 4 The Nextflow configuration file
@@ -260,6 +315,10 @@ There is a template of a nextflow.config file called aux.config.template. This i
 Then fill in the details in the config that are required for your run. These are expained in more detail below.
 
 ## 4.3 Using the Excel spreadsheet template
+
+**We plan on removing this -- it doesn't look like many people use this feature and it is very hard to keep in sync with the development of the workflow. If you think we are wrong and this is a useful feature please let us know by registering this an an issuse.**
+
+_Use of this is deprecated_
 
 For many users it may be convenient to use the Excel spreadsheet (config.xlsx and a read-only template file config.xlsx.template). This can be used just as an _aide-memoire_, but we also have an auxiliary program that converts the Excel spreadsheet into a config file. The program _config-gen/dist/config-gen.jar_ takes the spreadsheet and produces a config file.
 
@@ -391,8 +450,8 @@ Several of the above parameters make reference to a phenotype file. Of course, t
 
 There are three parameters that are important control performance. You probably won't need to change this, but feel free.
 
-* `plink_process_memory` : specify in MB or GB how much memory your processes that use PLINK require;
-*  ` other_process_memory` : specify how much other processes need;
+* `plink_mem_req` : specify in MB or GB how much memory your processes that use PLINK require;
+*  `other_mem_req` : specify how much other processes need;
 *  `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
 
 
@@ -404,6 +463,8 @@ Note that one issue that sometimes occurs in analysis is that there may over tim
 
 
 # 6. Simple association test pipeline: `plink-assoc.nf`
+
+This workflow has been extensively expanded by Jean-Tristan Brandenburg
 
 An association study is a complex analysis and each analysis has to consider
 * the disease/phenotype being studied and its mode of inheritance
@@ -474,7 +535,7 @@ with pipeline, do a GxE interaction with Gemma and Plink, arguments :
 
 For example
 
-```nextflow run plink-assoc --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
+```nextflow run plink-assoc.nf --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
 
 analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
 
@@ -482,18 +543,26 @@ Other flags are:
 * `thin`. You can set this to a floating point number in the range (0, 1] and then the PLINK data files are thinned leaving only that proportion of the SNPs. This allows pipeline to be tested with a small proportion of the data This is probably only needed for debugging purposes and usually this should not be be set.
 * `chrom`. Only do testing on this chromosome.
 
-# 7. Converting from Illumina genotyping reports in TOP/BOTTOM format
+# 7. Converting from Illumina genotyping reports in TOP/BOTTOM or Forward foramtformat
 
 This workflow is run by 
 
 ```nextflow run topbottom.nf```
 
-and converts from an Illumina TOP/BOTTOM call file. Together with auxiliary input data, this file is first converted into a raw PLINK file and then the PLINK file is aligned to a strand, and then convered into binary PLINK format. This process can take a very long time.
+and converts from an Illumina TOP/BOTTOM or FORWARD call file. Together with auxiliary input data, this file is first converted into a raw PLINK file and then the PLINK file is aligned to a strand, and then convered into binary PLINK format. This process can take a very long time.
 
+If you don't understand these formats, the bad news is that you really should. See  S. C. Nelson, K. F. Doheny, C. C. Laurie, and D. B. Mirel, "Is 'forward' the same as 'plus'?...and other adventures in SNP allele nomenclature." Trends in Genetics, vol. 28, no. 8, pp. 361-363, 2012. http://dx.doi.org/10.1016/j.tig.2012.05.002  The good news is that you are no talone
 
+Essentially the problem since the reference genome changes over time, what is on the forward strand of one reference could become the reverse in the next. Not likely but could and does happen. Thus what someone sees as a SNP with A/C alleles could become a SNP with T/G alleles etc. For SNPs with A/C alleles we can easily see when something's flipped but if the allele is an A/T or C/G allele we can't differentiate between alternate alleles and reverse complements.
+
+Two common methods that are used to disambiguuate this are to call
+* with respect to the entry in dbSNP -- usually the way in which the discoverer reported it. This submission to dbSNP will contain the flanking regions of the SNP. Usually this is will be in the smae orientation as the reference genome, but often is not 
+* Illumina's TOP/BOTTOM format which uses the SNP and/or flanking region (see the reference given)
+
+ 
 This process is expensive because:
 
-* the top/bottom file is a very bulky and inefficient format
+* the top/bottom or forward file is a very bulky and inefficient format
 * we convert first to PLINK using the inefficenct PED format
 
 As an example, on a 2.5m SNP-chip with 10k individuals, you are looking at over 200 CPU-hours.
@@ -520,7 +589,10 @@ e.g. `params.output = "cvd-rawcalls"`
 
 * `chipdescription`: this is a standard file produced by Illumina for your chip which contains not only the chromosome/coordinate of each SNP but also the genomic position (measured in centimorgans). If you don't have this -- give the manifest file. All will work except your bim files will not contain genonomic positoin
 
-* `samplesheet`: This is Excel spreadsheet that Illumina provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can set this variable to 0 or the empty string, in which case the output PLINK fam file will have unknown values for sex and phenotype.  Alternatively, ifyou don't have it, you can make your own. There are three columns that are important: "Institute Sample Label", "Manifest Gender" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
+* `samplesheet`: This is Excel spreadsheet or CSV (comma-separated only) that Illumina or a genotyping centre provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can set this variable to 0 or the empty string, in which case the output PLINK fam file will have unknown values for sex and phenotype.  Alternatively, if you don't have it, you can make your own. 
+
+There are three columns that are important: "Institute Sample Label", "Manifest Sex" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
+
 
 Please note that *we expect all entries in the sample IDs etc to be alphanumeric 0-9, Latin letters (NO accents!), underscore, space, hyphen*. The code may break otherwise.
 
@@ -529,9 +601,22 @@ the Illumina IDs in the sample ID are typically a long string some of  the compo
 
 For example, suppose the ID as found in the Illumina input data is `WG0680781-DNA_A02_ABCDE`, if you use ".*_(.+)" as the idpat, then the FID IID used would be ABCDE ABCDE. If you used "(\\w+)_DNA_(\\w+)_" then the FID IIS used would be "WG0680781 A02". Note how we need to escape the backslash twice.
 
-* `output_align`. This can be one of three values: _topbottom_, _dbsnp_ and _ref_. If topbot, the SNPs will be aligned to the Illumnia TOP strand. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. In the latter two cases, many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).
 
-* `strandreport`: This is an Illumina-style strand report. It is not needed if you choose "tobot" above, but it is needed for "dbsnp" or "ref"
+Unfortunately we experience that genotyping centres have different formats and that you can even get the same centre changing the labels of columns of the report. Using the `sheet_columns` parameter you can make adjustmens.
+
+* `params.sheet_columns`: this should be a file name. The file should explain what the column labels in your sample sheet are. The format is shown in the example below, where the default values are given (if you are happy with all of them you don't need the `sheet_columns` parameter -- if you are happy with some of them only put the ones you want to change). Here we are saying that the _sex_ as provided by the manifest is found in a column called "Manifest Sex", the sample is found in a column "Institute Sample Label" and so on. The first four are required by the workflow. If you don't have batch information, you can define `batch` as 0
+
+````
+sex=Manifest Sex
+sample_label=Institute Sample Label
+plate=Sample Plate
+well=Well
+batch=Batch Comment
+````
+
+* `output_align`. This can be one of three values: _dbsnp_, _ref_, and _db2ref_. dnsnp and ref assume that the input is in TOP/BOT format. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. Many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).   _db2ref_ assumes the input is in FORWARD format and aligns to to the given reference genome.
+
+* `strandreport`: This is an Illumina-style strand report. It is not needed if you choose "ref" above, but it is needed for the others.
 
 * `refererence`: This is the name of a file that gives the reference allele for each SNP on the chip.  This is only useful if the "ref" option is used for `output_align`, and is optional in this case. Note that the difference between aligning and the use of the reference. Aligning will decide which strand of the reference genome as found in the Illumina genotyping teh alleles can be found on. For example, if the genotyping report gives the two options as A and C, aligning checks whether this is A and C on the + strand of the reference genome or (and so will be A and C in the output bim file) or whther this is A and C on the $-$ strand of the reference genome and so should be reported as T and G. This is done using information in the chip manifest file. The second step is to know which allele is the reference allele and which is the alternate allele.
 
@@ -540,6 +625,18 @@ A reference file suitable for the H3A chip can be found here http://www.bioinf.w
 * `batch_col`: For this workflow, the `batch_col` parameter is a column in the `samplesheet` that should be used to extract out out the 6-th column of the `fam` file, or the phenotype. This allows you do do batch analysis. Of course, you can choose anything you like to be the "batch". The default value is 0, which means just set the 6-th column of the fam file to -9.  One special case: If the contents of the column is of the form "Batch n", then only the _n_ is returned.
 
 * `samplesize`: This was  included mainly for development purposes but _perhaps_ might be helpful to some users. This allows you sample only the first _n_ people in each genotype report. This allows you to extract out a small subset of the data for testing purposes. The default is 0, which means that *all* individuals will be generated.
+
+
+### Advanced features for sample handling
+
+* `mask`: This is a file of sample IDs that you want excluded from your data. These should be IDs given in the _Institute Sample Label_ of the sample sheet. The file should contain at least one column, possibly with other columns white-space delimited. Only the first column is used the other columns are ignored.
+
+* `replicates`: This is a file of sample IDs that are biological replicates. You will often include biological replicates for genotyping -- the label as given in the _Institute Sample Label_ column will of course be different, but once you have extracted out the sample ID using the _idpat_ field above, all the replicates for the same individual will then have the same sample id. For samples that have replicates you should choose one of the samples to be the canonical one and then identify the others as being the replicates with the labels 
+
+* `newpat`: This is experimental and only should be used with care. Suppose, completely hypothetically, there's a sample mix-up. The person you called "X3RTY" is actually "UYT0AV" who is actually "R2D2" and so on. You can fix the sample-sheet but the genotyping calls still have the same (wrong values). If you have chosen your _Institute Sample_Label_ so that it contains both the ID and the plate and well then our scripts can help you. If not, good luck to you.
+    * set _idpat_ to a regular expression that gives as the plate ID as the FID and well as the IID. This will give you the id uniquely determined by the plate and the well.
+    * fix your sample sheet -- just fix the _Institute Sample Label_ field. Choose your _newpat_ as a regular expression that extracts out the correct ID from this. Our workflow will use the plate and well in your sample sheet to produce to match the plate/well from the genotype calling phase to the correct ID. (If you look in the working directory of the fixFam process the .command.out file will show you all the matches)
+
 
 ## Output
 
@@ -565,9 +662,9 @@ In the  quick start we gave an overview of running our workflows in different en
 
 This option requires that all dependancies have been installed. You run the code by saying
 
-```
+````
 nextflow run plink-qc.nf
-```
+````
 
 You can add that any extra parameters at the end.
 
@@ -583,42 +680,28 @@ Run by `nextlow run plink-qc.nf -profile docker`
 
 Nextflow supports execution on clusters using standard resource managers, including Torque/PBS, SLURM and SGE. Log on to the head node of the cluster, and execute the workflow as shown below. Nextflow submits the jobs to the cluster on your behalf, taking care of any dependancies. If your job is likely to run for a long time because you've got really large data sets, use a tool like _screen_ to allow you to control your session without timing out.
 
-To run using Torque/PBS, log into the head node. Edit the _nextflow.config_ file (either directly or using our helper script). If you are doing this manually, edit the _nextflow.config_ file by looking for the stanza (around like 85)
+Our workflow has pre-built configuration for SLURM and Torque/PBS. If you use another scheduler that Nextflow supports you'll need to do a _little_ more (see later): see https://www.nextflow.io/docs/latest/executor.html for details
+
+To run using Torque/PBS, log into the head node. Edit the _nextflow.config_ file, and change the `queue` variable to be the queue you will run jobs on (if you're not sure of this, ask your friendly sysadmin). Then when you run, our workflow, use the `-profile pbs` option -- typically you would say something like `nextflow run -c my.config plink-qc -profile pbs`. Note that the `-profile pbs` only uses a single "-".
+
+Similarily, if you run SLURM, set the _queue_ variable, and use the `-profile slurm` option.
+
+To use only of the other schedulers supported by Nextflow, add the following sub-stanza to your nextflow.config file inside of the _profile_ stanza:
+
 
 
 ```
-    pbs {
-        process.executor = 'pbs'
-	process.queue = 'long'
+    myscheduler {
+        process.executor = 'myscheduler'
+	process.queue = queue
     }
 ```
-and change _long_ to whatever queue you are using. Note that in the current version, the only way in which the queue can be changed is by manuall editing the nextflow.config file. You can either change the `process.queue` line, or, better, modify the definition of the queue variable at the top of the `nextflow.config` file.
 
+where `myscheduler` is one of: nqsii, htcondor, sge, lsf.  
 
-Then you can run by saying
-
-```
-nextflow run plink-qc.nf -profile pbs
-```
-
-If you are using another scheduler, the changes should be straight-forward. For example, to run using SLURM, add a stanza like within the _profile_environment of the _nextflow.config_ file 
-
-```
-    slurm {
-        process.executor = 'slurm'
-	process.queue = 'long'
-    }
-```
 
 and  then use this as the profile.
 
-## Running on a cluster with Docker
-
-If you have a cluster which runs Docker, you can get the best of both worlds by editing the queue variable in the _pbsDocker_ stanza, and then running
-
-```
-nextflow run plink-qc.nf -profile pbsDocker
-```
 
 We assume all the data is visible to all nodes in the swarm. Log into the head node of the Swarm and run your chosed workflow -- for example
 
@@ -633,64 +716,30 @@ nextflow run plink-qc.nf -profile dockerSwarm
 
 ## 8.5 Singularity
 
-The workflows run on Singularity thought this is currently experimental and we haven't  tried and tested all options. We don't have first class support for Singularity yet, so you will have do some PT but it's not too bad.
 
-### Get the Singularity images
+Our workflows now run easily with Singularity.
 
-You need to make get the Singularity images for the workflow you want. There are two options
+`nextflow run plink-qc.nf -profile singularity`
 
-* running `docker2singularity` (https://github.com/singularityware/docker2singularity)
+or
 
-This is a good option for people who have a computer with docker running (e.g., their desktop) and will then move the Singularity container to another computer which doesn't run cluster.
+`nextflow run plink-qc.nf -profile pbsSingularity`
 
-An example run would be to create a directory _singularity_ somewhere and then run the _docker2singularity_ workflow. The singularity image will be put in the specified directory. For example, I did:
+By default the user's ${HOME}/.singularity will be used as the cache for Singularity images. If you want to use something else, change the `singularity.cacheDir` parameter in the config file.
 
-```
-  docker run -v /var/run/docker.sock:/var/run/docker.sock  \  
-           -v  /Users/scott/singularity:/output --privileged -t --rm  \
-           singularityware/docker2singularity quay.io/h3abionet_org/py3plink 
-  docker run -v /var/run/docker.sock:/var/run/docker.sock  \  
-             -v  /Users/scott/singularity:/output --privileged -t --rm  \
-             singularityware/docker2singularity quay.io/h3abionet_org/h3agwas-texlive
-```
+## Running on a cluster with Docker or Singularity
 
-* Using `singularity pull`
-
-This is easier, but the images are bigger
+If you have a cluster which runs Docker, you can get the best of both worlds by editing the queue variable in the _pbsDocker_ stanza, and then running
 
 ```
-singularity pull --size 1880  docker://quay.io/h3abionet_org/py3plink 
-singularity pull --size 1880  docker://quay.io/h3abionet_org/h3agwas-texlive
-
+nextflow run plink-qc.nf -profile option
 ```
 
-### Copy the images
-
-Move the images to the system you want to run the workflow on. If you're on a cluster, then this must be on a system-wide  file system
-
-### Edit the nextflow.config file
-
-You need to edit this part of the _singularity_ stanza
-
-```
-        sg_py3Image = "/home/scott/py3plink.img"
-        sg_latexImage = "/home/scott/h3agwas-texlive.img"
-
-        process.executor = 'pbs'
-        process.queue = 'batch'
-```
-
-The two image variables should be set to where you have put your singularity images. The `process.executor` variabel should be set to `local` if you want to run the workflow on the local computer, and to `pbs` if on a cluster using PBS. In the latter case, you should also set the queue variable appropriatelly.
-
-
-## Run the workflow
-
-`nextflow run plink-qc.nf --profile singularity`
-
+where _option_ is one of _pbsDocker_, _pbsSingularity_, _slurmDocker_ or _slurmSingularity_. If you use a different scheduler, read the Nextflow documentation on schedulers, and then use what we have in the _nextflow.config_ file as a template to tweak.
 
 ## 8.5 Other container services
 
-We hope to support Singularity soon. We are unlikely to support udocker unless Nextflow does. See this link for a discussion https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html
+We are unlikely to support udocker unless Nextflow does. See this link for a discussion https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html
 
 ## 8.6 Running on Amazon EC2
 
@@ -816,6 +865,71 @@ Note there are two uses of `-c`. The positions of these arguments are crucial. T
 The _scott.aws_ file is not shared or put under git control. The _nextflow.config_ and _run10.config_ files can be archived, put under git control and so on because you _want_ to share and archive this information with o thers.
 
 
+#9. Dealing with errors
+
+One problem with our current workflow is that error messages can be obscure. Errors can be caused by
+* bugs in our code
+* you doing something odd
+
+There are two related problems. When a Nextflow script fails for some reason, Nextflow prints out in _great_ detail what went wrong. Second, we don't always catch mistakes that the user makes gracefully.
+
+First, don't panic. Take a breath and read through the error message to see if you can find a sensible error message there. 
+
+A typical error message looks something like this
+
+```
+Command exit status:
+  1
+
+Command output:
+  (empty)
+
+Command error:
+  Traceback (most recent call last):
+    File ".command.sh", line 577, in <module>
+      bfrm, btext = getBatchAnalysis()
+    File ".command.sh", line 550, in getBatchAnalysis
+      result = miss_vals(ifrm,bfrm,args.batch_col,args.sexcheck_report)
+    File ".command.sh", line 188, in miss_vals
+      g  = pd.merge(pfrm,ifrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
+    File "/usr/local/python36/lib/python3.6/site-packages/pandas/core/generic.py", line 5162, in groupby
+      **kwargs)
+    File "/usr/local/python36/lib/python3.6/site-packages/pandas/core/groupby.py", line 1848, in groupby
+      return klass(obj, by, **kwds)
+    File "/usr/local/python36/lib/python3.6/site-packages/pandas/core/groupby.py", line 516, in __init__
+      mutated=self.mutated)
+    File "/usr/local/python36/lib/python3.6/site-packages/pandas/core/groupby.py", line 2934, in _get_grouper
+      raise KeyError(gpr)
+
+Column 'batches' unknown
+
+Work dir:
+  /project/h3abionet/h3agwas/test/work/cf/335b6d21ad75841e1e806178933d3d
+
+Tip: when you have fixed the problem you can continue the execution appending to the nextflow command line the option `-resume`
+
+ -- Check '.nextflow.log' file for details
+WARN: Killing pending tasks (1)
+
+```
+
+Buried in this is an error message that might help (did you say there was a column _batches_ in the manifest?) If you're comfortable, you can change directory to the specified directory and explore. There'll you find
+* Any input files for the process that failed
+* Any output files that might have been created
+* The script that was executed can be found in `.command.sh`
+* Output and error can be found as `.command.out` and `.command.err`
+
+If you spot the error, you can re-run the workflow (from the original directory), appending `-resume`.  Nextflow will re-run your workflow as needed -- any steps that finished successfully will not need to be re-run.
+
+If you are still stuck you can ask for help at two places
+
+
+* H3ABioNet Help desk --- https://www.h3abionet.org/support
+
+
+* On GitHub -- need a GitHub account if you have a GitHub account
+
+   https://github.com/h3abionet/h3agwas/issues
 
 
 # 9. Auxiliary Programs
@@ -926,16 +1040,56 @@ The key options are:
 
 
 
-# 11. Copyright and general
+## 9.3 make_ref.py 
+
+Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
+
+
+`python3 make_ref.py aux/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
+
+
+The program checks each SNP given in the manifest file by the chromosome and position number and then checks that the probe given in the manifest file actually matches the reference genome at that point. Minor slippage is acceptable because of indels.
+
+The wrn file are SNPs which are probably OK but have high slippage (these are in the ref file)
+The err file are the SNPs which don't match.
+
+## 9.6 plates.py
+
+This is used to depict where on the plates particular samples are. This is very useful for looking at problems in the data. If for example you find a bunch of sex mismatches this is most likely due to misplating. This script is a quick way of looking at the problem and seeing whether the errors are close together or spread out. There are two input arguments
+
+* A file with the IDs of the individuals -- assuming that the first token on each line is an individual
+* A sample sheet that gives the plating of each sample
+
+There is one output parameter -- the name of a directory where output should go. The directory should exist.
+
+You may need to change this line
+
+```
+batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
+```
+
+In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
+
+
+# 10. Acknowledgement, Copyright and general
+
+## Acknowledgement
+
+We acknowledge funding by the National Institutes of Health through the NHGRI (U41HG006941). The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.
+
+* We thank Sumir Panji and Nicola Mulder for their support and leadership
+* We thank Fourie Joubert at the University of Pretoria for hosting our initital hackathon.
+>>>>>>> master
 
 ### Authors
 
-Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
+Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Jean-Tristan Brandenburg, Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
 
 We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
 
 ### License
-h3agwas offered under the MIT license. See LICENSE.txt.
+This software is licensed under the MIT Licence.
+
 
 ### Download
 

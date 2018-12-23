@@ -43,6 +43,7 @@ def parseArguments():
                         help="if IDAT files are missing, report only, otherwise crash")
     parser.add_argument("-s","--suppress-warnings",dest="suppress",action="store_true",default=False,\
                         help="suppress warnings -- be careful")
+    parser.add_argument("--skip-header",action="store_true",dest="has_header",default=False)
     parser.add_argument("-n","--num-threads",dest="num_threads",type=int,default=1,\
                         help="number of threads for parallelism")
     parser.add_argument("-c","--chrom-pos",dest="chrom_pos",action="store_true",default=False,\
@@ -87,6 +88,19 @@ class SNP:
     def __str__(self):
         return("{}:{}".format(self.chrom,self.pos))
 
+
+def getiDatHash(idat_dir):
+    ''' dict of all idat files and thei locations : different projects organise their 
+        idat files differently -- some flat, some in a hierarchical space '''
+    tree = os.walk(idat_dir)
+    hash = {}
+    for (d,subds,fs) in tree:
+        for f in fs:
+            if f.endswith(".idat"):
+                hash[f] = os.path.join(d,f)
+    return hash
+
+
 def parseSampleSheet(args):
     #parse the sample file to extract the IDs of the particpants and their corresponding
     #idat files. Print warning or crash if the files don't exst
@@ -101,8 +115,8 @@ def parseSampleSheet(args):
             ok= True
             warning = ""
             for colour in ["Red","Grn"]:
-                f = os.path.join(args.idat,\
-                  "{barcode}_{pos}_{colour}.idat".format(barcode=barcode,pos=pos,colour=colour))
+                base_file = "{barcode}_{pos}_{colour}.idat".format(barcode=barcode,pos=pos,colour=colour)
+                f =  idat_hash[base_file]
                 this_ok = os.access(f,os.R_OK)
                 if not this_ok: warning=warning+"Warning: file {} does not exist or readable{}".format(f,EOL)
                 ok = ok & this_ok

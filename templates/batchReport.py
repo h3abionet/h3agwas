@@ -120,13 +120,12 @@ removing first those who are related to multiple people (e.g. if A is a cousin o
 
 The overall relationship analysis is shown in the Table *-ref{tab:sex:overall} on page *-pageref{tab:sex:overall}. For each group (or if there is only one group, the group as a whole), we show the group and the number of pairs of related individuals. We also show the number of pairs with 
 ##*-widehat{*-pi}>0.95##, which prima facie indicates identical individuals or twins, and 
-the number of pairs of individuals with ##*-widehat{*-pi}## between 0.45 and 0.95 which prima facie indicates
-relationship of parent/child or siblingship.
+the number of pairs of individuals with ##*-widehat{*-pi}## between 0.45 and 0.95 which prima facie indicates relationship of parent/child or siblingship.
 
 *-begin{table}[htb]
 *-begin{center}
-*-begin{tabular}{l@{}Q{2cm} r r}*-hline
-%(pheno_col)s & Num *-emph{pairs} & ##*-widehat{*-pi}>0.95## &  ##*-widehat{*-pi} *-in [0.45, 0.95]## *-*-*-hline
+*-begin{tabular}{l@{}Q{2cm} r r r}*-hline
+*-url{%(pheno_col)s} & Num *-emph{pairs} & ##*-widehat{*-pi}>0.95## &  ##*-widehat{*-pi} *-in [0.45, 0.95]## & ##<0.45## *-*-*-hline
 %(rows)s*-hline
 *-end{tabular}
 *-end{center}
@@ -237,13 +236,15 @@ def plotPCs(base,eigs,pfrm,pheno_col,batch,batch_col):
     batch_values = batch[batch_col].unique()
     our_colours  = dict(zip(batch_values,colours[1:1+len(batch_values)]))
     allplots=[]
+    batch['colour']=batch.apply(lambda x:our_colours[x['batch']],axis=1)
     for site, df in g:
+        df=df.merge(batch,on=['FID','IID'],how='inner')
         fig = plt.figure(figsize=(6,6))
         fig, ax = plt.subplots()
         locator = MaxNLocator(nbins=4) 
         ax.xaxis.set_major_locator(locator)
         ax.scatter(df['PC1'],df['PC2'],s=1,\
-                   c=list(map(lambda x:our_colours[x],batch[batch_col])),\
+                   c=df['colour'],\
                    label=[1,2,3])
         ax.legend(scatterpoints=1)
         recs=[]
@@ -322,8 +323,9 @@ def getVClose(gfrm,pfrm,pheno_col):
     vclose = gfrm[gfrm['PI_HAT']>0.45][["FID1","IID1","FID2","IID2","PI_HAT"]]
     curr = TAB.join(["FID1","IID1",pheno_col+"1","FID2","IID2",pheno_col+"2","PI_HAT"])+EOL
     for i,row in vclose.iterrows():
-        curr = curr+TAB.join([row[0],row[1],pfrm.loc[(row[0],row[1])][pheno_col],\
-                              row[2],row[3],pfrm.loc[(row[2],row[3])][pheno_col],\
+        if row[1][-4:-1]=="DUP" or row[3][-4:-1]=="DUP": continue
+        curr = curr+TAB.join([row[0],row[1],pfrm.loc[row[0],row[1]][pheno_col],\
+                              row[2],row[3],pfrm.loc[row[2],row[3]][pheno_col],\
                               str(row[4])])+EOL
     return curr
 
@@ -337,8 +339,9 @@ def getRelatedPairs(pfrm,pheno_col,genome):
     for i,pair in gfrm.iterrows():
         id1 = pair[["FID1","IID1"]].values
         id2 = pair[["FID2","IID2"]].values
-        this_g1 = pfrm[pheno_col].loc[tuple(id1)]
-        this_g2 = pfrm[pheno_col].loc[tuple(id2)]
+        if "DUP" == id2[1][-4:-1] or "DUP"==id1[1][-4:-1]:continue
+        this_g1 = pfrm[pheno_col].loc[id1[0],id1[1]]
+        this_g2 = pfrm[pheno_col].loc[id2[0],id2[1]]
         group[" ALL"] = group.get(" ALL",0)+1
         if this_g1 == this_g2:
             group[this_g1] = group.get(this_g1,0)+1
@@ -370,10 +373,12 @@ def getRelatedPairs(pfrm,pheno_col,genome):
     if len(keys)==2:
         keys=[" ALL"]
     for k in keys:
-        rows = rows + "%s & %d & %d & %d *-*-"%(k,group[k],ident.get(k,0),sib.get(k,0))+EOL
+        rest = group[k]-ident.get(k,0)-sib.get(k,0)
+        rows = rows + "%s & %d & %d & %d & %d*-*-"%(k,group[k],ident.get(k,0),sib.get(k,0),rest)+EOL
     rel_text=""
     if num_mixed > 0:
-        rows = rows + "mixed & %d & %d & %d*-*-"%(num_mixed,ident_mixed,sib_mixed)+EOL
+        rest = num_mixed-ident_mixed-sib_mixed
+        rows = rows + "mixed & %d & %d & %d & %d*-*-"%(num_mixed,ident_mixed,sib_mixed,rest)+EOL
         if num_mixed < 10:
             rel_text = "{*-footnotesize"
             for k, prs in mixed.items():
@@ -468,23 +473,23 @@ included with the given *-emph{mind} value. *-emph{HErr} is the number of hard e
 
 """
 
-def detSexHeader(sxAnalysis,pheno_col):
-    num_bands = len(sxAnalysis.columns) # missing rates supported
+def detSexHeader(pfrm,missing_sex_columns):
+    num_bands = len(missing_sex_columns) # missing rates supported
     tab_spec= "l"+(" r@{*-phantom{.}}r@{*-phantom{.}}r"*num_bands)
-    header1 = pheno_col 
-    for n in sxAnalysis.columns:
+    header1 = args.pheno_col 
+    for n in missing_sex_columns:
        header1=header1+" & *-multicolumn{3}{c}{mind=%s}"%str(n)
     header1 = header1+"*-*-"
     header2 = "& Tot & SAnm & HErr"*num_bands+"*-*-*-hline"
     return (tab_spec,header1,header2)
 
 # provide the details of a specific group
-def detSexGroup(sfrm,gname):
+def detSexGroup(sfrm,gname,missing_sex_columns):
     tot   = sfrm.count()-sfrm.isnull().sum()
     herrs = (sfrm=='H').sum()
     serrs = (sfrm=='S').sum()
     line = "%8s"%gname 
-    for rate in sfrm.columns:
+    for rate in missing_sex_columns:
         line = line+" & %d & %d & %d "%(tot[rate],serrs[rate],herrs[rate])
     line=line+"*-*-"+EOL
     return line
@@ -496,14 +501,14 @@ def xstr(m):
     else:
         return str(m)
 
-def dumpMissingSexTable(fname, ifrm,sxAnalysis,pfrm,bfrm):
-    g=open(fname,"w")
-    g.write(TAB.join(["FID","IID",args.batch_col,'F_MISS',args.pheno_col])+TAB+TAB.join(map(str,sxAnalysis.columns))+EOL)
-    for i, row in ifrm.iterrows():
-        output = TAB.join(map(str, [*i,bfrm.loc[i][args.batch_col],"%5.3f"%row['F_MISS'],pfrm.loc[i]]))+\
-                 TAB+TAB.join(map(xstr,sxAnalysis.loc[i]))+EOL
-        g.write(output)
-    g.close()
+def dumpMissingSexTable(fname, pfrm, sex_missing_cols):
+    if args.batch_col+"-b" in pfrm.columns.values: # could have same col in batch and pheno file
+        bcol = args.batch_col+"-b"
+    else:
+        bcol = args.batch_col
+    cols = [bcol,'F_MISS',args.pheno_col]+sex_missing_cols
+    pfrm.to_csv(fname,columns=cols)
+
 
 
 noX = """*-subsection{Detailed sex analysis}
@@ -512,26 +517,22 @@ There were no X-chromosome SNPs and so this was not possible. Note that in Table
 
 """
 
-def detailedSexAnalysis(pfrm,ifrm,sxAnalysisPkl,pheno_col,bfrm):
-    def group_fn(x):
-        return pfrm.ix[x][pheno_col]
+def detailedSexAnalysis(pfrm,missing_sex_columns):
     sex_fname = args.base+"_missing_and_sexcheck.csv"
     if type(pfrm)==bool or "$extrasexinfo" != "--must-have-sex":    
         g=open(sex_fname,"w")
         g.close()
         return noX
-    sxAnalysis = pd.read_pickle(sxAnalysisPkl)
-    dumpMissingSexTable(sex_fname,ifrm,sxAnalysis,pfrm[pheno_col],bfrm)
-    header = detSexHeader(sxAnalysis,pheno_col)
-    tbl    = detSexGroup(sxAnalysis,"overall")
-    if pheno_col != "all":
-       g = sxAnalysis.groupby(group_fn)
+    dumpMissingSexTable(sex_fname,pfrm,missing_sex_columns)
+    header = detSexHeader(pfrm,missing_sex_columns)
+    tbl    = detSexGroup(pfrm,"overall",missing_sex_columns)
+    if args.pheno_col != "all":
+       g = pfrm.groupby(args.pheno_col)
        for grpname, gg in g:
-           tbl = tbl+detSexGroup(gg,grpname)
-
+           tbl = tbl+detSexGroup(gg,grpname,missing_sex_columns)
     return \
-        det_sex_analysis%(sex_fname,pheno_col) +\
-        det_table%(header+(tbl,pheno_col))
+        det_sex_analysis%(sex_fname,args.pheno_col) +\
+        det_table%(header+(tbl,args.pheno_col))
 
        
 def backslashify(text):
@@ -581,7 +582,7 @@ def getPhenoAnalysis():
         result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
         res_text = res_text + showResult(args.pheno_col,*result)
     else:
-        pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['0'])
+        pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
     return pfrm, res_text
 
 
@@ -593,13 +594,21 @@ no_response = [0,"0",False,"FALSE","false","False",""]
 
 bfrm, btext = getBatchAnalysis()
 pfrm, ptext = getPhenoAnalysis()
+sxAnalysis = pd.read_pickle(args.sx_pickle)
+missing_sex_columns = list(map(str,sxAnalysis.columns.values))
+rdict = dict(zip(sxAnalysis.columns.values,missing_sex_columns))
+sxAnalysis.rename(columns=rdict,inplace=True)
+
 text = text + ptext + btext
+pfrm = pfrm.join(bfrm,rsuffix="-b",lsuffix="",how='inner')
+pfrm = pfrm.join(ifrm,how='inner')
+pfrm = pfrm.join(sxAnalysis,how='inner')
 
 col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
+
+text = text + detailedSexAnalysis(pfrm,missing_sex_columns)
+
 eigs=getCsvI(args.eigenvec,names=col_names)
-
-text = text + detailedSexAnalysis(pfrm,ifrm,args.sx_pickle,args.pheno_col,bfrm)
-
 
 m = re.search("(.*).eigenvec",args.eigenvec)
 base = m.group(1)

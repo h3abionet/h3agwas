@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
+# 2016-2018
+# Licensed under the MIT Licence
+# See the "LICENSE" file for details
+
 import glob
 import sys
 import os
@@ -156,7 +161,11 @@ def getImages(images):
    images =images.replace("[","").replace("]","").replace(",","").split()
    result = "Table "+chr(92)+"ref{table:docker}"+chr(10)+chr(92)+"begin{table}"+chr(92)+"begin{tabular}{ll}"+chr(92)+"textbf{Nextflow process} &" + chr(92)+"textbf{Docker Image}"+chr(92)+chr(92)+chr(92)+"hline"+chr(10)
    for img in images:
-      (proc,dimg)=img.split(":")
+      dets = img.split(":",1)
+      if len(dets)==1:
+         (proc,dimg)=("default",dets[0])
+      else:
+         (proc,dimg)==img.split(":",1)
       result = result +  \
                   proc.lstrip(chr(36)) + "&" + chr(92) + "url{%s}"%dimg+\
                   chr(92)+chr(92)

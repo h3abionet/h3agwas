@@ -2,12 +2,12 @@
 
 # Scott Hazelhurst, 2016
 # Creates a PDF report for QC
-
-# Tested under both Python 2.7 and 3.5.2
 # 
-# Scott Hazelhurst on behalf of the H3ABioinformatics Network Consortium
-# December 2016
-# (c) Released under GPL v.2
+# (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
+# 2016-2018
+# Licensed under the MIT Licence.
+# See the "LICENSE" file for details
+# 
 
 
 from __future__ import print_function
@@ -277,9 +277,11 @@ data, identifying the cases and controls. Should the cases and
 controls cluster differ signficantly, something is likely wrong.
 Moreover should there be any significant clusters or outliers, association
 testing should take into account stratification. Statistical testing could also
-be done.
+be done. Figure~*-ref{fig:pcaeigen} shows for each principal component what the corresponding eigenvalue is. The shape of the curve may indicate if there is any structure in the data. Informally, the ``broken stick" model sees two processes generating PCs -- population structure and random fluctuation. The eigenvalue is a function of both -- the former has a major impact but drops relatively rapidly; the latter has less effect but drops more slowly. If (!) the model is correct then you will see an inflection point in the graph, where the random effects become the leading factor in the change.  More formal analysis may be desirable, e.g., using the Tracy-Widom statistic or Velicer's MAP test.
 
 *-ourfig{fig:pca}{Principal Component Analysis of Cases Versus Controls}{{$pcapdf}}
+
+*-ourfig{fig:pcaeigen}{Eigenvalues for each principal component: the shape of the curve gives some indication of how many PCs are important}{{$eigenvalpdf}}
 
 *-clearpage
 *-section{Hardy-Weinberg Equilibrium}
@@ -383,7 +385,11 @@ def getImages(images):
    images =images.replace("[","").replace("]","").replace(",","").split()
    result = "Table "+chr(92)+"ref{table:docker}"+chr(10)+chr(92)+"begin{table}"+chr(92)+"begin{tabular}{ll}"+chr(92)+"textbf{Nextflow process} &" + chr(92)+"textbf{Docker Image}"+chr(92)+chr(92)+chr(92)+"hline"+chr(10)
    for img in images:
-      (proc,dimg)=img.split(":")
+      dets = img.split(":",1)
+      if len(dets)==1:
+         (proc,dimg)=("default",dets[0])
+      else:
+         (proc,dimg)=dets
       result = result +  \
                   proc + "&" + chr(92) + "url{%s}"%dimg+\
                   chr(92)+chr(92)

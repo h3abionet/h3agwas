@@ -8,6 +8,10 @@
 #  - the base name of the PLINK output files
 #  The output l
 
+# (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium
+# 2016-2018
+# Licensed under the Creative Commons Attribution 4.0 International Licence. 
+# See the "LICENSE" file for details
 
 from __future__ import print_function
 
@@ -20,6 +24,8 @@ from shutil import copyfile
 import pandas as pd
 
 
+null_values = [0,"0","",False,"false","FALSE","False"]
+
 
 def parseArguments():
     parser=argparse.ArgumentParser()
@@ -27,9 +33,8 @@ def parseArguments():
     parser.add_argument('report', type=str, metavar='report',\
                         help="genotypereport"),
     parser.add_argument('samplesize', type=int, metavar='samplesize',\
-                        help="how many indivs in each site")
+                        help="how many indivs in each site, 0=all")
     parser.add_argument('idpat', type=str, metavar='idpat',help="id pattern"),
-
     parser.add_argument('output', type=str, metavar='fname',help="output base"),
     args = parser.parse_args()
     return args
@@ -47,6 +52,9 @@ chr2chr[26]="MT"
 
 
 
+
+
+
 def conv(x):
    try:
       num = int(x)
@@ -57,6 +65,10 @@ def conv(x):
       elif x == "MT": num=26
       else: num = 0
    return num
+
+
+
+
 
 def parseArray(fname):
     f = open(fname)
@@ -74,8 +86,8 @@ def parseArray(fname):
     snp_elt=[]
     i=0
     for line in f:
-        fields=re.split("[,\t]",line.rstrip())
         if "[Controls]" in line: break
+        fields=re.split("[,\t]",line.rstrip())
         if len(indices)==3:
             cm = fields[indices[2]]
             cm = 0.0 if  "NA" in cm else float(cm)
@@ -88,15 +100,15 @@ def parseArray(fname):
     return snp_elt, array
 
 def generate_line(pedf,old_sample_id,output):
-    pedf.write(TAB.join(old_sample_id+("0","0","0","0")))
+    pedf.write(TAB.join((old_sample_id,"0","0","0","0")))
     pedf.write(TAB)
     pedf.write(TAB.join(output)+EOL)
     pass
 
 def getReportIndices(line):
     #SNP NameSample IDAllele1 - TopAllele2 - Top
-    #fields=re.split("[,\t]",line.rstrip())
-    fields = line.rstrip().split(",")
+    fields=re.split("[,\t]",line.rstrip())
+    #fields = line.rstrip().split(",")
     if "Sample Name" in fields:
         sample = "Sample Name"
     elif "Sample ID" in fields:
@@ -118,11 +130,15 @@ def getReportIndices(line):
 
 def getID(idreg,sample_id):
     m = idreg.match(sample_id)
+    if sample_id in replicates:
+        rep = "_replicate_"+replicates[sample_id]
+    else:
+        rep = ""
     if m:
        if len(m.groups())==2:
-           return m.groups()
+           return (m.group(1)+rep, m.group(2))
        elif len(m.groups())==1:
-           return (m.group(1),m.group(1))
+           return (m.group(1)+rep,m.group(1))
        else:
            sys.exit("Pattern <%s> has wrong number of groups"%args.idpat)
     else:
@@ -141,12 +157,14 @@ def parseChipReport(snp_elt,array,fname,output):
         if "[Data]" in line: break
     name_i, samp_i, alle_1, alle_2 = getReportIndices(f.readline())
     pedf = open ("{}.ped".format(output),"w")
-    old_sample_id=("xxx","")
+    old_sample_id="xxx" # ("xxx","")
     num=0
     output = np.empty([len(snp_elt)*2],dtype='U1')
     output.fill("0")
     for line in f:
-        fields = line.rstrip().split(",")
+        #fields = line.rstrip().split(",")
+        fields = re.split("[,\t]",line.rstrip())
+        sample_id = fields[samp_i].replace(' ','') 
         snp_name = fields[name_i]
         if snp_name  not in array:
             sys.exit("Unknown SNP name in line "+line)
@@ -154,12 +172,11 @@ def parseChipReport(snp_elt,array,fname,output):
         a2       = fields[alle_2]
         if a1 == "-": a1="0"
         if a2 == "-": a2="0"
-        sample_id = getID(idreg,fields[samp_i])
         if sample_id != old_sample_id:
             if num > args.samplesize >  0:
                 pedf.close()
                 return
-            if old_sample_id!=("xxx",""):
+            if old_sample_id!="xxx":
                 generate_line(pedf,old_sample_id,output)
             output.fill("0")
             old_sample_id = sample_id
@@ -178,13 +195,14 @@ def outputMap(snp_elt,array,outname):
     mapf.close()
             
 if len(sys.argv) == 1:
-   sys.argv=["topbot2plink.py","$array","$report","$samplesize", "$idpat", "$output"]
+   sys.argv=["topbot2plink.py","$array","$report","$samplesize", "$idpat", "$mask", "$replicates", "$output"]
     
 
 
 args = parseArguments()
-if args.idpat in [0,"0","",False,"false","FALSE"]:
+if args.idpat in null_values:
     args.idpat=("(.*)")
+
 
 
 snp_elt, array = parseArray(args.array)
