@@ -151,6 +151,39 @@ if (params.help) {
 }
 
 
+def fileColExists = { fname, pname, cname ->
+  f = new File(fname)
+  if (! f.exists()) {
+     error("\n\nThe file <${fname}> given for <${pname}> does not exist")
+    } else {
+      def line  
+      f.withReader { line = it.readLine() }  
+      // now get the column headers
+      fields = line.split()
+      // now separate the column
+      cols = cname.split(",")
+      cols.each { col -> 
+	det = col.split("/")
+	if ((det[0].length()>0) && (! fields.contains(det[0])))
+	  error("\n\nThe file <${fname}> given for <$pname> does not have a column <${det}>\n")
+      }
+    }
+}
+
+fileColExists(params.data,"${params.data} - covariates", params.covariates)
+fileColExists(params.data,"${params.data} - phenotypes", params.pheno)
+
+covs =  params.covariates.split(",")
+params.pheno.split(",").each { p ->
+  if (covs.contains(p)) {
+    println("\n\nThe phenotype <$p> is also given as a covariate -- this seems like a very bad idea")
+    sleep(10)
+  }
+}
+
+
+
+
 //---- Modification of variables for pipeline -------------------------------//
 
 
