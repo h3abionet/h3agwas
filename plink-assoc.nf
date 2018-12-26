@@ -91,6 +91,7 @@ params.gemma_mem_req = "6GB"
 params.gemma_relopt = 1
 params.gemma_lmmopt = 4
 params.gemma_mat_rel = ""
+params.gemma_num_cores = 8
 
 /*JT Append initialisation variable*/
 params.bolt_covariates_type = ""
@@ -172,6 +173,7 @@ def fileColExists = { fname, pname, cname ->
 
 fileColExists(params.data,"${params.data} - covariates", params.covariates)
 fileColExists(params.data,"${params.data} - phenotypes", params.pheno)
+fileColExists(params.data,"${params.gxe} - gxe", params.gxe)
 
 covs =  params.covariates.split(",")
 params.pheno.split(",").each { p ->
