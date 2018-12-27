@@ -236,7 +236,7 @@ def plotPCs(base,eigs,pfrm,pheno_col,batch,batch_col):
     batch_values = batch[batch_col].unique()
     our_colours  = dict(zip(batch_values,colours[1:1+len(batch_values)]))
     allplots=[]
-    batch['colour']=batch.apply(lambda x:our_colours[x['batch']],axis=1)
+    batch['colour']=batch.apply(lambda x:our_colours[x[batch_col]],axis=1)
     for site, df in g:
         df=df.merge(batch,on=['FID','IID'],how='inner')
         fig = plt.figure(figsize=(6,6))

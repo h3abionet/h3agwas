@@ -119,7 +119,7 @@ for (label, transform) in zip(pheno_labels+covar_labels, pheno_transform+cover_t
     datad[label]=datad[label].apply(check_missing, MissingOut=MissingOut)
 
 famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEXFAM","CC"])
-merge = pd.merge(famd,datad,how="left",on=["FID","IID"])
+merge = pd.merge(famd,datad,how="left",suffixes=["_f",""],on=["FID","IID"])
 # for gemma
 if args.form_out == 1 : 
    merge["intercept"]=1
