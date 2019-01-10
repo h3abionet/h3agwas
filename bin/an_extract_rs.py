@@ -43,12 +43,13 @@ else :
       sys.exit("args : inp_rs and list_rs not found\nexit\n")
 
 result = pd.read_csv(args.inp_resgwas,delim_whitespace=True)
-result=result[(result[args.freq_header]>args.maf) & (result[args.freq_header]<1-args.maf)]
+#result=result[(result[args.freq_header]>args.maf) & (result[args.freq_header]<1-args.maf)]
 
 sub_result=result.loc[result[args.rs_header].isin(list_rs)]
 TAB=chr(9)
 PosCol=[args.chro_header, args.pos_header,  args.pos_header, args.rs_header, args.pval_header, args.freq_header]
 for x in sub_result[args.rs_header] :
+    print(x)
     out_file=args.out_head+"_"+x+"_around.stat"
     out_gwas=args.out_head+"_"+x+"_gwas.stat"
     out_info=args.out_head+"_"+x+"_info.stat"
