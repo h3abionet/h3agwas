@@ -862,7 +862,7 @@ if (params.gemma == 1){
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase
-       all_covariate.py --data  $data_nomissing --inp_fam  $newbase".fam" $covariate_option --cov_out $gemma_covariate \
+       all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001
@@ -938,7 +938,7 @@ if (params.gemma_gxe == 1){
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase 
-       all_covariate.py --data  $data_nomissing --inp_fam  $newbase".fam" $covariate_option --cov_out $gemma_covariate \
+       all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
        gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
