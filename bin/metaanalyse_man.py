@@ -86,7 +86,6 @@ def get10Best(result):
 
 result = pd.read_csv(inp,delim_whitespace=True)
 
-fig, (ax1, ax2) =  plt.subplots(2, 1, sharey=True)
 
 sort_p = -np.log10(result[PvalueEnt].sort_values())
 n=len(sort_p)

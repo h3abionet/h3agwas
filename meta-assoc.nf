@@ -40,10 +40,18 @@ params.input_config=''
 // what analysis
 params.metal=0
 params.gwama=0
+params.metasoft=0
 
 // external binary definition
 params.metal_bin='metal'
 params.gwama_bin='GWAMA'
+params.metasoft_bin="Metasoft.jar"
+
+params.metasoft_pvalue_table=""
+params.metasoft_opt=""
+
+params.covariates=""
+report_ch = Channel.empty()
 
 def configfile_analysis(file){
    sep=','
@@ -83,7 +91,6 @@ def configfile_analysis(file){
 }
 
 info_file=configfile_analysis(params.file_config)
-//liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1]))
 pos_file_ref=info_file[2]
 if(pos_file_ref==-1){
 println "not file reference foud see in config file column IsRefFile"
@@ -110,7 +117,7 @@ process ChangeFormatFile {
     input :
       set file(file_assoc), val(info_file), file(file_ref) from liste_filesi_ch
     output :
-      file(newfile_assoc) into (liste_file_gwama, liste_file_metal)
+      file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft)
     script :
        newfile_assoc=file_assoc+".modif"
        """
@@ -118,16 +125,9 @@ process ChangeFormatFile {
        """
 }
 
-//(liste_file_gwama, liste_file_metal) = liste_files_mod_ch.toList().separate(2) { a -> [a, a] }
-
-//liste_file_gwama = Channel.create()
-//liste_file_metal = Channel.create()
-
-//liste_files_mod_ch.separate(liste_file_gwama,liste_file_metal)
-
-//liste_files_mod_ch=liste_files_mod_ch.collect()
 liste_file_gwama=liste_file_gwama.collect()
 liste_file_metal=liste_file_metal.collect()
+liste_file_metasoft=liste_file_metasoft.collect()
 
 
 if(params.gwama==1){
@@ -137,18 +137,32 @@ if(params.gwama==1){
       val(list_file) from liste_file_gwama
     publishDir "${params.output_dir}/gwama", overwrite:true, mode:'copy'
     output :
-      file("${out}*")
-      //file("${out}.out") into res_gwama
+      //file("${out}*")
+      file("${out}.out") into res_gwama
+      set file("${out}.err.out"), file("${out}.gc.out"), file("${out}.log.out"), file("${out}.out")
     script :
-      out = "gwama_res.stat"
+      out = "gwama_res"
       gc =  (params.ma_genomic_cont==1) ? "-gc -gco " : ""
       lfile=list_file.join(" ")
       """
       echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
       ${params.gwama_bin}  --filelist fileListe --output $out -r $gc -qt --name_marker RSID --name_strand  DIRECTION --name_n N --name_eaf FREQA1 --name_beta BETA --name_se SE --name_ea A1 --name_nea A2
       """
-
   }
+  process showGWAMA {
+    publishDir params.output_dir
+    input:
+      file(assoc) from res_gwama
+    output:
+      file("${out}*")  into report_gwama
+    script:
+      out = "gwama"
+      """
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header "rs_number" --pval_header "p-value" --beta_header "beta" --info_prog "GWAMA"
+      """
+  }
+  report_ch = report_ch.flatten().mix(report_gwama.flatten())
+
 }
 
 if(params.metal==1){
@@ -158,8 +172,8 @@ if(params.metal==1){
       val(list_file) from liste_file_metal
     publishDir "${params.output_dir}/metal", overwrite:true, mode:'copy'
     output :
-      //file("${out}*") into res_metal
-      file("${out}*") 
+      file("${out}1.stat") into res_metal
+      set file("${out}1.stat"), file("${out}1.stat.info")
     script :
       out = "metal_res"
       lfile=list_file.join("\t")
@@ -172,5 +186,115 @@ if(params.metal==1){
       ${params.metal_bin} $metal_config
       """
   }
+  process showMetal {
+    publishDir params.output_dir
+    input:
+      file(assoc) from res_metal
+    output:
+      file("${out}*")  into report_Metal
+    script:
+      out = "metal"
+      """
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header MarkerName --pval_header "P-value" --beta_header "Effect" --info_prog "Metal"
+      """
+  }
+  report_ch = report_ch.flatten().mix(report_Metal.flatten())
+
 
 }
+
+if(params.metasoft==1){
+
+  filepvaltable=Channel.fromPath(params.metasoft_pvalue_table)
+  process doMetaSoft {
+    input :
+      val(list_file) from liste_file_metasoft
+      file(file_pvaltab) from filepvaltable
+    publishDir "${params.output_dir}/metasoft", overwrite:true, mode:'copy'
+    output :
+      set file("${out}.meta"),file("${out}.res"),file("${out}.log"), file("${out}.files"), file("${out}.format.res")
+      file("${out}.format.res")  into res_metasoft
+    script :
+      out = "metasoft_res"
+      lfile=list_file.join(" ")
+      """
+      ma_formatmetasoft.py $out $lfile
+      java -jar ${params.metasoft_bin} -input $out".meta"  -output $out".res"   -log $out".log" -pvalue_table $file_pvaltab ${params.metasoft_opt}
+      ma_trans_outsetasoft.py $out".res" $out".files"  $out".format.res"
+      """
+  }
+  process showMetasoft {
+    publishDir params.output_dir
+    input:
+      file(assoc) from res_metasoft
+    output:
+      file("${out}*")  into report_Metasoft
+    script:
+      out = "metasoft"
+      """
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header RSID --pval_header "PVALUE_RE" --beta_header "BETA_RE" --info_prog "MetaSoft (Han and Eskin's Random Effects model)"
+      """
+  }
+  report_ch = report_ch.flatten().mix(report_Metasoft.flatten())
+
+}
+
+
+def getres(x) {
+  def  command1 = "$x"
+  def  command2 = "head -n 1"
+  def proc1 = command1.execute()
+  def proc2 = command2.execute()
+  def proc = proc1 | proc2
+  proc.waitFor()
+  res ="${proc.in.text}"
+  return res.trim()
+}
+
+nextflowversion =getres("nextflow -v")
+if (workflow.repository)
+  wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
+else
+  wflowversion="A local copy of the workflow was used"
+
+
+//---- Modification of variables for pipeline -------------------------------//
+
+
+def getConfig = {
+  all_files = workflow.configFiles.unique()
+  text = ""
+  all_files.each { fname ->
+      base = fname.baseName
+      curr = "\n\n*-subsection{*-protect*-url{$base}}@.@@.@*-footnotesize@.@*-begin{verbatim}"
+      file(fname).eachLine { String line ->
+        if (line.contains("secretKey")) { line = "secretKey='*******'" }
+        if (line.contains("accessKey")) { line = "accessKey='*******'" }
+        curr = curr + "@.@"+line
+      }
+      curr = curr +"@.@*-end{verbatim}\n"
+      text = text+curr
+  }
+  return text
+}
+
+
+process doReport {
+  input:
+    file(reports) from report_ch.toList()
+  publishDir params.output_dir, overwrite:true, mode:'copy'
+  output:
+    file("${out}.pdf")
+  script:
+    out = params.output+"-report"
+    these_phenos     = params.pheno
+    these_covariates = params.covariates
+    config = getConfig()
+    images = workflow.container
+    texf   = "${out}.tex"
+    template "make_assoc_report.py"
+}
+
+
+
+
