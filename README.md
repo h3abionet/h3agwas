@@ -1106,22 +1106,22 @@ The key options are:
        * `direction` : column name of strand for association -/+  in gwas file
        * `Imputed` :  column name of imputed or not for position in gwas file
        * `Sep` : what separator is in gwas file :
-         * you could use characters as ; . : but to avoid some trouble 
-         * COM : for comma
-         * TAB : for tabulation
-         * WHI : for white space
+         * you could use characters as ; . : but to avoid some trouble you can use :
+           * COM : for comma
+           * TAB : for tabulation
+           * WHI : for white space
        * `File` : gwas file with full path 
        * `IsRefFile` : you need to define a reference file to define what rs should be considered in other files
        * if one of the column is missing in your GWAS file, replace by _NA_
   * optional option :
      * binaries : 
-       * `metal_bin` : binarie for metal [default : _metal_ ] 
-       * `gwama_bin` :  binarie for gwam [ default : _GWAMA__ ]
-       * `metasoft_bin` : binarie for java of metasoft [ default _Metasoft.jar_]
-     * options software :
+       * `metal_bin` : binarie for metal (default : _metal_ ) 
+       * `gwama_bin` :  binarie for gwam ( default : _GWAMA__ )
+       * `metasoft_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
+     * options softwares :
        *  `metasoft_opt` : append other option in for metasoft (default : null)
-       * `ma_genomic_cont` : (default, 0)
-       * `ma_inv_var_weigth`: (default, 0)
+       * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
+       * `ma_inv_var_weigth`: do a invert variance weight usefull for metal (default, 0)
 
 
 # 11. Acknowledgement, Copyright and general
