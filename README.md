@@ -960,6 +960,38 @@ Three files are output: a fam file, an error file (the IDs of individuals who ar
 
 Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
 
+## 9.3 make_ref.py 
+
+Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
+
+
+`python3 make_ref.py aux/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
+
+
+The program checks each SNP given in the manifest file by the chromosome and position number and then checks that the probe given in the manifest file actually matches the reference genome at that point. Minor slippage is acceptable because of indels.
+
+The wrn file are SNPs which are probably OK but have high slippage (these are in the ref file)
+The err file are the SNPs which don't match.
+
+## 9.6 plates.py
+
+This is used to depict where on the plates particular samples are. This is very useful for looking at problems in the data. If for example you find a bunch of sex mismatches this is most likely due to misplating. This script is a quick way of looking at the problem and seeing whether the errors are close together or spread out. There are two input arguments
+
+* A file with the IDs of the individuals -- assuming that the first token on each line is an individual
+* A sample sheet that gives the plating of each sample
+
+There is one output parameter -- the name of a directory where output should go. The directory should exist.
+
+You may need to change this line
+
+```
+batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
+```
+
+In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
+
+
+
 # 10 Simulation pipeline: `simul-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *simul-assoc.nf* takes as input PLINK files that have been through quality control and
@@ -1019,58 +1051,10 @@ different output is provided :
   * for phenotype simulation all missing values is discarded and replaced by more frequent allele
   * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
 
-# 11 annotation pipeline: `simul-assoc.nf`
-This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype 
-
-## Installation
-need locuszoom, _R_ : (ggplot2, ), python3
-
-## Running
-The pipeline is run: `nextflow run annot-assoc.nf`
-
-
-The key options are:
-  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
-  * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
-  * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
 
 
 
-
-
-
-## 9.3 make_ref.py 
-
-Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
-
-
-`python3 make_ref.py aux/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
-
-
-The program checks each SNP given in the manifest file by the chromosome and position number and then checks that the probe given in the manifest file actually matches the reference genome at that point. Minor slippage is acceptable because of indels.
-
-The wrn file are SNPs which are probably OK but have high slippage (these are in the ref file)
-The err file are the SNPs which don't match.
-
-## 9.6 plates.py
-
-This is used to depict where on the plates particular samples are. This is very useful for looking at problems in the data. If for example you find a bunch of sex mismatches this is most likely due to misplating. This script is a quick way of looking at the problem and seeing whether the errors are close together or spread out. There are two input arguments
-
-* A file with the IDs of the individuals -- assuming that the first token on each line is an individual
-* A sample sheet that gives the plating of each sample
-
-There is one output parameter -- the name of a directory where output should go. The directory should exist.
-
-You may need to change this line
-
-```
-batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
-```
-
-In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
-
-
-# 10 MetaAnalysis pipeline : `meta-assoc.nf`
+# 11 MetaAnalysis pipeline : `meta-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 
@@ -1123,8 +1107,22 @@ The key options are:
        * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
        * `ma_inv_var_weigth`: do a invert variance weight usefull for metal (default, 0)
 
+# 12 annotation pipeline: `simul-assoc.nf`
+This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype
 
-# 11. Acknowledgement, Copyright and general
+## Installation
+need locuszoom, _R_ : (ggplot2, ), python3
+
+## Running
+The pipeline is run: `nextflow run annot-assoc.nf`
+
+The key options are:
+  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
+  * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
+  * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
+
+
+# 13. Acknowledgement, Copyright and general
 
 ## Acknowledgement
 
