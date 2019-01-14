@@ -83,6 +83,7 @@ for rsid in rsids:
             snp[A1Head]=snp[A1Head].upper()
             snp[A2Head]=snp[A2Head].upper()
             if snp[A1Head] not in vectortorbase  or snp[A1Head] not in vectortorbase :
+               output+='NA NA '
                continue 
             if 'OR' in snp:
                 beta='log(%s)'%snp['OR']
