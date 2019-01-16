@@ -41,14 +41,19 @@ params.input_config=''
 params.metal=0
 params.gwama=0
 params.metasoft=0
+params.mrmega=0
 
 // external binary definition
 params.metal_bin='metal'
 params.gwama_bin='GWAMA'
+params.mrmega_bin='MR-MEGA'
 params.metasoft_bin="Metasoft.jar"
 
 params.metasoft_pvalue_table=""
 params.metasoft_opt=""
+
+params.ma_mrmega_pc=4
+params.mrmega_other=""
 
 params.covariates=""
 report_ch = Channel.empty()
@@ -117,7 +122,7 @@ process ChangeFormatFile {
     input :
       set file(file_assoc), val(info_file), file(file_ref) from liste_filesi_ch
     output :
-      file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft)
+      file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega)
     script :
        newfile_assoc=file_assoc+".modif"
        """
@@ -128,6 +133,7 @@ process ChangeFormatFile {
 liste_file_gwama=liste_file_gwama.collect()
 liste_file_metal=liste_file_metal.collect()
 liste_file_metasoft=liste_file_metasoft.collect()
+liste_file_mrmega=liste_file_mrmega.collect()
 
 
 if(params.gwama==1){
@@ -164,6 +170,45 @@ if(params.gwama==1){
   report_ch = report_ch.flatten().mix(report_gwama.flatten())
 
 }
+
+if(params.mrmega==1){
+  //config channel
+  process doMRMEGA {
+    input :
+      val(list_file) from liste_file_mrmega
+    publishDir "${params.output_dir}/mrmega", overwrite:true, mode:'copy'
+    output :
+      //file("${out}*")
+      file("${out}.result") into res_mrmega
+      //mrmega_res.log  mrmega_res.result
+      set file("${out}.result"), file("${out}.log")
+    script :
+      out = "mrmega_res"
+      gc =  (params.ma_genomic_cont==1) ? "--gc " : ""
+      lfile=list_file.join(" ")
+      """
+      #echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
+      ma_printlistbonfile.py fileListe $lfile
+      ${params.mrmega_bin}  --filelist fileListe -o $out $gc --qt --name_marker RSID --name_chr CHRO --name_pos POS --name_strand  DIRECTION --name_n N --name_eaf FREQA1 --name_beta BETA --name_se SE --name_ea A1 --name_nea A2 --pc ${params.ma_mrmega_pc} ${params.mrmega_other} --no_std_names
+      """
+  }
+  process showMRMEGA {
+    publishDir params.output_dir
+    input:
+      file(assoc) from res_mrmega
+    output:
+      file("${out}*")  into report_mrmega
+    script:
+      out = "mrmega"
+      """
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header "rs_number" --pval_header "p-value" --beta_header "beta" --info_prog "MRMEGA"
+      """
+  }
+  report_ch = report_ch.flatten().mix(report_mrmega.flatten())
+
+}
+
+
 
 if(params.metal==1){
 
