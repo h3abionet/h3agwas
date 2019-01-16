@@ -78,27 +78,83 @@ sep=GetSep(l_oldhead[PosSep])
 del l_oldhead[PosSep]
 del l_newhead[PosSep]
 rsId_inp=l_oldhead[l_newhead.index('rsID')]
+baliserepchrpos=False
 if(args.rs_ref) :
   open_rs=open(args.rs_ref)
-  ls_rs=set([])
-  for l in open_rs :
-     ls_rs.add(l.replace('\n', '').split()[0])
+  head=open_rs.readline()
+  ncolrs=len(head.split())
+  if ncolrs==1 :
+     ls_rs=set([])
+     for l in open_rs :
+        rsspl=l.replace('\n', '').split()
+        ls_rs.add(rsspl[0])
+  else :
+     baliserepchrpos=True
+     ls_rs_dic={}
+     ls_rs=set([])
+     for l in open_rs :
+        rsspl=l.replace('\n', '').split()
+        ls_rs.add(rsspl[0])
+        ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2]]
 
+## sear
+if baliserepchrpos :
+  if 'Pos' in l_newhead :
+     PosPos=l_newhead.index('Pos')
+     del l_oldhead[PosPos]
+     del l_newhead[PosPos]
+  
+  if 'Chro' in l_newhead :
+     PosPos=l_newhead.index('Chro')
+     del l_oldhead[PosPos]
+     del l_newhead[PosPos]
+
+  
 head_inp=read.readline().replace('\n','').split(sep)
 ps_rsId_inp=head_inp.index(rsId_inp)
-## sear
-
-
 ps_head=GetPosHead(head_inp,l_oldhead)
-write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
-balise=True
-for line in read :
-  spl=line.replace('\n','').split(sep)
-  if args.rs_ref : 
-     if spl[ps_rsId_inp] in ls_rs :
-        balise=True
-     else :
-        balise=False
-  if balise :
-     write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
 
+balchangA1=False
+balchangA2=False
+if 'A1' in l_newhead :
+  A1_inp=l_oldhead[l_newhead.index('A1')]
+  ps_A1_inp=head_inp.index(A1_inp)
+  balchangA1=True
+
+if 'A2' in l_newhead :
+  A2_inp=l_oldhead[l_newhead.index('A2')]
+  ps_A2_inp=head_inp.index(A2_inp)
+  balchangA2=True
+
+if baliserepchrpos :
+   l_newhead+=["CHRO", "POS"]
+   write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
+   for line in read :
+     spl=line.replace('\n','').split(sep)
+     if  spl[ps_rsId_inp] in ls_rs :
+       if balchangA1 :
+          spl[ps_A1_inp]=spl[ps_A1_inp].upper()
+       if balchangA2 :
+          spl[ps_A2_inp]=spl[ps_A2_inp].upper()
+       tmp=[checknull(spl[x]) for x in ps_head]
+       tmp+=ls_rs_dic[spl[ps_rsId_inp]]
+       write.write(sep_out.join(tmp)+"\n")
+elif args.rs_ref :
+   write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
+   for line in read :
+     spl=line.replace('\n','').split(sep)
+     if  spl[ps_rsId_inp] in ls_rs :
+       if balchangA1 :
+          spl[ps_A1_inp]=spl[ps_A1_inp].upper()
+       if balchangA2 :
+          spl[ps_A2_inp]=spl[ps_A2_inp].upper()
+       write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
+else :
+   write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
+   for line in read :
+     spl=line.replace('\n','').split(sep)
+     if balchangA1 :
+          spl[ps_A1_inp]=spl[ps_A1_inp].upper()
+     if balchangA2 :
+          spl[ps_A2_inp]=spl[ps_A2_inp].upper()
+     write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")

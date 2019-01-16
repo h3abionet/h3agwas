@@ -41,18 +41,40 @@ l_filehead=[x.split(":")[1] for x in infohead]
 
 nomrs=l_filehead[l_infohead.index('rsID')]
 sep=GetSep(l_filehead[l_infohead.index('Sep')])
+if 'Chro' in l_infohead :
+   nomchro=l_filehead[l_infohead.index('Chro')]
+else :
+   nomchro='NA'
+
+
+if 'Pos' in l_infohead :
+   nompos=l_filehead[l_infohead.index('Pos')]
+else :
+   nompos='NA'
+
 
 readfile=open(args.input_file)
 writenew=open(args.out_file, 'w')
 
 headeri=readfile.readline().replace('\n','').split(sep)
 PosRs=headeri.index(nomrs)
+if nompos.upper()!="NA" and nomchro.upper()!="NA" and len(nompos)>0 and len(nomchro)>0 :
+   balisechro=True
+   PosChro=headeri.index(nomchro)
+   PosPos=headeri.index(nompos)
 
-writenew.write('rsID\n')
-for ligne in readfile :
-   spl=ligne.split(sep)
-   if spl[PosRs]!='.' :
-      writenew.write(spl[PosRs]+'\n')
+if  balisechro == True  :
+   writenew.write('rsID\tChro\tPos\n')
+   for ligne in readfile :
+     spl=ligne.split(sep)
+     if spl[PosRs]!='.' :
+        writenew.write(spl[PosRs]+"\t"+spl[PosChro]+"\t"+spl[PosPos]+'\n')
+else :
+   writenew.write('rsID\n')
+   for ligne in readfile :
+     spl=ligne.split(sep)
+     if spl[PosRs]!='.' :
+        writenew.write(spl[PosRs]+'\n')
 writenew.close()
 
    
