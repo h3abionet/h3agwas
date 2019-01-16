@@ -104,6 +104,7 @@ params.bolt_use_missing_cov=0
 params.exclude_snps=""
 params.bolt_impute2filelist=""
 params.bolt_impute2fidiid=""
+params.bolt_otheropt=""
 /*fastlmm param*/
 params.fastlmm = 0
 params.fastlmm_num_cores=8
@@ -748,7 +749,7 @@ if (params.boltlmm == 1) {
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
       bolt.py bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
-           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap
+           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt}
       #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap |\
       #       grep -B 1 -E "^[ ]+h2" $exclude_snp 1> $outReml 
       """

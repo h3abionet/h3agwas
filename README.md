@@ -1059,7 +1059,7 @@ different output is provided :
 This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 
 ## Installation
-need python3, METAL, GWAMA and MetaSoft
+need python3, METAL, GWAMA, MR-MEGA and MetaSoft
 
 ## Running
 The pipeline is run: `nextflow run meta-assoc.nf`
@@ -1072,8 +1072,9 @@ The key options are:
   * meta analysis option :
      * `metal` : 1 perform metal (default 0) 
      * `gwama` : 1 perform gwama (default 0)
-     * `metasoft` : 1 perform metasoft(default 0)  
-     * `metasoft_pvalue_table` : for metasoft need files :  _HanEskinPvalueTable.txt_ 
+     * `metasoft` : 1 perform metasoft(default 0)   
+       * `metasoft_pvalue_table` : for metasoft need files :  _HanEskinPvalueTable.txt_ 
+     * `mrmega` : 1 perform MR-MEGA (default 0)
   * `file_config` 
      * describe all informations for each gwas result used for meta analysis 
      * file is comma separated (csv), each line is to describe one file 
@@ -1102,16 +1103,24 @@ The key options are:
        * `metal_bin` : binarie for metal (default : _metal_ ) 
        * `gwama_bin` :  binarie for gwam ( default : _GWAMA__ )
        * `metasoft_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
+       * `mrmega_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
      * options softwares :
-       *  `metasoft_opt` : append other option in for metasoft (default : null)
+       * `ma_metasoft_opt` : append other option in metasoft command line(default : null)
        * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
        * `ma_inv_var_weigth`: do a invert variance weight usefull for metal (default, 0)
+       * `ma_random_effect` : do mixed model (default 1)
+       * `ma_mrmega_pc` : how many pcs used for mrmega (default : 4)
+       * `ma_mrmega_opt` : append other option in MR-MEGA command line (default : null)
+## specificity 
+### MR-MEGA
+MR-MEGA need chromosomes, positions and N (sample number) for each position, so in pipeline referent file (in file_config, 1 in IsRefFile) must be have chromosome and poosition 
 
-# 12 annotation pipeline: `simul-assoc.nf`
+
+# 12 annotation pipeline: `annot-assoc.nf`
 This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype
 
 ## Installation
-need locuszoom, _R_ : (ggplot2, ), python3
+need locuszoom, _R_ : (ggplot2), python3
 
 ## Running
 The pipeline is run: `nextflow run annot-assoc.nf`
