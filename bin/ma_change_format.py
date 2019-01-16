@@ -3,6 +3,7 @@
 import sys
 import os
 import argparse
+import math
 
 def GetSep(Sep):
    ListOfSep=["\t"," ",","]
@@ -125,6 +126,24 @@ if 'A2' in l_newhead :
   A2_inp=l_oldhead[l_newhead.index('A2')]
   ps_A2_inp=head_inp.index(A2_inp)
   balchangA2=True
+listposfloat=[]
+for head in ['freqA1', 'Beta', 'Se', 'Pval', 'N']:
+   if head in l_newhead :
+       newhead=l_oldhead[l_newhead.index(head)]
+       listposfloat.append(head_inp.index(newhead))
+
+p_minf=float('-inf')
+p_pinf=float('inf')
+print(listposfloat)
+def checkfloat(tmp, listposfloat):
+   for x in listposfloat :
+      try :
+        resfl=float(tmp[x]) 
+        if math.isnan(resfl) or resfl==p_minf or resfl==p_pinf:
+           tmp[x]="NA"
+      except ValueError:
+        tmp[x]="NA"
+   return tmp
 
 if baliserepchrpos :
    l_newhead+=["CHRO", "POS"]
@@ -132,6 +151,7 @@ if baliserepchrpos :
    for line in read :
      spl=line.replace('\n','').split(sep)
      if  spl[ps_rsId_inp] in ls_rs :
+       spl=checkfloat(spl, listposfloat)
        if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
        if balchangA2 :
@@ -143,6 +163,7 @@ elif args.rs_ref :
    write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
+     spl=checkfloat(spl, listposfloat)
      if  spl[ps_rsId_inp] in ls_rs :
        if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
@@ -153,6 +174,7 @@ else :
    write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
+     spl=checkfloat(spl, listposfloat)
      if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
      if balchangA2 :

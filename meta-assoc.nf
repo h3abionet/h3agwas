@@ -49,11 +49,16 @@ params.gwama_bin='GWAMA'
 params.mrmega_bin='MR-MEGA'
 params.metasoft_bin="Metasoft.jar"
 
+params.ma_random_effect=1
+params.ma_genomic_cont=0
+params.ma_inv_var_weigth=0
+
+
 params.metasoft_pvalue_table=""
-params.metasoft_opt=""
+params.ma_metasoft_opt=""
 
 params.ma_mrmega_pc=4
-params.mrmega_other=""
+params.ma_mrmega_opt=""
 
 params.covariates=""
 report_ch = Channel.empty()
@@ -149,10 +154,11 @@ if(params.gwama==1){
     script :
       out = "gwama_res"
       gc =  (params.ma_genomic_cont==1) ? "-gc -gco " : ""
+      optrandom = (params.ma_random_effect==1) ? " -r " : ""
       lfile=list_file.join(" ")
       """
       echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
-      ${params.gwama_bin}  --filelist fileListe --output $out -r $gc -qt --name_marker RSID --name_strand  DIRECTION --name_n N --name_eaf FREQA1 --name_beta BETA --name_se SE --name_ea A1 --name_nea A2
+      ${params.gwama_bin}  --filelist fileListe --output $out $optrandom $gc -qt --name_marker RSID --name_strand  DIRECTION --name_n N --name_eaf FREQA1 --name_beta BETA --name_se SE --name_ea A1 --name_nea A2
       """
   }
   process showGWAMA {
@@ -189,7 +195,7 @@ if(params.mrmega==1){
       """
       #echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
       ma_printlistbonfile.py fileListe $lfile
-      ${params.mrmega_bin}  --filelist fileListe -o $out $gc --qt --name_marker RSID --name_chr CHRO --name_pos POS --name_strand  DIRECTION --name_n N --name_eaf FREQA1 --name_beta BETA --name_se SE --name_ea A1 --name_nea A2 --pc ${params.ma_mrmega_pc} ${params.mrmega_other} --no_std_names
+      ${params.mrmega_bin}  --filelist fileListe -o $out $gc --qt --name_marker RSID --name_chr CHRO --name_pos POS --name_strand  DIRECTION --name_n N --name_eaf FREQA1 --name_beta BETA --name_se SE --name_ea A1 --name_nea A2 --pc ${params.ma_mrmega_pc} ${params.ma_mrmega_opt} --no_std_names
       """
   }
   process showMRMEGA {
@@ -264,7 +270,7 @@ if(params.metasoft==1){
       lfile=list_file.join(" ")
       """
       ma_formatmetasoft.py $out $lfile
-      java -jar ${params.metasoft_bin} -input $out".meta"  -output $out".res"   -log $out".log" -pvalue_table $file_pvaltab ${params.metasoft_opt}
+      java -jar ${params.metasoft_bin} -input $out".meta"  -output $out".res"   -log $out".log" -pvalue_table $file_pvaltab ${params.ma_metasoft_opt}
       ma_trans_outsetasoft.py $out".res" $out".files"  $out".format.res"
       """
   }
