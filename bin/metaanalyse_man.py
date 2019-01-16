@@ -78,13 +78,11 @@ def get10Best(result):
     best = ""
     for r in top.iterrows():
         x= r[1]
-        print(x[RsEnt])
-        print(RsEnt)
         row = best_row%(x[RsEnt],x[BEnt],x[PvalueEnt])+EOL
         best = best + row
     return best
 
-result = pd.read_csv(inp,delim_whitespace=True)
+result = pd.read_csv(inp,delim_whitespace=True, keep_default_na=True, na_values=["nan","nane-nan"])
 
 
 sort_p = -np.log10(result[PvalueEnt].sort_values())
