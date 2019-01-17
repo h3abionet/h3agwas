@@ -11,8 +11,8 @@ import sys
 inp     = sys.argv[1]
 phenos  = sys.argv[2].split("-")
 base    = sys.argv[3].replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
-out_man = "%s-man.pdf"%base
-out_qq  = "%s-qq.pdf"%base
+out_man = "%s-gemma-man.pdf"%base
+out_qq  = "%s-gemma-qq.pdf"%base
 out_tex = "%s.tex"%base
 
 
