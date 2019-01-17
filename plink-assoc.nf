@@ -111,6 +111,7 @@ params.bolt_use_missing_cov=0
 params.exclude_snps=""
 params.bolt_impute2filelist=""
 params.bolt_impute2fidiid=""
+params.bolt_otheropt=""
 /*fastlmm param*/
 params.fastlmm = 0
 params.fastlmm_num_cores=8
@@ -736,7 +737,6 @@ if (params.boltlmm == 1) {
     each this_pheno from ind_pheno_cols_ch_bolt
     output:
       file(out)
-      file(outReml) into bolt_reml_out
       set val(base), val(our_pheno), file("$outf") into bolt_manhatten_ch
     script:
       base = plinksbed.baseName
@@ -756,9 +756,9 @@ if (params.boltlmm == 1) {
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
       bolt.py bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
-           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap
-      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap |\
-             grep -B 1 -E "^[ ]+h2" $exclude_snp 1> $outReml 
+           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt}
+      #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap |\
+      #       grep -B 1 -E "^[ ]+h2" $exclude_snp 1> $outReml 
       """
   }
 

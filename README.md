@@ -960,6 +960,38 @@ Three files are output: a fam file, an error file (the IDs of individuals who ar
 
 Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
 
+## 9.3 make_ref.py 
+
+Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
+
+
+`python3 make_ref.py aux/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
+
+
+The program checks each SNP given in the manifest file by the chromosome and position number and then checks that the probe given in the manifest file actually matches the reference genome at that point. Minor slippage is acceptable because of indels.
+
+The wrn file are SNPs which are probably OK but have high slippage (these are in the ref file)
+The err file are the SNPs which don't match.
+
+## 9.6 plates.py
+
+This is used to depict where on the plates particular samples are. This is very useful for looking at problems in the data. If for example you find a bunch of sex mismatches this is most likely due to misplating. This script is a quick way of looking at the problem and seeing whether the errors are close together or spread out. There are two input arguments
+
+* A file with the IDs of the individuals -- assuming that the first token on each line is an individual
+* A sample sheet that gives the plating of each sample
+
+There is one output parameter -- the name of a directory where output should go. The directory should exist.
+
+You may need to change this line
+
+```
+batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
+```
+
+In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
+
+
+
 # 10 Simulation pipeline: `simul-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *simul-assoc.nf* takes as input PLINK files that have been through quality control and
@@ -1019,15 +1051,79 @@ different output is provided :
   * for phenotype simulation all missing values is discarded and replaced by more frequent allele
   * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
 
-# 11 annotation pipeline: `simul-assoc.nf`
-This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype 
+
+
+
+# 11 MetaAnalysis pipeline : `meta-assoc.nf`
+
+This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 
 ## Installation
-need locuszoom, _R_ : (ggplot2, ), python3
+need python3, METAL, GWAMA, MR-MEGA and MetaSoft
+
+## Running
+The pipeline is run: `nextflow run meta-assoc.nf`
+
+
+The key options are:
+  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
+  * `input`, `output` and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
+  * `output_dir` = "all"
+  * meta analysis option :
+     * `metal` : 1 perform metal (default 0) 
+     * `gwama` : 1 perform gwama (default 0)
+     * `metasoft` : 1 perform metasoft(default 0)   
+       * `metasoft_pvalue_table` : for metasoft need files :  _HanEskinPvalueTable.txt_ 
+     * `mrmega` : 1 perform MR-MEGA (default 0)
+  * `file_config` 
+     * describe all informations for each gwas result used for meta analysis 
+     * file is comma separated (csv), each line is to describe one file 
+     * header of config file is : rsID,Chro,Pos,A1,A2,Beta,Se,Pval,N,freqA1,direction,Imputed,Sep,File,IsRefFile
+       * `rsID` : column name for rsID in gwas file
+       * `Chro` : column name for Chro in gwas file
+       * `Pos` : column name for Pos in gwas file
+       * `A1` :  column name for reference allele in gwas file
+       * `A2` :  column name for alternative allele in gwas file
+       * `Beta` :  column name for B values in gwas file
+       * `Se` :  column name for sterr values in gwas file
+       * `N` : column name for size in gwas file
+       * `freqA1` : column name for freqA1 or maf in gwas file
+       * `direction` : column name of strand for association -/+  in gwas file
+       * `Imputed` :  column name of imputed or not for position in gwas file
+       * `Sep` : what separator is in gwas file :
+         * you could use characters as ; . : but to avoid some trouble you can use :
+           * COM : for comma
+           * TAB : for tabulation
+           * WHI : for white space
+       * `File` : gwas file with full path 
+       * `IsRefFile` : you need to define a reference file to define what rs should be considered in other files
+       * if one of the column is missing in your GWAS file, replace by _NA_
+  * optional option :
+     * binaries : 
+       * `metal_bin` : binarie for metal (default : _metal_ ) 
+       * `gwama_bin` :  binarie for gwam ( default : _GWAMA__ )
+       * `metasoft_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
+       * `mrmega_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
+     * options softwares :
+       * `ma_metasoft_opt` : append other option in metasoft command line(default : null)
+       * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
+       * `ma_inv_var_weigth`: do a invert variance weight usefull for metal (default, 0)
+       * `ma_random_effect` : do mixed model (default 1)
+       * `ma_mrmega_pc` : how many pcs used for mrmega (default : 4)
+       * `ma_mrmega_opt` : append other option in MR-MEGA command line (default : null)
+## specificity 
+### MR-MEGA
+MR-MEGA need chromosomes, positions and N (sample number) for each position, so in pipeline referent file (in file_config, 1 in IsRefFile) must be have chromosome and poosition 
+
+
+# 12 annotation pipeline: `annot-assoc.nf`
+This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype
+
+## Installation
+need locuszoom, _R_ : (ggplot2), python3
 
 ## Running
 The pipeline is run: `nextflow run annot-assoc.nf`
-
 
 The key options are:
   * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
@@ -1035,43 +1131,7 @@ The key options are:
   * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
 
 
-
-
-
-
-
-## 9.3 make_ref.py 
-
-Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
-
-
-`python3 make_ref.py aux/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
-
-
-The program checks each SNP given in the manifest file by the chromosome and position number and then checks that the probe given in the manifest file actually matches the reference genome at that point. Minor slippage is acceptable because of indels.
-
-The wrn file are SNPs which are probably OK but have high slippage (these are in the ref file)
-The err file are the SNPs which don't match.
-
-## 9.6 plates.py
-
-This is used to depict where on the plates particular samples are. This is very useful for looking at problems in the data. If for example you find a bunch of sex mismatches this is most likely due to misplating. This script is a quick way of looking at the problem and seeing whether the errors are close together or spread out. There are two input arguments
-
-* A file with the IDs of the individuals -- assuming that the first token on each line is an individual
-* A sample sheet that gives the plating of each sample
-
-There is one output parameter -- the name of a directory where output should go. The directory should exist.
-
-You may need to change this line
-
-```
-batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
-```
-
-In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
-
-
-# 10. Acknowledgement, Copyright and general
+# 13. Acknowledgement, Copyright and general
 
 ## Acknowledgement
 

@@ -184,10 +184,10 @@ process ExtractInfoRs{
       set val(rs), file(out_info_rs) into infors_rs, infors_rs2
       set val(rs), file(out_gwas_rs) into infors_gwas
     script:
-      out="sub"
-      out_locus_rs=out+"_"+rs+"_around.stat"
-      out_gwas_rs=out+"_"+rs+"_gwas.stat"
-      out_info_rs=out+"_"+rs+"_info.stat"
+      out="sub_"+rs.replace(':',"_")
+      out_locus_rs=out+"_around.stat"
+      out_gwas_rs=out+"_gwas.stat"
+      out_info_rs=out+"_info.stat"
       """
      an_extract_rs.py --inp_resgwas  $gwas_file --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --freq_header  $head_freq --maf ${params.cut_maf} --list_rs $rs --around_rs ${params.around_rs} --out_head $out
       """
@@ -203,11 +203,12 @@ process PlotLocusZoom{
     memory plink_mem_req
     input : 
        set rs, file(filegwas) from locuszoom_ch
-    publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
     output :
-       file("out_$rs/*.svg")
-       set rs, file("out_$rs/*.pdf") into report_lz_ch
+       file("out_$rsnameout/*.svg")
+       set val(rs), file("out_$rsnameout/*.pdf") into report_lz_ch
     script :
+       rsnameout=rs.replace(':',"_")
        """
        ${params.loczm_bin} --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} --gwas-cat whole-cat_significant-only --svg  -p out --no-date 
        """
@@ -218,13 +219,13 @@ process ExtractAnnotation{
       memory plink_mem_req
       input :
         set val(rs),file(file_rs),file(annot_file), file(annot_info) from fileannot_ch
-        //set val(rs), file(file_rs) from infors_rs
-      publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
+      publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
       output :
         file("${out}*") 
         set rs, file("${out}.pdf") into report_info_rs
       script :    
-         out="annot-"+rs
+         out="annot-"+rs.replace(':','_')
+         rsnameout=rs.replace(':',"_")
          """  
          an_extract_annot.py --list_file_annot $annot_file --info_pos $file_rs --out $out --info_file_annot $annot_info
          pdflatex $out 
@@ -253,13 +254,14 @@ process PlotByGenotype{
     memory plink_mem_req
     input :
         set val(rs),file(file_rs), file(bed), file(bim), file(fam), file(data)  from fileplotgeno_ch
-    publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
     output :
        set rs, file(outpdf) into report_plot_rs_ch
     script :
+        rsnameout=rs.replace(':',"_")
         plinkbase=bed.baseName
-        out="plk_"+rs
-        outpdf="geno-"+rs+".pdf"
+        out="plk_"+rsnameout
+        outpdf="geno-"+rsnameout+".pdf"
         """
         plink -bfile $plinkbase --extract $file_rs  --recode tab --out $out
         an_plotboxplot.r --ped $out".ped" --data $data --out $outpdf --pheno ${params.pheno} $cov_plot_geno $gxe_cov_geno
@@ -272,15 +274,16 @@ process WriteReportRsFile{
     memory plink_mem_req
     input :
        set val(rs), file(locuszoom), file(gwasres),file(annotpdf) ,file(plotgeno) from all_info_rs_ch 
-    publishDir "${params.output_dir}/$rs", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/$rsnnameout", overwrite:true, mode:'copy'
     output :
        file(out)
     script :
-       outtex=rs+".tex"
-       out=rs+".pdf"
+       rsnnameout=rs.replace(':',"_")
+       outtex=rsnnameout+".tex"
+       out=rsnnameout+".pdf"
        """
        an_general_man.py --inp_asso $gwasres --rsname $rs --pheno ${params.pheno} $covrep --out $outtex --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --freq_header  $head_freq --locuszoom_plot $locuszoom --geno_plot $plotgeno --inp_asso $gwasres --annot_pdf $annotpdf
-       pdflatex $rs
-       pdflatex $rs
+       pdflatex $rsnnameout
+       pdflatex $rsnnameout
        """ 
 }
