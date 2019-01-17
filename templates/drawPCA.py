@@ -35,7 +35,7 @@ def parseArguments():
 
 def getColours():
     if len(args.cc_fname)==0 or args.cc_fname=="0":
-        return [], "black"
+        return [], "_None_"
     phe = pd.read_csv(args.cc,delim_whitespace=True)
     all_labels = phe[args.column].unique()
     all_labels.sort()
@@ -72,7 +72,10 @@ col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 
 
 def draw(pc1,pc2,evecs,labels,phe):
-   evecs=evecs.merge(phe,how='inner',on=["FID","IID"])
+   if type(phe)==str and phe == "_None_":
+       evecs["colour"] = "black"
+   else:
+       evecs=evecs.merge(phe,how='inner',on=["FID","IID"])   
    fig, ax = plt.subplots(figsize=(10,8))
    font = {'family' : 'normal','weight' : 'bold','size'   : 14}
    matplotlib.rc('font', **font)
