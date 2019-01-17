@@ -1014,7 +1014,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
       set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink
     publishDir params.output_dir
     script:
-      base="cleaned"
+      base="cleaned-${test}"
       """
       plinkDraw.py  C050 $base $test ${pheno_name} $gotcovar png
       """
