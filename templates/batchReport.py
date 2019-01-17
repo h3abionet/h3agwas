@@ -226,12 +226,8 @@ def showResult(colname,num_samples,ave_miss,num_poor_i,problems,sex_report):
 
 
 def plotPCs(base,eigs,pfrm,pheno_col,batch,batch_col):
-    def group_fn(x):
-       try:
-          return pfrm.ix[x][args.pheno_col]
-       except KeyError:
-          return 0
-    g = eigs.groupby(group_fn)
+    all_f = eigs.join(pfrm)
+    g = all_f.groupby(args.pheno_col)
     matplotlib.rcParams.update({'font.size': 12})
     batch_values = batch[batch_col].unique()
     our_colours  = dict(zip(batch_values,colours[1:1+len(batch_values)]))
@@ -323,11 +319,20 @@ def getVClose(gfrm,pfrm,pheno_col):
     vclose = gfrm[gfrm['PI_HAT']>0.45][["FID1","IID1","FID2","IID2","PI_HAT"]]
     curr = TAB.join(["FID1","IID1",pheno_col+"1","FID2","IID2",pheno_col+"2","PI_HAT"])+EOL
     for i,row in vclose.iterrows():
+        #if re.search("_replicate_",row[0]+row[2]): continue
+        #if re.search("_MSK_",row[1]+row[3]): continue
         if row[1][-4:-1]=="DUP" or row[3][-4:-1]=="DUP": continue
-        curr = curr+TAB.join([row[0],row[1],pfrm.loc[row[0],row[1]][pheno_col],\
-                              row[2],row[3],pfrm.loc[row[2],row[3]][pheno_col],\
+        pairA=pfrm.loc[row[0],row[1]][pheno_col].values[0]
+        pairB=pfrm.loc[row[2],row[3]][pheno_col].values[0]
+        curr = curr+TAB.join([row[0],row[1],pairA,\
+                              row[2],row[3],pairB,\
                               str(row[4])])+EOL
     return curr
+
+
+def getGroupNum(pfrm,pheno_col,fid,iid):
+   this_g = pfrm[pheno_col].loc[fid,iid].values[0]
+   return this_g
 
 def getRelatedPairs(pfrm,pheno_col,genome):
     gfrm = pd.read_csv(genome,delim_whitespace=True, dtype=idtypes)
@@ -340,8 +345,10 @@ def getRelatedPairs(pfrm,pheno_col,genome):
         id1 = pair[["FID1","IID1"]].values
         id2 = pair[["FID2","IID2"]].values
         if "DUP" == id2[1][-4:-1] or "DUP"==id1[1][-4:-1]:continue
-        this_g1 = pfrm[pheno_col].loc[id1[0],id1[1]]
-        this_g2 = pfrm[pheno_col].loc[id2[0],id2[1]]
+        #if re.search("_replicate_",id1[0]+id2[0]): continue
+        #if re.search("_MSK_",id1[1]+id2[1]): continue
+        this_g1 = getGroupNum(pfrm,pheno_col,id1[0],id1[1])
+        this_g2 = getGroupNum(pfrm,pheno_col,id2[0],id2[1])
         group[" ALL"] = group.get(" ALL",0)+1
         if this_g1 == this_g2:
             group[this_g1] = group.get(this_g1,0)+1
@@ -551,7 +558,9 @@ def getBatchAnalysis():
        res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error "\
                   " rate as shown by %(bname)s as found in file *-url{%(fname)s}."\
                    %({'bname':args.batch_col,'fname':args.batch})
+   
    problems = ifrm.index.difference(bfrm.index).to_series().values
+   problems = list(filter(lambda fn: "_replicate_" not in fn[0] and (not fn[1].startswith("_MSK_")), problems))
    if len(problems)>0:
         print("Problem there IDs in the genotype data that are not in the batch data")
         print("You need to fix one way or the other")

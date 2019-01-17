@@ -195,6 +195,7 @@ Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sam
 *-input $inithwetex
 
 *-clearpage
+*-input plates/crgc10.tex
 *-section{QC Phase 1}
 
 The details of the final filtering can be found in the Nextflow script. Note that the exact ordering or removal will affect the final results. However, we take a conservative approach.
@@ -205,8 +206,8 @@ The details of the final filtering can be found in the Nextflow script. Note tha
 *-item SNPs and individuals that have been very poorly genotyped (missingness exceeding 10 per cent) are removed.
 *-item Individuals with missingness greater than ${params.cut_mind} are removed (by filtering out very badly genotyped individuals or SNPs) in the previous steps we *-emph{may} save a few individuals in this step;
 *-item SNP with missingness greater than ${params.cut_geno} are removed ;
-*-item minor allele frequency less than ${params.cut_maf} (and greater than 1-${params.cut_maf});
-*-item HWE p-value less than ${params.cut_hwe}
+*-item minor allele frequency less than ${params.cut_maf} (and greater than 1-${params.cut_maf}) are removed;
+*-item HWE adjusted p-value less than ${params.cut_hwe} are removed
 *-end{enumerate}
 
 *-noindent

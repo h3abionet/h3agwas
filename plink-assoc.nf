@@ -27,7 +27,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file"]
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -77,10 +77,10 @@ params.mperm = 1000
 /* Adjust for multiple correcttion */
 params.adjust = 0
 
-supported_tests = ["chi2","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma"]
+supported_tests = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma"]
 
 
-params.chi2     = 0
+params.assoc     = 0
 params.fisher   = 0
 params.cmh     =  0
 params.model   =  0
@@ -92,6 +92,13 @@ params.gemma_relopt = 1
 params.gemma_lmmopt = 4
 params.gemma_mat_rel = ""
 params.gemma_num_cores = 8
+params.pheno = "_notgiven_"
+
+if (params.pheno == "_notgiven_") {
+  println "No phenotype given -- set params.pheno";
+  System.exit(-2);
+}
+  
 
 /*JT Append initialisation variable*/
 params.bolt_covariates_type = ""
@@ -246,7 +253,7 @@ println "\nTesting data            : ${params.input_pat}\n"
 println "Testing for phenotypes  : ${params.pheno}\n"
 println "Using covariates        : ${params.covariates}\n\n"
 
-if (params.chi2) println "Doing chi2 testing"
+if (params.assoc) println "Doing chi2 testing"
 if (params.linear) println "Doing linear regression testing"
 if (params.logistic) println "Doing logistic regression testing"
 if (params.fastlmm == 1) println "Doing mixed model with fastlmm "
@@ -336,7 +343,7 @@ process drawPCA {
 
 num_assoc_cores = params.mperm == 0 ? 1 : Math.min(10,params.max_plink_cores)
 
-supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
+supported_tests = ["assoc","fisher","model","cmh","linear","logistic"]
 
 requested_tests = supported_tests.findAll { entry -> params.get(entry) }
 
@@ -965,7 +972,7 @@ if (params.gemma_gxe == 1){
 } 
 
 
-if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
+if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
 
    process computeTest {
       cpus num_assoc_cores

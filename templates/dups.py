@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import print_function
 import sys
+import os
 
 # Called as a template from nextflow
 if len(sys.argv) == 1:
@@ -46,7 +47,7 @@ def removeOnBP(fname, out):
             sys.exit(10)
 
 
-
+os.system("hostname > hostname")
 f=open(sys.argv[1])
 if not f:
     sys.exit("File <%s> not opened"%sys.argv[1])
