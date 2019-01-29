@@ -48,7 +48,7 @@ option_list = list(
               help="ped file contains genotype for each ", metavar="character"),
   make_option(c("-t", "--type_out"), type="character", default="pdf",
               help="type output file name [default= %default]", metavar="character"),
-  make_option(c("-g", "--gxe"), type="character", default="pdf",
+  make_option(c("-g", "--gxe"), type="character",
               help="type output file name [default= %default]", metavar="character"),
   make_option(c("-o", "--out"), type="character", default="out",
               help="output file name [default= %default]", metavar="character")
