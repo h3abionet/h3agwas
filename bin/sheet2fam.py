@@ -167,12 +167,13 @@ def parseSheet(allrows):
        if (plate,well)  in replicates:
            real_fid = real_fid + "_replicate_" + replicates[(plate,well)]
        if (plate,well) in masks or (raw_id,raw_id) in masks:
-           real_iid="_MSK_"+real_iid+"_MSK_"+fid+"_MSK_"
+           print("**********************",plate,well)
+           real_fid= real_fid+"_MSK_"+"%s_%s"%(plate,well)
        elif real_fid in sofar:
            if real_fid in problems:
                problems[real_fid] = problems[real_fid]+", "+raw_id
            else:
-               print(plate,well,real_fid,raw_id)
+               print("----------------------",plate,well,real_fid,raw_id)
                problems[real_fid] = sofar[real_fid]+", "+raw_id
        sofar[real_fid]=raw_id
        sample_sex  = getVal(row,col_sex)
@@ -221,6 +222,7 @@ def produceFam(indivs,problems,origfam):
                   format(sample_id,args.samplesheet))
             print(EOL+EOL+EOL+"======================================================"+EOL+EOL+EOL)
             sys.exit(125)
+        print(fid,iid,sample_sex)
         data = TAB.join((fid,real_id,"0","0",sex_code(sample_sex),batch))+EOL
         g.write(data)
     g.close()
