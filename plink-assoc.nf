@@ -27,7 +27,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list"]
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -122,6 +122,7 @@ params.fastlmmc_bin =""
 params.gemma_gxe=0
 params.plink_gxe=0
 params.max_plink_cores = 4
+params.rs_list=""
 params.gxe=""
 
 
@@ -834,6 +835,12 @@ if (params.gemma == 1){
   else
      covariate_option = ""
   ind_pheno_cols_ch = newNamePheno(params.pheno)
+   if(params.rs_list==""){
+        rsfile=file('NO_FILE5')
+     }else{
+        rsfile=file(params.rs_list)
+   }
+
 
   process doGemma{
     cpus params.gemma_num_cores
@@ -843,6 +850,7 @@ if (params.gemma == 1){
       file(covariates) from data_ch
       file(rel) from rel_mat_ch
       file(plinks) from  gem_ch_gemma
+      file(rsfilelist) from rsfile
     each this_pheno from ind_pheno_cols_ch
     publishDir params.output_dir, overwrite:true, mode:'copy'
     output:
@@ -862,17 +870,18 @@ if (params.gemma == 1){
        gemma_covariate    = "${newbase}.gemma_cov"
        phef               = "${newbase}_n.phe"
        covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
+       rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
        out                = "$base-$our_pheno"
        dir_gemma          =  "gemma"
        """
        list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $ourpheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
-       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase
+       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase  ${rs_plk_gem}
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001
+       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 
        mv output ${dir_gemma}
        """
   }
