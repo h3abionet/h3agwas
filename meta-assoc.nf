@@ -24,7 +24,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req"]
+allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req"]
 
 /*
 params.each { parm ->
@@ -53,6 +53,7 @@ params.ma_random_effect=1
 params.ma_genomic_cont=0
 params.ma_inv_var_weigth=0
 params.ma_mem_req="5G"
+params.ma_mem_req="10G"
 
 params.metasoft_pvalue_table=""
 params.ma_metasoft_opt=""
@@ -148,7 +149,7 @@ liste_file_mrmega=liste_file_mrmega.collect()
 if(params.gwama==1){
   //config channel
   process doGWAMA {
-     memory ma_mem_req 
+     memory gwama_mem_req
     input :
       val(list_file) from liste_file_gwama
     publishDir "${params.output_dir}/gwama", overwrite:true, mode:'copy'
