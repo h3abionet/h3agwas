@@ -63,6 +63,8 @@ params.ma_mrmega_opt=""
 params.covariates=""
 report_ch = Channel.empty()
 
+ma_mem_req=params.ma_mem_req
+
 def configfile_analysis(file){
    sep=','
    File theInfoFile = new File( file )
