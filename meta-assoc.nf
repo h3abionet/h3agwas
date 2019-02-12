@@ -24,7 +24,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req"]
+allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req", "metasoft_mem_req"]
 
 /*
 params.each { parm ->
@@ -54,6 +54,7 @@ params.ma_genomic_cont=0
 params.ma_inv_var_weigth=0
 params.ma_mem_req="5G"
 params.ma_mem_req="10G"
+params.metasoft_mem_req="20G"
 
 params.metasoft_pvalue_table=""
 params.ma_metasoft_opt=""
@@ -287,7 +288,7 @@ if(params.metasoft==1){
       """
   }
   process showMetasoft {
-    memory ma_mem_req
+    memory metasoft_mem_req
     publishDir params.output_dir
     input:
       file(assoc) from res_metasoft
