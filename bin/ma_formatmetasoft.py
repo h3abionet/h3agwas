@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 ########################################################
-# plink2metasoft.py                                    
-#   Convert Plink .assoc files to Metasoft input file  
+# ma_formatmetasoft.py modification of plink2metasoft.py                                    
+#   Convert file of assoc files to Metasoft input file  
 #   Free license -- you are free to use it in any ways 
 #   Buhm Han (2012)                                    
+#   memories used is very high
 ########################################################
 
 import sys, subprocess, os
