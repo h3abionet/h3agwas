@@ -53,7 +53,7 @@ params.ma_random_effect=1
 params.ma_genomic_cont=0
 params.ma_inv_var_weigth=0
 params.ma_mem_req="5G"
-params.ma_mem_req="10G"
+params.gwama_mem_req="10G"
 params.metasoft_mem_req="20G"
 
 params.metasoft_pvalue_table=""
@@ -65,7 +65,8 @@ params.ma_mrmega_opt=""
 params.covariates=""
 report_ch = Channel.empty()
 
-gwama_mem_req=params.ma_mem_req
+gwama_mem_req=params.gwama_mem_req
+ma_mem_req=params.ma_mem_req
 metasoft_mem_req=params.metasoft_mem_req
 
 def configfile_analysis(file){
