@@ -128,6 +128,7 @@ for f in files:
                 rsidsinfo[rsid][0]=[rsidsinfo[rsid][0] , spll[PosA1Head],spll[PosA2Head]]
            rsidsinfo[rsid][0]+=1  
            rsidschar[rsid]+=GetInfoRsGWAS(rsid, spll,rsidsinfo[rsid][1], rsidsinfo[rsid][2],CompSE, PosA1Head, PosA2Head, PosBetHead, PosPHead,PosSError)
+           listrsfile.add(rsid)
         else :
            print("rs "+ rsid +" multi times :skip")
     fin.close()
