@@ -66,6 +66,7 @@ params.covariates=""
 report_ch = Channel.empty()
 
 ma_mem_req=params.ma_mem_req
+metasoft_mem_req=params.metasoft_mem_req
 
 def configfile_analysis(file){
    sep=','
