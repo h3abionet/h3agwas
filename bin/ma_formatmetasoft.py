@@ -92,6 +92,7 @@ newfileslist=[]
 rsidschar={}
 rsidsinfo={}
 listrsall=set([])
+CmtFile=0
 for f in files:
     listrsfile=set([])
     study={}
@@ -126,7 +127,7 @@ for f in files:
         rsid=spll[PosRsHead]
         if rsid not in listrsall :
            listrsall.add(rsid)
-           rsidschar[rsid]=rsid+" "
+           rsidschar[rsid]=rsid+" "+"NA NA "*CmtFile
            if PosA2Head and PosA1Head:
              rsidsinfo[rsid]=[0,spll[PosA1Head],spll[PosA2Head]]
         if rsid not in listrsfile :
@@ -139,8 +140,12 @@ for f in files:
                rsidsinfo[rsid][0]+=1  
            listrsfile.add(rsid)
         else :
-           print("rs "+ rsid +" multi times :skip")
+           print("rs "+ rsid +" multi times :skip "+f)
+    toappend=[x for x in listrsall if x not in listrsfile]
+    for x in toappend :
+      rsidschar[x]+="NA NA "
     fin.close()
+    CmtFile+=1
 
 for rsid in listrsall :
    if rsidsinfo[rsid][0] > 1:

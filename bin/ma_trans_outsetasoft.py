@@ -10,8 +10,9 @@ readfile.close()
 readI=open(fileI)
 head=readI.readline().replace('\n','').replace(" ","_").split('\t')
 head=head[:-2]
-head+=["P_"+x for x in InfoI]
-head+=["M_"+x for x in InfoI]
+ncol=len(head)
+#head+=["P_"+x for x in InfoI]
+#head+=["M_"+x for x in InfoI]
 
 writeall=open(fileout, 'w')
 writeall.write("\t".join(head)+"\n")
