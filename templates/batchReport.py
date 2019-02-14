@@ -556,7 +556,7 @@ def getBatchAnalysis():
    else:
        bfrm = getCsvI(args.batch)
        res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error "\
-                  " rate as shown by %(bname)s as found in file *-url{%(fname)s}."\
+                  " rate as shown by *-url{%(bname)s} as found in file *-url{%(fname)s}."\
                    %({'bname':args.batch_col,'fname':args.batch})
    
    problems = ifrm.index.difference(bfrm.index).to_series().values
@@ -585,7 +585,7 @@ def getPhenoAnalysis():
         pfrm = getCsvI(args.phenotype)
         got_frame = True
         res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error"\
-                   " rate as shown by %(bname)s as found in file *-url{%(fname)s}."\
+                   " rate as shown by *-url{%(bname)s} as found in file *-url{%(fname)s}."\
                      %({'bname':args.pheno_col,'fname':args.phenotype})
     if got_frame:
         result = miss_vals(ifrm,pfrm,args.pheno_col,args.sexcheck_report)
