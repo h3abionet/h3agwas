@@ -63,14 +63,21 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
           return beta+' '+stderr+' ' 
        elif A1Pivot == snp[PosA2Head] and A2Pivot == snp[PosA1Head]:
             # SIMPLE FLIP
-            beta='%f'%(float(beta)*-1)
+            if beta != "NA" :
+               beta='%f'%(float(beta)*-1)
+            else :
+               return 'NA NA '
        elif A1Pivot == comple[snp[PosA1Head]] and A2Pivot == comple[snp[PosA2Head]]:
                         # STRAND INCONSIS., BUT GOOD
             flog.write('FLIP_STRAND %s in study %d\n'%(rsid,studyindex))
        elif  A1Pivot == comple[snp[PosA2Head]] and A2Pivot == comple[snp[PosA1Head]]:
              # STRAND INCONSIS., SIMPLE FLIP
              flog.write('FLIP_STRAND %s in study %d\n'%(rsid,studyindex))
-             beta='%f'%(float(beta)*-1)
+             if beta != "NA" :
+               beta='%f'%(float(beta)*-1)
+             else :
+               return 'NA NA '
+                
        else:
             flog.write('EXCLUDE %s due to allele inconsistency: A1:%s A2:%s in study %d but A1:%s A2:%s in study %d\n'
                                    %(rsid, A1Pivot, A2Pivot, pivotstudyindex,
@@ -126,8 +133,10 @@ for f in files:
            if not spll[PosA1Head] or  not spll[PosA2Head]:
               if PosA2Head and PosA1Head:
                 rsidsinfo[rsid][0]=[rsidsinfo[rsid][0] , spll[PosA1Head],spll[PosA2Head]]
-           rsidsinfo[rsid][0]+=1  
-           rsidschar[rsid]+=GetInfoRsGWAS(rsid, spll,rsidsinfo[rsid][1], rsidsinfo[rsid][2],CompSE, PosA1Head, PosA2Head, PosBetHead, PosPHead,PosSError)
+           charInfo=GetInfoRsGWAS(rsid, spll,rsidsinfo[rsid][1], rsidsinfo[rsid][2],CompSE, PosA1Head, PosA2Head, PosBetHead, PosPHead,PosSError)
+           rsidschar[rsid]+=charInfo
+           if "NA" not in charInfo :
+               rsidsinfo[rsid][0]+=1  
            listrsfile.add(rsid)
         else :
            print("rs "+ rsid +" multi times :skip")
