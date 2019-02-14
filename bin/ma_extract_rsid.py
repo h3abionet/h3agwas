@@ -66,13 +66,13 @@ if nompos.upper()!="NA" and nomchro.upper()!="NA" and len(nompos)>0 and len(nomc
 if  balisechro == True  :
    writenew.write('rsID\tChro\tPos\n')
    for ligne in readfile :
-     spl=ligne.split(sep)
+     spl=ligne.replace('\n','').split(sep)
      if spl[PosRs]!='.' :
         writenew.write(spl[PosRs]+"\t"+spl[PosChro]+"\t"+spl[PosPos]+'\n')
 else :
    writenew.write('rsID\n')
    for ligne in readfile :
-     spl=ligne.split(sep)
+     spl=ligne.replace('\n','').split(sep)
      if spl[PosRs]!='.' :
         writenew.write(spl[PosRs]+'\n')
 writenew.close()
