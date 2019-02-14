@@ -24,7 +24,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', 'input_']
+allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req", "metasoft_mem_req"]
 
 /*
 params.each { parm ->
@@ -52,7 +52,9 @@ params.metasoft_bin="Metasoft.jar"
 params.ma_random_effect=1
 params.ma_genomic_cont=0
 params.ma_inv_var_weigth=0
-
+params.ma_mem_req="5G"
+params.gwama_mem_req="10G"
+params.metasoft_mem_req="10G"
 
 params.metasoft_pvalue_table=""
 params.ma_metasoft_opt=""
@@ -62,6 +64,10 @@ params.ma_mrmega_opt=""
 
 params.covariates=""
 report_ch = Channel.empty()
+
+gwama_mem_req=params.gwama_mem_req
+ma_mem_req=params.ma_mem_req
+metasoft_mem_req=params.metasoft_mem_req
 
 def configfile_analysis(file){
    sep=','
@@ -109,6 +115,7 @@ exit(0)
 info_ref_rs=Channel.from(info_file[1][NumRef])
 file_info_ref_rs=Channel.fromPath(info_file[0][NumRef])
 process GetRsFile{
+    memory ma_mem_req
     input :
        file(file_assoc_rs) from file_info_ref_rs
        val(info_rs) from info_ref_rs
@@ -124,6 +131,7 @@ liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1]))
 
 
 process ChangeFormatFile {
+    memory ma_mem_req
     input :
       set file(file_assoc), val(info_file), file(file_ref) from liste_filesi_ch
     output :
@@ -144,6 +152,7 @@ liste_file_mrmega=liste_file_mrmega.collect()
 if(params.gwama==1){
   //config channel
   process doGWAMA {
+     memory gwama_mem_req
     input :
       val(list_file) from liste_file_gwama
     publishDir "${params.output_dir}/gwama", overwrite:true, mode:'copy'
@@ -162,6 +171,7 @@ if(params.gwama==1){
       """
   }
   process showGWAMA {
+    memory ma_mem_req
     publishDir params.output_dir
     input:
       file(assoc) from res_gwama
@@ -180,6 +190,7 @@ if(params.gwama==1){
 if(params.mrmega==1){
   //config channel
   process doMRMEGA {
+    memory ma_mem_req
     input :
       val(list_file) from liste_file_mrmega
     publishDir "${params.output_dir}/mrmega", overwrite:true, mode:'copy'
@@ -199,6 +210,7 @@ if(params.mrmega==1){
       """
   }
   process showMRMEGA {
+    memory ma_mem_req
     publishDir params.output_dir
     input:
       file(assoc) from res_mrmega
@@ -219,6 +231,7 @@ if(params.mrmega==1){
 if(params.metal==1){
 
   process doMetal {
+    memory ma_mem_req
     input :
       val(list_file) from liste_file_metal
     publishDir "${params.output_dir}/metal", overwrite:true, mode:'copy'
@@ -238,6 +251,7 @@ if(params.metal==1){
       """
   }
   process showMetal {
+    memory ma_mem_req
     publishDir params.output_dir
     input:
       file(assoc) from res_metal
@@ -258,6 +272,7 @@ if(params.metasoft==1){
 
   filepvaltable=Channel.fromPath(params.metasoft_pvalue_table)
   process doMetaSoft {
+    memory ma_mem_req
     input :
       val(list_file) from liste_file_metasoft
       file(file_pvaltab) from filepvaltable
@@ -275,6 +290,7 @@ if(params.metasoft==1){
       """
   }
   process showMetasoft {
+    memory metasoft_mem_req
     publishDir params.output_dir
     input:
       file(assoc) from res_metasoft
