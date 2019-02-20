@@ -28,7 +28,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","chi2","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin","adjust","mperm"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin","adjust","mperm"]
 
 
 
@@ -64,10 +64,10 @@ params.mperm = 1000
 /* Adjust for multiple correcttion */
 params.adjust = 0
 
-supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
+supported_tests = ["assoc","fisher","model","cmh","linear","logistic"]
 
 
-params.chi2     = 0
+params.assoc     = 0
 params.fisher   = 0
 params.cmh     =  0
 params.model   =  0
@@ -95,7 +95,7 @@ other_mem_req = params.other_mem_req
 params.help = false
 
 
-data_ch = Channel.fromPath(params.data)
+data_ch = file(params.data)
 
 if (params.help) {
     params.each {
@@ -209,7 +209,7 @@ println "Testing for phenotypes  : ${params.pheno}\n"
 println "Using covariates        : ${params.covariates}\n\n"
 
 if (params.gemma) println "Doing gemma testing"
-if (params.chi2) println "Doing chi2 testing"
+if (params.assoc) println "Doing assoc testing"
 if (params.linear) println "Doing linear regression testing"
 if (params.logistic) println "Doing logistic regression testing"
 println "\n"
@@ -305,7 +305,7 @@ process drawPCA {
 
 num_assoc_cores = params.mperm == 0 ? 1 : Math.min(10,params.max_plink_cores)
 
-supported_tests = ["chi2","fisher","model","cmh","linear","logistic"]
+supported_tests = ["assoc","fisher","model","cmh","linear","logistic"]
 
 requested_tests = supported_tests.findAll { entry -> params.get(entry) }
 
@@ -325,13 +325,11 @@ if (params.data != "") {
       gotcovar = 1
   }
 
-  data_ch1 = Channel.create()
-  data_ch2 = Channel.create()
-  Channel.fromPath(params.data).separate(data_ch1,data_ch2) { a -> [a,a] } 
+
   
   process extractPheno {
     input:
-     file(data) from data_ch1
+     file(data) from data_ch
     output:
      file(phenof) into pheno_ch
     script:
@@ -347,7 +345,7 @@ if (params.data != "") {
 
   process showPhenoDistrib {
     input:
-    file(data) from data_ch2
+    file(data) from data_ch
     output:
       file ("B050*") into report_ch
     script:
@@ -469,7 +467,7 @@ if (params.gemma == 1) {
     
 
 
-if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
+if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
 
    process computeTest {
       cpus num_assoc_cores
@@ -488,7 +486,7 @@ if (params.chi2+params.fisher+params.logistic+params.linear > 0) {
        perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
        adjust = (params.adjust ? "--adjust" : "")
        outfname = "${pheno_name}"
-       test = test_choice == "chi2" ? "assoc" : test_choice
+       test = test_choice 
        if (params.data == "") {
            pheno_cmd = ""
            out = base
