@@ -108,7 +108,7 @@ This report gives a brief overview of the run of the association testing pipelin
 EOL = chr(10)
 
 for  x in src_tex:
-    template = template + (r"*-input %s"%x) + EOL
+    template = template + (r"*-input %s"%x) + EOL+"*-clearpage"+EOL
 
 template = template + r"""
 

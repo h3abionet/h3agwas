@@ -176,8 +176,8 @@ def showResults():
     if gotcovar == "1" and test != "assoc":
         asf = asf[asf['TEST']=="ADD"]
     cpheno  = pheno.replace("_","-")
-    hashd = {'manfile':clean("%s-man-%s.%s"%(base,cpheno,gtype)), 'testing':data,'test':test, 'pheno':cpheno,
-             'qqfile':clean("%s-qq-%s.%s"%(base,cpheno,gtype))}
+    hashd = {'manfile':clean("%s-pl-man-%s.%s"%(base,cpheno,gtype)), 'testing':data,'test':test, 'pheno':cpheno,
+             'qqfile':clean("%s-pl-qq-%s.%s"%(base,cpheno,gtype))}
     drawManhatten(pheno.replace("_","-"),asf,hashd['manfile'])
     drawQQ(pheno.replace("_","-"),asf,hashd['qqfile'])
     outpics = qq_template%hashd + lambdaGC(clean(pheno)+".log")+EOL+EOL+"*-begin{itemize}"+EOL

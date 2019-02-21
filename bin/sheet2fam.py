@@ -93,9 +93,10 @@ def getHeading(allrows):
     return (col_id, col_plate, col_well, col_sex, col_batch)
 
 def sex_code(x):
-    if x == "Male":
+    x=x.upper()[0]
+    if x[0] == "M":
         return "1"
-    elif x == "Female":
+    elif x[0] == "F":
         return "2"
     else:
         return "0"
@@ -120,6 +121,7 @@ def getIndivHash(fname):
     """ Open a file and build a dict of individuals -- assume that first column is the individual ID
         and the last column is a label we might be interested in -- e.g. replicate number  """
     indivs = {}
+    ok = False
     if fname in null_values: return indivs
     f = open(fname)
     for line in f:
@@ -147,22 +149,32 @@ def parseSheet(allrows):
           else:
              return row[col].replace(" ","")
        except KeyError as e:
-          print(EOL+"<%s> is not a column of the sample sheet"%col+EOL)
+          sys.exit(EOL+"<%s> is not a column of the sample sheet"%col+EOL)
     for row in allrows:
+       curr_row_num=row[0].value
        raw_id = getVal(row,col_id)
-       (fid,iid)= getID(args.idpat, raw_id)
-       if (fid,iid) in masks: continue
-       if args.newpat not in null_values and (fid != getVal(row,col_plate) or iid != getVal(row,col_well)):
-           print("mismatch in this row <%s %s %s %s %s>"%(raw_id,fid,iid,getVal(row,col_plate),getVal(row,col_well)))
-       (real_fid, real_iid) = getID(args.newpat, raw_id)
-       print(raw_id,fid,iid,real_fid,real_iid)
-       if (fid,iid)  in replicates:
-           real_fid = real_fid + "_replicate_" + replicates[(fid,iid)]
-       if real_fid in sofar:
+       plate  = getVal(row,col_plate)
+       well   = getVal(row,col_well)
+       if len(raw_id)==0:
+           wrn.write("not great end of file -- hope all OK"+EOL)
+           break
+       (fid,iid)= getID(args.idpat, raw_id)  # typically plate, well
+       if args.newpat not in null_values and \
+          ((fid, iid) != (plate,well)):
+             wrn.write("prob OK but mismatch in this row <%s %s %s %s %s>\n"%\
+                   (raw_id,fid,iid,getVal(row,col_plate),getVal(row,col_well)))
+       (real_fid, real_iid) = getID(args.newpat, raw_id) # ID embedded in sample id
+       if (plate,well)  in replicates:
+           real_fid = real_fid + "_replicate_" + replicates[(plate,well)]
+       if (plate,well) in masks or (raw_id,raw_id) in masks:
+           print("**********************",plate,well)
+           real_fid= real_fid+"_MSK_"+"%s_%s"%(plate,well)
+       elif real_fid in sofar:
            if real_fid in problems:
-               problems[real_fid] = problems[real_fid]+","+raw_id
+               problems[real_fid] = problems[real_fid]+", "+raw_id
            else:
-               problems[real_fid] = sofar[real_fid]+","+raw_id
+               print("----------------------",plate,well,real_fid,raw_id)
+               problems[real_fid] = sofar[real_fid]+", "+raw_id
        sofar[real_fid]=raw_id
        sample_sex  = getVal(row,col_sex)
        if col_batch not in null_values:
@@ -172,28 +184,31 @@ def parseSheet(allrows):
                batch = m.group(1)
            else:
                batch=batch.replace(" ","")
-       indivs[(fid,iid)] =  [real_fid,real_iid,sample_sex,batch]
+       indivs[(plate,well)] =  [real_fid,real_iid,sample_sex,batch]
     if len(problems)>0:
-        print(EOL+EOL+"==============================================="+EOL+EOL)
-        print("The following IDs are duplicated in the sample sheet --- a problem")
-        print("If a genuine replicate, one should have the ID modifed (dd '-_replicate_')")
+        wrn.write(EOL+EOL+"==============================================="+EOL+EOL)
+        wrn.write("The following IDs are duplicated in the sample sheet --- a problem"+EOL)
+        wrn.write("If a genuine replicate, one should have the ID modifed (dd '-_replicate_')")
         for idn in problems:
-            print("    ",idn,problems[idn])
-        print("""" 
+            wrn.write("    "+idn+problems[idn]+EOL)
+        wrn.write("""" 
                 The IDs above duplicated in the sample sheet --- a problem.
                 Either set the "replicates" option or manually add '-_replicateN_') to the sheet ")
               """)
+        wrn.close()
+        sys.exit("Duplicates in file -- see warning")
     return indivs, problems
 
 def produceFam(indivs,problems,origfam):
     g = open("{}.fam".format(args.output),"w")
+    wrn.write("This is the list of ID changes made "+EOL+EOL)
     for sample_id in origfam:
         try:
             (fid,iid) = getID(args.idpat, sample_id)
             ofid,oiid = fid,iid
             [fid,real_id,sample_sex,batch] = indivs[(fid,iid)]
             if (ofid,oiid) != (fid,real_id):
-               print("<%s,%s> --->  <%s,%s>"%(ofid,oiid,fid,real_id))
+               wrn.write("<%s,%s>\t<%s,%s>\n"%(ofid,oiid,fid,real_id))
             if real_id in problems:
                 print("The ID <%s> with fid, iid, real_id <%s> <%s> <%s> is a duplicate"%(sample_id,fid,iid,real_id))
                 sys.exit(124)
@@ -207,9 +222,11 @@ def produceFam(indivs,problems,origfam):
                   format(sample_id,args.samplesheet))
             print(EOL+EOL+EOL+"======================================================"+EOL+EOL+EOL)
             sys.exit(125)
+        print(fid,iid,sample_sex)
         data = TAB.join((fid,real_id,"0","0",sex_code(sample_sex),batch))+EOL
         g.write(data)
     g.close()
+
 
 def getFam(fam):
     """ get the list of IDs from the orignal fam file -- we need to know the correct order of the fam file """
@@ -241,9 +258,12 @@ if args.samplesheet in null_values:
     shutil.copyfile(args.fam,"${output}.fam")
     sys.exit(0)
 
+wrn = open("%s.wrn"%args.output,"w")
 column = getSheetColumnMaps(args.sheet) # How are the columns in the sample sheet labelled?
 
 replicates = {} if args.replicates in null_values else getIndivHash(args.replicates)
+
+
 masks      = {} if args.mask in null_values else getIndivHash(args.mask)
 
 
@@ -264,3 +284,4 @@ produceFam(indivs,problems,origfam)
 
 
 
+wrn.close()

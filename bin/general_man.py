@@ -5,6 +5,7 @@ Produces Manhatten, QQ plot and supporting tex file  for output from some tools
 '''
 
 
+import argparse
 import matplotlib
 matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
@@ -12,17 +13,33 @@ import numpy as np
 import pandas as pd
 import sys
 
-inp     = sys.argv[1]
-#if("-" in sys.argv[2]): phenos=sys.argv[2].split("-")
-#else:phenos  = sys.argv[2]
-phenos=sys.argv[2]
-base    = sys.argv[3].replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
-ChroEnt=sys.argv[4]
-PosEnt=sys.argv[5]
-RsEnt=sys.argv[6]
-PvalueEnt=sys.argv[7]
-BEnt=sys.argv[8]
-NameProg=sys.argv[9]
+
+def parseArguments():
+    parser = argparse.ArgumentParser(description='Produces Manhatten, QQ plot and supporting tex file  for output from some tools')
+    parser.add_argument('--inp',type=str,required=True, help="association files")
+    parser.add_argument('--phenoname',type=str,required=True,help="pheno names")
+    parser.add_argument('--out', type=str,help="out of tex file",default="")
+    parser.add_argument('--chro_header',type=str,required=True,help="chro header in inp files")
+    parser.add_argument('--pos_header',type=str,required=True,help="pos header in inp files")
+    parser.add_argument('--rs_header',type=str,required=True,help="rs header in inp files")
+    parser.add_argument('--pval_header',type=str,required=True,help="pvalue header in inp files")
+    parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
+    parser.add_argument('--info_prog',type=str,required=True,help="info program to be print in tex files")
+    args = parser.parse_args()
+    return args
+
+args = parseArguments()
+
+inp     = args.inp
+phenos= args.phenoname
+base    = args.out.replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
+ChroEnt=args.chro_header
+PosEnt=args.pos_header
+RsEnt=args.rs_header
+PvalueEnt=args.pval_header
+BEnt=args.beta_header
+NameProg=args.info_prog
+
 out_man = "%s-man.pdf"%base
 out_qq  = "%s-qq.pdf"%base
 out_tex = "%s.tex"%base
@@ -93,15 +110,16 @@ delta=0
 colours= ['crimson','blue','green']
 xtick_pos=[]
 xtick_label = []
+result['ps_new']=result[PosEnt]
 for chrom_num, chrom_res in chroms:
     this_chrom = result[ChroEnt]==chrom_num
-    result.loc[this_chrom,PosEnt]+=delta
+    result.loc[this_chrom,'ps_new']+=delta
     old_delta=delta
-    delta = delta + int(chrom_res.tail(1)[PosEnt])
+    delta = delta + int(chrom_res.tail(1)['ps_new'])
     xtick_pos.append((delta+old_delta)/2)
     xtick_label.append(str(chrom_num))
     under_thresh = result[PvalueEnt]<0.005
-    ax.scatter(result.loc[this_chrom & under_thresh, PosEnt],\
+    ax.scatter(result.loc[this_chrom & under_thresh, 'ps_new'],\
                -np.log10(result.loc[this_chrom  & under_thresh,PvalueEnt]),c=colours[chrom_num%3])
     if chrom_num == 9:
        ax.set_xticklabels(xtick_label)
@@ -118,7 +136,10 @@ plt.savefig(out_man)
 plt.figure()
 sort_p = -np.log10(result[PvalueEnt].sort_values())
 n=len(sort_p)
-expected = -np.log10(np.linspace(1/n,1,n))
+if n==0 :
+   expected=[]
+else :
+   expected = -np.log10(np.linspace(1/n,1,n))
 plt.plot(expected,sort_p)
 plt.plot(expected,expected)
 plt.savefig(out_qq)

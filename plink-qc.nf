@@ -57,7 +57,7 @@ else
   wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","initmaf","inithwe","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1"]
+repnames = ["dups","initmaf","inithwe","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1","poorgc10"]
 
 
 
@@ -79,6 +79,7 @@ orepmd5      = report["outmd5"]
 
 params.queue    = 'batch'
 params.remove_on_bp  = 1
+params.samplesheet   = "0"
 
 max_plink_cores = params.max_plink_cores 
 plink_mem_req   = params.plink_mem_req
@@ -90,7 +91,7 @@ f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
 remove_on_bp    = params.remove_on_bp
 
-allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue"]
+allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10"]
 
 
 params.each { parm ->
@@ -135,6 +136,17 @@ def getSubChannel = { parm, parm_name, col_name ->
   return new_ch;
 }
 
+/* This takes one file and makes multiple channels */
+def fromPathReplicas = { fname, num ->
+      src = Channel.fromPath (fname);
+      trgs = (1..num).collect { Channel.create() }
+      src.separate(*trgs) { it -> (1..num).collect { it } }
+      return trgs
+}
+
+
+
+
 if (params.case_control) {
   ccfile = params.case_control
   Channel.fromPath(ccfile).into { cc_ch; cc2_ch }
@@ -163,6 +175,10 @@ raw_ch       = Channel.create()
 bim_ch       = Channel.create()
 inpmd5ch     = Channel.create()
 configfile   = Channel.create()
+
+
+
+sample_sheet_ch = Channel.fromPath(params.samplesheet)
 
 
 //---- Modification of variables for pipeline -------------------------------//
@@ -245,6 +261,19 @@ process inMD5 {
 }
 
 
+process sampleSheet {
+  input:
+  file(sheet) from sample_sheet_ch
+  output:
+     file("poorgc10.lst") into poorgc10_ch
+     file("plates") into report["poorgc10"]
+  script:
+   fname = params.samplesheet
+   """
+    mkdir -p plates
+    sampleqc.py $fname ${params.gc10} ".*_(.*)"  poorgc10.lst plates/crgc10.tex
+   """
+}
 
 
 
@@ -505,6 +534,8 @@ process compPCA {
       file plinks from qc2A_ch
    output:
       set file ("${prune}.eigenval"), file("${prune}.eigenvec") into (pcares, pcares1)
+      set file ("${prune}.{bed,bim,fam}") into out_only_pcs_ch
+   publishDir "${params.output_dir}/pca", overwrite:true, mode:'copy',pattern: "${prune}*"
    script:
       base = plinks[0].baseName
       prune= "${base}-prune".replace(".","_")
@@ -651,6 +682,7 @@ process removeQCIndivs {
     file(f_miss_het)     from failed_miss_het
     file(rel_indivs)     from related_indivs_ch1
     file (f_sex_check_f) from failed_sex_ch1
+    file (poorgc)        from poorgc10_ch
     set file(bed), file(bim), file(fam) from qc2D_ch
   output:
      file("${out}.{bed,bim,fam}") into\
@@ -659,7 +691,7 @@ process removeQCIndivs {
    base = bed.baseName
    out  = "${base}-c".replace(".","_")
     """
-     cat $f_sex_check_f $rel_indivs $f_miss_het | sort -k1 | uniq > failed_inds
+     cat $f_sex_check_f $rel_indivs $f_miss_het $poorgc | sort -k1 | uniq > failed_inds
      plink $K --bfile $base $sexinfo --remove failed_inds --make-bed --out $out
      mv failed_inds ${out}.irem
   """
@@ -894,6 +926,7 @@ process produceReports {
     set file(inithwepdf), file(inithweqqpdf), file(inithwetex) from report["inithwe"]
     set file(qc1), file(irem)  from report["qc1"]
     file(batch_tex)  from report["batch_report"]
+    file(poorgc)     from report["poorgc10"]
     set file(bpdfs), file(bcsvs) from report["batch_aux"]
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:

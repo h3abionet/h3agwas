@@ -18,7 +18,9 @@ def parseArguments():
     parser.add_argument('--pheno',type=str,required=True,help="comma separated list of  pheno column")
     parser.add_argument('--phe_out', type=str,help="output fam file")
     parser.add_argument('--cov_out', type=str,help="output covariate file")
-    parser.add_argument('--form_out', type=int,help="format output : 1:Gemma; 2:boltlmm", required=True)
+    parser.add_argument('--gxe_out', type=str,help="output gxe file (gemma use)")
+    parser.add_argument('--gxe', type=str,help="gxe covariate (gemma use)")
+    parser.add_argument('--form_out', type=int,help="format output : 1:Gemma, 2:boltlmm, 3:FastLmm", required=True)
     args = parser.parse_args()
     return args
 
@@ -66,17 +68,25 @@ args = parseArguments()
 TAB =chr(9)
 
 phenos     = args.pheno.split(",")
-use        = ["FID","IID"]
+use= ["FID","IID"]
+useI        = ["FID","IID"]
 if args.cov_list:
     covariates = args.cov_list.split(",")
-    use = use+covariates
+    use = useI+covariates
 else:
     covariates = []
+
+if args.gxe:
+   gxe=[args.gxe]
+   gxe_use = useI+gxe
+else :
+   gxe=[]
+  
 
 if args.form_out==1 :
    MissingOut="NA"
 elif  args.form_out==2:
-    MissingOut="-9" 
+    MissingOut="NA" 
 elif  args.form_out==3:
     MissingOut="-9" 
 else :
@@ -87,8 +97,9 @@ else :
 
 pheno_labels, pheno_transform  = getColNames(phenos)
 covar_labels, cover_transform  = getColNames(use)
+gxe_labels, gxe_transform  = getColNames(gxe)
 
-usecols = covar_labels+pheno_labels
+usecols = covar_labels+pheno_labels+gxe_labels
 
 datad = pd.read_csv(args.data,delim_whitespace=True,usecols=usecols)
 columns = datad.columns
@@ -107,13 +118,16 @@ for (label, transform) in zip(pheno_labels+covar_labels, pheno_transform+cover_t
             sys.exit(10)
     datad[label]=datad[label].apply(check_missing, MissingOut=MissingOut)
 
-famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEX","CC"])
-merge = pd.merge(famd,datad,how="left",on=["FID","IID"])
+famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEXFAM","CC"])
+merge = pd.merge(famd,datad,how="left",suffixes=["_f",""],on=["FID","IID"])
+# for gemma
 if args.form_out == 1 : 
    merge["intercept"]=1
    merge.reindex(["FID","IID","intercept"]+covariates)
    merge.to_csv(args.cov_out,sep=TAB,columns=["intercept"]+covariates,header=False,index=False,na_rep=MissingOut)
    merge.to_csv(args.phe_out,sep=TAB,columns=pheno_labels,header=False,index=False,na_rep=MissingOut)
+   merge.reindex(["FID","IID"]+gxe)
+   merge.to_csv(args.gxe_out,sep=TAB,columns=gxe_labels,header=False,index=False,na_rep=MissingOut)
 elif  args.form_out == 2 :
    merge.reindex(["FID","IID"])
    merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels+covariates,header=True,index=False,na_rep=MissingOut)

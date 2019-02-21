@@ -10,6 +10,7 @@
  *      Lerato Magosi
  *      Brandenburg Jean-Tristan
  *
+ *
  *  On behalf of the H3ABionet Consortium
  *  2015-2018
  *
@@ -30,9 +31,7 @@ allowed_params = ["data","covariates","fastlmm_multi","max_plink_cores","gemma_n
 
 param_bolt=["bolt_ld_scores_col","bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov"]
 allowed_params+=param_bolt
-param_fastlmm=["fastlmm"]
-allowed_params+=param_fastlmm
-param_phenosim=["ph_mem_req","ph_cov_range","ph_intercept","phs_nb_qtl","phs_list_qtl","phs_nb_sim", "phs_qual", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
+param_phenosim=["ph_cov_norm","ph_mem_req","ph_cov_range","ph_intercept","ph_nb_qtl","ph_list_qtl","ph_nb_sim", "ph_quant_trait", "ph_qual_dom", "ph_maf_r", "ph_alpha_lim", "ph_windows_size", "ph_normalise"]
 allowed_params+=param_phenosim
 
 
@@ -75,9 +74,6 @@ params.bolt_ld_scores_col=""
 params.boltlmm = 0
 params.bolt_use_missing_cov=0
 params.num_cores=1
-/*fastlmm param*/
-params.fastlmm = 0
-params.fastlmm_multi = 0
 
 params.input_pat  = 'raw-GWA-data'
 
@@ -86,15 +82,15 @@ params.data=""
 
 /*param for phenosim*/
 /*Number simulation*/
-params.phs_nb_sim=5
+params.ph_nb_sim=5
 /*quantitative traits => 1
 qualitative traits 0*/
-params.phs_qual=1
+params.ph_quant_trait=1
 /*Qualitative */
 /*Nb qtl*/
-params.phs_nb_qtl=2
-/*qtl : number be as phs_nb_qtl, separate by ","*/
-params.phs_list_qtl=""
+params.ph_nb_qtl=2
+/*qtl : number be as ph_nb_qtl, separate by ","*/
+params.ph_list_qtl=""
 /*ph_qual_dom Quantitative : adititve : 0 dominant 1 */
 params.ph_qual_dom=0
 /*freq for each snps*/
@@ -166,8 +162,12 @@ if (params.chrom)
 else
    chrom = ""
 
+if(params.ph_normalise==1){
+if(params.data=="")error("ph_normalise must be have a data file")
+}
 /*Initialisation of bed data, check files exist*/
 raw_src_ch= Channel.create()
+
 
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
@@ -198,7 +198,7 @@ if (thin+chrom) {
         bed_all_file_msI=Channel.create()
         raw_src_ch.into(bed_all_file_msI)
  }
-if(params.ph_cov_norm || params.covariates){
+if(params.ph_normalise){
   liste_cov=""
   if(params.ph_cov_norm!=""){
    liste_cov=params.ph_cov_norm.replaceAll(/=[0-9.-]+,/,",").replaceAll(/=[0-9.-]+$/,"")+","
@@ -208,6 +208,7 @@ if(params.ph_cov_norm || params.covariates){
   }
   liste_cov=liste_cov.replaceAll(/,$/,"")
   data_ch = Channel.fromPath(params.data)
+  if(liste_cov=="")liste_cov="FID"
   process GetDataNoMissing{
      time params.big_time
      input :
@@ -221,7 +222,7 @@ if(params.ph_cov_norm || params.covariates){
        data_nomissing=".temp"
        list_ind_nomissing="listeInd"
        """
-       list_ind_nomissing.py --data $data --inp_fam $fam --cov_list FID --pheno FID --dataout  $data_nomissing --lindout $list_ind_nomissing 
+       list_ind_nomissing.py --data $data --inp_fam $fam --cov_list $liste_cov --pheno FID --dataout  $data_nomissing --lindout $list_ind_nomissing 
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $out
        """
 }
@@ -258,17 +259,18 @@ process ChangeMsFormat{
      """
 }
 
-phenosim_data_all=Channel.from(1..params.phs_nb_sim).combine(phenosim_data)
-if(params.phs_qual==1){
-if(!params.phs_list_qtl)LQTL=([0.05]*params.phs_nb_qtl).join(",")
-else LQTL=params.phs_list_qtl
-phs_qual_param="-n ${params.phs_nb_qtl} -v $LQTL"
+phenosim_data_all=Channel.from(1..params.ph_nb_sim).combine(phenosim_data)
+if(params.ph_quant_trait==1){
+if(!params.ph_list_qtl)LQTL=([0.05]*params.ph_nb_qtl).join(",")
+else LQTL=params.ph_list_qtl
+ph_quant_trait_param="-n ${params.ph_nb_qtl} -v $LQTL"
 }
 process SimulPheno{
    memory params.ph_mem_req
    time params.big_time
    input :
      set sim, file(ms), file(ped),file(bed), file(bim), file(fam) from phenosim_data_all
+   publishDir "${params.output_dir}/simul/", pattern: "$file_causal", overwrite:true, mode:'copy'
    output :
      set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) into raw_pheno
    script :
@@ -277,7 +279,7 @@ process SimulPheno{
      file_pheno=ent_out_phen+".pheno"
      file_causal=ent_out_phen+".causal"
      """
-     phenosim.py -d 1 -f $ms -i M -o N -q ${params.phs_qual} $phs_qual_param --maf_c 0 --outfile $ent_out_phen
+     phenosim.py -d 1 -f $ms -i M -o N -q ${params.ph_quant_trait} $ph_quant_trait_param --maf_c 0 --outfile $ent_out_phen
      echo -e "FID\\tIID\\tPhenoS" > $file_pheno
      paste $fam $ent_out_phen"0.pheno"|awk '{print \$1"\\t"\$2"\\t"\$NF}' >> $file_pheno
      ListePos=`awk 'BEGIN{AA=""}{AA=AA\$2","}END{print AA}' ${ent_out_phen}0.causal`
@@ -285,33 +287,33 @@ process SimulPheno{
      paste ${file_causal}"tmp" ${ent_out_phen}0.causal > $file_causal
      """
 }
-if(params.data!=""){
-normal_cov_param=""
-if(params.ph_cov_norm){
-normal_cov_param+="--cov_info="+params.ph_cov_norm
-normal_cov_param+=" --rangenorm="+params.ph_cov_range
-if(params.ph_intercept)normal_cov_param+=" --intercept="+params.ph_intercept
-}
-raw_pheno_data= Channel.fromPath(params.data).combine(raw_pheno)
-process NormaliseData{
-   cpus params.num_cores
-   memory params.mem_req
-   time params.big_time
-   input :
-     set file(data), sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from raw_pheno_data
-   output :
-     set sim, file(file_causal), file(file_pheno_new), file(bed), file(bim), file(fam) into (sim_data_gemma,sim_data_bolt, sim_data_plink)
-   script :
-     file_pheno_new=file_pheno+".norm"
-    """
-    ph_normalise_variable.py --data $data $normal_cov_param --data_sim $file_pheno --out $file_pheno_new
-    """
-}
+if(params.ph_normalise && params.data){
+   normal_cov_param=""
+   if(params.ph_cov_norm){
+      normal_cov_param+="--cov_info="+params.ph_cov_norm
+      normal_cov_param+=" --rangenorm="+params.ph_cov_range
+      if(params.ph_intercept)normal_cov_param+=" --intercept="+params.ph_intercept
+   }
+   raw_pheno_data= Channel.fromPath(params.data).combine(raw_pheno)
+   process NormaliseDataph_normalise{
+     cpus params.num_cores
+     memory params.mem_req
+     time params.big_time
+     input :
+       set file(data), sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from raw_pheno_data
+     output :
+       set sim, file(file_causal), file(file_pheno_new), file(bed), file(bim), file(fam) into (sim_data_gemma,sim_data_bolt, sim_data_plink)
+     script :
+       file_pheno_new=file_pheno+".norm"
+       """
+       ph_normalise_variable.py --data $data $normal_cov_param --data_sim $file_pheno --out $file_pheno_new --na_out "NA"
+       """
+   }
 }else{
-sim_data_gemma=Channel.create()
-sim_data_bolt=Channel.create()
-sim_data_plink=Channel.create()
-raw_pheno.into(sim_data_gemma,sim_data_bolt, sim_data_plink)
+  sim_data_gemma=Channel.create()
+  sim_data_bolt=Channel.create()
+  sim_data_plink=Channel.create()
+  raw_pheno.into(sim_data_gemma,sim_data_bolt, sim_data_plink)
 }
 if(params.gemma==1){
   process getGemmaRel {
@@ -340,6 +342,7 @@ if(params.gemma==1){
     time params.big_time
     input:
       set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam), file(rel) from sim_data_gemma2
+    publishDir "${params.output_dir}/gemma/simul/", pattern: "output/${out}.assoc.txt", overwrite:true, mode:'copy'
     output :
       set sim, file(file_causal), file("output/${out}.assoc.txt"), file(bim) into res_gem
     script :
@@ -437,6 +440,7 @@ if(params.boltlmm==1){
     time params.big_time
     input:
       set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) from sim_data_bolt
+    publishDir "${params.output_dir}/boltlmm/simul/", pattern: "${out}", overwrite:true, mode:'copy'
     output :
       set sim, file(file_causal), file(out), file(bim) into res_bolt
     script :
