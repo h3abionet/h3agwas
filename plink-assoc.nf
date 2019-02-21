@@ -914,6 +914,11 @@ if (params.gemma_gxe == 1){
      covariate_option = "--cov_list ${params.covariates}"
   else
      covariate_option = ""
+   if(params.rs_list==""){
+        rsfile=file('NO_FILERS')
+     }else{
+        rsfile=file(params.rs_list)
+   }
 
   
   ind_pheno_cols_ch = newNamePheno(params.pheno)
@@ -926,6 +931,7 @@ if (params.gemma_gxe == 1){
       file(covariates) from data_ch_gxe
       file(rel) from rel_mat_ch_gxe
       file(plinks) from  gem_ch_gemma_gxe
+      file(rsfilelist) from rsfile
     each this_pheno from ind_pheno_cols_ch
     publishDir params.output_dir, overwrite:true, mode:'copy'
     output: 
@@ -949,11 +955,12 @@ if (params.gemma_gxe == 1){
        gxe_opt_gemma      =  (params.gemma_gxe) ? " -gxe $gemma_gxe " : ""
        out                = "$base-$our_pheno"
        dir_gemma          =  (params.gemma_gxe) ? "gemma_gxe" : "gemma"
+       rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
        """
        list_ind_nomissing.py --data $covariates --inp_fam $inp_fam --cov_list ${params.covariates},${params.gxe} --pheno $our_pheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
-       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase 
+       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase ${rs_plk_gem}
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
