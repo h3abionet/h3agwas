@@ -78,11 +78,7 @@ params.mperm = 1000
 /* Adjust for multiple correcttion */
 params.adjust = 0
 
-<<<<<<< HEAD
-supported_tests = ["assoc","fisher","model","cmh","linear","logistic"]
-=======
-supported_tests = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma"]
->>>>>>> awigen
+supported_tests = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma", "gemma_gxe"]
 
 
 params.assoc     = 0
