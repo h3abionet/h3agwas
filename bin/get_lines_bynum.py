@@ -19,7 +19,7 @@ def parseArguments():
 
 args=parseArguments()
 liste_numline=[int(x) for x in args.lines.split(",") if len(x)>0]
-cmtline=1
+cmtline=0
 read=open(args.file)
 write=open(args.out, 'w')
 for line in  read :

@@ -24,7 +24,7 @@ if mask_type == "fid-iid":
         return (fid,iid)
 elif mask_type == "sample-label":
     def transform(line):
-        data = line.split().strip()
+        data = line.strip()
         return (data[0],data[0])
 else:
     sys.exit("Mask_type <%s> is incorrect: can only be fid-iid or sample-label")
@@ -32,8 +32,13 @@ else:
 
 dels = []
 for line in open(mask_file):
+    print(len(line))
     data = line.split()
-    dels.append((data[0].rstrip(),data[1].rstrip()))
+    print(data[0].strip())
+    if mask_type=="sample-label":
+        dels.append((data[0].strip(),data[0].strip()))
+    else:
+        dels.append((data[0].rstrip(),data[1].rstrip()))
 
 f = open(fam)
 g=open(out,"w")

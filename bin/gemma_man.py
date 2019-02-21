@@ -11,8 +11,8 @@ import sys
 inp     = sys.argv[1]
 phenos  = sys.argv[2].split("-")
 base    = sys.argv[3].replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
-out_man = "%s-man.pdf"%base
-out_qq  = "%s-qq.pdf"%base
+out_man = "%s-gemma-man.pdf"%base
+out_qq  = "%s-gemma-qq.pdf"%base
 out_tex = "%s.tex"%base
 
 
@@ -81,15 +81,16 @@ delta=0
 colours= ['crimson','blue','green']
 xtick_pos=[]
 xtick_label = []
+result['ps_new']=result['ps']
 for chrom_num, chrom_res in chroms:
     this_chrom = result['chr']==chrom_num
-    result.loc[this_chrom,'ps']+=delta
+    result.loc[this_chrom,'ps_new']+=delta
     old_delta=delta
-    delta = delta + int(chrom_res.tail(1)['ps'])
+    delta = delta + int(chrom_res.tail(1)['ps_new'])
     xtick_pos.append((delta+old_delta)/2)
     xtick_label.append(str(chrom_num))
     under_thresh = result['p_wald']<0.005
-    ax.scatter(result.loc[this_chrom & under_thresh, 'ps'],\
+    ax.scatter(result.loc[this_chrom & under_thresh, 'ps_new'],\
                -np.log10(result.loc[this_chrom  & under_thresh,'p_wald']),c=colours[chrom_num%3])
     if chrom_num == 9:
        ax.set_xticklabels(xtick_label)
