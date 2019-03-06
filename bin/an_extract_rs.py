@@ -66,7 +66,7 @@ for x in sub_result[args.rs_header] :
     if args.freq_header :
        small=small[(small[args.rs_header]==x) | ((small[args.freq_header]>maf) & (small[args.freq_header]<(1-maf)))]
     else :
-       small=small[(small[args.rs_header]==x)]
+       small=small
     # chrom, start, end, marker ID, and p-value 
     verysmall=infors[[args.rs_header,args.chro_header, args.pos_header]]
     verysmall.to_csv(out_info, sep=TAB, header=False, index=False,na_rep="NA")
