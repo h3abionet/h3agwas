@@ -70,6 +70,8 @@ params.head_beta="BETA"
 params.head_se="SE"
 params.head_A1="ALLELE1"
 params.head_A2="ALLELE0"
+params.data=""
+params.pheno=""
 
 params.around_rs=100000
 params.cut_maf = 0.01
@@ -105,7 +107,6 @@ max_plink_cores = params.max_plink_cores
 params.help = false
 
 
-//data_ch = Channel.fromPath(params.data)
 
 //---- Modification of variables for pipeline -------------------------------//
 
@@ -171,7 +172,6 @@ println "Using covariates        : ${params.covariates}\n"
 println "Around rs : ${params.around_rs}\n\n"
 
 gwas_ch = Channel.fromPath(params.file_gwas)
-
 rs_label_ch=Channel.from(list_rs)
 
 process ExtractInfoRs{
@@ -188,8 +188,9 @@ process ExtractInfoRs{
       out_locus_rs=out+"_around.stat"
       out_gwas_rs=out+"_gwas.stat"
       out_info_rs=out+"_info.stat"
+      freq_header=(head_freq!="") ? " --freq_header  $head_freq " : "" 
       """
-     an_extract_rs.py --inp_resgwas  $gwas_file --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --freq_header  $head_freq --maf ${params.cut_maf} --list_rs $rs --around_rs ${params.around_rs} --out_head $out
+     an_extract_rs.py --inp_resgwas  $gwas_file --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} ${freq_header}  --maf ${params.cut_maf} --list_rs $rs --around_rs ${params.around_rs} --out_head $out
       """
 }
 
@@ -245,6 +246,7 @@ Channel
     .set { plink_src_ch }
 
 
+if(params.data){
 fileplotgeno_ch = infors_rs2.join(Channel.from(list_rs).combine(plink_src_ch)).join(Channel.from(list_rs).combine(Channel.fromPath(params.data)))
 if(params.covariates)cov_plot_geno="--cov ${params.covariates}"
 else  cov_plot_geno=""
@@ -267,6 +269,10 @@ process PlotByGenotype{
         an_plotboxplot.r --ped $out".ped" --data $data --out $outpdf --pheno ${params.pheno} $cov_plot_geno $gxe_cov_geno
         """
 }
+}else{
+report_plot_rs_ch=Channel.empty()
+
+}
 all_info_rs_ch=report_lz_ch.join(infors_gwas).join(report_info_rs).join(report_plot_rs_ch)
 if(params.covariates)covrep="--cov ${params.covariates}"
 else  covrep=""
@@ -281,8 +287,9 @@ process WriteReportRsFile{
        rsnnameout=rs.replace(':',"_")
        outtex=rsnnameout+".tex"
        out=rsnnameout+".pdf"
+       geno_plot = (params.data!="")? "--geno_plot $plotgeno" : ""
        """
-       an_general_man.py --inp_asso $gwasres --rsname $rs --pheno ${params.pheno} $covrep --out $outtex --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --freq_header  $head_freq --locuszoom_plot $locuszoom --geno_plot $plotgeno --inp_asso $gwasres --annot_pdf $annotpdf
+       an_general_man.py --inp_asso $gwasres --rsname $rs --pheno ${params.pheno} $covrep --out $outtex --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --freq_header  $head_freq --locuszoom_plot $locuszoom $geno_plot --inp_asso $gwasres --annot_pdf $annotpdf
        pdflatex $rsnnameout
        pdflatex $rsnnameout
        """ 
