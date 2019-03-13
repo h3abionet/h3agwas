@@ -27,7 +27,8 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust"]
+
 
 /*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -77,7 +78,7 @@ params.mperm = 1000
 /* Adjust for multiple correcttion */
 params.adjust = 0
 
-supported_tests = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma"]
+supported_tests = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma", "gemma_gxe"]
 
 
 params.assoc     = 0
@@ -142,7 +143,7 @@ max_plink_cores = params.max_plink_cores
 params.help = false
 
 
-data_ch = Channel.fromPath(params.data)
+data_ch = file(params.data)
 
 if (params.help) {
     params.each {
@@ -255,7 +256,8 @@ println "\nTesting data            : ${params.input_pat}\n"
 println "Testing for phenotypes  : ${params.pheno}\n"
 println "Using covariates        : ${params.covariates}\n\n"
 
-if (params.assoc) println "Doing chi2 testing"
+if (params.gemma) println "Doing gemma testing"
+if (params.assoc) println "Doing assoc testing"
 if (params.linear) println "Doing linear regression testing"
 if (params.logistic) println "Doing logistic regression testing"
 if (params.fastlmm == 1) println "Doing mixed model with fastlmm "
@@ -365,13 +367,11 @@ if (params.data != "") {
       gotcovar = 1
   }
 
-  data_ch1 = Channel.create()
-  data_ch2 = Channel.create()
-  Channel.fromPath(params.data).separate(data_ch1,data_ch2) { a -> [a,a] } 
+
   
   process extractPheno {
     input:
-     file(data) from data_ch1
+     file(data) from data_ch
     output:
      file(phenof) into pheno_ch
     script:
@@ -387,7 +387,7 @@ if (params.data != "") {
 
   process showPhenoDistrib {
     input:
-    file(data) from data_ch2
+    file(data) from data_ch
     output:
       file ("B050*") into report_ch
     script:
@@ -914,6 +914,11 @@ if (params.gemma_gxe == 1){
      covariate_option = "--cov_list ${params.covariates}"
   else
      covariate_option = ""
+   if(params.rs_list==""){
+        rsfile=file('NO_FILERS')
+     }else{
+        rsfile=file(params.rs_list)
+   }
 
   
   ind_pheno_cols_ch = newNamePheno(params.pheno)
@@ -926,6 +931,7 @@ if (params.gemma_gxe == 1){
       file(covariates) from data_ch_gxe
       file(rel) from rel_mat_ch_gxe
       file(plinks) from  gem_ch_gemma_gxe
+      file(rsfilelist) from rsfile
     each this_pheno from ind_pheno_cols_ch
     publishDir params.output_dir, overwrite:true, mode:'copy'
     output: 
@@ -949,11 +955,12 @@ if (params.gemma_gxe == 1){
        gxe_opt_gemma      =  (params.gemma_gxe) ? " -gxe $gemma_gxe " : ""
        out                = "$base-$our_pheno"
        dir_gemma          =  (params.gemma_gxe) ? "gemma_gxe" : "gemma"
+       rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
        """
        list_ind_nomissing.py --data $covariates --inp_fam $inp_fam --cov_list ${params.covariates},${params.gxe} --pheno $our_pheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
-       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase 
+       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase ${rs_plk_gem}
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
@@ -1000,6 +1007,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
        perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
        adjust = (params.adjust ? "--adjust" : "")
        outfname = "${pheno_name}"
+       test = test_choice 
        if (params.data == "") {
            pheno_cmd = ""
            out = base

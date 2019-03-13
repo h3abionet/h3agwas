@@ -14,6 +14,8 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import os
 import re
+
+
 g = glob.glob
 
 
@@ -162,9 +164,14 @@ def clean(name):
 def showResults():
     # first get the result for the straight forward test
     if test=="assoc":
-        data = clean(pheno) + ".assoc"
+        data = clean(pheno) + ".*assoc"
     else:
-        data = clean(pheno) + ".assoc."+test
+        data = clean(pheno) + ".*assoc."+test
+    data = glob.glob(data)
+    if len(data)!=1:
+        print((EOL*3)+"---- Expected only one assoc file found <"+",".join(result)+">"+(EOL*3))
+        sys.exit(17)
+    data = data[0]
     asf   = pd.read_csv(data,delim_whitespace=True)
     if gotcovar == "1" and test != "assoc":
         asf = asf[asf['TEST']=="ADD"]
