@@ -14,7 +14,7 @@ import sys
 def parseArguments():
     parser = argparse.ArgumentParser(description='format file for gcta, append N and frequencie if not present using bed file')
     parser.add_argument('--data',type=str,required=True, help="phenotypes files")
-    parser.add_argument('--out', type=str,help="out of tex file",default="test.tex")
+    parser.add_argument('--out', type=str,help="out of tex file")
     parser.add_argument('--pheno',type=str,required=False,help="phenotype header")
     args = parser.parse_args()
     return args

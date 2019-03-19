@@ -1010,8 +1010,8 @@ The key options are:
   * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
   * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
   * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
-  * num_cores : cores number used 
-  * ph_mem_req : memory request for phenosim
+  * `num_cores` : cores number used 
+  * `ph_mem_req` : memory request for phenosim
   *  Simulation option :
      * `phs_nb_sim` : simulation number (default : 5) 
      * `phs_quant_trait` :  quantitative trait simulation : 1, qualitative not develop yet (default : 1, -q option in phenosim)
@@ -1130,15 +1130,51 @@ The key options are:
   * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
   * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
 
+# 13. COJO : `cojo-assoc.nf`
+this section describes a pipeline in devloment, objectives is doing a conditional and joint association using GWAS summary data and gcta
+see [cojo](https://cnsgenomics.com/software/gcta/#COJO)
+## Installation
+need python3, gcta
+## Running
+The pipeline is run: `nextflow run annot-assoc.nf`
 
-# 13. Acknowledgement, Copyright and general
+The key options are:
+  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
+  * `output_dir` : output directory
+  * `output` : output pattern 
+  * ̀ data` : same option that _plink-assoc.nf_, file is optional, used if need select specific individus for gcta,  compute frequencies or N, if mission in `file_gwas`
+  * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+  * `pheno` : optional, header in data, if present select individuals with no missiong individual to keep individuals for computed frequencie or gcta
+  * `cut_maf` minor allele frequencies [ default : 0.0001]
+  * ̀`file_gwas` : file contains gwas result, if N or frequencies is not available, it is computed with plink file and `data` file, to change format header must be defined :
+    * ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+    * `head_freq` : freq header [ default : None], if not present computed with plink, (and data/pheno if present)
+    * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
+    * `head_rs` : rs header column [default : "SNP"]
+    * `head_beta` : beta header colum [default : "BETA"]
+    * `head_se`  : column for standard error of beta "SE"
+    * `head_A1` : column for A0 :[default : "ALLELE0" ]
+    * `head_A2` : column for A0 :[default : "ALLELE2" ]
+
+Cojo parameter :
+  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ]
+  * `cojo_slct` : Perform a stepwise model selection procedure to select independently associated SNPs? 1 : yes 0 : no [default 1] 
+    * `cojo_p` :  Threshold p-value to declare a genome-wide significant hit. The default value is 5e-8 if not specified. This option is only valid in conjunction with the option `cojo_slct`. 
+    * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO)
+  * `cojo_cond` if file 
+  * `gcta_mem_req`="6GB"
+  
+
+
+
+# 14. Acknowledgement, Copyright and general
 
 ## Acknowledgement
 
 We acknowledge funding by the National Institutes of Health through the NHGRI (U41HG006941). The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.
 
 * We thank Sumir Panji and Nicola Mulder for their support and leadership
-* We thank Fourie Joubert at the University of Pretoria for hosting our initital hackathon.
+* We thank Fourie Joubert at the University of Pretoria for hosting our initial hackathon.
 >>>>>>> master
 
 ### Authors
