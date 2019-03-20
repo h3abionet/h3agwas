@@ -30,7 +30,7 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_me
 // define param for
 //annotation_model=["gemma","boltlmm", "plink", "head", "linear", "logistic", "fisher", "fastlmm", ""]
 //allowed_params+=annotation_model
-annotation_param=[ "file_gwas","gcta_bin","cojo_p","cojo_p","gcta_mem_req","cojo_slct_other"]
+annotation_param=[ "file_gwas","gcta_bin","cojo_p","cojo_p","gcta_mem_req","cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 allowed_params+=annotation_param
 allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2", "head_n"]
 allowed_params+=allowed_params_head
@@ -66,11 +66,13 @@ params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
 params.cojo_p=5e-8
 params.cojo_wind=10000
-params.cut_maf=0.0001
+params.cut_maf=0.01
 params.gcta_mem_req="6GB"
 params.plink_mem_req="6GB"
 params.cojo_slct=1
-params.cojo_slct_other
+params.cojo_slct_other=""
+params.cojo_top_snps=0
+params.cojo_actual_geno=1
 
 
 gcta_mem_req=params.gcta_mem_req
@@ -173,9 +175,9 @@ process doFormatData{
      file(keepind) from filekeepformat
      set file(bed), file(bim), file(fam) from plink_format
      file(gwas) from gwas_format
-   each chro from chrolist_ch
+   each chro from chrolist_ch 
    output :
-        set file(keepind), file(bed), file(bim), file(fam),chro, file(out) into gwas_chro_cojo
+        set file(keepind), file(bed), file(bim), file(fam),chro, file(out) into gwas_chro_cojo,gwas_chro_topsnp
    script :
       out=chro+".format"
       baseplk=bed.baseName
@@ -198,8 +200,9 @@ process SLCTAnalyse{
       baseplk=bed.baseName
       out="res_cojo"+chro
       headkeep=params.data!="" ? " --keep $keepind " : ""
+      cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
       """
-      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --cojo-p ${params.cojo_p} --maf ${params.cut_maf} ${headkeep} --cojo-slct ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind}
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --cojo-p ${params.cojo_p} --maf ${params.cut_maf} ${headkeep} --cojo-slct ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu
       if [ ! -f ${out}.jma.cojo ]
       then 
       echo -e "Chr\\tSNP\\tbp\\trefA\\tfreq\\tb\tse\\tp\\tn\\tfreq_geno\\tbJ\\tbJ_se\\tpJ\\tLD_r" > ${out}.jma.cojo
@@ -224,6 +227,43 @@ process SLCTMerge{
 }
 //to do report
 }
+
+if(params.cojo_top_snps_chro>0){
+process TopAnalyse{
+    time   params.big_time
+    memory gcta_mem_req
+    input :
+        set file(keepind), file(bed), file(bim), file(fam),chro, file(gwas_chro) from gwas_chro_topsnp
+    output :
+        file("${out}.jma.cojo") into res_chro_top
+    script :
+      baseplk=bed.baseName
+      out="res_cojo"+chro+"."+params.cojo_top_snps_chro
+      headkeep=params.data!="" ? " --keep $keepind " : ""
+      cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
+      """
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --maf ${params.cut_maf} ${headkeep} --cojo-top-SNPs $params.cojo_top_snps_chro ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu
+      """
+}
+res_chro_top_merg=res_chro_top.collect()
+process TopMerge{
+   input :
+      file(list_file) from res_chro_top_merg
+   publishDir "${params.output_dir}/slct", overwrite:true, mode:'copy'
+   output :
+      file("$out") into res_top
+   script :
+     fnames = list_file.join(" ")
+     file1  = list_file[0]
+     out=params.output+"_top.jma.out"
+     """
+     head -1 $file1 > $out
+     tail -q -n +2  $fnames >> $out
+     """
+}
+//to do report
+}
+
 
 
 
