@@ -67,7 +67,7 @@ params.head_A2="ALLELE1"
 params.cojo_p=5e-8
 params.cojo_wind=10000
 params.cut_maf=0.01
-params.gcta_mem_req="6GB"
+params.gcta_mem_req="12GB"
 params.plink_mem_req="6GB"
 params.cojo_slct=1
 params.cojo_slct_other=""
@@ -231,7 +231,9 @@ process SLCTMerge{
 if(params.cojo_top_snps_chro>0){
 process TopAnalyse{
     time   params.big_time
-    memory gcta_mem_req
+    memory { gcta_mem_req * task.attempt }
+    //memory gcta_mem_req
+    errorStrategy 'retry' 
     input :
         set file(keepind), file(bed), file(bim), file(fam),chro, file(gwas_chro) from gwas_chro_topsnp
     output :
