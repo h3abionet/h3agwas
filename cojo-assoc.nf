@@ -69,6 +69,7 @@ params.cojo_wind=10000
 params.cut_maf=0.01
 params.gcta_mem_req="12GB"
 params.plink_mem_req="6GB"
+params.gcta_cpus_req = 1
 params.cojo_slct=1
 params.cojo_slct_other=""
 params.cojo_top_snps=0
@@ -244,7 +245,7 @@ process TopAnalyse{
       headkeep=params.data!="" ? " --keep $keepind " : ""
       cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
       """
-      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --maf ${params.cut_maf} ${headkeep} --cojo-top-SNPs $params.cojo_top_snps_chro ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --maf ${params.cut_maf} ${headkeep} --cojo-top-SNPs $params.cojo_top_snps_chro ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu --thread-num ${params.gcta_cpus_req}
       """
 }
 res_chro_top_merg=res_chro_top.collect()
