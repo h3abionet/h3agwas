@@ -67,13 +67,15 @@ params.head_A2="ALLELE1"
 params.cojo_p=5e-8
 params.cojo_wind=10000
 params.cut_maf=0.01
-params.gcta_mem_req="12GB"
+params.gcta_mem_req="15GB"
 params.plink_mem_req="6GB"
 params.gcta_cpus_req = 1
 params.cojo_slct=1
 params.cojo_slct_other=""
 params.cojo_top_snps=0
 params.cojo_actual_geno=1
+params.big_time='100h'
+
 
 
 gcta_mem_req=params.gcta_mem_req
@@ -191,22 +193,27 @@ process doFormatData{
 }
 if(params.cojo_slct){
 process SLCTAnalyse{
-    time   params.big_time
+    time params.big_time
+    //memory { gcta_mem_req * task.attempt }
     memory gcta_mem_req
+    cpus params.gcta_cpus_req
+    //errorStrategy { task.exitStatus == 137 ? 'retry' : 'terminate' }
+    //memory gcta_mem_req
     input :
         set file(keepind), file(bed), file(bim), file(fam),chro, file(gwas_chro) from gwas_chro_cojo
     output :
-        file("${out}.jma.cojo") into res_chro_slct
+        file("${out}.jma.cojo")  optional true into res_chro_slct
     script :
       baseplk=bed.baseName
       out="res_cojo"+chro
       headkeep=params.data!="" ? " --keep $keepind " : ""
       cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
       """
-      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --cojo-p ${params.cojo_p} --maf ${params.cut_maf} ${headkeep} --cojo-slct ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --cojo-p ${params.cojo_p} --maf ${params.cut_maf} ${headkeep} --cojo-slct ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu --thread-num ${params.gcta_cpus_req} &> $out".out"
+      gcta_manage_error.py --file_err $out".out"
       if [ ! -f ${out}.jma.cojo ]
       then 
-      echo -e "Chr\\tSNP\\tbp\\trefA\\tfreq\\tb\tse\\tp\\tn\\tfreq_geno\\tbJ\\tbJ_se\\tpJ\\tLD_r" > ${out}.jma.cojo
+      echo -e "Chr\\tSNP\\tbp\\trefA\\tfreq\\tb\\tse\\tp\\tn\\tfreq_geno\\tbJ\\tbJ_se\\tpJ\\tLD_r" > ${out}.jma.cojo
       fi
       """ 
 }
@@ -231,10 +238,11 @@ process SLCTMerge{
 
 if(params.cojo_top_snps_chro>0){
 process TopAnalyse{
-    time   params.big_time
-    memory { gcta_mem_req * task.attempt }
-    //memory gcta_mem_req
-    errorStrategy 'retry' 
+    time  params.big_time
+    //memory { gcta_mem_req * task.attempt }
+    memory gcta_mem_req
+    cpus params.gcta_cpus_req
+    //errorStrategy { task.exitStatus == 137 ? 'retry' : 'terminate' }
     input :
         set file(keepind), file(bed), file(bim), file(fam),chro, file(gwas_chro) from gwas_chro_topsnp
     output :
@@ -252,7 +260,7 @@ res_chro_top_merg=res_chro_top.collect()
 process TopMerge{
    input :
       file(list_file) from res_chro_top_merg
-   publishDir "${params.output_dir}/slct", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/top", overwrite:true, mode:'copy'
    output :
       file("$out") into res_top
    script :
