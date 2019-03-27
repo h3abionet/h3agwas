@@ -73,7 +73,7 @@ params.gcta_cpus_req = 1
 params.cojo_slct=1
 params.cojo_slct_other=""
 params.cojo_top_snps=0
-params.cojo_actual_geno=1
+params.cojo_actual_geno=0
 params.big_time='100h'
 
 
