@@ -79,6 +79,7 @@ params.big_time='100h'
 
 
 gcta_mem_req=params.gcta_mem_req
+gcta_cpus_req = params.gcta_cpus_req+2
 plink_mem_req = params.plink_mem_req
 max_plink_cores = params.max_plink_cores
 params.help = false
@@ -196,7 +197,7 @@ process SLCTAnalyse{
     time params.big_time
     //memory { gcta_mem_req * task.attempt }
     memory gcta_mem_req
-    cpus params.gcta_cpus_req
+    cpus gcta_cpus_req
     //errorStrategy { task.exitStatus == 137 ? 'retry' : 'terminate' }
     //memory gcta_mem_req
     input :
@@ -241,7 +242,7 @@ process TopAnalyse{
     time  params.big_time
     //memory { gcta_mem_req * task.attempt }
     memory gcta_mem_req
-    cpus params.gcta_cpus_req
+    cpus gcta_cpus_req
     //errorStrategy { task.exitStatus == 137 ? 'retry' : 'terminate' }
     input :
         set file(keepind), file(bed), file(bim), file(fam),chro, file(gwas_chro) from gwas_chro_topsnp
