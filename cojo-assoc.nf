@@ -210,6 +210,7 @@ process SLCTAnalyse{
       headkeep=params.data!="" ? " --keep $keepind " : ""
       cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
       """
+      export OMP_NUM_THREADS=${params.gcta_cpus_req}
       ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --cojo-p ${params.cojo_p} --maf ${params.cut_maf} ${headkeep} --cojo-slct ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu --thread-num ${params.gcta_cpus_req} &> $out".out"
       gcta_manage_error.py --file_err $out".out"
       if [ ! -f ${out}.jma.cojo ]
@@ -254,6 +255,7 @@ process TopAnalyse{
       headkeep=params.data!="" ? " --keep $keepind " : ""
       cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
       """
+      export OMP_NUM_THREADS=${params.gcta_cpus_req}
       ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --maf ${params.cut_maf} ${headkeep} --cojo-top-SNPs $params.cojo_top_snps_chro ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu --thread-num ${params.gcta_cpus_req}
       """
 }
