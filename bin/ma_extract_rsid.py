@@ -40,7 +40,10 @@ l_infohead=[x.split(":")[0] for x in infohead]
 l_filehead=[x.split(":")[1] for x in infohead]
 
 nomrs=l_filehead[l_infohead.index('rsID')]
-sep=GetSep(l_filehead[l_infohead.index('Sep')])
+if "Sep" not in l_infohead :
+   sep=None
+else :
+   sep=GetSep(l_filehead[l_infohead.index('Sep')])
 if 'Chro' in l_infohead :
    nomchro=l_filehead[l_infohead.index('Chro')]
 else :

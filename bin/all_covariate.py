@@ -20,7 +20,7 @@ def parseArguments():
     parser.add_argument('--cov_out', type=str,help="output covariate file")
     parser.add_argument('--gxe_out', type=str,help="output gxe file (gemma use)")
     parser.add_argument('--gxe', type=str,help="gxe covariate (gemma use)")
-    parser.add_argument('--form_out', type=int,help="format output : 1:Gemma, 2:boltlmm, 3:FastLmm", required=True)
+    parser.add_argument('--form_out', type=int,help="format output : 1:Gemma, 2:boltlmm, 3:FastLmm, 4:gcta", required=True)
     args = parser.parse_args()
     return args
 
@@ -89,6 +89,8 @@ elif  args.form_out==2:
     MissingOut="NA" 
 elif  args.form_out==3:
     MissingOut="-9" 
+elif  args.form_out==4:
+    MissingOut="NA" 
 else :
     print("--form_out : "+str(args.form_out)+" not define")
     sys.exit(11)
@@ -135,6 +137,10 @@ elif  args.form_out == 3 :
    merge.reindex(["FID","IID"])
    merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels,header=False,index=False,na_rep=MissingOut)
    merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covariates,header=False,index=False,na_rep=MissingOut)
+elif args.form_out == 4 :
+   merge.reindex(["FID","IID"])
+   merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels,header=True,index=False,na_rep=MissingOut)
+   merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covariates,header=True,index=False,na_rep=MissingOut)
 
 
 
