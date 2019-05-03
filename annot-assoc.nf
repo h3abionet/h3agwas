@@ -80,7 +80,7 @@ params.loczm_build = "hg19"
 params.loczm_source ="1000G_March2012"
 params.loczm_gwascat = ""
 
-list_rs=params.list_rs.split(",")
+list_rs=params.list_rs.split(",").toList()
 
 
 /* Do permutation testing -- 0 for none, otherwise give number */
