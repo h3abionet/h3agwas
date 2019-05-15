@@ -50,7 +50,7 @@ def GetAnnotation(File,infopos, out):
         balisefind=True
         break
    if balisefind==False :
-      Line=None
+      return ("",False,"")
    return (Line.replace('\n','').split(),balisefind, head.replace('\n','').split())
 
 def GetFileForAnnot(list_file_annot):
@@ -134,9 +134,11 @@ if FileAnnot==None :
    print("doesn't find chromosome or All in "+ args.info_pos+"\n")
    sys.exit(1)
 (InfoAnnotPos, balisefind, head)=GetAnnotation(FileAnnot,infopos, args.out+".annot")
+print(balisefind)
 out_tex=args.out+".tex"
 
 colors=['red', 'blue']
+hashd={'rs_initname':rs_initname, 'listrsknow':""}
 if args.info_file_annot :
    if balisefind:
       (listrs, DicFreq, DicInfo)=GetInfoHead(args.info_file_annot)
@@ -205,8 +207,7 @@ if args.info_file_annot :
            """ 
            hashd={'DB':DB,'rs_initname':rs_initname}
            latex_tex+=figlatex%hashd
-   hashd={'rs_initname':rs_initname, 'listrsknow':listrsknow}
-
+      hashd={'rs_initname':rs_initname, 'listrsknow':listrsknow}
 
 latex_tex=latex_tex%hashd
 latex_tex=headerpdf+latex_tex+"\n*-end{document}"
