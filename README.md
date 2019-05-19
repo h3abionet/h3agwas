@@ -1156,3 +1156,7 @@ This software is licensed under the MIT Licence.
 `git clone https://github.com/h3abionet/h3agwas`
 
 ### References
+
+To cite this pipeline, please use:
+
+Baichoo, S., Souilmi, Y., Panji, S., Botha, G., Meintjes, A., Hazelhurst, S., Bendou, H., Beste, E. de, et al. 2018. Developing reproducible bioinformatics analysis workflows for heterogeneous computing environments to support African genomics. BMC Bioinformatics. 19(1):457. DOI: [10.1186/s12859-018-2446-1](https://doi.org/10.1186/s12859-018-2446-1).
