@@ -108,8 +108,11 @@ def extractID(x):
         
 
 if __name__ == "__main__":
+    if inf in ["","0","false","False"] :
+        noGCAnalysis(outf,badf)
+        sys.exit(0)
     sdf = pd.read_excel(inf)
-    if inf in ["","0","false","False"] or "Call_Rate" not in sdf.columns or "10%_GC_Score" not in sdf.columns:
+    if  "Call_Rate" not in sdf.columns or "10%_GC_Score" not in sdf.columns: 
         noGCAnalysis(outf,badf)
         sys.exit(0)
     bad = sdf[sdf["10%_GC_Score"]<float(gc10)]["Institute Sample Label"].apply(extractID).values

@@ -758,8 +758,8 @@ if (params.boltlmm == 1) {
       """
       bolt.py bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
            $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt}
-      #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap |\
-      #       grep -B 1 -E "^[ ]+h2" $exclude_snp 1> $outReml 
+      #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp |\
+      #       grep -B 1 -E "^[ ]+h2" 1> $outReml 
       """
   }
 

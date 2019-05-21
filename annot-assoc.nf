@@ -85,7 +85,6 @@ params.pheno=""
 list_rs=params.list_rs.split(",").toList()
 
 
-/* Do permutation testing -- 0 for none, otherwise give number */
 /*JT Append initialisation variable*/
 params.bolt_impute2fidiid=""
 /*gxe param : contains column of gxe*/

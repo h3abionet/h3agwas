@@ -268,10 +268,10 @@ process sampleSheet {
      file("poorgc10.lst") into poorgc10_ch
      file("plates") into report["poorgc10"]
   script:
-   fname = params.samplesheet
+   //fname = params.samplesheet
    """
     mkdir -p plates
-    sampleqc.py $fname ${params.gc10} ".*_(.*)"  poorgc10.lst plates/crgc10.tex
+    sampleqc.py $sheet ${params.gc10} ".*_(.*)"  poorgc10.lst plates/crgc10.tex
    """
 }
 
