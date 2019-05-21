@@ -212,9 +212,9 @@ def showResult(colname,num_samples,ave_miss,num_poor_i,problems,sex_report):
        template="%s & %d & %5.2f & %5.2f & %5.2f *-*-"
    for r in ave_miss.index:
       if type(problems) == type(None):
-         res = ( r, num_samples.ix[r],ave_miss.ix[r],num_poor_i.ix[r]['F_MISS'])
+         res = ( r, num_samples.loc[r],ave_miss.loc[r],num_poor_i.loc[r]['F_MISS'])
       else:
-         res = ( r, num_samples.ix[r],ave_miss.ix[r],num_poor_i.ix[r]['F_MISS'],problems.ix[r]['STATUS'])
+         res = ( r, num_samples.loc[r],ave_miss.loc[r],num_poor_i.loc[r]['F_MISS'],problems.loc[r]['STATUS'])
       t = t + template%res + EOL
    t=t+"*-hline"+EOL+"*-end{tabular}"+(res_caption%colname)
    t=t+sex_report
@@ -322,8 +322,8 @@ def getVClose(gfrm,pfrm,pheno_col):
         #if re.search("_replicate_",row[0]+row[2]): continue
         #if re.search("_MSK_",row[1]+row[3]): continue
         if row[1][-4:-1]=="DUP" or row[3][-4:-1]=="DUP": continue
-        pairA=pfrm.loc[row[0],row[1]][pheno_col].values[0]
-        pairB=pfrm.loc[row[2],row[3]][pheno_col].values[0]
+        pairA=pfrm.loc[row[0],row[1]][pheno_col]
+        pairB=pfrm.loc[row[2],row[3]][pheno_col]
         curr = curr+TAB.join([row[0],row[1],pairA,\
                               row[2],row[3],pairB,\
                               str(row[4])])+EOL
@@ -331,7 +331,8 @@ def getVClose(gfrm,pfrm,pheno_col):
 
 
 def getGroupNum(pfrm,pheno_col,fid,iid):
-   this_g = pfrm[pheno_col].loc[fid,iid].values[0]
+   this_g = pfrm[pheno_col].loc[fid,iid]
+   if 'values' in dir(this_g): this_g=this_g.values[0]
    return this_g
 
 def getRelatedPairs(pfrm,pheno_col,genome):
@@ -492,12 +493,12 @@ def detSexHeader(pfrm,missing_sex_columns):
 
 # provide the details of a specific group
 def detSexGroup(sfrm,gname,missing_sex_columns):
-    tot   = sfrm.count()-sfrm.isnull().sum()
-    herrs = (sfrm=='H').sum()
-    serrs = (sfrm=='S').sum()
     line = "%8s"%gname 
     for rate in missing_sex_columns:
-        line = line+" & %d & %d & %d "%(tot[rate],serrs[rate],herrs[rate])
+        tot   = sfrm[rate].count()-sfrm[rate].isnull().sum()
+        herrs = (sfrm[rate]=='H').sum()
+        serrs = (sfrm[rate]=='S').sum()
+        line = line+" & %d & %d & %d "%(tot,serrs,herrs)
     line=line+"*-*-"+EOL
     return line
    

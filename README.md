@@ -589,7 +589,7 @@ e.g. `params.output = "cvd-rawcalls"`
 
 * `chipdescription`: this is a standard file produced by Illumina for your chip which contains not only the chromosome/coordinate of each SNP but also the genomic position (measured in centimorgans). If you don't have this -- give the manifest file. All will work except your bim files will not contain genonomic positoin
 
-* `samplesheet`: This is Excel spreadsheet or CSV (comma-separated only) that Illumina or a genotyping centre provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can set this variable to 0 or the empty string, in which case the output PLINK fam file will have unknown values for sex and phenotype.  Alternatively, if you don't have it, you can make your own. 
+* `samplesheet`: This is Excel spreadsheet or CSV (comma-separated only) that Illumina or a genotyping centre provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can set this variable to 0 or the empty string, in which case the output PLINK fam file will have unknown values for sex and phenotype.  Alternatively, if you don't have it, you can make your own. Note that if the suffix is ".xls" or ".xlsx" the code assumes it's an Excel file otherwise a comma-separated set of values.
 
 There are three columns that are important: "Institute Sample Label", "Manifest Sex" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
 

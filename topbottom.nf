@@ -82,7 +82,7 @@ def gChrom= { x ->
   output      = params.output
   // array may be the manifest or pref a file with both genetic 
   // and physical coordinates
-  array       = Channel.fromPath(params.chipdescription)
+  array       =  Channel.fromPath(params.chipdescription)
   report       = Channel.fromPath(inpat).ifEmpty { error "No files match the pattern "+inpat }
   output_align = params.output_align
 

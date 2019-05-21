@@ -48,6 +48,31 @@ def getres(x) {
 }
 
 
+
+nullfile = [false,"False","false", "FALSE",0,"","0","null"]
+
+
+
+def checkColumnHeader(fname, columns) {
+  if (nullfile.contains(fname)) return;
+  new File(fname).withReader { line = it.readLine().tokenize() }  
+  problem = false; 
+  columns.each { col -> 
+    if (! line.contains(col) ) {
+      println "The file <$fname> does not contain the column <$col>";
+      problem=true;
+    }
+    if (problem)
+      System.exit(0)
+  }
+}
+
+idfiles = [params.batch,params.phenotype]
+idfiles.each { checkColumnHeader(it,['FID','IID']) }
+
+
+
+
 nextflowversion =getres("nextflow -v")
 
 
@@ -178,7 +203,7 @@ configfile   = Channel.create()
 
 
 
-sample_sheet_ch = Channel.fromPath(params.samplesheet)
+sample_sheet_ch = file(params.samplesheet)
 
 
 //---- Modification of variables for pipeline -------------------------------//
@@ -191,9 +216,8 @@ sample_sheet_ch = Channel.fromPath(params.samplesheet)
 
 
 
-nosexentries = [false,"False","false", "FALSE",0,"","0"]
 
-if ( nosexentries.contains(params.sexinfo_available) ) {
+if ( nullfile.contains(params.sexinfo_available) ) {
   sexinfo = "--allow-no-sex"
   extrasexinfo = ""
   println "Sexinfo not available, command --allow-no-sex\n"
@@ -201,10 +225,8 @@ if ( nosexentries.contains(params.sexinfo_available) ) {
   sexinfo = ""
   extrasexinfo = "--must-have-sex"
   println "Sexinfo available command"
-
-  
-
 }
+
 
 
 
@@ -263,15 +285,14 @@ process inMD5 {
 
 process sampleSheet {
   input:
-  file(sheet) from sample_sheet_ch
+     file(sheet) from sample_sheet_ch
   output:
      file("poorgc10.lst") into poorgc10_ch
      file("plates") into report["poorgc10"]
   script:
-   fname = params.samplesheet
    """
     mkdir -p plates
-    sampleqc.py $fname ${params.gc10} ".*_(.*)"  poorgc10.lst plates/crgc10.tex
+    sampleqc.py $sheet ${params.gc10} "${params.idpat}"  poorgc10.lst plates/crgc10.tex
    """
 }
 

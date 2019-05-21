@@ -49,7 +49,7 @@ def plotGraphs(plateg,mins):
 
 EOL=chr(10)
 
-def header(g,num_bad):
+def header(g,graphs,num_bad):
    g.write(r"""
     \section{Plate Analysis} 
 
@@ -57,13 +57,14 @@ def header(g,num_bad):
     QC step is at the plate level, this analysis may include samples
     not in your data (if the plates also include samples from other
     experiments)}.  There were %d samples with 10\%s GenCall value
-    below %s on the plates. Any of these that were part of the data
-    are removed.   Analysis of call rate versus 10\%s GenCall Score
-    can be found in Figure \ref{fig:ccrvgc10}. This should be used to
-    set your QC parameters \url{cut_mind} and \url{gc10}.
-
-   
-   """ % (num_bad,"%",gc10,"%"))
+    below %s on the plates -- these can be found in \url{poorgc10.lst}. Any of these that were part of the data
+    are removed.  """%(num_bad,"%",gc10))
+   if len(graphs)>0:
+     g.write(r"""
+       Analysis of call rate versus 10\%s GenCall Score
+       can be found in Figure \ref{fig:ccrvgc10}. This should be used to
+       set your QC parameters \url{cut_mind} and \url{gc10}.
+      """ % ("%"))
 
 
 
@@ -83,8 +84,11 @@ def noGCAnalysis(outf,badf):
        
 def produceTeX(outf,graphs,num_bad):
     g = open(outf,"w")
-    header(g,num_bad)
+    header(g,graphs,num_bad)
 
+    if len(graphs)==0: 
+        g.close()
+        return
     g.write((r"\begin{longtable}{%s}"%(("|c"*num_cols)+r"|"))+EOL)
     g.write(r"\caption{Call rate versus 10\% GenCall score}"+EOL)
     g.write(r"\label{fig:ccrvgc10}"+EOL+r"\\\hline"+EOL)
@@ -108,17 +112,30 @@ def extractID(x):
         
 
 if __name__ == "__main__":
-    sdf = pd.read_excel(inf)
-    if inf in ["","0","false","False"] or "Call_Rate" not in sdf.columns or "10%_GC_Score" not in sdf.columns:
+    if inf in ["","0","false","False"]:
         noGCAnalysis(outf,badf)
         sys.exit(0)
+    if ".xls" in inf:
+        sdf = pd.read_excel(inf)
+    else:
+        sdf = pd.read_csv(inf,delimiter=",")
+    if "10%_GC_Score" not in sdf.columns:
+        noGCAnalysis(outf,badf)
+        sys.exit(0)
+    if "Institute Sample Label" not in sdf.columns:
+        if "Sample Plate" not in sdf.columns and "Well" not in sdf.columns:
+            sys.exit("There is no field <Institute Sample Label> in the samplesheet <%s> and I can't guess it")
+        sdf["Institute Sample Label"] = sdf.agg('{0[Sample Plate]} is {0[Well]}'.format, axis=1)
     bad = sdf[sdf["10%_GC_Score"]<float(gc10)]["Institute Sample Label"].apply(extractID).values
     num_bad = len(bad)
     g=open(badf,"w")
     g.writelines(map(lambda x:"%s %s"%(x,x)+EOL,bad))
     g.close()
-    mins  = sdf[["Call_Rate","10%_GC_Score"]].min()
-    plateg = sdf.groupby("Institute Plate Label")
-    graphs = plotGraphs(plateg,mins)
+    if "Call_Rate" not in sdf.columns:
+        graphs = []
+    else:
+        mins  = sdf[["Call_Rate","10%_GC_Score"]].min()
+        plateg = sdf.groupby("Institute Plate Label")
+        graphs = plotGraphs(plateg,mins)
     produceTeX(outf,graphs,num_bad)
         
