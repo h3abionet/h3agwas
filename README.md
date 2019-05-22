@@ -446,6 +446,22 @@ The following parameters control QC
 
 Several of the above parameters make reference to a phenotype file. Of course, these can be to the same phenotype file, but probably using different columns.
 
+### Filtering by GenCall 10 score
+
+If your sample sheet contains a column with the GC10 score (it must be called `10%_GC_Score`), you can filter out all individuals who have a GC10 score below a specified value. 
+
+Please read (the Illumina explanation)[https://www.illumina.com/Documents/products/technotes/technote_gencall_data_analysis_software.pdf] if you are not clear about this.
+
+To do this you need to give a file with the GC10 score (usually it will be in the sample sheet from the sequencing centre). This can either be an Excel or CSV (comma-separated) file.  The header line must contain a column `10%_GC_Score` and a column called `Institute Sample Label` which matches the IDs found in your PLINK file  (an alternative is that there are columns `Sample Label` and `Well` which when concatenated with an underscore give you the ID). The following parameters are relevant
+
+* `samplesheet` : Give the name of the file here. Put 0 (the default) if no samplesheet and then this filtering is not done.
+* `gc10`: this is the gc10 score that will be used as the cut-off. The default is 0.4, which is may be too low, but you should definitely think about it.
+* `idpat`: Naming conventions differ from sequencing centre to sequencing centre. You may be lucky and the ID in the "Institute Sample Label` matches exactly the FID, IID columns in yoour PLINK data, but more often than not, there is some mangling. For example, it's often the case that the "Institute Sample Label" value contains the sample plate, well _and_ your study ID (e.g. WP00030101_H02_BBC3666 -- with the BBC3666 ID being in your PLINK data). The `idpat` specifies a regular expression that is used to extract out the ID you want. Two common patterns that are likely to be used are
+   * `(.*)`  This is the default. This says that the ID as it appears in the sample sheet in the column "Institute Sample Label" _is_ the same as in your PLINK data. If you are so lucky, you need not do anything or even set `idpat` explicitly. 
+   * `.*_(.*)` : this is for the case where the value in "Insitute Sample Label` is in the format PlateLabel_Well_SampleID and it says, ignore everything up to and including the last underscore and then everything else is the ID
+   * If you have something else, you'll have to figure out how to either create a better sample sheet or pick the right regex. For Pythonites, the regular expression should contain exactly one pair of parenthesis which will be used by Python's regex features to extract out the ID.
+
+
 ## 5.4 Performance parameters
 
 There are three parameters that are important control performance. You probably won't need to change this, but feel free.

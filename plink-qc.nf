@@ -63,9 +63,35 @@ def checkColumnHeader(fname, columns) {
       problem=true;
     }
     if (problem)
-      System.exit(0)
+      System.exit(2)
   }
 }
+
+
+def checkSampleSheet(fname)  {
+  if (nullfile.contains(fname) || fname.contains(".xls")) return;
+  new File(fname).withReader { line = it.readLine()}  
+  problem  = false
+  prob_str = ""
+  if (! line.contains(",")) {
+    problem = true;
+    prob_str = "If given as a CSV file, it must be comma-separated\n";
+  }
+  headers = line.tokenize(",")
+  headers.each { println it}
+  if (!(headers.contains("Institute Sample Label") || 
+      (headers.contains("Sample Plate") && headers.contains("Well")))) {
+    problem= true
+    prob_str = prob_str + "Column headers must include 'Institute Sample Label'  or both 'Sample Plate' and 'Well'"
+  }
+  if (problem)  {
+    println "There's a problem with the sample sheet <$fname>."
+    println prob_str;
+    System.exit(1)
+  }
+}        
+
+checkSampleSheet(params.samplesheet)
 
 idfiles = [params.batch,params.phenotype]
 idfiles.each { checkColumnHeader(it,['FID','IID']) }
@@ -105,6 +131,11 @@ orepmd5      = report["outmd5"]
 params.queue    = 'batch'
 params.remove_on_bp  = 1
 params.samplesheet   = "0"
+
+if (params.idatpat ==  "0")  {
+    params.idpat   = "(.*)"
+}
+
 
 max_plink_cores = params.max_plink_cores 
 plink_mem_req   = params.plink_mem_req

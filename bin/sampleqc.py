@@ -123,9 +123,10 @@ if __name__ == "__main__":
         noGCAnalysis(outf,badf)
         sys.exit(0)
     if "Institute Sample Label" not in sdf.columns:
-        if "Sample Plate" not in sdf.columns and "Well" not in sdf.columns:
-            sys.exit("There is no field <Institute Sample Label> in the samplesheet <%s> and I can't guess it")
-        sdf["Institute Sample Label"] = sdf.agg('{0[Sample Plate]} is {0[Well]}'.format, axis=1)
+        if "Sample Plate" not in sdf.columns or "Well" not in sdf.columns:
+            sys.exit("There is no field <Institute Sample Label> in the samplesheet <%s> and I can't guess it"%inf)
+        sdf["Institute Sample Label"] = sdf.agg('{0[Sample Plate]}_{0[Well]}'.format, axis=1)
+        idpat="(.*)"
     bad = sdf[sdf["10%_GC_Score"]<float(gc10)]["Institute Sample Label"].apply(extractID).values
     num_bad = len(bad)
     g=open(badf,"w")
