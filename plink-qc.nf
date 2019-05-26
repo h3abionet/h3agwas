@@ -49,7 +49,7 @@ def getres(x) {
 
 
 
-nullfile = [false,"False","false", "FALSE",0,"","0","null"]
+nullfile = [false,"False","false", "FALSE",0,"","0","null",null]
 
 
 
@@ -69,6 +69,7 @@ def checkColumnHeader(fname, columns) {
 
 
 def checkSampleSheet(fname)  {
+  println("The file is called <$fname> ******")
   if (nullfile.contains(fname) || fname.contains(".xls")) return;
   new File(fname).withReader { line = it.readLine()}  
   problem  = false
@@ -130,9 +131,12 @@ orepmd5      = report["outmd5"]
 
 params.queue    = 'batch'
 params.remove_on_bp  = 1
+if (params.samplesheet == 0)
+  params.samplesheet = "0"
+
 params.samplesheet   = "0"
 
-if (params.idatpat ==  "0")  {
+if (params.idpat ==  "0")  {
     params.idpat   = "(.*)"
 }
 
@@ -234,6 +238,7 @@ configfile   = Channel.create()
 
 
 
+println(params.samplesheet)
 sample_sheet_ch = file(params.samplesheet)
 
 
