@@ -40,8 +40,8 @@ This version has been run on real data sets and works. However, not all cases ha
 2. Installing the pipeline
 3. A quick start example
 4. The Nextflow configuration file
-5. The QC pipeline: `plink-qc.nf`
-6. A simple association testing pipeline: `plink-assoc.nf`
+5. The QC pipeline: `qc.nf`
+6. A simple association testing pipeline: `assoc.nf`
 7. Converting Illumina genotyping reports to PLINK: `topbottom.nf`
 8. Advanced options: Docker, PBS, Singularity, Amazon EC2
 9. Dealing with errors
@@ -58,7 +58,7 @@ There are three separate workflows that make up *h3agwas*
 
 1. `topbottom.nf`.  Conversion of Illumina genotyping reports with TOP/BOTTOM or FORWARD/REVERSE  calls into PLINK format, aligning the calls.
 
-2. `plink-qc.nf`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
+2. `qc.nf`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
 
    * Sample QC tasks checking:
 
@@ -77,7 +77,7 @@ There are three separate workflows that make up *h3agwas*
        * differential missingness
        * Hardy Weinberg Equilibrium deviations
 
-3.  `plink-assoc.nf`: Association study. A simple analysis association study is done. The purpose of this is to give users an introduction to their data. Real studies, particularly those of the H3A consortium will have to handle compex co-variates and particular population study. We encourage users of our pipeline to submit thieir analysis for the use of other scientists.
+3.  `assoc.nf`: Association study. A simple analysis association study is done. The purpose of this is to give users an introduction to their data. Real studies, particularly those of the H3A consortium will have to handle compex co-variates and particular population study. We encourage users of our pipeline to submit thieir analysis for the use of other scientists.
   * Basic PLINK association tests, producing manhattan and qqplots
   * CMH association test - Association analysis, accounting for clusters
   * permutation testing
@@ -165,7 +165,7 @@ The following code needs to be installed and placed in a directory on the user's
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
 * python 3.6 or later. pandas, numpy, scipy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
-If you want to run the `plink-assoc.nf` pipeline then you should install gemma if you are using those options.
+If you want to run the `assoc.nf` pipeline then you should install gemma if you are using those options.
 
 ## 2.5 Installing the workflow
 
@@ -181,8 +181,8 @@ If we update the workflow, the next time you run it, you will get a warning mess
 
 If you manage the workflow this way, you will run the scripts, as follows
 * `nextflow run h3abionet/h3agwas/topbottom.nf ..... `
-* `nextflow run h3abionet/h3agwas/plink-qc.nf ..... `
-* `nextflow run h3abionet/h3agwas/plink-assoc.nf ..... `
+* `nextflow run h3abionet/h3agwas/qc.nf ..... `
+* `nextflow run h3abionet/h3agwas/assoc.nf ..... `
 
 ### 2.5.2 Managing with Git
 
@@ -193,8 +193,8 @@ Change directory where you want to install the software and say
 This will create a directory called _h3agwas_ with all the necesssary code.
 If you manage the workflow this way, you will run the scripts this way:
 * `nextflow run SOME-PATH/topbottom.nf ..... `
-* `nextflow run SOME-PATH/plink-qc.nf ..... `
-* `nextflow run SOME-PATH/plink-assoc.nf ..... `
+* `nextflow run SOME-PATH/qc.nf ..... `
+* `nextflow run SOME-PATH/assoc.nf ..... `
 
 where _SOME-PATH_ is a relative or absolute path to where the workflow was downloaded.
 
@@ -202,7 +202,7 @@ where _SOME-PATH_ is a relative or absolute path to where the workflow was downl
 
 # 3. Quick start example
 
-This section shows a simple run of the `plink-qc.nf` pipeline that
+This section shows a simple run of the `qc.nf` pipeline that
 should run out of the box if you have installed the software or
 Docker. More details and general configuration will be shown later.
 
@@ -232,14 +232,14 @@ This requires that all software dependancies have been installed.
 
 We also assume the _sample_ directory with data is in the current working directory
 
-`nextflow run h3abionet/h3agwas/plink-qc.nf`
+`nextflow run h3abionet/h3agwas/qc.nf`
 
 
 ### 3.1.2 If you downloaded using Git
 
 Change directory to the directory in which the workflow was downloaded
 
-`nextflow run  plink-qc.nf`
+`nextflow run  qc.nf`
 
 ## 3.2 Remarks
 
@@ -248,13 +248,13 @@ _sampleA.pdf_ file, a record of the analysis can be found.
 
 In order, to run the workflow on another PLINK data set, say _mydata.{bed,bim,fam}_, say
 
-`nextflow run  plink-qc.nf --input_pat mydata`
+`nextflow run  qc.nf --input_pat mydata`
 
-(or `nextflow run  h3abionet/h3agwas/plink-qc.nf --input_pat mydata` : **for simplicity for the rest of the tutorial we'll only present the one way of running the workflow -- you should use the method that is appropriate for you**)
+(or `nextflow run  h3abionet/h3agwas/qc.nf --input_pat mydata` : **for simplicity for the rest of the tutorial we'll only present the one way of running the workflow -- you should use the method that is appropriate for you**)
 
 If the data is another directory, and you want to the data to go elsehwere:
 
-`nextflow run  plink-qc.nf --input_pat mydata --input_dir /data/project10/ --output_dir ~/results `
+`nextflow run  qc.nf --input_pat mydata --input_dir /data/project10/ --output_dir ~/results `
 
 There are many other options that can be passed on the the command-line. Options can also be given in the _config_ file (explained below). We recommend putting options in the configuration file since these can be archived, which makes the workflow more portable
 
@@ -262,7 +262,7 @@ There are many other options that can be passed on the the command-line. Options
 
 Execute 
 
-`nextflow run  plink-qc.nf -profile docker`
+`nextflow run  qc.nf -profile docker`
 
 Please note that the _first_ time you run the workflow using Docker,  the Docker images will be downloaded. *Warning:* This will take about 1GB of bandwidth which will consume bandwidth and will take time depending on your network connection. It is only the first time that the workflow runs that the image will be downloaded.
 
@@ -297,13 +297,13 @@ your config files.
 
 You can use the _-c_ option specify another configuration file in addition to the nextflow.config file
 
-```nextflow run -c data1.config plink-qc.nf```
+```nextflow run -c data1.config qc.nf```
 
 
 **This is highly recommended.** We recommend that you keep the `nextflow.config` file as static as possible, perhaps not even modifying it from the default config. Then  for any
  run or data set, have a much smaller config file that only specifies the changes you want made. The base `nextflow.config` file will typically contain config options that are best set by the h3aGWAS developers (e.g., the names of the docker containers) or default GWAS options that are unlikely to change. In your separate config file, you will specify the run-specific options, such as data sets, directories or particular GWAS parameters you want. Both configuration files should be specified. For example, suppose I create a sub-directory within the directory where the nextflow file is (probably called h3agwas). Within the h3agwas directory I keep my nexflow.config file and the nextflow file itself. From the sub-directory, I run the workflow by saying:
 
-```nextflow run  -c data1.config ../plink-qc.nf```
+```nextflow run  -c data1.config ../qc.nf```
 
 This will automatically use the `nextflow.config` file in either the current or parent directory. Note that the the config files are processed in order: if an option is set into two config files, the latter one takes precedence.
 
@@ -343,7 +343,7 @@ I suggest editing that by removing any lines you don't want to change.
 
 Then you would run your script by saying
 
-`nextflow run -c run10.config plink-qc.nf`
+`nextflow run -c run10.config qc.nf`
 
 The _nextflow.config_ file will automatically be used, except for any additions or changes that are in the _run10.config_ file.
 
@@ -354,7 +354,7 @@ When you run the the scripts there are a number of different options that you mi
 
 Almost all the workflow options that are in the _nextflow.config_ file can also be passed on the command line and they will then override anything in the config like. For example
 
-```nextflow run plink-qc.nf   --cut_miss  0.04```
+```nextflow run qc.nf   --cut_miss  0.04```
 
 sets the maximim allowable per-SNP misisng to 4%. However, this should only be used when debugging and playing round. Rather, keep the options in the auxiliary config file that you save. By putting options on the command line you reduce reproducibility. (Using the parameters that change the mode of the running -- e.g. whether using docker or whether to produce a time line only affects time taken and auxiliary data rather than the substantive results).
 
@@ -373,7 +373,7 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
 
 * A nice graphic of a run of your workflow
 
-    `nextflow run plink-qc.nf -with-dag quality-d.pdf`
+    `nextflow run qc.nf -with-dag quality-d.pdf`
 
 * A timeline of your workflow and individual processes (produced as an html file).
 
@@ -385,7 +385,7 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
 
 
 
-# 5 The QC pipeline: `plink-qc.nf`
+# 5 The QC pipeline: `qc.nf`
 
 
 This section describes the various ways in which the pipeline can be run and various options. Usually options are specified in the _nextflow.config_ file (or which ever file you use). However, you can also pass parameters to the Nextflow script on the command-line. Parameters on the command line over-ride any parameters specified in the config file.
@@ -393,8 +393,8 @@ This section describes the various ways in which the pipeline can be run and var
 
 The main pipeline is the PLINK QC pipeline. It takes as input PLINK bed,bim,fam files and performs quality control on  the data according to the parameters specified in the config file.
 
-The Nextflow script file is called *plink-qc.nf*. This could be
-called, for example, by running `nextflow run plink-qc.nf`.
+The Nextflow script file is called *qc.nf*. This could be
+called, for example, by running `nextflow run qc.nf`.
 
 The output of the QC is a set of PLINK files that can be used for GWAS, as well as PDF report that describes the QC steps.
 
@@ -478,7 +478,7 @@ A PDF report can be found in the output directory. This describes the process as
 Note that one issue that sometimes occurs in analysis is that there may over time be multple copies of the same file, perhaps with minor differences. To help version control, the PDF report captures the md5 checksums of inputs and outputs.
 
 
-# 6. Simple association test pipeline: `plink-assoc.nf`
+# 6. Simple association test pipeline: `assoc.nf`
 
 This workflow has been extensively expanded by Jean-Tristan Brandenburg
 
@@ -491,13 +491,13 @@ For this reason it is difficult to build a high quality, generic pipeline to do 
 
 The purpose of this pipeline is to perform a very superficial initial analysis that can be used as one piece of information to guide a rigorous analysis. Of course, we would encourage users to build their own Nextflow script for their rigorous analysis, perhaps using our script as a start.
 
-Our script, *plink-assoc.nf* takes as input PLINK files that have been through quality control and 
+Our script, *assoc.nf* takes as input PLINK files that have been through quality control and 
 * does a principal component analysis on the data, and produces pictures from that; 
 * performs a simple association test giving odds ratio and  raw and adjusted _p_ values
 
 ## Running
 
-The pipeline is run: `nextflow run plink-assoc.nf`
+The pipeline is run: `nextflow run assoc.nf`
 
 The key options are:
 * `input_dir`, `output_dir`: where input and output goes to and comes from;
@@ -551,7 +551,7 @@ with pipeline, do a GxE interaction with Gemma and Plink, arguments :
 
 For example
 
-```nextflow run plink-assoc.nf --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
+```nextflow run assoc.nf --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
 
 analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
 
@@ -679,7 +679,7 @@ In the  quick start we gave an overview of running our workflows in different en
 This option requires that all dependancies have been installed. You run the code by saying
 
 ````
-nextflow run plink-qc.nf
+nextflow run qc.nf
 ````
 
 You can add that any extra parameters at the end.
@@ -688,7 +688,7 @@ You can add that any extra parameters at the end.
 
 This requires the user to have docker installed.
 
-Run by `nextlow run plink-qc.nf -profile docker`
+Run by `nextlow run qc.nf -profile docker`
 
 
 
@@ -698,7 +698,7 @@ Nextflow supports execution on clusters using standard resource managers, includ
 
 Our workflow has pre-built configuration for SLURM and Torque/PBS. If you use another scheduler that Nextflow supports you'll need to do a _little_ more (see later): see https://www.nextflow.io/docs/latest/executor.html for details
 
-To run using Torque/PBS, log into the head node. Edit the _nextflow.config_ file, and change the `queue` variable to be the queue you will run jobs on (if you're not sure of this, ask your friendly sysadmin). Then when you run, our workflow, use the `-profile pbs` option -- typically you would say something like `nextflow run -c my.config plink-qc -profile pbs`. Note that the `-profile pbs` only uses a single "-".
+To run using Torque/PBS, log into the head node. Edit the _nextflow.config_ file, and change the `queue` variable to be the queue you will run jobs on (if you're not sure of this, ask your friendly sysadmin). Then when you run, our workflow, use the `-profile pbs` option -- typically you would say something like `nextflow run -c my.config qc -profile pbs`. Note that the `-profile pbs` only uses a single "-".
 
 Similarily, if you run SLURM, set the _queue_ variable, and use the `-profile slurm` option.
 
@@ -727,7 +727,7 @@ We assume all the data is visible to all nodes in the swarm. Log into the head n
 We have tested our workflow on different Docker Swarms. How to set up Docker Swarm is beyond the scope of this tutorial, but if you have a Docker Swarm, it is easy to run. From the head node of your Docker swarm, run
 
 ```
-nextflow run plink-qc.nf -profile dockerSwarm
+nextflow run qc.nf -profile dockerSwarm
 ```
 
 ## 8.5 Singularity
@@ -735,11 +735,11 @@ nextflow run plink-qc.nf -profile dockerSwarm
 
 Our workflows now run easily with Singularity.
 
-`nextflow run plink-qc.nf -profile singularity`
+`nextflow run qc.nf -profile singularity`
 
 or
 
-`nextflow run plink-qc.nf -profile pbsSingularity`
+`nextflow run qc.nf -profile pbsSingularity`
 
 By default the user's ${HOME}/.singularity will be used as the cache for Singularity images. If you want to use something else, change the `singularity.cacheDir` parameter in the config file.
 
@@ -748,7 +748,7 @@ By default the user's ${HOME}/.singularity will be used as the cache for Singula
 If you have a cluster which runs Docker, you can get the best of both worlds by editing the queue variable in the _pbsDocker_ stanza, and then running
 
 ```
-nextflow run plink-qc.nf -profile option
+nextflow run qc.nf -profile option
 ```
 
 where _option_ is one of _pbsDocker_, _pbsSingularity_, _slurmDocker_ or _slurmSingularity_. If you use a different scheduler, read the Nextflow documentation on schedulers, and then use what we have in the _nextflow.config_ file as a template to tweak.
@@ -847,7 +847,7 @@ Login in the master node using the following command:
    Of course, you can also use other parameters (e.g. -resume or --work_dir). For your own run you will want to use your nextflow.config file.
 
 
-   By default, running the workflow like this runs the `plink-qc.nf` script. If you want to run one of the other scripts you would say `nextflow run  h3abionet/h3agwas/topbottom.nf` or `nextflow run h3abionet/h3agwas/plink-assoc.nf` etc. 
+   By default, running the workflow like this runs the `qc.nf` script. If you want to run one of the other scripts you would say `nextflow run  h3abionet/h3agwas/topbottom.nf` or `nextflow run h3abionet/h3agwas/assoc.nf` etc. 
 
 
 7. The output of the default runcan be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
@@ -1043,8 +1043,8 @@ The key options are:
            * `ph_cov_range` : normalisation range for initial phenotype
            * `ph_intercept` : intercept
   * Association option :
-     * `boltlmm` : 1 perform boltlmm (default 0), see boltlmm option in _plink-assoc.nf_
-     * `gemma` : 1 perform gemma (default 0)  see gemma option in _plink-assoc.nf_
+     * `boltlmm` : 1 perform boltlmm (default 0), see boltlmm option in _assoc.nf_
+     * `gemma` : 1 perform gemma (default 0)  see gemma option in _assoc.nf_
      * `covariates` : covariates to include in model (if ph_normalise is 1)
   * Statistics option :
      * `ph_alpha_lim` : list of alpha used to computed significance (separated by comma)  

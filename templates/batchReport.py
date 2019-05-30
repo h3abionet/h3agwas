@@ -17,6 +17,11 @@ from matplotlib.ticker import MaxNLocator
 
 colours =['white','black','darkmagenta','green','cyan','maroon','green','black', 'blue', 'darkgrey', 'rosybrown', 'lightcoral', 'brown', 'firebrick', 'darkred', 'r', 'red', 'mistyrose', 'salmon', 'tomato', 'darksalmon', 'coral', 'orangered', 'lightsalmon', 'sienna', 'seashell', 'chocolate', 'saddlebrown', 'sandybrown', 'peachpuff', 'peru', 'linen', 'bisque', 'darkorange', 'burlywood',  'tan', 'papayawhip', 'moccasin', 'orange', 'wheat', 'oldlace', 'floralwhite', 'darkgoldenrod', 'goldenrod', 'cornsilk', 'gold', 'lemonchiffon', 'khaki', 'palegoldenrod', 'darkkhaki', 'ivory', 'beige', 'lightyellow', 'lightgoldenrodyellow', 'olive', 'y', 'yellow', 'olivedrab', 'yellowgreen', 'darkolivegreen', 'greenyellow', 'chartreuse', 'lawngreen', 'honeydew', 'darkseagreen', 'palegreen', 'lightgreen', 'forestgreen', 'limegreen', 'darkgreen', 'g', 'green', 'lime', 'seagreen', 'mediumseagreen', 'springgreen', 'mintcream', 'mediumspringgreen', 'mediumaquamarine', 'aquamarine', 'turquoise', 'lightseagreen', 'mediumturquoise', 'azure', 'lightcyan', 'paleturquoise', 'darkslategray', 'darkslategrey', 'teal', 'darkcyan', 'c', 'aqua', 'cyan', 'darkturquoise', 'cadetblue', 'powderblue', 'lightblue', 'deepskyblue', 'skyblue', 'lightskyblue', 'steelblue', 'aliceblue', 'dodgerblue', 'lightslategray', 'lightslategrey', 'slategray', 'slategrey', 'lightsteelblue', 'cornflowerblue', 'royalblue', 'ghostwhite', 'lavender', 'midnightblue', 'navy', 'darkblue', 'mediumblue', 'b', 'blue', 'slateblue', 'darkslateblue', 'mediumslateblue', 'mediumpurple', 'rebeccapurple', 'blueviolet', 'indigo', 'darkorchid', 'darkviolet', 'mediumorchid', 'thistle', 'plum', 'violet', 'purple', 'darkmagenta', 'm', 'fuchsia', 'magenta', 'orchid', 'mediumvioletred', 'deeppink', 'hotpink', 'lavenderblush', 'palevioletred', 'crimson', 'pink', 'lightpink']
 
+def debug(*args):
+    return
+    print(*args)
+
+
 def parseArguments():
     parser=argparse.ArgumentParser()
     parser.add_argument('base', type=str, metavar='base'),
@@ -226,6 +231,10 @@ def showResult(colname,num_samples,ave_miss,num_poor_i,problems,sex_report):
 
 
 def plotPCs(base,eigs,pfrm,pheno_col,batch,batch_col):
+    debug("In plotPCs")
+    debug("eigs",eigs.index.names," columns", eigs.columns)  #DBG
+    debug("pfrm",pfrm.index.names," columns",pfrm.columns)  #DBG
+    debug("batch",batch.index.names," batch",batch.columns) #DBG
     all_f = eigs.join(pfrm)
     g = all_f.groupby(args.pheno_col)
     matplotlib.rcParams.update({'font.size': 12})
@@ -234,7 +243,8 @@ def plotPCs(base,eigs,pfrm,pheno_col,batch,batch_col):
     allplots=[]
     batch['colour']=batch.apply(lambda x:our_colours[x[batch_col]],axis=1)
     for site, df in g:
-        df=df.merge(batch,on=['FID','IID'],how='inner')
+        debug("plotPCs loop",site,df.head()) #DBG
+        df=df.merge(batch,left_index=True,right_index=True,how='inner')
         fig = plt.figure(figsize=(6,6))
         fig, ax = plt.subplots()
         locator = MaxNLocator(nbins=4) 
@@ -548,7 +558,9 @@ def backslashify(text):
 
 def getBatchAnalysis():
 # Show the missingness by batch
+   debug("In getBatchAnalysis") #DBG
    if "${params.batch}" in no_response:
+       print("Making fake batch file",ifrm.columns," index is ",ifrm.index.names)  # DBG
        args.batch_col = 'all'
        bfrm = DataFrame([1]*len(ifrm),index=ifrm.index,columns=['all'])
        res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
@@ -556,6 +568,7 @@ def getBatchAnalysis():
        g.close()
    else:
        bfrm = getCsvI(args.batch)
+       debug("Read in batch file",bfrm.columns," index is ",bfrm.index.names) #DBG
        res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error "\
                   " rate as shown by *-url{%(bname)s} as found in file *-url{%(fname)s}."\
                    %({'bname':args.batch_col,'fname':args.batch})
@@ -578,10 +591,11 @@ def getPhenoAnalysis():
     res_text = ""
     if  "${params.phenotype}" in no_response:
         if "${params.batch}" not in no_response:
+            debug("Making fake phenotype file") #DBG
             args.pheno_col = 'all'
             pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
             got_frame = True
-            res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the error rate."
+            res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the *-textbf{overall} error rate."
     else:
         pfrm = getCsvI(args.phenotype)
         got_frame = True
@@ -600,6 +614,9 @@ def getPhenoAnalysis():
 text = getHeader()+EOL+EOL
 #if not(args.batch == "0" and args.phenotype == "0"):
 ifrm = getCsvI(args.imiss)
+debug("Read the missing file ",args.imiss)  # DBG
+debug("Index is ",ifrm.index.names)  #DBG
+debug("Columns are",ifrm.columns)  #DBG
 no_response = [0,"0",False,"FALSE","false","False",""]
 
 bfrm, btext = getBatchAnalysis()
