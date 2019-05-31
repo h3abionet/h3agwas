@@ -1109,6 +1109,7 @@ report_ch = report_ch.mix(report_pca_ch)
 }
 
 process doReport {
+  label 'latex'
   input:
     file(reports) from report_ch.toList()
   publishDir params.output_dir, overwrite:true, mode:'copy'
