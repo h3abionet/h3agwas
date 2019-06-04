@@ -1165,6 +1165,11 @@ Cojo parameter :
   * `cojo_top_snps_chro` :  Perform a stepwise model selection procedure to select a fixed number of independently associated SNPs by chromosome without a p-value threshold.  [integer between 0 and n, to define top snp number. default : 0].
   * `gcta_mem_req`="6GB"
   
+# 13. h2 estimation : `esth2-assoc.nf`
+
+This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, rmel of bolt and greml of gcta 
+
+
 
 
 

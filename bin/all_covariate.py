@@ -13,6 +13,7 @@ EOL=chr(10)
 def parseArguments():
     parser = argparse.ArgumentParser(description='fill in missing bim values')
     parser.add_argument('--inp_fam',type=str,required=True)
+    parser.add_argument('--lind',type=str,required=False)
     parser.add_argument('--data',type=str,required=True,help="File with phenotype and covariate data")
     parser.add_argument('--cov_list', type=str,help="comma separated list of covariates",default="")
     parser.add_argument('--pheno',type=str,required=True,help="comma separated list of  pheno column")
@@ -121,6 +122,9 @@ for (label, transform) in zip(pheno_labels+covar_labels, pheno_transform+cover_t
     datad[label]=datad[label].apply(check_missing, MissingOut=MissingOut)
 
 famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEXFAM","CC"])
+#if args.lind :
+#   indtokepp=pd.read_csv(args.lind,delim_whitespace=True,header=None, names=["FID","IID"])
+#   famd=pd.merge(famd, indtokepp,how="inner",on=["FID","IID"])
 merge = pd.merge(famd,datad,how="left",suffixes=["_f",""],on=["FID","IID"])
 # for gemma
 if args.form_out == 1 : 
