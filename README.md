@@ -1167,7 +1167,39 @@ Cojo parameter :
   
 # 13. h2 estimation : `esth2-assoc.nf`
 
-This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, rmel of bolt and greml of gcta 
+This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, grmel of bolt and greml of gcta, gemma  
+two distincs approaches should be considered :
+  * based on relatdness matrix and phenotype as gcta, bolt, gemma  
+  * based on gwas result as implemented in ldlc and gemma
+
+## Installation
+need python3, gcta, ldlc, bolt and gemma
+
+## Running
+The pipeline is run: `nextflow run esth2-assoc.nf`
+ 
+The key options are:
+  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
+  * `output_dir` : output directory
+  * `output` : output pattern
+  * ̀ data` : same option that _plink-assoc.nf_, file is optional, used for gemma, bolt and gcta
+    * `pheno` :phenotypes used in data to computed in gemma, bolt
+  * `file_gwas` : one ore more one file gwas, used for ldsc and gemma, to defined column of files :
+    * ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+    * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
+    * `head_rs` : rs header column [default : "SNP"]
+    * `head_beta` : beta header colum [default : "BETA"]
+    * `head_se`  : column for standard error of beta "SE"
+    * `head_A1` : column for A0 :[default : "ALLELE0" ]
+    * `head_A2` : column for A0 :[default : "ALLELE2" ]
+    * `head_freq` : freq header [ default : A1Freq], 
+    * `head_n`: N header, used just for ldsc, if not present, `Nind` must be initialize.
+    * `Nind` : if `head_n` not initialise, must be initialise, individuals number for each gwas file, separate by comma
+  * `ldsc_h2` : need a estimation of h2 by ldc : 1 [default : 0]:   
+    * [LDSC](https://github.com/bulik/ldsc) computes heritabilies between gwas value using LD information.
+    * 
+    * `ldsc_h2opt` : other option for ldsc  
+
 
 
 
