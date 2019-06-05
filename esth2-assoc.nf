@@ -775,7 +775,7 @@ process DoGemmah2Pval{
        file("output/*")
    script :
      NInfo=params.head_n=="" ? " --n_header ${params.head_n}   " : ""
-     out=gwas.baseName+"_gemm_"+gwas_type_gem
+     out=gwas.baseName+"_gemm_"+gemtype
      plkbas=bed.baseName
      newplkbas=plkbas+"_new"
      """
@@ -784,7 +784,7 @@ process DoGemmah2Pval{
      cp $newplkbas".fam" $newplkbas".fam.tmp" 
      awk \'{\$6=1;print \$0}\' $newplkbas".fam.tmp" > $newplkbas".fam"
      export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-     gemma -beta $gwas".new" -bfile  $newplkbas -vc gemtype -o test1
+     gemma -beta $gwas".new" -bfile  $newplkbas -vc $gemtype -o $out
      """
 }
 
