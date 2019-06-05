@@ -1197,10 +1197,14 @@ The key options are:
     * `Nind` : if `head_n` not initialise, must be initialise, individuals number for each gwas file, separate by comma
   * `ldsc_h2` : need a estimation of h2 by ldc : 1 [default : 0]:   
     * [LDSC](https://github.com/bulik/ldsc) computes heritabilies between gwas value using LD information.
-    * 
+    * `ldsc_bin` : binary for ldsc 
+    * `dir_ref_ld_chr` : folder containing ld information, 1 file by begin by chromosome num without chr, see : `--ref-ld-chr` in ldsc manual
+    * ̀`ldsc_mem_req`
+    * `ldsc_h2_multi` : computing genetic correlation. between different gwas result
+    * `munge_sumstats_bin` : binary for munge 
     * `ldsc_h2opt` : other option for ldsc  
-
-
+    * output : 
+  * ``
 
 
 

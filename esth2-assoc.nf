@@ -26,9 +26,8 @@ import java.nio.file.Paths
 def helps = [ 'help' : 'help' ]
 
 allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
+
 // define param for
-//annotation_model=["gemma","boltlmm", "plink", "head", "linear", "logistic", "fisher", "fastlmm", ""]
-//allowed_params+=annotation_model
 annotation_param=[ "file_gwas","gcta_bin","gcta_mem_req", "Nind"]
 allowed_params+=annotation_param
 h2_param=[ "bolt_h2", "gcta_h2", "gcta_h2_imp"]
@@ -57,7 +56,6 @@ params.output_testing = "cleaned"
 params.covariates = ""
 params.Nind=0
 params.pheno=""
-params.gcta_bin="gcta64"
 params.munge_sumstats_bin="munge_sumstats.py"
 params.ldsc_bin="ldsc.py"
 outfname = params.output_testing
@@ -75,6 +73,7 @@ params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
 
 // bolt option default
+params.bolt_h2=0
 params.bolt_covariates_type = ""
 params.bolt_ld_score_file= ""
 params.bolt_ld_scores_col=""
@@ -88,47 +87,49 @@ params.bolt_otheropt=""
 
 
 params.cut_maf=0.01
-params.dir_ref_ld_chr=""
-params.ldsc_h2opt=""
 //pos with rsid pos chro
 params.list_snp=""
 //## info if need
 params.cut_info=0.6
-params.gcta_mem_req="15GB"
-params.gcta_mem_reqmgrm = "40GB"
-params.ldsc_mem_req="6GB"
 params.plink_mem_req="6GB"
-params.gcta_cpus_req = 10
+params.gcta_num_cores = 10
 params.data=""
 
 
 params.big_time='200h'
+//ldsc
 params.ldsc_h2=0
 params.ldsc_h2_multi=0
-params.gcta_h2_multi=0
-
-params.bolt_h2=0
+params.ldsc_mem_req="6GB"
+params.ldsc_h2opt=""
+params.dir_ref_ld_chr=""
+//params for gcta
+params.gcta_bin="gcta64"
 params.gcta_h2=0
+params.gcta_h2_multi=0
+params.gcta_mem_req="15GB"
+params.gcta_mem_reqmgrm = "40GB"
 params.gcta_h2_imp=0
 params.gcta_h2_ldscore = 200
 params.gcta_h2_grmfile =""
 
+//params gemma
+params.gemma_bin="gemma"
 params.gemma_h2=0
 params.gemma_h2_pval = 0
 /*1 ou 2*/
-params.gemma_h2_type=1
+params.gemma_h2_typeest="1"
 params.gemma_mat_rel=""
 params.gemma_num_cores=8
 params.gemma_mem_req="10GB"
-
 params.gemma_relopt = 1
 
 
 
-params.output="multi_cor"
+params.output="heritabilies"
 
 gcta_mem_req=params.gcta_mem_req
-gcta_cpus_req = params.gcta_cpus_req+1
+gcta_num_cores = params.gcta_num_cores+1
 plink_mem_req = params.plink_mem_req
 max_plink_cores = params.max_plink_cores
 ldsc_mem_req=params.ldsc_mem_req
@@ -494,7 +495,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
        /*to do*/
        //       error("\n\n------\npipeline grm multi is not developped yet\n\n---\n")
        process GCTAComputeMultiGRM{
-          cpus gcta_cpus_req
+          cpus gcta_num_cores
           time params.big_time
           memory params.gcta_mem_reqmgrm
           input :
@@ -506,7 +507,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
             plk=bed.baseName
             out="ldscore_"+params.gcta_h2_ldscore
             """ 
-            ${params.gcta_bin} --bfile $plk --ld-score-region ${params.gcta_h2_ldscore} --out $out  --thread-num ${gcta_cpus_req}
+            ${params.gcta_bin} --bfile $plk --ld-score-region ${params.gcta_h2_ldscore} --out $out  --thread-num ${gcta_num_cores}
             """
        } 
        println "GCTAStrat"
@@ -572,7 +573,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
    filegrmcta_gctai.into{ filegrmcta_gcta; filegrmcta_gcta_cor}
    filegrmcta_gcta=filegrmcta_gcta.combine(newdata_ch_gcta)
    process doMultiGRM{
-     cpus params.gcta_cpus_req
+     cpus params.gcta_num_cores
      time params.big_time
      memory params.gcta_mem_req
      input:
@@ -583,7 +584,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
      script :
         output=pheno+"_gcta"
         """
-        ${params.gcta_bin} --reml --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_cpus_req}  --out $output
+        ${params.gcta_bin} --reml --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output
         """
   }
   listpheno=params.pheno.split(",")
@@ -614,7 +615,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
    }
    }
    process doMultiGRMCor{
-     cpus params.gcta_cpus_req
+     cpus params.gcta_num_cores
      time params.big_time
      memory params.gcta_mem_req
      input :
@@ -631,7 +632,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
         pos=pos+1
         pos2=pos2+1
         """
-        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_cpus_req}  --out $output  --reml-bivar $pos $pos2
+        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2
         """ 
     }
 
@@ -690,7 +691,7 @@ if(params.gemma_h2==1){
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
-       gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
+       ${params.gemma_bin} -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
        """
   }
   }else{
@@ -705,6 +706,7 @@ if(params.gemma_h2==1){
   ind_pheno_cols_ch = newNamePheno(params.pheno)
   data_ch = file(params.data)
 
+  gwas_type_gem1=Channel.from(params.gemma_h2_typeest.split(",")).flatMap{it->file(it)}
 
   process doGemmah2 {
     cpus params.gemma_num_cores
@@ -716,6 +718,7 @@ if(params.gemma_h2==1){
       set file(bed),file(bim),file(fam) from gem_ch_gemma
     each this_pheno from ind_pheno_cols_ch
     publishDir params.output_dir, overwrite:true, mode:'copy'
+    each gemtype from gwas_type_gem1
     output:
       file("output/${out}.log.txt")
     script:
@@ -728,7 +731,7 @@ if(params.gemma_h2==1){
        gemma_covariate    = "${our_pheno}.gemma_cov"
        phef               = "${our_pheno}_n.phe"
        covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
-       out                = "$our_pheno"
+       out                = "$our_pheno"+"_type"+gemma_h2_typeest
        dir_gemma          =  "gemma"
        base = bed.baseName
        inp_fam = base+".fam"
@@ -743,7 +746,7 @@ if(params.gemma_h2==1){
        all_covariate.py --data  $data_nomissing --inp_fam  $newbase".fam" $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       gemma ${covar_opt_gemma}  -k $rel_matrix  -n 1 -p $phef -o $out -maf 0.0000001 -vc ${params.gemma_h2_type}
+       ${params.gemma_bin} ${covar_opt_gemma}  -k $rel_matrix  -n 1 -p $phef -o $out -maf 0.0000001 -vc $gemtype
        """
 
   }
@@ -759,17 +762,20 @@ if(params.gemma_h2_pval==1){
         .set { gemmapval_assoc_ch }
 
 gwas_file_gem=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(gemmapval_assoc_ch)
+gwas_type_gem2=Channel.from(params.gemma_h2_typeest.split(",")).flatMap{it->file(it)}
+
 process DoGemmah2Pval{
    memory params.gemma_mem_req
    cpus params.gemma_num_cores
    input :
       set file(gwas),file(bed),file(bim),file(fam) from gwas_file_gem
    publishDir "${params.output_dir}/gemmapval", overwrite:true, mode:'copy'
+   each gemtype from gwas_type_gem2
    output :
        file("output/*")
    script :
      NInfo=params.head_n=="" ? " --n_header ${params.head_n}   " : ""
-     out=gwas.baseName+"_gemm"
+     out=gwas.baseName+"_gemm_"+gwas_type_gem
      plkbas=bed.baseName
      newplkbas=plkbas+"_new"
      """
@@ -778,7 +784,7 @@ process DoGemmah2Pval{
      cp $newplkbas".fam" $newplkbas".fam.tmp" 
      awk \'{\$6=1;print \$0}\' $newplkbas".fam.tmp" > $newplkbas".fam"
      export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-     gemma -beta $gwas".new" -bfile  $newplkbas -vc 1 -o test1
+     gemma -beta $gwas".new" -bfile  $newplkbas -vc gemtype -o test1
      """
 }
 
