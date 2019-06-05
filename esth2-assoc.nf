@@ -717,8 +717,8 @@ if(params.gemma_h2==1){
       file(rel) from rel_mat_ch
       set file(bed),file(bim),file(fam) from gem_ch_gemma
     each this_pheno from ind_pheno_cols_ch
-    publishDir params.output_dir, overwrite:true, mode:'copy'
     each gemtype from gwas_type_gem1
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     output:
       file("output/${out}.log.txt")
     script:
@@ -731,7 +731,7 @@ if(params.gemma_h2==1){
        gemma_covariate    = "${our_pheno}.gemma_cov"
        phef               = "${our_pheno}_n.phe"
        covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
-       out                = "$our_pheno"+"_type"+gemma_h2_typeest
+       out                = "$our_pheno"+"_type"+gemtype
        dir_gemma          =  "gemma"
        base = bed.baseName
        inp_fam = base+".fam"
