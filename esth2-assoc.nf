@@ -762,7 +762,7 @@ if(params.gemma_h2_pval==1){
         .set { gemmapval_assoc_ch }
 
 gwas_file_gem=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(gemmapval_assoc_ch)
-gwas_type_gem2=Channel.from(params.gemma_h2_typeest.split(",")).flatMap{it->file(it)}
+gwas_type_gem2=Channel.from(params.gemma_h2_typeest.split(",")).toList()
 
 process DoGemmah2Pval{
    memory params.gemma_mem_req
