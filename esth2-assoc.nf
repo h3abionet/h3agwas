@@ -706,7 +706,7 @@ if(params.gemma_h2==1){
   ind_pheno_cols_ch = newNamePheno(params.pheno)
   data_ch = file(params.data)
 
-  gwas_type_gem1=Channel.from(params.gemma_h2_typeest.split(",")).flatMap{it->file(it)}
+  gwas_type_gem1=Channel.from(params.gemma_h2_typeest.split(",")).toList()
 
   process doGemmah2 {
     cpus params.gemma_num_cores
