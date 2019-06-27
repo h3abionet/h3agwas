@@ -189,19 +189,19 @@ def gChrom= { x ->
       refBase = ref.baseName
       newref = "${refBase}.new"
       "checkRef.py  $ref $newref"
-   }
+ }
 
 
-// Check if some of the entries are known errors to be removed at this point
-// set up delete_cmd and remove to be used next
+ //  Check if some of the entries are known errors to be removed at this point
+ // set up delete_cmd and remove to be used next
 
-    if (null_values.contains(mask)) {
-	mask_ch = Channel.from(0)
-	mask_2_ch = Channel.from(0)
-     } else {
-	mask_ch = Channel.fromPath(mask)
-	mask_2_ch = Channel.fromPath(mask)
-    }
+ if (null_values.contains(mask)) {
+    mask_ch = Channel.from(0)
+    mask_2_ch = Channel.from(0)
+  } else {
+   mask_ch = Channel.fromPath(mask)
+   mask_2_ch = Channel.fromPath(mask)
+  }
 
 
 
@@ -213,11 +213,11 @@ def gChrom= { x ->
     file(ref) from ref2_ch
     val(ref_parm) from ref_parm_ch
     file(flips) from flip_ch
-    publishDir params.output_dir, pattern: "*.{bed,bim,log,badsnps}", \
+   publishDir params.output_dir, pattern: "*.{bed,bim,log,badsnps}", \
         overwrite:true, mode:'copy'
    output:
      file("*.{bed,bim,log,badsnps}") into aligned_ch
-     file ("aligned.fam") into fix_fam_ch
+     file ("aligned.fam") into (fix_fam_ch, orig_fam_ch)
    script:
     base = bed.baseName
     refBase = ref.baseName
@@ -241,34 +241,21 @@ def gChrom= { x ->
  }
 
 
-
-
-if (null_values.contains(params.samplesheet)) {
-  process fixFam{
-    input:
-       file(fam) from fix_fam_ch
-     publishDir params.output_dir, pattern: "${output}.fam", \
-             overwrite:true, mode:'copy'
-     output:
-        file("${output}.fam") into fixedfam_ch
-     script:
-       "cp $fam ${output}.fam"
-  }
-} else {
-
   if (null_values.contains(params.replicates))
-      replicates_ch = Channel.from(0)
+    replicates_ch = Channel.from(0)
   else
     replicates_ch = Channel.fromPath(params.replicates)
 
 
- if (params.newpat) {
+  if (params.newpat) {
     sheet_parm = " --newpat '${params.newpat}' "
- } else {
+  } else {
     sheet_parm = ' '
- }
+  }
 
- process fixFam {
+
+
+  process fixFam {
    input:
      file(samplesheet)
      file(fam) from fix_fam_ch
@@ -279,6 +266,8 @@ if (null_values.contains(params.samplesheet)) {
              overwrite:true, mode:'copy'
    output:
      file("${output}.fam") into fixedfam_ch
+   when:
+     !null_values.contains(params.samplesheet)
    script:
      idpat = params.idpat
      if (null_values.contains(params.replicates))
@@ -289,13 +278,27 @@ if (null_values.contains(params.samplesheet)) {
      sheet2fam.py --idpat '$idpat' ${sheet_parm} --sheet-columns $sheet_columns \
                   $replicate_parm --mask $masks \
                   $samplesheet $fam $output  
-     """
+     """ 
  } 
-}
-
-fixedfam_ch.combine(aligned_ch).subscribe { 
-  files =  it.collect { fn -> fn.getName().replace(".*/","") }
-  println "The output can be found in ${params.output_dir}: files are ${files}"
-}
 
 
+  if (null_values.contains(params.samplesheet)) {
+    fixedfam_ch.combine(aligned_ch).subscribe { 
+      files =  it.collect { fn -> fn.getName().replace(".*/","") }
+      println "The output can be found in ${params.output_dir}: files are ${files}"
+    }
+
+ }  else {
+   process publishFam {
+     input:
+      file (fam) from orig_fam_ch
+     output:
+      file("${output}.fam")
+     publishDir params.output_dir, pattern: "${output}.fam", \
+             overwrite:true, mode:'copy'
+     script:
+      " cp $fam ${output}.fam "
+   }
+
+  }
+  
