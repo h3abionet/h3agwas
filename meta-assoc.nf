@@ -299,7 +299,7 @@ if(params.metasoft==1){
     script:
       out = "metasoft"
       """
-      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header RSID --pval_header "PVALUE_RE" --beta_header "BETA_RE" --info_prog "MetaSoft (Han and Eskin's Random Effects model)"
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header RSID --pval_header "PVALUE_RE" --beta_header "BETA_RE" --info_prog "MetaSoft (Han and Eskin Random Effects model)"
       """
   }
   report_ch = report_ch.flatten().mix(report_Metasoft.flatten())
@@ -318,7 +318,9 @@ def getres(x) {
   return res.trim()
 }
 
-nextflowversion =getres("nextflow -v")
+nextflowversion =nextflow.version
+
+
 if (workflow.repository)
   wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
 else

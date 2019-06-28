@@ -104,7 +104,7 @@ println "The batch file is ${params.batch}"
 
 
 
-nextflowversion =getres("nextflow -v")
+nextflowversion =nextflow.version
 
 
 if (workflow.repository)
