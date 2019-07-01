@@ -196,8 +196,8 @@ def gChrom= { x ->
  // set up delete_cmd and remove to be used next
 
  if (null_values.contains(mask)) {
-    mask_ch = Channel.from(0)
-    mask_2_ch = Channel.from(0)
+    mask_ch = Channel.fromPath(0)
+    mask_2_ch = Channel.fromPath(0)
   } else {
    mask_ch = Channel.fromPath(mask)
    mask_2_ch = Channel.fromPath(mask)
@@ -242,7 +242,7 @@ def gChrom= { x ->
 
 
   if (null_values.contains(params.replicates))
-    replicates_ch = Channel.from(0)
+    replicates_ch = Channel.fromPath(0)
   else
     replicates_ch = Channel.fromPath(params.replicates)
 
@@ -269,7 +269,6 @@ def gChrom= { x ->
    when:
      !null_values.contains(params.samplesheet)
    script:
-     idpat = params.idpat
      if (null_values.contains(params.replicates))
        replicate_parm = ""
      else 

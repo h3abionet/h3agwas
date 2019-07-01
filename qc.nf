@@ -33,6 +33,16 @@ def helps = [ 'help' : 'help' ]
 params.batch = "0"
 params.phenotype="0"
 params.samplesheet   = "0"
+if (params.samplesheet == 0)
+   samplesheet = "0"
+else
+   samplesheet = params.samplesheet
+if (params.idpat ==  "0") 
+    idpat   = "(.*)"
+else
+    idpat   = params.idpat
+
+
 params.help = false
 K = "--keep-allele-order"
 
@@ -94,7 +104,7 @@ def checkSampleSheet(fname)  {
   }
 }        
 
-checkSampleSheet(params.samplesheet)
+checkSampleSheet(samplesheet)
 
 idfiles = [params.batch,params.phenotype]
 idfiles.each { checkColumnHeader(it,['FID','IID']) }
@@ -135,14 +145,9 @@ orepmd5      = report["outmd5"]
 
 params.queue    = 'batch'
 params.remove_on_bp  = 1
-if (params.samplesheet == 0)
-  params.samplesheet = "0"
 
 
 
-if (params.idpat ==  "0")  {
-    params.idpat   = "(.*)"
-}
 
 
 max_plink_cores = params.max_plink_cores 
@@ -242,8 +247,7 @@ configfile   = Channel.create()
 
 
 
-println(params.samplesheet)
-sample_sheet_ch = file(params.samplesheet)
+sample_sheet_ch = file(samplesheet)
 
 
 //---- Modification of variables for pipeline -------------------------------//
@@ -332,7 +336,7 @@ process sampleSheet {
   script:
    """
     mkdir -p plates
-    sampleqc.py $sheet ${params.gc10} "${params.idpat}"  poorgc10.lst plates/crgc10.tex
+    sampleqc.py $sheet ${params.gc10} "${idpat}"  poorgc10.lst plates/crgc10.tex
    """
 }
 

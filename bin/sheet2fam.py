@@ -147,11 +147,12 @@ def parseSheet(allrows):
                  the_val=str(the_val)
              return the_val.replace(" ","")
           else:
-             return row[col].replace(" ","")
+             return str(row[col]).replace(" ","")
        except KeyError as e:
           sys.exit(EOL+"<%s> is not a column of the sample sheet"%col+EOL)
+    curr_row_num=0
     for row in allrows:
-       curr_row_num=row[0].value
+       curr_row_num=curr_row_num+1
        raw_id = getVal(row,col_id)
        plate  = getVal(row,col_plate)
        well   = getVal(row,col_well)
@@ -184,7 +185,10 @@ def parseSheet(allrows):
                batch = m.group(1)
            else:
                batch=batch.replace(" ","")
-       indivs[(plate,well)] =  [real_fid,real_iid,sample_sex,batch]
+      if args.newpat in null_values:
+           indivs[(fid,iid)] =  [real_fid,real_iid,sample_sex,batch]
+       else:
+           indivs[(plate,well)] =  [real_fid,real_iid,sample_sex,batch]
     if len(problems)>0:
         wrn.write(EOL+EOL+"==============================================="+EOL+EOL)
         wrn.write("The following IDs are duplicated in the sample sheet --- a problem"+EOL)
