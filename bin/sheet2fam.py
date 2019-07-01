@@ -185,7 +185,7 @@ def parseSheet(allrows):
                batch = m.group(1)
            else:
                batch=batch.replace(" ","")
-      if args.newpat in null_values:
+       if args.newpat in null_values:
            indivs[(fid,iid)] =  [real_fid,real_iid,sample_sex,batch]
        else:
            indivs[(plate,well)] =  [real_fid,real_iid,sample_sex,batch]
