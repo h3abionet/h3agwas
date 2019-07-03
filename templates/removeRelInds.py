@@ -10,6 +10,8 @@ if len(sys.argv)<=1:
 
 EOL=chr(10)
 
+str_type = {"FID":str, "IID":str, "FID1":str, "IID1":str, "FID2":str, 'IID2':str}
+
 imissf = pd.read_csv(sys.argv[1],delim_whitespace=True,index_col=["FID","IID"])
 genomef = pd.read_csv(sys.argv[2],delim_whitespace=True,usecols=["FID1","IID1","FID2","IID2","PI_HAT"])
 
