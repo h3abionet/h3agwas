@@ -51,7 +51,9 @@ if len(sys.argv)<=1:
 
 args = parseArguments()
 
-idtypes = dict(map(lambda x: (x,object),["FID","IID","FID1","IID1","FID2","IID2",str(args.pheno_col), str(args.batch_col)]))
+
+idtypes = dict(map(lambda x: (x,str),\
+                   ["FID","IID","FID1","IID1","FID2","IID2",str(args.pheno_col), str(args.batch_col)]))
 idtypes['PI_HAT']=float
 
 
