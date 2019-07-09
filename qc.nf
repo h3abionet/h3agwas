@@ -448,7 +448,7 @@ if (extrasexinfo == "--must-have-sex") {
 } else {
 
 
-  x_analy_res_ch = Channel.from("none")
+  x_analy_res_ch = Channel.fromPath("0")
    
 
 }

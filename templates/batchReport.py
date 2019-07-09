@@ -539,7 +539,7 @@ There were no X-chromosome SNPs and so this was not possible. Note that in Table
 
 def detailedSexAnalysis(pfrm,missing_sex_columns):
     sex_fname = args.base+"_missing_and_sexcheck.csv"
-    if type(pfrm)==bool or "$extrasexinfo" != "--must-have-sex":    
+    if missing_sex_columns == "---":
         g=open(sex_fname,"w")
         g.close()
         return noX
@@ -609,6 +609,7 @@ def getPhenoAnalysis():
         res_text = res_text + showResult(args.pheno_col,*result)
     else:
         pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
+        args.pheno_col="all"
     return pfrm, res_text
 
 
@@ -623,19 +624,25 @@ no_response = [0,"0",False,"FALSE","false","False",""]
 
 bfrm, btext = getBatchAnalysis()
 pfrm, ptext = getPhenoAnalysis()
-sxAnalysis = pd.read_pickle(args.sx_pickle)
-missing_sex_columns = list(map(str,sxAnalysis.columns.values))
-rdict = dict(zip(sxAnalysis.columns.values,missing_sex_columns))
-sxAnalysis.rename(columns=rdict,inplace=True)
 
 text = text + ptext + btext
 pfrm = pfrm.join(bfrm,rsuffix="-b",lsuffix="",how='inner')
 pfrm = pfrm.join(ifrm,how='inner')
-pfrm = pfrm.join(sxAnalysis,how='inner')
 
 col_names=['FID','IID']+list(map(lambda x: "PC%d"%x,range(1,21)))
 
+if args.sx_pickle != "0":
+    sxAnalysis = pd.read_pickle(args.sx_pickle)
+    missing_sex_columns = list(map(str,sxAnalysis.columns.values))
+    rdict = dict(zip(sxAnalysis.columns.values,missing_sex_columns))
+    sxAnalysis.rename(columns=rdict,inplace=True)
+    pfrm = pfrm.join(sxAnalysis,how='inner')
+else:
+    missing_sex_columns = "---"
+
 text = text + detailedSexAnalysis(pfrm,missing_sex_columns)
+
+
 
 eigs=getCsvI(args.eigenvec,names=col_names)
 
