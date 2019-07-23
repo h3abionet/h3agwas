@@ -778,6 +778,7 @@ process DoGemmah2Pval{
      out=gwas.baseName+"_gemm_"+gemtype
      plkbas=bed.baseName
      newplkbas=plkbas+"_new"
+     //error! Number of columns in the wcat file does not match that of cat file.error! fail to read files. 
      """
      gemma_format_pval.py --inp_asso $gwas --out $gwas".new"  --rs_header ${params.head_rs} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --chro_header ${params.head_chr} --beta_header ${params.head_beta} --bfile $plkbas --threads ${params.gemma_num_cores}
      plink -bfile $plkbas --extract listrs.rs --make-bed  --out $newplkbas --keep-allele-order --threads ${params.gemma_num_cores} 

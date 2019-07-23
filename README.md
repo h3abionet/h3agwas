@@ -1204,7 +1204,9 @@ The key options are:
     * `munge_sumstats_bin` : binary for munge 
     * `ldsc_h2opt` : other option for ldsc  
     * output : 
-  * ``
+  * `gemma_h2` :
+  * `gemma_h2_pval`
+    * _-vc_ for vc equal 2 need LD files, fou
 
 
 
