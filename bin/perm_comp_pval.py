@@ -40,8 +40,8 @@ def GetPvalue(listfile,listpvlocalobs, headpv) :
     listminpval=[]
     listpvloc=[(x+1)/float(len(listminpv)+1) for x in listpvloc]
     for x in listpvlocalobs :
-        listminpval.append((len([x for y in listminpv if y < x])+1)/float(len(listminpv)+1))
-    return (listpvloc, listminpval)
+        listminpval.append((len([y for y in listminpv if y <= x])+1)/float(len(listminpv)+1))
+    return (listpvloc, listminpval, listminpv)
 args = parseArguments()
 
 read = open(args.listgwas)
@@ -50,10 +50,11 @@ read.close()
 
 
 datagwas=pd.read_csv(args.inp,delim_whitespace=True)
-(listpvloc, listminpva)=GetPvalue(listfile, datagwas[args.head_pv].tolist(), args.head_pv)
+(listpvloc, listminpva, listminpv)=GetPvalue(listfile, datagwas[args.head_pv].tolist(), args.head_pv)
 datagwas['PvalmaxT']=listminpva
 datagwas['PvalByLoc']=listpvloc
 datagwas.to_csv(args.out,sep=TAB,header=True,index=False,na_rep="NA")
-
+writemin=open(args.out+".MINPV", 'w')
+writemin.write("\n".join([str(x) for x in listminpv]))
 
 
