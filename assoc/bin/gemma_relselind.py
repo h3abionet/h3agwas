@@ -67,7 +67,8 @@ for FID in listeFID :
    if FID in listeFIDKept :
       ListePosKept.append(CmtFID)
    CmtFID+=1 
-
+print(len(ListePosKept))
+print(max(ListePosKept))
 readmat=open(args.rel)
 writemat=open(args.relout, 'w')
 CmtL=0
