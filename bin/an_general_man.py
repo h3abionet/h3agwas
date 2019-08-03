@@ -108,7 +108,7 @@ def parseArguments():
     parser.add_argument('--pos_header',type=str,required=True,help="pos header in inp files")
     parser.add_argument('--rs_header',type=str,required=True,help="rs header in inp files")
     parser.add_argument('--pval_header',type=str,required=True,help="pvalue header in inp files")
-    parser.add_argument('--freq_header',type=str,required=True,help="pvalue header in inp files")
+    parser.add_argument('--freq_header',type=str,required=False,help="pvalue header in inp files")
     parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
     parser.add_argument('--geno_plot',type=str,required=True,help="info program to be print in tex files")
     parser.add_argument('--locuszoom_plot',type=str,required=True,help="info program to be print in tex files")
@@ -129,7 +129,8 @@ rsname=args.rsname
 cov=args.cov
 
 result = pd.read_csv(inp,delim_whitespace=True)
-
+if freq_ent ==None :
+   result[freq_ent]=-1
 best_row = r"%s & %s & %s & %7.4f & %6.3E & %7.4f\\"
 x=result.head(1)
 rsvalue = best_row%(x[chro_ent][0],x[rs_ent][0].replace("_","-"),x[pos_ent][0],x[beta_ent][0],x[pval_ent][0], x[freq_ent][0])+EOL

@@ -19,7 +19,7 @@ def parseArguments():
     parser.add_argument('--rs_header',type=str,required=True,help="rs header in inp files")
     parser.add_argument('--pval_header',type=str,required=True,help="pvalue header in inp files")
     parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
-    parser.add_argument('--freq_header',type=str,required=True,help="frequencies header in inp files")
+    parser.add_argument('--freq_header',type=str,required=False,help="frequencies header in inp files")
     parser.add_argument('--around_rs',type=float,required=True,help="around rs (pb)")
     parser.add_argument('--maf',type=float,default=0.0,help="minor allele frequencies")
     parser.add_argument('--out_head',type=str,default="out",help="around rs (pb)")
@@ -47,7 +47,10 @@ result = pd.read_csv(args.inp_resgwas,delim_whitespace=True)
 
 sub_result=result.loc[result[args.rs_header].isin(list_rs)]
 TAB=chr(9)
-PosCol=[args.chro_header, args.pos_header,  args.pos_header, args.rs_header, args.pval_header, args.freq_header]
+if args.freq_header :
+   PosCol=[args.chro_header, args.pos_header,  args.pos_header, args.rs_header, args.pval_header, args.freq_header]
+else :
+   PosCol=[args.chro_header, args.pos_header,  args.pos_header, args.rs_header, args.pval_header]
 for x in sub_result[args.rs_header] :
     print(x)
     out_file=args.out_head+"_around.stat"
@@ -59,11 +62,15 @@ for x in sub_result[args.rs_header] :
     pos=infors[args.pos_header].tolist()[0]
     small=result[(result[args.chro_header]==chro) & (result[args.pos_header]>(args.around_rs-pos)) & (result[args.pos_header]<(args.around_rs+pos))]
     maf=args.maf
-    small=small[(small[args.rs_header]==x) | ((small[args.freq_header]>maf) & (small[args.freq_header]<(1-maf)))]
+    if args.freq_header :
+       small=small[(small[args.rs_header]==x) | ((small[args.freq_header]>maf) & (small[args.freq_header]<(1-maf)))]
     # chrom, start, end, marker ID, and p-value 
     verysmall=infors[[args.rs_header,args.chro_header, args.pos_header]]
     verysmall.to_csv(out_info, sep=TAB, header=False, index=False,na_rep="NA")
     small=small[PosCol] 
-    small.columns=["#CHROM","BEGIN","END","MARKER_ID","PVALUE","MAF"]
+    if args.freq_header :
+       small.columns=["#CHROM","BEGIN","END","MARKER_ID","PVALUE","MAF"]
+    else :
+       small.columns=["#CHROM","BEGIN","END","MARKER_ID","PVALUE"]
     small.to_csv(out_file, sep=TAB, header=True, index=False,na_rep="NA")
 

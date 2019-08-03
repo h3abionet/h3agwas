@@ -112,6 +112,7 @@ def extractID(x):
         
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     if inf in ["","0","false","False"]:
         noGCAnalysis(outf,badf)
         sys.exit(0)
@@ -120,6 +121,13 @@ if __name__ == "__main__":
     else:
         sdf = pd.read_csv(inf,delimiter=",")
     if "10%_GC_Score" not in sdf.columns:
+=======
+    if inf in ["","0","false","False"] :
+        noGCAnalysis(outf,badf)
+        sys.exit(0)
+    sdf = pd.read_excel(inf)
+    if  "Call_Rate" not in sdf.columns or "10%_GC_Score" not in sdf.columns: 
+>>>>>>> awigen
         noGCAnalysis(outf,badf)
         sys.exit(0)
     if "Institute Sample Label" not in sdf.columns:

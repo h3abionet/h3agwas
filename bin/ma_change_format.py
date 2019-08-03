@@ -68,16 +68,18 @@ sep_out=GetSep(args.sep_out)
 
 
 read=open(args.input_file)
-write=open(args.out_file,'w')
 
 infohead=args.info_file.split(",")
 l_oldhead=[x.split(":")[1] for x in infohead if(ConfIsNotNull(x))]
 l_newhead=[x.split(":")[0] for x in infohead  if(ConfIsNotNull(x))]
 
-PosSep=l_newhead.index('Sep')
-sep=GetSep(l_oldhead[PosSep])
-del l_oldhead[PosSep]
-del l_newhead[PosSep]
+if 'Sep' in l_newhead :
+   PosSep=l_newhead.index('Sep')
+   sep=GetSep(l_oldhead[PosSep])
+   del l_oldhead[PosSep]
+   del l_newhead[PosSep]
+else :
+   sep =None
 rsId_inp=l_oldhead[l_newhead.index('rsID')]
 baliserepchrpos=False
 if(args.rs_ref) :
@@ -145,6 +147,7 @@ def checkfloat(tmp, listposfloat):
         tmp[x]="NA"
    return tmp
 
+write=open(args.out_file,'w')
 if baliserepchrpos :
    l_newhead+=["CHRO", "POS"]
    write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")

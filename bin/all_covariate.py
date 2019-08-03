@@ -13,6 +13,7 @@ EOL=chr(10)
 def parseArguments():
     parser = argparse.ArgumentParser(description='fill in missing bim values')
     parser.add_argument('--inp_fam',type=str,required=True)
+    parser.add_argument('--lind',type=str,required=False)
     parser.add_argument('--data',type=str,required=True,help="File with phenotype and covariate data")
     parser.add_argument('--cov_list', type=str,help="comma separated list of covariates",default="")
     parser.add_argument('--pheno',type=str,required=True,help="comma separated list of  pheno column")
@@ -20,7 +21,7 @@ def parseArguments():
     parser.add_argument('--cov_out', type=str,help="output covariate file")
     parser.add_argument('--gxe_out', type=str,help="output gxe file (gemma use)")
     parser.add_argument('--gxe', type=str,help="gxe covariate (gemma use)")
-    parser.add_argument('--form_out', type=int,help="format output : 1:Gemma, 2:boltlmm, 3:FastLmm", required=True)
+    parser.add_argument('--form_out', type=int,help="format output : 1:Gemma, 2:boltlmm, 3:FastLmm, 4:gcta", required=True)
     args = parser.parse_args()
     return args
 
@@ -89,6 +90,8 @@ elif  args.form_out==2:
     MissingOut="NA" 
 elif  args.form_out==3:
     MissingOut="-9" 
+elif  args.form_out==4:
+    MissingOut="NA" 
 else :
     print("--form_out : "+str(args.form_out)+" not define")
     sys.exit(11)
@@ -119,6 +122,9 @@ for (label, transform) in zip(pheno_labels+covar_labels, pheno_transform+cover_t
     datad[label]=datad[label].apply(check_missing, MissingOut=MissingOut)
 
 famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID","IID","FAT","MAT","SEXFAM","CC"])
+#if args.lind :
+#   indtokepp=pd.read_csv(args.lind,delim_whitespace=True,header=None, names=["FID","IID"])
+#   famd=pd.merge(famd, indtokepp,how="inner",on=["FID","IID"])
 merge = pd.merge(famd,datad,how="left",suffixes=["_f",""],on=["FID","IID"])
 # for gemma
 if args.form_out == 1 : 
@@ -135,6 +141,10 @@ elif  args.form_out == 3 :
    merge.reindex(["FID","IID"])
    merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels,header=False,index=False,na_rep=MissingOut)
    merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covariates,header=False,index=False,na_rep=MissingOut)
+elif args.form_out == 4 :
+   merge.reindex(["FID","IID"])
+   merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels,header=True,index=False,na_rep=MissingOut)
+   merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covariates,header=True,index=False,na_rep=MissingOut)
 
 
 

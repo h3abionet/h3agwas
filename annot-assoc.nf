@@ -62,7 +62,7 @@ outfname = params.output_testing
 
 /**/
 params.head_pval = "P_BOLT_LMM"
-params.head_freq = "A1FREQ"
+params.head_freq = ""
 params.head_bp = "BP"
 params.head_chr = "CHR"
 params.head_rs = "SNP"
@@ -79,11 +79,12 @@ params.loczm_pop = "AFR"
 params.loczm_build = "hg19"
 params.loczm_source ="1000G_March2012"
 params.loczm_gwascat = ""
+params.data=""
+params.pheno=""
 
-list_rs=params.list_rs.split(",")
+list_rs=params.list_rs.split(",").toList()
 
 
-/* Do permutation testing -- 0 for none, otherwise give number */
 /*JT Append initialisation variable*/
 params.bolt_impute2fidiid=""
 /*gxe param : contains column of gxe*/
@@ -188,8 +189,9 @@ process ExtractInfoRs{
       out_locus_rs=out+"_around.stat"
       out_gwas_rs=out+"_gwas.stat"
       out_info_rs=out+"_info.stat"
+      infoaf=head_freq=="" ? "" :  " --freq_header  $head_freq --maf ${params.cut_maf} " 
       """
-     an_extract_rs.py --inp_resgwas  $gwas_file --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --freq_header  $head_freq --maf ${params.cut_maf} --list_rs $rs --around_rs ${params.around_rs} --out_head $out
+     an_extract_rs.py --inp_resgwas  $gwas_file --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --list_rs $rs --around_rs ${params.around_rs} --out_head $out
       """
 }
 
@@ -281,8 +283,9 @@ process WriteReportRsFile{
        rsnnameout=rs.replace(':',"_")
        outtex=rsnnameout+".tex"
        out=rsnnameout+".pdf"
+       infoaf=head_freq=="" ? "" :  " --freq_header  $head_freq " 
        """
-       an_general_man.py --inp_asso $gwasres --rsname $rs --pheno ${params.pheno} $covrep --out $outtex --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --freq_header  $head_freq --locuszoom_plot $locuszoom --geno_plot $plotgeno --inp_asso $gwasres --annot_pdf $annotpdf
+       an_general_man.py --inp_asso $gwasres --rsname $rs --pheno ${params.pheno} $covrep --out $outtex --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} $infoaf --locuszoom_plot $locuszoom --geno_plot $plotgeno --inp_asso $gwasres --annot_pdf $annotpdf
        pdflatex $rsnnameout
        pdflatex $rsnnameout
        """ 

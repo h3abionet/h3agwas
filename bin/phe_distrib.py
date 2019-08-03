@@ -122,6 +122,9 @@ output_latex= ""
 for phen in phenos:
     dets = phen.split("/")
     pname = dets[0]
+    if (frm[pname].dtype == np.float64 or frm[pname].dtype == np.int64)==False :
+        errorMessage10(pname)
+        sys.exit(11) 
     output_latex = output_latex + showPheno(pname,frm)
 
 g = open("%s.tex"%args.output,"w")
