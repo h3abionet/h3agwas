@@ -21,7 +21,7 @@ sample = sample[ , !(names(sample) %in% drops)]
 
 xx =
      genotype.Illumina(sampleSheet=sample,
-     path="/spaces/scott/h3agwas/img2call/aux/allidats",
+     path="/spaces/scott/h3agwas/img2call/aux/idats/",
      arrayNames = names,                  
      arrayInfoColNames=list(barcode="Array Info.S", position="Sentrix ID"),
      highDensity=TRUE, sep="_",
