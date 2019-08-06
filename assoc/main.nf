@@ -30,7 +30,6 @@ def helps = [ 'help' : 'help' ]
 allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust"]
 
 
-/*JT : append argume boltlmm, bolt_covariates_type */
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
 ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt"]
 allowed_params+=ParamBolt
@@ -386,6 +385,7 @@ if (params.data != "") {
   pheno_label_ch = Channel.from(params.pheno.split(","))
 
   process showPhenoDistrib {
+    // not sure difference between container and label
     input:
     file(data) from data_ch
     output:
@@ -485,6 +485,7 @@ if (params.fastlmm == 1) {
 
 
      process doFastlmmMulti{
+       label 'py2fast'
        cpus params.fastlmm_num_cores
        time   params.big_time
        input:
@@ -536,6 +537,7 @@ if (params.fastlmm == 1) {
   }  else { // if not   doing fastlmm_multi
 
      process doFastlmm{
+       label 'py2fast'
        cpus params.fastlmm_num_cores
        time   params.big_time
        input:
@@ -721,6 +723,7 @@ if (params.boltlmm == 1) {
   }
 
   process doBoltmm{
+    label 'py2fast'
     cpus params.bolt_num_cores
     memory params.bolt_mem_req
     time   params.big_time
@@ -992,6 +995,7 @@ if (params.gemma_gxe == 1){
 if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
 
    process computeTest {
+      // template 
       cpus num_assoc_cores
       time params.big_time
       input:
@@ -1008,7 +1012,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
        perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
        adjust = (params.adjust ? "--adjust" : "")
        outfname = "${pheno_name}"
-       test = test_choice 
+       //test = test_choice 
        if (params.data == "") {
            pheno_cmd = ""
            out = base

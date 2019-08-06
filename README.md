@@ -82,12 +82,19 @@ There are three separate workflows that make up *h3agwas*
        * differential missingness
        * Hardy Weinberg Equilibrium deviations
 
-`assoc`: Association study. A simple analysis association study is done. The purpose of this is to give users an introduction to their data. Real studies, particularly those of the H3A consortium will have to handle compex co-variates and particular population study. We encourage users of our pipeline to submit thieir analysis for the use of other scientists.
+3. `assoc`: Association study. A simple analysis association study is done. The purpose of this is to give users an introduction to their data. Real studies, particularly those of the H3A consortium will have to handle compex co-variates and particular population study. We encourage users of our pipeline to submit their analysis for the use of other scientists.
   * Basic PLINK association tests, producing manhattan and qqplots
   * CMH association test - Association analysis, accounting for clusters
   * permutation testing
   * logistic regression
   * Efficient Mixed Model Association testing with gemma, boltlmm or fastlmm
+  * Gene environment association with gemma or plink
+  * Other scripts gave for post analysis :
+    * `assoc/cojo-assoc.nf` : do Conditional & joint (COJO) analysis of GWAS summary statistics without individual-level genotype data with gcta
+    * ̀ assoc/esth2-assoc.nf` : estimate heritability and co-heritabilie with gcta, ldsc, gemma and bolt
+    * `assoc/meta-assoc.nf` : do meta analysis with summary statistics 
+    * `assoc/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
+    * `assoc/simul-assoc.nf` : simulation of bed file 
 
 
 
