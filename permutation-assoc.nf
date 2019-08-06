@@ -515,7 +515,7 @@ gemma_merge=gemma_manhatten_ch2.join(gemma_permres.groupTuple())
 
 process ComputePval{
    input :
-     set val(pheno), file(gemmai), val(listgemperm) from gemma_merge
+     set val(pheno), file(gemmai), file(listgemperm) from gemma_merge
    publishDir params.output_dir, overwrite:true, mode:'copy'
    output :
      file("$out")
