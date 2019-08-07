@@ -56,7 +56,7 @@ params.ma_mem_req="5G"
 params.gwama_mem_req="10G"
 params.metasoft_mem_req="10G"
 
-params.metasoft_pvalue_table=""
+params.metasoft_pvalue_table="/usr/local/bin/HanEskinPvalueTable.txt"
 params.ma_metasoft_opt=""
 
 params.ma_mrmega_pc=4
@@ -152,6 +152,7 @@ liste_file_mrmega=liste_file_mrmega.collect()
 if(params.gwama==1){
   //config channel
   process doGWAMA {
+     label 'metaanalyse'
      memory gwama_mem_req
     input :
       val(list_file) from liste_file_gwama
@@ -190,6 +191,7 @@ if(params.gwama==1){
 if(params.mrmega==1){
   //config channel
   process doMRMEGA {
+    label 'metaanalyse'
     memory ma_mem_req
     input :
       val(list_file) from liste_file_mrmega
@@ -231,6 +233,7 @@ if(params.mrmega==1){
 if(params.metal==1){
 
   process doMetal {
+    label 'metaanalyse'
     memory ma_mem_req
     input :
       val(list_file) from liste_file_metal
@@ -273,6 +276,7 @@ if(params.metasoft==1){
   filepvaltable=Channel.fromPath(params.metasoft_pvalue_table)
   process doMetaSoft {
     memory ma_mem_req
+    label 'metaanalyse'
     input :
       val(list_file) from liste_file_metasoft
       file(file_pvaltab) from filepvaltable

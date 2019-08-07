@@ -78,3 +78,10 @@ analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and lo
 Other flags are:
 * `thin`. You can set this to a floating point number in the range (0, 1] and then the PLINK data files are thinned leaving only that proportion of the SNPs. This allows pipeline to be tested with a small proportion of the data This is probably only needed for debugging purposes and usually this should not be be set.
 * `chrom`. Only do testing on this chromosome.
+
+
+## Post-Analysis script 
+1. Computed a new p.value par permutation with gemma 
+2. Conditional & joint (COJO) analysis of GWAS summary statistic
+3. Annotation of position 
+4. 

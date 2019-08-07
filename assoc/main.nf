@@ -31,7 +31,7 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_me
 
 
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
-ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt"]
+ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin"]
 allowed_params+=ParamBolt
 ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin"]
 allowed_params+=ParamFast
@@ -117,7 +117,11 @@ params.fastlmm = 0
 params.fastlmm_num_cores=8
 params.fastlmm_mem_req="15GB"
 params.fastlmm_multi = 0 
-params.fastlmmc_bin =""
+
+params.fastlmmc_bin ="fastlmmc"
+params.bolt_bin ="bolt"
+params.gemma_bin ="gemma"
+
 /*gxe param : contains column of gxe*/
 params.gemma_gxe=0
 params.plink_gxe=0
@@ -463,7 +467,7 @@ if (params.fastlmm == 1) {
 	   """
            cat $fam |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
 	   export OPENBLAS_NUM_THREADS=${params.fastlmm_num_cores}
-	   gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
+	   ${params.gemma_bin} -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
 	   cvt_rel_gemma_fastlmm.py $fam output/${base}.*XX.txt $rel_fastlmm
 	   """
 	 }
@@ -759,7 +763,7 @@ if (params.boltlmm == 1) {
       boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp  " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
-      bolt.py bolt $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
+      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
            $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt}
       #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp |\
       #       grep -B 1 -E "^[ ]+h2" 1> $outReml 
@@ -822,7 +826,7 @@ if (params.gemma+params.gemma_gxe>0) {
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
-       gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
+       ${params.gemma_bin} -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
        """
   }
   }else{
@@ -884,7 +888,7 @@ if (params.gemma == 1){
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 
+       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 
        mv output ${dir_gemma}
        rm $rel_matrix
        """
@@ -968,7 +972,7 @@ if (params.gemma_gxe == 1){
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
-       gemma -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
+       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
        mv output ${dir_gemma}
        """
   } 
@@ -1113,6 +1117,7 @@ report_ch = report_ch.mix(report_pca_ch)
 }
 
 process doReport {
+  label 'latex'
   input:
     file(reports) from report_ch.toList()
   publishDir params.output_dir, overwrite:true, mode:'copy'
