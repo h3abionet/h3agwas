@@ -10,6 +10,9 @@ for File in ListFile :
    if 'CHRO' in tmp and 'POS' in tmp and 'FREQA1' in tmp and 'N' in tmp:
       NewLFile.append(File)
    lire.close()
+if len(NewLFile)<2 :
+   print("too few file for MR-MEGA with good header")
+   sys.exit(1)
 
 ecrire=open(FileOut, 'w')
 ecrire.write("\n".join(NewLFile))

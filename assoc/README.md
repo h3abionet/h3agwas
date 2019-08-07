@@ -59,9 +59,9 @@ By default a chi2 test for association is done. But you can do multiple differen
     * `fastlmm_multi` : memory used by fastmll is very big and increase with snp number, option run fastlmm by chromosome, with relatedness matrix computed before with gemma (-gk 1) 
     * `fastlmmc_bin` : should change binary for fastlmmc (default fastlmmc)
 and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want to adjust for multiple testing 
-
-* `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
-* `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
+ * plink gwas option :
+    * `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
+    * `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
 
 with pipeline, do a GxE interaction with Gemma and Plink, arguments :
   * `gxe` : environmental variables to do gxe analysis with `pheno`, must be coded in 1 and 2 for plink
