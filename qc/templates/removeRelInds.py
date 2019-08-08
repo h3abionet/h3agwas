@@ -31,10 +31,13 @@ def getDegrees(remove):
        x=tuple(row[["FID1","IID1"]].tolist())
        y=tuple(row[["FID2","IID2"]].tolist())
        if x in remove or y in remove : pass
-       deg[x]=deg[x]+1
-       deg[y]=deg[y]+1
-       rel[x].append(y)
-       rel[y].append(x)
+       try:
+           deg[x]=deg[x]+1
+           deg[y]=deg[y]+1
+           rel[x].append(y)
+           rel[y].append(x)
+       except:
+           print("saw the problem")
    return rel, deg
 
 

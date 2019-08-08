@@ -47,7 +47,7 @@ params.mrmega=0
 params.metal_bin='metal'
 params.gwama_bin='GWAMA'
 params.mrmega_bin='MR-MEGA'
-params.metasoft_bin="Metasoft.jar"
+params.metasoft_bin="/opt/bin/Metasoft.jar"
 
 params.ma_random_effect=1
 params.ma_genomic_cont=0
@@ -56,7 +56,7 @@ params.ma_mem_req="5G"
 params.gwama_mem_req="10G"
 params.metasoft_mem_req="10G"
 
-params.metasoft_pvalue_table=""
+params.metasoft_pvalue_table="/opt/bin/HanEskinPvalueTable.txt"
 params.ma_metasoft_opt=""
 
 params.ma_mrmega_pc=4
@@ -152,6 +152,7 @@ liste_file_mrmega=liste_file_mrmega.collect()
 if(params.gwama==1){
   //config channel
   process doGWAMA {
+     label 'metaanalyse'
      memory gwama_mem_req
     input :
       val(list_file) from liste_file_gwama
@@ -190,6 +191,7 @@ if(params.gwama==1){
 if(params.mrmega==1){
   //config channel
   process doMRMEGA {
+    label 'metaanalyse'
     memory ma_mem_req
     input :
       val(list_file) from liste_file_mrmega
@@ -231,6 +233,7 @@ if(params.mrmega==1){
 if(params.metal==1){
 
   process doMetal {
+    label 'metaanalyse'
     memory ma_mem_req
     input :
       val(list_file) from liste_file_metal
@@ -270,12 +273,13 @@ if(params.metal==1){
 
 if(params.metasoft==1){
 
-  filepvaltable=Channel.fromPath(params.metasoft_pvalue_table)
+  file_pvaltab=params.metasoft_pvalue_table
   process doMetaSoft {
     memory ma_mem_req
+    label 'metaanalyse'
     input :
       val(list_file) from liste_file_metasoft
-      file(file_pvaltab) from filepvaltable
+      //file(file_pvaltab) from filepvaltable
     publishDir "${params.output_dir}/metasoft", overwrite:true, mode:'copy'
     output :
       set file("${out}.meta"),file("${out}.res"),file("${out}.log"), file("${out}.files"), file("${out}.format.res")
@@ -349,6 +353,7 @@ def getConfig = {
 
 
 process doReport {
+  label 'latex'
   input:
     file(reports) from report_ch.toList()
   publishDir params.output_dir, overwrite:true, mode:'copy'

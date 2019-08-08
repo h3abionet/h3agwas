@@ -59,9 +59,9 @@ By default a chi2 test for association is done. But you can do multiple differen
     * `fastlmm_multi` : memory used by fastmll is very big and increase with snp number, option run fastlmm by chromosome, with relatedness matrix computed before with gemma (-gk 1) 
     * `fastlmmc_bin` : should change binary for fastlmmc (default fastlmmc)
 and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want to adjust for multiple testing 
-
-* `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
-* `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
+ * plink gwas option :
+    * `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
+    * `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
 
 with pipeline, do a GxE interaction with Gemma and Plink, arguments :
   * `gxe` : environmental variables to do gxe analysis with `pheno`, must be coded in 1 and 2 for plink
@@ -78,3 +78,10 @@ analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and lo
 Other flags are:
 * `thin`. You can set this to a floating point number in the range (0, 1] and then the PLINK data files are thinned leaving only that proportion of the SNPs. This allows pipeline to be tested with a small proportion of the data This is probably only needed for debugging purposes and usually this should not be be set.
 * `chrom`. Only do testing on this chromosome.
+
+
+## Post-Analysis script 
+1. Computed a new p.value par permutation with gemma 
+2. Conditional & joint (COJO) analysis of GWAS summary statistic
+3. Annotation of position 
+4. 
