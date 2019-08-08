@@ -270,7 +270,7 @@ process SimulPheno{
    time params.big_time
    input :
      set sim, file(ms), file(ped),file(bed), file(bim), file(fam) from phenosim_data_all
-   publishDir "${params.output_dir}/simul/", pattern: "$file_causal", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/simul/", pattern: "$ent_out_phen*", overwrite:true, mode:'copy'
    output :
      set sim, file(file_causal), file(file_pheno), file(bed), file(bim), file(fam) into raw_pheno
    script :
@@ -326,9 +326,12 @@ if(params.gemma==1){
        file("output/${base}.*XX.txt") into rel_mat_ch
     script:
        base = plinks[0].baseName
+       famfile=base+".fam"
+
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       gemma -bfile $base  -gk ${params.gemma_relopt} -o $base
+       cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
+       gemma -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 
        """
   }
   sim_data_gemma2=sim_data_gemma.combine(rel_mat_ch)
