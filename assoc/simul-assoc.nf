@@ -52,6 +52,7 @@ params.thin       = ""
 params.covariates = ""
 params.chrom      = ""
 outfname = params.output_testing
+params.gemma_num_cores = 6
 
 supported_tests = ["chi2","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma"]
 
