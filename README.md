@@ -1,6 +1,4 @@
 
-
-
 <img src="aux/H3ABioNetlogo2.jpg"/>
 
 # h3agwas Pipeline Version 3
@@ -13,9 +11,7 @@ This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, yo
 ## Background
 
 
-
 h3aGWAS is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). h3aGWAS uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
-
 
 
 The original version of the h3aGWAS was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.  
@@ -37,22 +33,17 @@ This version has been run on real data sets and works. However, not all cases ha
 * it is not robust when X chromosome data is not available
 * the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
 
-
-
 ## Outline of documentation
-
+### main documentation
 1. Features
 2. Installing the pipeline
 3. A quick start example
 4. The Nextflow configuration file
-5. The QC pipeline: `qc.nf`
-6. A simple association testing pipeline: `assoc.nf`
-7. Converting Illumina genotyping reports to PLINK: `topbottom.nf`
 8. Advanced options: Docker, PBS, Singularity, Amazon EC2
 9. Dealing with errors
 10. Auxiliary Programs
 
-#  Features
+#1.  Features
 
 ##  Goals of the h3agwas pipeline
 
@@ -64,6 +55,7 @@ There are three separate workflows that make up *h3agwas*
 1. `call2plink`.  Conversion of Illumina genotyping reports with TOP/BOTTOM or FORWARD/REVERSE  calls into PLINK format, aligning the calls.
 
 2. `qc`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
+   * see [README of qc](qc/)
 
    * Sample QC tasks checking:
 
@@ -334,7 +326,7 @@ When you run the the scripts there are a number of different options that you mi
 
 Almost all the workflow options that are in the _nextflow.config_ file can also be passed on the command line and they will then override anything in the config like. For example
 
-```nextflow run qc.nf   --cut_miss  0.04```
+```nextflow run qc   --cut_miss  0.04```
 
 sets the maximim allowable per-SNP misisng to 4%. However, this should only be used when debugging and playing round. Rather, keep the options in the auxiliary config file that you save. By putting options on the command line you reduce reproducibility. (Using the parameters that change the mode of the running -- e.g. whether using docker or whether to produce a time line only affects time taken and auxiliary data rather than the substantive results).
 
@@ -706,9 +698,7 @@ batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
 In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
 
 
-
-
-# 14. Acknowledgement, Copyright and general
+# 7. Acknowledgement, Copyright and general
 
 ## Acknowledgement
 
