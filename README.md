@@ -39,11 +39,13 @@ This version has been run on real data sets and works. However, not all cases ha
 2. Installing the pipeline
 3. A quick start example
 4. The Nextflow configuration file
-8. Advanced options: Docker, PBS, Singularity, Amazon EC2
-9. Dealing with errors
-10. Auxiliary Programs
+5. Running the workflow in different environments and Advanced options: Docker, PBS, Singularity, Amazon EC2
+6. Dealing with errors
+7. Auxiliary Programs
+8. Acknowledgement, Copyright and general
 
-#1.  Features
+
+# 1.  Features
 
 ##  Goals of the h3agwas pipeline
 
@@ -53,6 +55,7 @@ for performing a genome-wide association study
 There are three separate workflows that make up *h3agwas*
 
 1. `call2plink`.  Conversion of Illumina genotyping reports with TOP/BOTTOM or FORWARD/REVERSE  calls into PLINK format, aligning the calls.
+   * see [README of call2plink](qc/)
 
 2. `qc`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
    * see [README of qc](qc/)
@@ -75,6 +78,7 @@ There are three separate workflows that make up *h3agwas*
        * Hardy Weinberg Equilibrium deviations
 
 3. `assoc`: Association study. A simple analysis association study is done. The purpose of this is to give users an introduction to their data. Real studies, particularly those of the H3A consortium will have to handle compex co-variates and particular population study. We encourage users of our pipeline to submit their analysis for the use of other scientists.
+   * see [README of assoc/](assoc/)
   * Basic PLINK association tests, producing manhattan and qqplots
   * CMH association test - Association analysis, accounting for clusters
   * permutation testing
@@ -87,8 +91,6 @@ There are three separate workflows that make up *h3agwas*
     * `assoc/meta-assoc.nf` : do meta analysis with summary statistics 
     * `assoc/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
     * `assoc/simul-assoc.nf` : simulation of bed file 
-
-
 
 
 ## Design principles
@@ -169,7 +171,7 @@ The following code needs to be installed and placed in a directory on the user's
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
 * python 3.6 or later. pandas, numpy, scipy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
-If you want to run the `assoc.nf` pipeline then you should install gemma if you are using those options.
+If you want to run the `assoc` pipeline then you should install gemma if you are using those options.
 
 ## 2.5 Installing the workflow
 
@@ -184,9 +186,9 @@ To download the workflow you can say
 If we update the workflow, the next time you run it, you will get a warning message. You can do another pull to bring it up to date.
 
 If you manage the workflow this way, you will run the scripts, as follows
-* `nextflow run h3abionet/h3agwas/topbottom.nf ..... `
-* `nextflow run h3abionet/h3agwas/qc.nf ..... `
-* `nextflow run h3abionet/h3agwas/assoc.nf ..... `
+* `nextflow run h3abionet/h3agwas/call2plink ..... `
+* `nextflow run h3abionet/h3agwas/qc ..... `
+* `nextflow run h3abionet/h3agwas/assoc ..... `
 
 ### 2.5.2 Managing with Git
 
@@ -196,9 +198,9 @@ Change directory where you want to install the software and say
 
 This will create a directory called _h3agwas_ with all the necesssary code.
 If you manage the workflow this way, you will run the scripts this way:
-* `nextflow run SOME-PATH/topbottom.nf ..... `
-* `nextflow run SOME-PATH/qc.nf ..... `
-* `nextflow run SOME-PATH/assoc.nf ..... `
+* `nextflow run SOME-PATH/call2plink ..... `
+* `nextflow run SOME-PATH/qc ..... `
+* `nextflow run SOME-PATH/assoc ..... `
 
 where _SOME-PATH_ is a relative or absolute path to where the workflow was downloaded.
 
@@ -213,7 +215,7 @@ Docker. More details and general configuration will be shown later.
 This section illustrates how to run the pipeline on a small sample data
 file with default parameters.  For real runs, the data to be analysed
 and the various parameters to be used are specified in the
-_nextflow.config_ file.  The details will be explained in another
+_nextflow.config_ files in assoc, qc and call2plink folder.  The details will be explained in another
 section.
 
 If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.sip and unzip
@@ -254,11 +256,11 @@ In order, to run the workflow on another PLINK data set, say _mydata.{bed,bim,fa
 
 `nextflow run  qc --input_pat mydata`
 
-(or `nextflow run  h3abionet/h3agwas/qc.nf --input_pat mydata` : **for simplicity for the rest of the tutorial we'll only present the one way of running the workflow -- you should use the method that is appropriate for you**)
+(or `nextflow run  h3abionet/h3agwas/qc --input_pat mydata` : **for simplicity for the rest of the tutorial we'll only present the one way of running the workflow -- you should use the method that is appropriate for you**)
 
 If the data is another directory, and you want to the data to go elsehwere:
 
-`nextflow run  qc.nf --input_pat mydata --input_dir /data/project10/ --output_dir ~/results `
+`nextflow run  qc --input_pat mydata --input_dir /data/project10/ --output_dir ~/results `
 
 There are many other options that can be passed on the the command-line. Options can also be given in the _config_ file (explained below). We recommend putting options in the configuration file since these can be archived, which makes the workflow more portable
 
@@ -266,7 +268,7 @@ There are many other options that can be passed on the the command-line. Options
 
 Execute 
 
-`nextflow run  qc.nf -profile docker`
+`nextflow run  qc -profile docker`
 
 Please note that the _first_ time you run the workflow using Docker,  the Docker images will be downloaded. *Warning:* This will take about 1GB of bandwidth which will consume bandwidth and will take time depending on your network connection. It is only the first time that the workflow runs that the image will be downloaded.
 
@@ -301,13 +303,13 @@ your config files.
 
 You can use the _-c_ option specify another configuration file in addition to the nextflow.config file
 
-```nextflow run -c data1.config qc.nf```
+```nextflow run -c data1.config qc``
 
 
 **This is highly recommended.** We recommend that you keep the `nextflow.config` file as static as possible, perhaps not even modifying it from the default config. Then  for any
  run or data set, have a much smaller config file that only specifies the changes you want made. The base `nextflow.config` file will typically contain config options that are best set by the h3aGWAS developers (e.g., the names of the docker containers) or default GWAS options that are unlikely to change. In your separate config file, you will specify the run-specific options, such as data sets, directories or particular GWAS parameters you want. Both configuration files should be specified. For example, suppose I create a sub-directory within the directory where the nextflow file is (probably called h3agwas). Within the h3agwas directory I keep my nexflow.config file and the nextflow file itself. From the sub-directory, I run the workflow by saying:
 
-```nextflow run  -c data1.config ../qc.nf```
+```nextflow run  -c data1.config ../qc```
 
 This will automatically use the `nextflow.config` file in either the current or parent directory. Note that the the config files are processed in order: if an option is set into two config files, the latter one takes precedence.
 
@@ -326,7 +328,7 @@ When you run the the scripts there are a number of different options that you mi
 
 Almost all the workflow options that are in the _nextflow.config_ file can also be passed on the command line and they will then override anything in the config like. For example
 
-```nextflow run qc   --cut_miss  0.04```
+```nextflow run qc --cut_miss  0.04```
 
 sets the maximim allowable per-SNP misisng to 4%. However, this should only be used when debugging and playing round. Rather, keep the options in the auxiliary config file that you save. By putting options on the command line you reduce reproducibility. (Using the parameters that change the mode of the running -- e.g. whether using docker or whether to produce a time line only affects time taken and auxiliary data rather than the substantive results).
 
@@ -345,7 +347,7 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
 
 * A nice graphic of a run of your workflow
 
-    `nextflow run qc.nf -with-dag quality-d.pdf`
+    `nextflow run qc -with-dag quality-d.pdf`
 
 * A timeline of your workflow and individual processes (produced as an html file).
 
@@ -355,32 +357,27 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
 
 
 
-
-
-
-
-
-
 # 5. Running the workflow in different environments
 
 In the  quick start we gave an overview of running our workflows in different environments. Here we go through all the options, in a little more detail
+
 
 ## 5.1 Running natively on a machine
 
 This option requires that all dependancies have been installed. You run the code by saying
 
 ````
-nextflow run qc.nf
+nextflow run qc
 ````
 
 You can add that any extra parameters at the end.
+
 
 ## 5.2 Running  on a local machine with Docker
 
 This requires the user to have docker installed.
 
-Run by `nextlow run qc.nf -profile docker`
-
+Run by `nextlow run qc -profile docker`
 
 
 ## 5.3 Running on a cluster 
@@ -418,7 +415,7 @@ We assume all the data is visible to all nodes in the swarm. Log into the head n
 We have tested our workflow on different Docker Swarms. How to set up Docker Swarm is beyond the scope of this tutorial, but if you have a Docker Swarm, it is easy to run. From the head node of your Docker swarm, run
 
 ```
-nextflow run qc.nf -profile dockerSwarm
+nextflow run qc -profile dockerSwarm
 ```
 
 ## 5.5 Singularity
@@ -426,20 +423,19 @@ nextflow run qc.nf -profile dockerSwarm
 
 Our workflows now run easily with Singularity.
 
-`nextflow run qc.nf -profile singularity`
+`nextflow run qc -profile singularity`
 
 or
 
-`nextflow run qc.nf -profile pbsSingularity`
+`nextflow run qc -profile pbsSingularity`
 
 By default the user's ${HOME}/.singularity will be used as the cache for Singularity images. If you want to use something else, change the `singularity.cacheDir` parameter in the config file.
 
-## Running on a cluster with Docker or Singularity
 
 If you have a cluster which runs Docker, you can get the best of both worlds by editing the queue variable in the _pbsDocker_ stanza, and then running
 
 ```
-nextflow run qc.nf -profile option
+nextflow run qc -profile option
 ```
 
 where _option_ is one of _pbsDocker_, _pbsSingularity_, _slurmDocker_ or _slurmSingularity_. If you use a different scheduler, read the Nextflow documentation on schedulers, and then use what we have in the _nextflow.config_ file as a template to tweak.
@@ -538,7 +534,7 @@ Login in the master node using the following command:
    Of course, you can also use other parameters (e.g. -resume or --work_dir). For your own run you will want to use your nextflow.config file.
 
 
-   By default, running the workflow like this runs the `qc.nf` script. If you want to run one of the other scripts you would say `nextflow run  h3abionet/h3agwas/topbottom.nf` or `nextflow run h3abionet/h3agwas/assoc.nf` etc. 
+   __ Need to change : By default, running the workflow like this runs the `qc` script. If you want to run one of the other scripts you would say `nextflow run  h3abionet/h3agwas/topbottom.nf` or `nextflow run h3abionet/h3agwas/assoc.nf` etc. __
 
 
 7. The output of the default runcan be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
@@ -572,7 +568,7 @@ Note there are two uses of `-c`. The positions of these arguments are crucial. T
 The _scott.aws_ file is not shared or put under git control. The _nextflow.config_ and _run10.config_ files can be archived, put under git control and so on because you _want_ to share and archive this information with o thers.
 
 
-#9. Dealing with errors
+#6. Dealing with errors
 
 One problem with our current workflow is that error messages can be obscure. Errors can be caused by
 * bugs in our code
@@ -639,11 +635,11 @@ If you are still stuck you can ask for help at two places
    https://github.com/h3abionet/h3agwas/issues
 
 
-# 6. Auxiliary Programs
+# 7. Auxiliary Programs
 
 These are in the aux directory
 
-## 6.1 updateFam.py
+## 7.1 updateFam.py
 
 Can be used to update fam files. You probably won't need it, but others might find it useful. The intended application might be that there's been a mix-up of sample IDs and you want to correct.  The program takes four parameters: the original sample sheet, a new sample sheet (only has to include those elements that have changed), the original fam file, and then the base of a newfam file name.  The program takes the plate and well as the authorative ID of a sample. For every row in the updated sheet, the program finds the plate and well, looks up the corresponded entry in the original sheet, and then replaces that associated ID in the fam file. For example, if we have
 
@@ -663,11 +659,11 @@ Then the new fam file has the AAAAA entry replaced with the BBBBB entry
 
 Three files are output: a fam file, an error file (the IDs of individuals who are in th e sample sheet but not the fam file are output), and a switch file (containing all the changes that were made). Some problems like duplicate entries are detected.
 
-## 6.2 getRunsTimes.pl (By Harry Noyes)
+## 7.2 getRunsTimes.pl (By Harry Noyes)
 
 Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
 
-## 6.3 make_ref.py 
+## 7.3 make_ref.py 
 
 Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
 
@@ -680,7 +676,7 @@ The program checks each SNP given in the manifest file by the chromosome and pos
 The wrn file are SNPs which are probably OK but have high slippage (these are in the ref file)
 The err file are the SNPs which don't match.
 
-## 6.6 plates.py
+## 7.4 plates.py
 
 This is used to depict where on the plates particular samples are. This is very useful for looking at problems in the data. If for example you find a bunch of sex mismatches this is most likely due to misplating. This script is a quick way of looking at the problem and seeing whether the errors are close together or spread out. There are two input arguments
 
@@ -698,7 +694,7 @@ batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
 In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
 
 
-# 7. Acknowledgement, Copyright and general
+# 8. Acknowledgement, Copyright and general
 
 ## Acknowledgement
 
