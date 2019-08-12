@@ -1,4 +1,6 @@
-#  Association pipeline: `assoc.nf`
+<img src="../aux/H3ABioNetlogo2.jpg"/>
+
+#  Association pipeline: `assoc/main.nf`
 
 This workflow has been extensively expanded by Jean-Tristan Brandenburg
 
@@ -11,13 +13,13 @@ For this reason it is difficult to build a high quality, generic pipeline to do 
 
 The purpose of this pipeline is to perform a very superficial initial analysis that can be used as one piece of information to guide a rigorous analysis. Of course, we would encourage users to build their own Nextflow script for their rigorous analysis, perhaps using our script as a start.
 
-Our script, *assoc.nf* takes as input PLINK files that have been through quality control and 
+Our script, *assoc* takes as input PLINK files that have been through quality control and 
 * does a principal component analysis on the data, and produces pictures from that; 
 * performs a simple association test giving odds ratio and  raw and adjusted _p_ values
 
 ## Running
 
-The pipeline is run: `nextflow run assoc.nf`
+The pipeline is run: `nextflow run assoc`
 
 The key options are:
 * `input_dir`, `output_dir`: where input and output goes to and comes from;
@@ -71,7 +73,7 @@ with pipeline, do a GxE interaction with Gemma and Plink, arguments :
 
 For example
 
-```nextflow run assoc.nf --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
+```nextflow run assoc --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
 
 analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
 
@@ -92,13 +94,13 @@ see [cojo](https://cnsgenomics.com/software/gcta/#COJO)
 need python3, gcta 
 tested for singularity image: no
 ### Running
-The pipeline is run: `nextflow run annot-assoc.nf`
+The pipeline is run: `nextflow run assoc/annot-assoc.nf`
 
 The key options are:
   * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
   * `output_dir` : output directory
   * `output` : output pattern
-  * ̀ data` : same option that _plink-assoc.nf_, file is optional, used if need select specific individus for gcta,  compute frequencies or N, if mission in `file_gwas`
+  * ̀ data` : same option that _assoc/main.nf_, file is optional, used if need select specific individus for gcta,  compute frequencies or N, if mission in `file_gwas`
   * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
   * `pheno` : optional, header in data, if present select individuals with no missiong individual to keep individuals for computed frequencie or gcta
   * `cut_maf` minor allele frequencies [ default : 0.0001]
@@ -110,7 +112,7 @@ The key options are:
     * `head_beta` : beta header colum [default : "BETA"]
     * `head_se`  : column for standard error of beta "SE"
     * `head_A1` : column for A0 :[default : "ALLELE0" ]
-    * `head_A2` : column for A0 :[default : "ALLELE2" ]
+    * `head_A2` : column for A1 :[default : "ALLELE1" ]
 
 
 
@@ -132,9 +134,9 @@ This section describes a pipeline in devlopment, objectives is annotation of rs 
 need locuszoom, _R_ : (ggplot2), python3
 
 
-##4. Simulation pipeline: `simul-assoc.nf`
+##4. Simulation pipeline: `assoc/simul-assoc.nf`
 
-This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *simul-assoc.nf* takes as input PLINK files that have been through quality control and
+This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *assoc/simul-assoc.nf* takes as input PLINK files that have been through quality control and
   * Simulate quantitative phenotypes with [phenosim](https://www.ncbi.nlm.nih.gov/pubmed/21714868) based on genetics data
   * perform a GWAS on  phenotype simulated using gemma, boltlmm.
   * Perform summary statistics.
@@ -144,7 +146,7 @@ a version of _phenosim_ adapted is already in nextflow binary, write in python2.
 
 ### Running
 
-The pipeline is run: `nextflow run simul-assoc.nf`
+The pipeline is run: `nextflow run assoc/simul-assoc.nf`
 
 The key options are:
   * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
@@ -167,8 +169,8 @@ The key options are:
            * `ph_cov_range` : normalisation range for initial phenotype
            * `ph_intercept` : intercept
   * Association option :
-     * `boltlmm` : 1 perform boltlmm (default 0), see boltlmm option in _assoc.nf_
-     * `gemma` : 1 perform gemma (default 0)  see gemma option in _assoc.nf_
+     * `boltlmm` : 1 perform boltlmm (default 0), see boltlmm option in _assoc/main.nf_
+     * `gemma` : 1 perform gemma (default 0)  see gemma option in _assoc/main.nf_
      * `covariates` : covariates to include in model (if ph_normalise is 1)
   * Statistics option :
      * `ph_alpha_lim` : list of alpha used to computed significance (separated by comma)
@@ -203,13 +205,13 @@ two distincs approaches should be considered :
 need python3, gcta, ldlc, bolt and gemma
 
 ### Running
-The pipeline is run: `nextflow run esth2-assoc.nf`
+The pipeline is run: `nextflow run assoc/esth2-assoc.nf`
 
 The key options are:
   * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
   * `output_dir` : output directory
   * `output` : output pattern
-  * ̀ data` : same option that _plink-assoc.nf_, file is optional, used for gemma, bolt and gcta
+  * ̀ data` : same option that _assoc/plink-assoc.nf_, file is optional, used for gemma, bolt and gcta
     * `pheno` :phenotypes used in data to computed in gemma, bolt
   * `file_gwas` : one ore more one file gwas, used for ldsc and gemma, to defined column of files :
     * ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
@@ -234,7 +236,7 @@ The key options are:
   * `gemma_h2` :
 
 
-##5. MetaAnalysis pipeline : `meta-assoc.nf`
+##5. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 
