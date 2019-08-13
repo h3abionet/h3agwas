@@ -835,7 +835,8 @@ process removeSkewSnps {
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${output}.{bed,bim,fam}") into (qc4A_ch,qc4B_ch,qc4C_ch)
-    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into report["cleaned"], forconvertvcf
+    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into report["cleaned"] 
+    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into forconvertvcf
   script:
   base = plinks[0].baseName
   output = params.output.replace(".","_")
@@ -848,15 +849,15 @@ process convertInVcf {
    memory plink_mem_req
    cpus max_plink_cores
    input :
-    plink from forconvertvcf
+    file(plink) from forconvertvcf
    publishDir params.output_dir, overwrite:true, mode:'copy'
    output :
-    file("${vcf}.vcf")  
+    file("${base}.vcf")  
    script:
-   base= plink[0].baseName
-   """
-   plink --bfile ${base} --threads ${max_plink_cores} --recode vcf --out $base
-   """
+     base= plink[0].baseName
+     """
+     plink --bfile ${base} --threads ${max_plink_cores} --recode vcf --out $base
+     """
 
 }
 
