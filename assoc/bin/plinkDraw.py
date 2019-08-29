@@ -161,6 +161,7 @@ def processProbs(data,p_col,p_name):
 def clean(name):
    return name.replace("/","-").replace("np.","")
 
+## problem when there is no sex !!!!!!
 def showResults():
     # first get the result for the straight forward test
     if test=="assoc":

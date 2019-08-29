@@ -136,7 +136,7 @@ params.sexinfo_available = "false"
 
 
 params.plink_mem_req = '750MB' // how much plink needs for this
-params.other_process_memory = '750MB' // how much other processed need
+params.other_process_memory = '2G' // how much other processed need
 
 
 plink_mem_req = params.plink_mem_req
@@ -569,6 +569,7 @@ if (params.fastlmm == 1) {
   // this part is plotting done for any fastlmm mode
 
   process showFastLmmManhatten {
+    params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from fastlmm_manhatten_ch
@@ -771,6 +772,8 @@ if (params.boltlmm == 1) {
   }
 
   process showBoltmmManhatten {
+    cpus params.other_process_memory
+    memory 
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from bolt_manhatten_ch
@@ -894,6 +897,7 @@ if (params.gemma == 1){
        """
   }
   process showGemmaManhatten {
+    params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch
@@ -978,6 +982,7 @@ if (params.gemma_gxe == 1){
   } 
 
   process showGemmaManhattenGxE { 
+    params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch_gxe
@@ -1077,6 +1082,7 @@ if (params.plink_gxe==1) {
  }
 
   process showPlinkManhattenGxE {
+    params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from res_plink_gxe
