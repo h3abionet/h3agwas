@@ -569,7 +569,7 @@ if (params.fastlmm == 1) {
   // this part is plotting done for any fastlmm mode
 
   process showFastLmmManhatten {
-    params.other_process_memory
+    memory params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from fastlmm_manhatten_ch
@@ -772,8 +772,7 @@ if (params.boltlmm == 1) {
   }
 
   process showBoltmmManhatten {
-    cpus params.other_process_memory
-    memory 
+   memory params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from bolt_manhatten_ch
@@ -897,7 +896,7 @@ if (params.gemma == 1){
        """
   }
   process showGemmaManhatten {
-    params.other_process_memory
+    memory params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch
@@ -982,7 +981,7 @@ if (params.gemma_gxe == 1){
   } 
 
   process showGemmaManhattenGxE { 
-    params.other_process_memory
+    memory params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch_gxe
@@ -1082,7 +1081,7 @@ if (params.plink_gxe==1) {
  }
 
   process showPlinkManhattenGxE {
-    params.other_process_memory
+    memory params.other_process_memory
     publishDir params.output_dir
     input:
       set val(base), val(this_pheno), file(assoc) from res_plink_gxe
