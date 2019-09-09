@@ -77,7 +77,7 @@ if args.n_header==None or args.freq_header==None :
    elif args.freq_header==None :
       data_n=data_n[["SNP","MAF"]]
       freq_head="MAF"
-   result=result.merge(data_n,how="left", on=rs_head)
+   result=result.merge(data_n,how="inner", on=rs_head)
 
 
 if args.chr :
