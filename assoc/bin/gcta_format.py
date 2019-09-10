@@ -24,7 +24,7 @@ def parseArguments():
     parser.add_argument('--se_header',type=str,required=True,help="se header in inp files")
     parser.add_argument('--n_header',type=str,help="n header in inp files", default=None)
     parser.add_argument('--chr',type=str,help="n header in inp files", default=None)
-    parser.add_argument('--chro_header',type=str,help="n header in inp files", default="")
+    parser.add_argument('--chro_header',type=str,required=True,help="n header in inp files", default="")
     parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
     parser.add_argument('--bin_plk',type=str,required=False,help="plink binary", default="plink")
     parser.add_argument('--bfile',type=str,required=False,help="bfile if need to compute frequency or N", default=None)
@@ -67,7 +67,7 @@ if args.n_header==None or args.freq_header==None :
    # CHR            SNP   A1   A2          MAF  NCHROBS
    #SNP A1 A2 freq b se p N
    data_n['N']=data_n['NCHROBS']/2
-   if args.n_header==None and args.freq_header : 
+   if args.n_header==None and args.freq_header==None: 
       data_n=data_n[["SNP","MAF","N"]]
       freq_head="MAF"
       n_head="N"
