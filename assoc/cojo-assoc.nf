@@ -162,7 +162,20 @@ process getListInd{
    """
 }
 }else{
-filekeepcojo=filekeepformat=file('NO_FILEINDKEEP')
+famlind = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+process getListInd2{
+   input :
+     file(fam) from famlind
+   output :
+     file(keepout) into (filekeepformat,filekeepcojo)
+   script :
+   keepout="list_ind.keep"
+   """
+   awk \'{print \$1\" \"\$2}\' $fam > $keepout
+   """
+
+}
+//filekeepcojo=filekeepformat=file('NO_FILEINDKEEP')
 }
 
 
