@@ -71,6 +71,7 @@ params.head_beta="BETA"
 params.head_se="SE"
 params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
+params.multigrm_opt=""
 
 // bolt option default
 params.bolt_h2=0
@@ -632,7 +633,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
         pos=pos+1
         pos2=pos2+1
         """
-        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2
+        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2 ${params.multigrm_opt}
         """ 
     }
 
