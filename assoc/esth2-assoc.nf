@@ -585,7 +585,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
      script :
         output=pheno+"_gcta"
         """
-        ${params.gcta_bin} --reml --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output
+        ${params.gcta_bin} --reml --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output ${params.multigrm_opt}
         """
   }
   listpheno=params.pheno.split(",")
@@ -633,7 +633,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
         pos=pos+1
         pos2=pos2+1
         """
-        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2 ${params.multigrm_opt}
+        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2 
         """ 
     }
 
