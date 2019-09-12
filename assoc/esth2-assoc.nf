@@ -621,7 +621,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
      memory params.gcta_mem_req
      input :
        set file(phef), file(covfile) from newdata_ch_gcta_multi
-       set file(filemult) from filegrmcta_gcta_cor
+       file(filemult) from filegrmcta_gcta_cor
     publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
      each poss from list_Cor
      output:
@@ -633,7 +633,11 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
         pos=pos+1
         pos2=pos2+1
         """
-        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2 
+        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  &> outmultgrlm 
+        if [ -f $output".hsq" ]
+        then
+        cat outmultgrlm > $output".hsq"
+        fi
         """ 
     }
 
