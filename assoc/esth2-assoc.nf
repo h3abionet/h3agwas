@@ -14,7 +14,7 @@
  *  2015-2018
  *
  *
- * Description : pipeline annotation
+ * Description : pipeline to estimate heritabilies and co heritabilites with summary stat, genetics data.... with gemma, bolt, ldsc, gcta
  *
  */
 
@@ -431,7 +431,7 @@ if(params.bolt_h2){
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
-      bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd > $outReml 
+      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 $outReml
       """
   }
 }
@@ -585,7 +585,11 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
      script :
         output=pheno+"_gcta"
         """
-        ${params.gcta_bin} --reml ${params.multigrm_opt} --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output 
+        ${params.gcta_bin} --reml ${params.multigrm_opt} --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output &> outmultgrlm
+        if [ ! -f $output".hsq" ]
+        then
+        cat outmultgrlm > $output".hsq"
+        fi
         """
   }
   listpheno=params.pheno.split(",")
@@ -634,7 +638,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
         pos2=pos2+1
         """
         ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  &> outmultgrlm 
-        if [ -f $output".hsq" ]
+        if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"
         fi
