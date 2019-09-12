@@ -58,6 +58,7 @@ params.head_A2="ALLELE0"
 params.input_dir=""
 params.input_pat=""
 params.list_N=""
+params.mtag_mem_req="10G"
 params.bin_mtag="mtag.py"
 params.cut_maf = 0.001
 
@@ -123,6 +124,7 @@ if(params.list_N!="" || head_N!=""){
 /* Channel for each file*/
 list_gwas_multi_for1=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}
 process doFormatFile{
+ memory params.mtag_mem_req
  input :
    file filegwas from list_gwas_multi_for1
  output :
@@ -154,6 +156,8 @@ Channel
 list_gwas_multi_for3=list_gwas_multi_for2.combine(raw_src_ch)
 
 process doFormatFilePlk{
+ memory params.mtag_mem_req
+ cpu params.max_plink_cores
  input :
    set file(filegwas), file(bed), file(bim), file(fam) from list_gwas_multi_for3
  output :
@@ -178,11 +182,12 @@ gwasformat.collect().into { listgwasform_col1; listgwasform_col2}
 
 /*Mtag*/
 process doMTAG{
+   memory params.mtag_mem_req
   input :
    file(listfile) from listgwasform_col1
  publishDir "${params.output_dir}/mtag", overwrite:true, mode:'copy'
  output :
-   file("$out")
+   file("$out*")
  script :
    fnames = listfile.join(",")
    out='./res_mtag'
@@ -204,12 +209,13 @@ for (i = 0; i <(nbfile-1); i++){
 }
 
 process doMTAG2by2{
+   memory params.mtag_mem_req
    input :
      file(listfile) from listgwasform_col2
      each poss from list_file2by2
      publishDir "${params.output_dir}/mtag_2by_2", overwrite:true, mode:'copy'
      output:
-       file("$output"+".hsq")
+       file("$output"+"*")
      script :
         file1=listfile[poss[0]]
         file2=listfile[poss[1]]
