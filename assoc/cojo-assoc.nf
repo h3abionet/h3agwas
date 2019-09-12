@@ -4,17 +4,13 @@
  *
  *
  *      Scott Hazelhurst
- *      Shaun Aron
- *      Rob Clucas
- *      Eugene de Beste
- *      Lerato Magosi
  *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2018
+ *  2015-2019
  *
  *
- * Description : pipeline annotation
+ * Description : pipeline to do a Conditional and joint multiple-SNP analysis of GWAS
  *
  */
 
