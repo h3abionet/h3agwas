@@ -157,7 +157,7 @@ list_gwas_multi_for3=list_gwas_multi_for2.combine(raw_src_ch)
 
 process doFormatFilePlk{
  memory params.mtag_mem_req
- cpu params.max_plink_cores
+ cpus params.max_plink_cores
  input :
    set file(filegwas), file(bed), file(bim), file(fam) from list_gwas_multi_for3
  output :
@@ -190,11 +190,11 @@ process doMTAG{
    file("$out*")
  script :
    fnames = listfile.join(",")
-   out='./res_mtag'
+   out='res_mtag'
    Ninfo=head_N!="" ? " --n_name ${head_N} " : " --n_value ${params.list_N}" 
    ////--info_min $info_min
    """
-   python ${params.bin_mtag} --sumstats $fnames --out $out --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps 
+   python ${params.bin_mtag} --sumstats $fnames --out ./$out --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps 
 
    """
 }
@@ -219,9 +219,9 @@ process doMTAG2by2{
      script :
         file1=listfile[poss[0]]
         file2=listfile[poss[1]]
-        output="./"+file1+"_"+file2
+        output=""+file1+"_"+file2
         """
-        python ${params.bin_mtag} --sumstats $file1,$file2 --out $output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps
+        python ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps
         """
 }
 }
