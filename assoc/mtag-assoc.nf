@@ -58,7 +58,7 @@ params.head_A2="ALLELE0"
 params.input_dir=""
 params.input_pat=""
 params.list_N=""
-params.mtag_mem_req="10G"
+params.mtag_mem_req="15G"
 params.bin_mtag="mtag.py"
 params.cut_maf = 0.001
 

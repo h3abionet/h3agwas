@@ -113,8 +113,40 @@ process TransformRsDup{
        replacers_forbim.py ${bim}.save $rstochange $bim  
        """
 }
-listplinkinf=listchroplinkrs.collect()
-headplink=plinkhead.collect()
+///dataE/AWIGenGWAS/shared/imputed_data_plink/Build/genetic_map_hg19.txt
+if(params.genetic_maps!=""){
+GMMap=Channel.fromPath(params.genetic_maps)
+listchroplinkrsmap=GMMap.combine(listchroplinkrs)
+process AddedCM{
+    cpus params.max_plink_cores
+    memory params.plink_mem_req
+    time   params.big_time
+    input :
+       set map,file(bedi),file(bimi),file(fami) from listchroplinkrsmap
+    output :
+       set file(bedf),file(bimf),file(famf) into listchroplinkrsf
+       val(header) into plinkheadf
+    script :
+       headeri=bedi.baseName
+       header=headeri+"_map"
+       bedf=header+".bed"
+       bimf=header+".bim"
+       famf=header+".fam"
+       cm_shap=header+".shape"
+       """
+       chro=`head $bimi|awk '{print \$1}'|uniq`
+       sed '1d' $map|awk -v chro=\$chro '{if(chro==\$1)print \$2"\\t"\$3"\\t"\$4}' >> $cm_shap
+       plink --bfile $headeri --keep-allele-order --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $header
+       """
+
+}
+
+}else{
+plinkheadf=plinkhead
+listchroplinkrsf=listchroplinkrs
+}
+listplinkinf=listchroplinkrsf.collect()
+headplinkf=plinkheadf.collect()
 
 process MergePlink{
   cpus params.max_plink_cores
@@ -122,7 +154,7 @@ process MergePlink{
   time   params.big_time
   input :
        file(lplk) from listplinkinf
-       val(hplk) from headplink
+       val(hplk) from headplinkf
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
      set file("${params.output_pat}.bed"), file("${params.output_pat}.bim"),file("${params.output_pat}.fam") into plinkformatf
@@ -135,6 +167,7 @@ process MergePlink{
        plink --bfile $hplkFirst --keep-allele-order --threads ${params.max_plink_cores} --merge-list fileplk --make-bed --out ${params.output_pat}
        """
 }
+
 
 
 
