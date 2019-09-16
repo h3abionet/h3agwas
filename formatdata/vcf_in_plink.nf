@@ -27,7 +27,7 @@ import java.security.MessageDigest;
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ['file_listvcf', 'min_scoreinfo']
+allowed_params = ['file_listvcf', 'min_scoreinfo', "output_pat", "output_dir"]
 
 
 params.help = false

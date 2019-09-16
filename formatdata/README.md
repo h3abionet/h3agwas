@@ -38,3 +38,18 @@ ls  dirvcf/chr*.vcf.gz > listfileawigen
 nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfileawigen -resume -profile slurm --output_pat awigen  --genetic_maps $FileCM --plink_mem_req 6GB -r hackathon
 ```
 
+## Script : `vcf_in_impute2.nf`
+### Requirement :
+* plink, bcftools, bash, nextflow
+* singularity / dockers image : no test yet
+### what script done :
+* Intiial data : format of Sanger imputation format vcf file
+* select for each chromosome on quality of imputation : min info
+* convert each vcf in impute2 format used by boltlmmm
+* output for each chromosome is basename of initial files with .impute2.gz
+
+### arguments :
+* `file_listvcf` : file contains each bgzip vcf files to merge, one by line [default : none]
+* `min_scoreinfo` : what score info minimum do you want : [default :0.6]
+* `output_dir` : directory of output : [default : impute2] 
+
