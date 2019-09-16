@@ -3,8 +3,10 @@
 # Pipeline : format data
 
 ## Script : `vcf_in_plink.nf`
-
-### what doe's :
+### Requirement :
+  * python3, plink, bcftools, bash, nextflow
+  * singularity / dockers image : no test yet
+### what script done :
   * select for each chromosome on quality of imputation : min info
   * convert each vcf in plink
   * rename duplicate rs or . by chro
@@ -17,6 +19,9 @@
 * `output_dir` : directory of output : [default : plink] 
 * `genetic_maps` : genetics maps to added map in bim file, if not provided, map doesn't added in bim, must be not compressed :
  * file for [hg19](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg19.txt.gz) 
+ * file for [hg17](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg17.txt.gz)
+ * file for [hg18](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg18.txt.gz)
+ * file for [hg38](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg38_withX.txt.gz)
 
 ```
 chr position COMBINED_rate(cM/Mb) Genetic_Map(cM)
