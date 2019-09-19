@@ -30,7 +30,7 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_me
 // define param for
 annotation_param=[ "file_gwas","gcta_bin","gcta_mem_req", "Nind"]
 allowed_params+=annotation_param
-h2_param=[ "bolt_h2", "gcta_h2", "gcta_h2_imp"]
+h2_param=[ "bolt_h2", "gcta_h2", "gcta_h2_imp","bolt_h2_multi"]
 allowed_params+=h2_param
 h2_bolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt"]
 allowed_params+=h2_bolt
@@ -85,6 +85,7 @@ params.exclude_snps=""
 params.bolt_impute2filelist=""
 params.bolt_impute2fidiid=""
 params.bolt_otheropt=""
+params.bolt_h2_multi=0
 
 
 params.cut_maf=0.01
@@ -121,7 +122,7 @@ params.gemma_h2_pval = 0
 /*1 ou 2*/
 params.gemma_h2_typeest="1"
 params.gemma_mat_rel=""
-params.gemma_num_cores=8
+params.gemma_num_cores=6
 params.gemma_mem_req="10GB"
 params.gemma_relopt = 1
 
@@ -172,6 +173,7 @@ println "Testing for gwas file : ${params.file_gwas}\n"
 //////
 
 if(params.ldsc_h2==1){
+println "ldsc_h2"
 if(params.file_gwas==""){
 error("\n\n------\nbCan't do ldsc without file_gwas\n\n---\n")
 }
@@ -192,7 +194,7 @@ process DoLDSC{
      file("$out"+".log")
    script :
      NInfo=params.head_n=="" ? " --N ${params.Nind} " : "--N-col ${params.head_n} " 
-     out=gwas.baseName+"_ldsc"
+     out=gwas.baseName.replace('_','-')+"_ldsc"
      """
      ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out"_mg" --snp ${params.head_rs} --p ${params.head_pval} \
      --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --no-alleles
@@ -201,6 +203,7 @@ process DoLDSC{
 }
 }
 if(params.ldsc_h2_multi==1){
+println "ldsc_h2_multi"
 if(params.file_gwas==""){
 error("---------------\n ldsc_h2_multi=1 and file_gwas is null\n\n---------------")
 }
@@ -235,7 +238,7 @@ process FormatLDSC{
    output :
      file("$out"+".sumstats.gz") into (list_gwas_formatldsc, list_gwas_formatldsc2)
    script :
-     out=gwas.baseName
+     out=gwas.baseName.replace('_','-')
      NInfo=params.head_n=="" ? " --N ${params.Nind} " : "--N-col ${params.head_n} " 
      """
      ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp ${params.head_rs} --p ${params.head_pval} \
@@ -258,7 +261,7 @@ process DoCorrLDSC{
      filegwas=listfilegwas[pos-1]
      listfilegwas.remove((pos-1))
      listfil=filegwas+","+listfilegwas.join(',')
-     out = filegwas.baseName+"_ldsc_mc"
+     out = filegwas.baseName.replace('_','-')+"_ldsc_mc"
      println listfil
      println filegwas
      """
@@ -271,8 +274,7 @@ process DoCorrLDSC{
 }
 
 
-
-   /*JT Fonction to transforme argument for cofactor in gemma
+  /*
    @Input
    args: cofactor args separate by a comma
    infoargs: type of cofactor separate by a comma : 0 for qualitative, 1 for quantitative
@@ -315,6 +317,7 @@ process DoCorrLDSC{
 //////
 
 if(params.bolt_h2){
+    println "ldsc_bolt_h2"
     bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
     bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
     fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
@@ -324,10 +327,11 @@ if(params.bolt_h2){
         .set { boltlmm_assoc_ch }
 
     plink_ch_bolt = Channel.create()
+    plink_ch_bolt_multi = Channel.create()
     bim_ch_bolt_snpchoice = Channel.create()
     fam_ch_bolt = Channel.create()
     bim_ch_bolt = Channel.create()
-    boltlmm_assoc_ch.separate (plink_ch_bolt, fam_ch_bolt, bim_ch_bolt, bim_ch_bolt_snpchoice) { a -> [ a, a[2], a[1],a[1]] }
+    boltlmm_assoc_ch.separate (plink_ch_bolt, plink_ch_bolt_multi,fam_ch_bolt, bim_ch_bolt, bim_ch_bolt_snpchoice) { a -> [ a, a,a[2], a[1],a[1]] }
     data_ch_bolt = Channel.fromPath(params.data)
     if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
@@ -338,8 +342,8 @@ if(params.bolt_h2){
         file(covariates) from data_ch_bolt
         file(fam) from fam_ch_bolt
       output:
-        file(phef) into newdata_ch_bolt
-        stdout into pheno_cols_ch_bolt
+        file(phef) into (newdata_ch_bolt,newdata_ch_bolt_multi)
+        stdout into (pheno_cols_ch_bolt,pheno_cols_ch_bolt_multi)
       script:
         base = fam.baseName
         phef = "${base}_bolt_n.phe"
@@ -350,7 +354,7 @@ if(params.bolt_h2){
    }
    ind_pheno_cols_ch_bolt = Channel.create()
    check_bolt = Channel.create()
-   pheno_cols_ch_bolt.flatMap { list_str -> list_str.split() }.tap ( check_bolt) .set { ind_pheno_cols_ch_bolt }
+   pheno_cols_ch_bolt.flatMap { list_str -> list_str.split() }.tap ( check_bolt) .set { ind_pheno_cols_ch_bolt}
 
 
    if (params.covariates)
@@ -364,13 +368,22 @@ if(params.bolt_h2){
 
    pval_head = "P_BOLT_LMM"
 
-  type_lmm="--lmm"
-  if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps)
-  else rs_ch_exclude_bolt=file('NO_FILE')
+  if(params.exclude_snps){
+     println "snp exclude of files "+params.exclude_snps
+       rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps)
+       rs_ch_exclude_bolt_multi=Channel.fromPath(params.exclude_snps)
+  }else{
+     println "no snp exclude"
+     rs_ch_exclude_bolt=file('NO_FILE')
+     rs_ch_exclude_bolt_multi=file('NO_FILE')
+  }
   if(params.file_rs_buildrelat!=""){
+      println "snp used for rs :"+params.file_rs_buildrelat
       filers_matrel=Channel.fromPath(params.file_rs_buildrelat)
       BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
+      filers_matrel_multi=Channel.fromPath(params.file_rs_buildrelat)
   }else{
+      println "CHoice of random Snps to build reladness"
       BoltNbMaxSnps=1000000
       process buildBoltFileSnpRel{
          memory params.bolt_mem_req
@@ -378,9 +391,9 @@ if(params.bolt_h2){
          input:
            file(plinksbim) from bim_ch_bolt_snpchoice
          output :
-           file(output) into filers_matrel
+           file(output) into (filers_matrel,filers_matrel_multi)
          script :
-           output=plinksbim.baseName+".rs.choice"
+           output=plinksbim.baseName.replace('_','-')+".rs.choice"
            """
            shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
            """
@@ -390,15 +403,23 @@ if(params.bolt_h2){
 
 
   if(params.bolt_ld_score_file!=""){
+     println "bolt : ld files used : "+params.bolt_ld_score_file
      Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file)
+     Bolt_ld_score_multi= Channel.fromPath(params.bolt_ld_score_file)
   }else{
+     println "no ld files used for bolt "
      Bolt_ld_score = file('NO_FILE3')
+     Bolt_ld_score_multi = file('NO_FILE3')
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
+     println "genetic map used : "+params.genetic_map_file
      Bolt_genetic_map= Channel.fromPath(params.genetic_map_file)
+     Bolt_genetic_map_multi= Channel.fromPath(params.genetic_map_file)
   }else{
+     println "no genetic maps used "
      Bolt_genetic_map = file('NO_FILE4')
+     Bolt_genetic_map_multi = file('NO_FILE4')
   }
 
 
@@ -423,7 +444,7 @@ if(params.bolt_h2){
       our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
       our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
-      outReml = "$base-$our_pheno2"+".reml"
+      outReml = "$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
       model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
       ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
@@ -434,7 +455,41 @@ if(params.bolt_h2){
       bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 $outReml
       """
   }
+
+if (params.bolt_h2_multi==1){
+  println "bolt multi done"
+  process doh2BoltiMulti{
+    cpus params.bolt_num_cores
+    memory params.bolt_mem_req
+    time   params.big_time
+    input:
+      set file(plinksbed), file(plinksbim), file(plinksfam) from plink_ch_bolt_multi
+      file(phef) from newdata_ch_bolt_multi
+      file(rs_exclude) from rs_ch_exclude_bolt_multi
+      file(SnpChoiceMod) from filers_matrel_multi
+      file(bolt_ld_score) from Bolt_ld_score_multi
+      file(bolt_genetic_map) from Bolt_genetic_map_multi
+      val phenoinfo from pheno_cols_ch_bolt_multi
+    publishDir "${params.output_dir}/boltlmm_multi", overwrite:true, mode:'copy'
+    output:
+      file(outReml_multi)
+   script :
+      phenonew="--phenoFile="+params.pheno.split(',').join(" --phenoFile=")
+      base = plinksbed.baseName
+      outReml_multi = "$base-all"+".reml"
+      covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
+      model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
+      ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
+      ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
+      exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
+      geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
+      """
+      bolt.py bolt  --reml  --bfile=$base  phenoFile=${phef} $phenonew --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 ${outReml_multi}
+      """
+  }
 }
+}
+
 //////
 ///
 ///
@@ -461,7 +516,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
   plink_ch_gcta_grm2 = Channel.create()
   h2gcta_assoc_ch.separate (plink_ch_gcta, plink_ch_gcta_grm,plink_ch_gcta_grm2,fam_ch_gcta, fam_ch_gcta_mult) { a -> [ a, a,a,a[2], a[2]] }
   data_h2gcta1=Channel.fromPath(params.data)
-   data_h2gcta1_multi = Channel.fromPath(params.data)
+  data_h2gcta1_multi = Channel.fromPath(params.data)
   check_gcta = Channel.create()
   pheno_cols_ch_gcta1=Channel.from(params.pheno.split(",").toList())
   pheno_cols_ch_gcta2=Channel.from(params.pheno.split(",").toList())
@@ -528,10 +583,6 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
           input :
             set file(grmfile),file(bed),file(bim),file(fam) from grlmstroupescorec
           publishDir "${params.output_dir}/gcta/grlem/", overwrite:true, mode:'copy'
-          //work/f2/50eb11a8759a1690bd6fb5d54a5542/snp_group_1.grm.bin
-          //work/f2/50eb11a8759a1690bd6fb5d54a5542/snp_group_1.grm.id
-          //work/f2/50eb11a8759a1690bd6fb5d54a5542/snp_group_1.grm.N.bin
-          //work/f2/50eb11a8759a1690bd6fb5d54a5542/snp_group_1.log
           output :
              set file("${out}.grm.bin"), file("${out}.grm.id"), file("${out}.grm.N.bin"), file("${out}.log") into resgrlmfile
              val("${out}") into resgrlmhead 
@@ -583,7 +634,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
      output :
        file("$output"+".hsq")
      script :
-        output=pheno+"_gcta"
+        output=pheno.replace('_','-')+"_gcta"
         """
         ${params.gcta_bin} --reml ${params.multigrm_opt} --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output &> outmultgrlm
         if [ ! -f $output".hsq" ]
@@ -633,7 +684,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
      script :
         pos=poss[0]
         pos2=poss[1]
-        output=listpheno[pos]+"_"+listpheno[pos2]
+        output=listpheno[pos].replace('_','-')+"_"+listpheno[pos2].replace('_','-')
         pos=pos+1
         pos2=pos2+1
         """
@@ -727,9 +778,9 @@ if(params.gemma_h2==1){
       set file(bed),file(bim),file(fam) from gem_ch_gemma
     each this_pheno from ind_pheno_cols_ch
     each gemtype from gwas_type_gem1
-    publishDir params.output_dir, overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
     output:
-      file("output/${out}.log.txt")
+      file("output/*")
     script:
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
        ourpheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
@@ -784,7 +835,7 @@ process DoGemmah2Pval{
        file("output/*")
    script :
      NInfo=params.head_n=="" ? " --n_header ${params.head_n}   " : ""
-     out=gwas.baseName+"_gemm_"+gemtype
+     out=gwas.baseName+"_gemm_"+gemtype.replace('_','-')
      plkbas=bed.baseName
      newplkbas=plkbas+"_new"
      //error! Number of columns in the wcat file does not match that of cat file.error! fail to read files. 
