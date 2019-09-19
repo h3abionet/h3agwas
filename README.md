@@ -8,6 +8,7 @@ The major change from Version 2 to Version 3 is the reorganisation of the repo s
 This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc`
 
 ## what's news :
+* 19/09/19 : added in estimation of heritabilites option for Multiple variance components for boltlmm  [assoc](assoc/README.md)
 * 17/09/19 : added format and analysis by mtag in [assoc](assoc/README.md)
 * 16/09/19 : added two news nextflow files to convert data in [formatdata](formatdata/README.md):
   * `formatdata/vcf_in_plink.nf` : format data in vcf for plink

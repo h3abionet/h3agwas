@@ -193,7 +193,7 @@ different output is provided :
   * for phenotype simulation all missing values is discarded and replaced by more frequent allele
   * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
 
-##5. Estimatiion of heritabilies
+## 5. Estimatiion of heritabilies
 
 This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, grmel of bolt and greml of gcta, gemma
 two distincs approaches should be considered :
@@ -239,14 +239,24 @@ The key options are:
   * `gemma_h2_pval` : do you want a estimation of heritabilities with gemma using p-value [ default : 0]
   * `gemma_h2_typeest` do you wang a (1) or reml (2)[default : "1"]
   * `gemma_mat_rel` for `gemma_h2`, have you a pre estimated relatdness otherwise it wil be computed with plink file [default : none]
-  * gemma_num_cores : Core number [ default : 6] 
-  * gemma_mem_req : memory for gemma [ default : "10GB" ]
-  * gemma_relopt = 1
- 
+  * `gemma_num_cores` : Core number [ default : 6] 
+  * `gemma_mem_req` : memory for gemma [ default : "10GB" ]
+  * `gemma_relopt` = 1
+  * file_rs_buildrelat : list of rs used to build relatdness [default : None ]
+* `bolt_h2` : estimation using bolt
+  *  see [manual](https://data.broadinstitute.org/alkesgroup/BOLT-LMM/)
+  * file_rs_buildrelat : list of rs used to build relatdness [default : None ]
+     * if SNPs is higher than 950,000, 950,000 SNPs are chosen randomly to build the model (see --modelSnps option in bolt)
+  * `bolt_covariates_type` : for bolt need to define if covariate is binary (0) or continue (1), a comma-separated list as same order than covariates
+  * `bolt_ld_score_file` : A table of reference LD scores for boltlmm is needed to calibrate the BOLT-LMM statistic (option in boltlmm --LDscoresFile),to choice a specific column in Ld file you can use `bolt_ld_scores_col` option (by default : LDSCORE) if option is not provided --LDscoresUseChip used.
+  * `bolt_num_cores` if bolt is used set this up to 8
+  * `bolt_mem_req` memory required for boltlmm, (default : 6GB)
+  * `bolt_h2_multi`  : to have multi variance between traits [ default : 0]
+* `gcta` : need write manuals
   
 
 
-##5. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
+## 5. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 
