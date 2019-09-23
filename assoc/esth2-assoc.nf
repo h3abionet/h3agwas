@@ -59,6 +59,7 @@ params.pheno=""
 params.munge_sumstats_bin="munge_sumstats.py"
 params.ldsc_bin="ldsc.py"
 outfname = params.output_testing
+params.file_rs_buildrelat = ""
 
 params.file_gwas=""
 params.head_pval = "P_BOLT_LMM"
@@ -474,7 +475,7 @@ if (params.bolt_h2_multi==1){
     output:
       file(outReml_multi)
    script :
-      phenonew="--phenoFile="+params.pheno.split(',').join(" --phenoFile=")
+      phenonew="--phenoCol="+params.pheno.split(',').join(" --phenoCol=")
       base = plinksbed.baseName
       outReml_multi = "$base-all"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
@@ -484,7 +485,7 @@ if (params.bolt_h2_multi==1){
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
-      bolt.py bolt  --reml  --bfile=$base  phenoFile=${phef} $phenonew --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 ${outReml_multi}
+      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} $phenonew --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 ${outReml_multi}
       """
   }
 }
@@ -822,7 +823,16 @@ if(params.gemma_h2_pval==1){
         .set { gemmapval_assoc_ch }
 
 gwas_file_gem=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(gemmapval_assoc_ch)
-gwas_type_gem2=Channel.from(params.gemma_h2_typeest.split(",")).toList()
+
+// for 2 we need a zcat file 
+
+typegemmah2=params.gemma_h2_typeest.split(",")
+if("2" in typegemmah2){
+println "warning for hertitabilies with pvalue option 2 of gemma not implemented issue with wcat option (see manuals)"
+}
+//gwas_type_gem1=Channel.from(params.gemma_h2_typeest.split(",")).toList()
+gwas_type_gem2=Channel.from("1".split(",")).toList()
+//gwas_type_gem2=["1"]
 
 process DoGemmah2Pval{
    memory params.gemma_mem_req
@@ -839,6 +849,8 @@ process DoGemmah2Pval{
      plkbas=bed.baseName
      newplkbas=plkbas+"_new"
      //error! Number of columns in the wcat file does not match that of cat file.error! fail to read files. 
+     //WCAT=gemtype=="2" ? " --wcat "
+     //This analysis option requires marginal z-scores from the study and individual-level genotypes froma random subset of the study (or a separate reference panel).
      """
      gemma_format_pval.py --inp_asso $gwas --out $gwas".new"  --rs_header ${params.head_rs} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --chro_header ${params.head_chr} --beta_header ${params.head_beta} --bfile $plkbas --threads ${params.gemma_num_cores}
      plink -bfile $plkbas --extract listrs.rs --make-bed  --out $newplkbas --keep-allele-order --threads ${params.gemma_num_cores} 

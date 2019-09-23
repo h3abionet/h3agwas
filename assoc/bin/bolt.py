@@ -19,6 +19,7 @@ if "--reml" in " ".join(Args) :
           
 else :
    cmd=" ".join(sys.argv[1::])+" 2> "+ FileStder
+
 error=os.system(cmd)
 lireerror=open("tmp.stderr")
 
@@ -48,5 +49,5 @@ if BaliseEr:
             Lire.write("\t".join(["SNP","CHR","BP","GENPOS","ALLELE1","ALLELE0","A1FREQ","F_MISS","BETA","SE","P_BOLT_LMM_INF","P_BOLT_LMM"])+"\n")
             Lire.close()
 else :
-   if error> 0:
+   if int(error)> 0:
      sys.exit(error)

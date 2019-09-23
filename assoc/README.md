@@ -210,7 +210,7 @@ The pipeline is run: `nextflow run assoc/esth2-assoc.nf`
 The key options are:
 * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
 * `output_dir` : output directory
-* `output` : output pattern
+* `output_pat` : output pattern
 * ̀ data` : same option that _assoc/plink-assoc.nf_, file is optional, used for gemma, bolt and gcta
   * `pheno` :phenotypes used in data to computed in gemma, bolt
 * `file_gwas` : one ore more one file gwas, used for ldsc and gemma, to defined column of files :
@@ -235,8 +235,10 @@ The key options are:
   * output :
 * `gemma_h2` : estimation using gemma, 
   * `gemma_bin` : gemma binary [ default "gemma"]
-  * `gemma_h2` : do you want a estimation with gemma of heritabilies with relatdness matrix [default : 0]
+  * `gemma_h2` : do you want a estimation with gemma of heritabilies with relatdness matrix [default : 0] :
   * `gemma_h2_pval` : do you want a estimation of heritabilities with gemma using p-value [ default : 0]
+   * need file of pvalue see `file_gwas`
+   * Z obtained with beta/se
   * `gemma_h2_typeest` do you wang a (1) or reml (2)[default : "1"]
   * `gemma_mat_rel` for `gemma_h2`, have you a pre estimated relatdness otherwise it wil be computed with plink file [default : none]
   * `gemma_num_cores` : Core number [ default : 6] 
@@ -252,7 +254,21 @@ The key options are:
   * `bolt_num_cores` if bolt is used set this up to 8
   * `bolt_mem_req` memory required for boltlmm, (default : 6GB)
   * `bolt_h2_multi`  : to have multi variance between traits [ default : 0]
-* `gcta` : need write manuals
+* `gcta` : 
+  * just version for high density of snps, described [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata)
+  * need option `output_dir`, `output_pat`, `data` and `pheno` (if you want to estimate with covariable used : `covariates` option)
+  * `gcta_h2_imp` : pipeline for imputed data (must be in 1)
+    * for imputed data, we used algorithm of [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata) and build :
+      * Step 1: segment based LD score
+      * Step 2 : stratify the SNPs by LD scores of individual SNPs in R
+      * Step 3: making GRMs using SNPs stratified into different groups
+      * steps was very long you can provide `gcta_h2_grmfile` option to skip with already snps stratified
+      * `gcta_mem_reqmgrm` : option memory for the step
+  * `gcta_h2_grmfile` : if file not provide pipeline will do step described before[default None]
+  * `gcta_mem_req` : [default 20GB]
+  * `gcta_bin` : binary for gcta 
+  * `gcta_h2_ldscore` [default 200kb]
+  * `gcta_mem_reqmgrm` : [default 40GB]
   
 
 
@@ -315,7 +331,7 @@ The key options are:
 ### specificity 
 #### MR-MEGA
 MR-MEGA need chromosomes, positions and N (sample number) for each position, so in pipeline referent file (in file_config, 1 in IsRefFile) must be have chromosome and poosition 
-##6. Mtag analysis
+## 6. Mtag analysis
 ### reference 
 TODO
 ### parameters
