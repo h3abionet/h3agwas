@@ -53,6 +53,7 @@ params.covariates = ""
 params.chrom      = ""
 outfname = params.output_testing
 params.gemma_num_cores = 6
+params.big_time="100H"
 
 supported_tests = ["chi2","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma"]
 
@@ -356,7 +357,7 @@ if(params.gemma==1){
        out=base+"."+sim+".gem"
        covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
        """
-       all_covariate.py --data  $file_pheno --inp_fam  $fam $covariate_option --cov_out $gemma_covariate \
+       all_covariate.py --data  $file_pheno --inp_fam  $fam ${covariate_option} --cov_out $gemma_covariate \
                           --pheno PhenoS --phe_out $gemma_pheno --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        gemma -bfile $base ${covar_opt_gemma}  -k $rel -lmm 1  -n 1 -p $gemma_pheno  -o $out 
@@ -437,6 +438,10 @@ if(params.boltlmm==1){
 
   type_lmm="--lmm"
   
+  if (params.covariates)
+     covariate_option = "--cov_list ${params.covariates}"
+  else
+     covariate_option = ""
 
   process doBoltlmmm{
     cpus params.num_cores
@@ -455,7 +460,7 @@ if(params.boltlmm==1){
        covar_file_bolt =  (params.covariates) ?  " --covarFile ${bolt_pheno} " : ""
        """
        shuf -n 950000 $bim | awk '{print \$2}' > .sample.snp
-       all_covariate.py --data  $file_pheno --inp_fam  $fam $covariate_option --cov_out $bolt_covariate \
+       all_covariate.py --data  $file_pheno --inp_fam  $fam ${covariate_option} --cov_out $bolt_covariate \
                           --pheno PhenoS --phe_out $bolt_pheno --form_out 2
        bolt $type_lmm --bfile=$base  --phenoFile=$bolt_pheno --phenoCol=PhenoS --numThreads=$params.num_cores  $covar_file_bolt --statsFile=$out\
            $ld_score_cmd  --lmmForceNonInf  --modelSnps=.sample.snp $bolt_covparam

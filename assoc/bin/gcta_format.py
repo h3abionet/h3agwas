@@ -24,12 +24,14 @@ def parseArguments():
     parser.add_argument('--se_header',type=str,required=True,help="se header in inp files")
     parser.add_argument('--n_header',type=str,help="n header in inp files", default=None)
     parser.add_argument('--chr',type=str,help="n header in inp files", default=None)
-    parser.add_argument('--chro_header',type=str,help="n header in inp files", default="")
+    parser.add_argument('--chro_header',type=str,required=True,help="n header in inp files")
+    parser.add_argument('--bp_header',type=str,help="bp header")
     parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
     parser.add_argument('--bin_plk',type=str,required=False,help="plink binary", default="plink")
     parser.add_argument('--bfile',type=str,required=False,help="bfile if need to compute frequency or N", default=None)
     parser.add_argument('--keep',type=str,required=False,help="file of data used for if need to compute frequency or N", default=None)
     parser.add_argument('--threads',type=int,required=False,help="", default=1)
+    parser.add_argument('--print_pos',type=bool,required=False,help="", default=False)
     args = parser.parse_args()
     return args
 
@@ -45,11 +47,17 @@ a1_head=args.a1_header
 a2_head=args.a2_header
 se_head=args.se_header
 n_head=args.n_header
+IsFreq=False
+IsN=False
+if freq_head :
+  IsFreq=True
+if n_head :
+  IsN=True
 
 ## first step : if
 result = pd.read_csv(inp,delim_whitespace=True)
 result[args.chro_header] = result[args.chro_header].astype(str)
-if args.n_header==None or args.freq_header==None :
+if (args.n_header==None or args.freq_header==None) and args.bfile :
    plkfreqfil=os.path.basename(args.bfile)
    if args.bfile==None :
      print("no header for n or freq and bfile")
@@ -67,7 +75,7 @@ if args.n_header==None or args.freq_header==None :
    # CHR            SNP   A1   A2          MAF  NCHROBS
    #SNP A1 A2 freq b se p N
    data_n['N']=data_n['NCHROBS']/2
-   if args.n_header==None and args.freq_header : 
+   if args.n_header==None and args.freq_header==None: 
       data_n=data_n[["SNP","MAF","N"]]
       freq_head="MAF"
       n_head="N"
@@ -77,15 +85,47 @@ if args.n_header==None or args.freq_header==None :
    elif args.freq_header==None :
       data_n=data_n[["SNP","MAF"]]
       freq_head="MAF"
-   result=result.merge(data_n,how="left", on=rs_head)
+   IsFreq=True
+   IsN=True
+   result=result.merge(data_n,how="inner", on=rs_head)
 
 
 if args.chr :
    result=result[result[args.chro_header]==args.chr]
 
 
-result=result[[rs_head, a1_head,a2_head,freq_head,beta_head, se_head,pval_head, n_head]]
-result.columns=["SNP","A1","A2","freq","b","se","p","N"]
+#Head=[rs_head, a1_head,a2_head,beta_head, se_head,pval_head]
+#NewHead=["SNP","A1","A2","b","se","p"]
+NewHead=["SNP"]
+Head=[rs_head]
+if args.chro_header and args.print_pos:
+  NewHead.append("chro")
+  Head.append(args.chro_header)
+
+if args.bp_header and args.print_pos:
+  NewHead.append("bp")
+  Head.append(args.bp_header)
+
+NewHead+=["A1","A2"]
+Head+=[a1_head,a2_head]
+
+if IsFreq :
+  NewHead.append("freq")
+  Head.append(freq_head)
+
+NewHead+=["b","se"]
+Head+=[beta_head, se_head]
+if pval_head :
+   NewHead+=["p"]
+   Head+=[pval_head]
+
+if IsN :
+   Head.append(n_head)
+   NewHead.append("N")
+
+result=result.loc[:,Head]
+result.columns=NewHead
+
 
 result.to_csv(args.out,sep=" ",header=True,index=False,na_rep="NA")
 

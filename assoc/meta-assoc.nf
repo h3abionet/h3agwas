@@ -52,8 +52,8 @@ params.metasoft_bin="/opt/bin/Metasoft.jar"
 params.ma_random_effect=1
 params.ma_genomic_cont=0
 params.ma_inv_var_weigth=0
-params.ma_mem_req="5G"
-params.gwama_mem_req="10G"
+params.ma_mem_req="10G"
+params.gwama_mem_req="20G"
 params.metasoft_mem_req="10G"
 
 params.metasoft_pvalue_table="/opt/bin/HanEskinPvalueTable.txt"

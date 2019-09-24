@@ -4,17 +4,13 @@
  *
  *
  *      Scott Hazelhurst
- *      Shaun Aron
- *      Rob Clucas
- *      Eugene de Beste
- *      Lerato Magosi
  *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2018
+ *  2015-2019
  *
  *
- * Description : pipeline annotation
+ * Description : pipeline to do a Conditional and joint multiple-SNP analysis of GWAS
  *
  */
 
@@ -64,7 +60,7 @@ params.head_beta="BETA"
 params.head_se="SE"
 params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
-params.cojo_p=5e-8
+params.cojo_p=1e-7
 params.cojo_wind=10000
 params.cut_maf=0.01
 params.gcta_mem_req="15GB"
@@ -72,8 +68,8 @@ params.plink_mem_req="6GB"
 params.gcta_cpus_req = 1
 params.cojo_slct=1
 params.cojo_slct_other=""
-params.cojo_top_snps=0
 params.cojo_actual_geno=0
+params.cojo_top_snps=0
 params.big_time='100h'
 
 
@@ -162,7 +158,20 @@ process getListInd{
    """
 }
 }else{
-filekeepcojo=filekeepformat=file('NO_FILEINDKEEP')
+famlind = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+process getListInd2{
+   input :
+     file(fam) from famlind
+   output :
+     file(keepout) into (filekeepformat,filekeepcojo)
+   script :
+   keepout="list_ind.keep"
+   """
+   awk \'{print \$1\" \"\$2}\' $fam > $keepout
+   """
+
+}
+//filekeepcojo=filekeepformat=file('NO_FILEINDKEEP')
 }
 
 
@@ -174,7 +183,7 @@ chrolist.flatMap { list_str -> list_str.split() }.tap ( check) .set {chrolist_ch
 
 process doFormatData{
    cpus params.max_plink_cores
-   memory plink_mem_req
+   memory params.gcta_mem_req
    input :
      file(keepind) from filekeepformat
      set file(bed), file(bim), file(fam) from plink_format
@@ -189,7 +198,7 @@ process doFormatData{
       headn=params.head_n!="" ? " --freq_header ${params.head_n}" : ""
       headkeep=params.data!="" ? " --keep $keepind " : ""
       """
-      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval} $headfreq --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_freq} --chro_header ${params.head_chr} --chr $chro --bfile $baseplk --out $out --threads ${params.max_plink_cores}
+      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval} $headfreq --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_beta} --chro_header ${params.head_chr} --chr $chro --bfile $baseplk --out $out --threads ${params.max_plink_cores}
       """
 }
 if(params.cojo_slct){

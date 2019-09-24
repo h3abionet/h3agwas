@@ -71,7 +71,7 @@ if args.n_header==None :
    if args.n_header==None :
       data_n=data_n[["SNP","N"]]
       n_head="N"
-   result=result.merge(data_n,how="left", on=rs_head)
+   result=result.merge(data_n,how="left", left_on=rs_head, right_on="SNP")
 
 
 if args.chr :

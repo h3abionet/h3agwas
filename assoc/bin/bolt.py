@@ -2,9 +2,24 @@
 import os
 import sys 
 import re
-FileStder="--reml"
+FileStder="tmp.stderr"
+Args=sys.argv
    
-cmd=" ".join(sys.argv[1::])+" 2> tmp.stderr "
+if "--reml" in " ".join(Args) :
+    Cmt=0
+    for x in sys.argv :
+       if x == "--out_bolt2" :
+         Balise=True 
+         break
+       Cmt+=1
+    FileStdout=sys.argv[Cmt+1]
+    Args.remove(FileStdout)
+    Args.remove("--out_bolt2")
+    cmd=" ".join(sys.argv[1::])+"> "+ FileStdout+" 2> "+ FileStder
+          
+else :
+   cmd=" ".join(sys.argv[1::])+" 2> "+ FileStder
+
 error=os.system(cmd)
 lireerror=open("tmp.stderr")
 
@@ -18,8 +33,14 @@ for lines in lireerror :
 
 cmdspl=re.split(r'[ =]', cmd)
 ListStd=["statsFile", "statsFileImpute2Snps"]
+  
 if BaliseEr:
-   for CmtArg in range(len(cmdspl)):
+   if "--reml" in " ".join(sys.argv) :
+      Ecrire=open(FileStdout,'w')
+      Ecrire.write(AllLines)
+      Ecrire.close()
+   else :
+     for CmtArg in range(len(cmdspl)):
        argv=cmdspl[CmtArg]
        for Std in ListStd :
           if Std in argv :
@@ -27,11 +48,6 @@ if BaliseEr:
             Lire=open(File,'w')
             Lire.write("\t".join(["SNP","CHR","BP","GENPOS","ALLELE1","ALLELE0","A1FREQ","F_MISS","BETA","SE","P_BOLT_LMM_INF","P_BOLT_LMM"])+"\n")
             Lire.close()
-   if "--reml" in " ".join(sys.argv) :
-      FileOut=sys.argv[-1].replace(">","")
-      Ecrire=open(FileOut,'w')
-      Ecrire.write(AllLines)
-      Ecrire.close()
 else :
-   if error> 0:
+   if int(error)> 0:
      sys.exit(error)
