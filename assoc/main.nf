@@ -306,42 +306,45 @@ if (thin+chrom) {
 
 
 if(params.print_pca!=0){
-process computePCA {
-  cpus max_plink_cores
-  memory plink_mem_req
-  time   params.big_time
-  input:
-    set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from pca_in_ch
-  publishDir params.output_dir, overwrite:true, mode:'copy'
-  output:
-    set file("${outfname}.eigenval"), file("${outfname}.eigenvec")  \
-         into pca_out_ch
-  script:
-      base = "cleaned"
-      prune= "${base}-prune"
-     """
-     plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
-     plink --keep-allele-order --bfile ${base} --extract check.prune.in --make-bed --out $prune
-     plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname}
-     """
-}
+   process computePCA {
+     cpus max_plink_cores
+     memory plink_mem_req
+     time   params.big_time
+     input:
+       set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from pca_in_ch
+     publishDir params.output_dir, overwrite:true, mode:'copy'
+     output:
+       set file("${outfname}.eigenval"), file("${outfname}.eigenvec")  \
+	    into pca_out_ch
+     script:
+	 base = "cleaned"
+	 prune= "${base}-prune"
+	"""
+	plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
+	plink --keep-allele-order --bfile ${base} --extract check.prune.in --make-bed --out $prune
+	plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname}
+	"""
+   }
 
-process drawPCA {
-    input:
-      set file(eigvals), file(eigvecs) from pca_out_ch
-    output:
-      file (output) into report_pca_ch
-    publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
-    script:
-      base=eigvals.baseName
-      cc_fname = 0
-      cc       = 0
-      col      = 0
-      // also relies on "col" defined above
-      output="${base}-pca.pdf"
-      template "drawPCA.py"
+   process drawPCA {
+       input:
+	 set file(eigvals), file(eigvecs) from pca_out_ch
+       output:
+	 set file ("${output}"), file("B040-pca.tex") into report_pca_ch
+       publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
+       script:
+	 base=eigvals.baseName
+	 cc_fname = 0
+	 cc       = 0
+	 col      = 0
+	 // also relies on "col" defined above
+	 output="${base}-pca.pdf"
+	 template "drawPCA.py"
 
+   }
 }
+else {
+  report_pca_ch = Channel.empty()
 }
 
 
@@ -393,12 +396,12 @@ if (params.data != "") {
     input:
     file(data) from data_ch
     output:
-      file ("B050*") into report_ch
+      file ("B050*") into pheno_report_ch
     script:
       "phe_distrib.py --pheno ${params.pheno} $data B050 "
   }
 }  else {
-  report_ch = Channel.empty()
+  pheno_report_ch = Channel.empty()
   pheno_label = ""
   pheno_label_ch = Channel.from("")
 }
@@ -584,10 +587,12 @@ if (params.fastlmm == 1) {
   }
 
 
-  report_ch = report_ch.flatten().mix(report_fastlmm_ch.flatten())
+
 
   // End of FASTLMM
-}
+}  else {
+  report_fastlmm_ch=Channel.empty()
+} 
 
 
 /*JT : Case boltlmm => if yes*/
@@ -785,15 +790,17 @@ if (params.boltlmm == 1) {
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header BP --rs_header SNP --pval_header $pval_head --beta_header BETA --info_prog BoltLMM
       """
   }
-   report_ch = report_ch.flatten().mix(report_bolt_ch.flatten())
 
-}/*JT End of boltlmm*/
 
+}/*JT End of boltlmm*/ else {
+  report_bolt_ch = Channel.empty()
+}
+ 
 
   def newNamePheno(Pheno){
       SplP=Pheno.split(',')
       for (i = 0; i <SplP.size(); i++) {
-         SplP[i]=(i+1)+"-"+SplP[i]
+         SplP[i]=(i+1)+"@@@"+SplP[i]
       }
       return(SplP)
   }
@@ -866,9 +873,9 @@ if (params.gemma == 1){
       file("${dir_gemma}/${out}.log.txt")
       set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch
     script:
-       our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
+       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
        ourpheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
-       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
        data_nomissing     = "pheno-"+our_pheno+".pheno"
        list_ind_nomissing = "lind-"+our_pheno+".lind"
        rel_matrix         = "newrel-"+our_pheno+".rel"
@@ -895,6 +902,8 @@ if (params.gemma == 1){
        rm $rel_matrix
        """
   }
+
+
   process showGemmaManhatten {
     memory params.other_process_memory
     publishDir params.output_dir
@@ -910,7 +919,9 @@ if (params.gemma == 1){
       """
   }
 
-  report_ch = report_ch.flatten().mix(report_gemma_ch.flatten())
+
+} else {
+  report_gemma_ch = Channel.empty()
 }
 
 
@@ -995,8 +1006,9 @@ if (params.gemma_gxe == 1){
       """
   }
 
-  report_ch = report_ch.flatten().mix(report_gemma_ch_GxE.flatten())
     
+} else {
+  report_gemma_ch_GxE=Channel.empty()
 } 
 
 
@@ -1050,8 +1062,8 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
       """
   }
 
-  report_ch = report_ch.mix(report_plink.flatten())
-  
+} else {
+  report_plink_ch = Channel.empty()
 }
 
 if (params.plink_gxe==1) {
@@ -1094,8 +1106,10 @@ if (params.plink_gxe==1) {
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNP --pval_header P_GXE --beta_header Z_GXE --info_prog "Plink,GxE : ${params.gxe}"
       """
   }
-  report_ch = report_ch.flatten().mix(report_plink_gxe.flatten())
+} else {
+  report_plink_gxe=Channel.empty()
 }
+
 
 
 
@@ -1117,14 +1131,19 @@ if (workflow.repository)
 else
   wflowversion="A local copy of the workflow was used"
 
-if(params.print_pca!=0){
-report_ch = report_ch.mix(report_pca_ch)
-}
+
+report_ch = report_fastlmm_ch.flatten().mix(pheno_report_ch.flatten())
+                                     .mix(report_pca_ch.flatten())
+				     .mix(report_plink_ch.flatten())
+				     .mix(report_bolt_ch.flatten())
+				     .mix(report_gemma_ch_GxE.flatten())
+				     .mix(report_plink_gxe.flatten())
+                                     .mix(report_gemma_ch.flatten()).toList()
 
 process doReport {
   label 'latex'
   input:
-    file(reports) from report_ch.toList()
+    file(reports) from report_ch
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${out}.pdf")

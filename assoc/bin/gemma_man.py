@@ -9,7 +9,7 @@ import pandas as pd
 import sys
 
 inp     = sys.argv[1]
-phenos  = sys.argv[2].split("-")
+pheno   = sys.argv[2]
 base    = sys.argv[3].replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
 out_man = "%s-gemma-man.pdf"%base
 out_qq  = "%s-gemma-qq.pdf"%base
@@ -115,7 +115,6 @@ plt.savefig(out_qq)
 
 
 tex_file=""
-pheno=phenos[1]
 best = get10Best(result,pheno)
 hashd = { 'pheno':pheno.replace("_","-"), 'man':out_man, 'qq':out_qq, 'best':best, 'fname':inp}
 tex_file = tex_file + C049%hashd
