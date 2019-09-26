@@ -23,6 +23,15 @@ fileExt=list(green="Grn.idat", red="Red.idat")
 sample$"Sample_ID" = sample$"Institute Sample Label"
 
 
+some = readIdatFiles(
+     sampleSheet=sample,
+     path="/spaces/scott/h3agwas/img2call/data/all",
+     arrayNames = names,                  
+     arrayInfoColNames=list(barcode="Array Info.S", position="Sentrix ID"),
+     highDensity=TRUE, sep="_",
+     fileExt=list(green="Grn.idat", red="Red.idat"),
+     saveDate=FALSE, verbose=TRUE)
+
 xx =
      genotype.Illumina(sampleSheet=sample,
      path="/spaces/scott/h3agwas/img2call/data/all",
@@ -30,6 +39,6 @@ xx =
      arrayInfoColNames=list(barcode="Array Info.S", position="Sentrix ID"),
      highDensity=TRUE, sep="_",
      fileExt=list(green="Grn.idat", red="Red.idat"),
-     XY=NULL, anno=annof, genome=37, call.method="krlmm", trueCalls=NULL,
+     XY=NULL, anno=annof, genome="hg19", call.method="krlmm", trueCalls=NULL,
      cdfName='nopackage', copynumber=FALSE, batch=NULL,
      saveDate=FALSE, verbose=TRUE)

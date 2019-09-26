@@ -47,7 +47,7 @@ if len(kpsewhich)>1:
 if len(sys.argv)<=1:
    sys.argv = "make_assoc_report.py ${params.pheno} $texf".split()
 
-pheno  = "*-protect*-url{%s}"%sys.argv[1]
+pheno  = ", ".join(list(map(lambda x:"*-protect*-url{%s}"%x,sys.argv[1].split(","))))
 out    = sys.argv[2]
 
 
@@ -88,7 +88,7 @@ breaklines=true
 *-usepackage{url}
 *-title{Association Testing  %(base)s : %(pheno)s}
 *-date{%(date)s}
-'''+dateheader+'''
+'''+dateheader+('''
 *-author{H3Agwas Association Testing Pipeline}
 
 *-newcommand{*-ourfig}[3]{*-begin{figure}[ht]*-begin{center}*-includegraphics[scale=0.6]{#3} *-end{center} *-caption{#2 [File is *-protect*-url{#3}]}  *-label{#1}*-end{figure}}
@@ -100,10 +100,10 @@ breaklines=true
 
 This report gives a brief overview of the run of the association testing pipeline.
 *-begin{itemize}
-*-item You were testing for the following phenotypes *-url{${these_phenos}}
+*-item You were testing for the following phenotypes %s 
 *-item You were using the following covariates [*-url{${these_covariates}}]
 *-end{itemize}
-'''
+'''%pheno)
 
 EOL = chr(10)
 
