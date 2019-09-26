@@ -188,7 +188,7 @@ If you manage the workflow this way, you will run the scripts, as follows
 
 Change directory where you want to install the software and say
 
-    `git clone https://github.com/h3agwas`
+    `git clone https://github.com/h3abionet/h3agwas.git`
 
 This will create a directory called _h3agwas_ with all the necesssary code.
 If you manage the workflow this way, you will run the scripts this way:
