@@ -188,7 +188,7 @@ If you manage the workflow this way, you will run the scripts, as follows
 
 Change directory where you want to install the software and say
 
-    `git clone https://github.com/h3agwas`
+    `git clone https://github.com/h3abionet/h3agwas.git`
 
 This will create a directory called _h3agwas_ with all the necesssary code.
 If you manage the workflow this way, you will run the scripts this way:
@@ -212,7 +212,7 @@ and the various parameters to be used are specified in the
 _nextflow.config_ file.  The details will be explained in another
 section.
 
-If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.sip and unzip
+If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.zip and unzip
 
 
 The sample data to be used is in the _input_ directory (in PLINK
