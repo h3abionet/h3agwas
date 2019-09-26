@@ -12,17 +12,7 @@ def getChrom(chrom):
     try:
         result = int(chrom)
     except ValueError:
-        sys.exit("""
- Chromosome <%s> found in bim file -- expected integer
-
- PLINK files use integers for all chromosomes including X, Y and MT. 
-
-If you've produced a PLINK file using some other tool, please run it through plink to ensure that it is valid and to ensure consistency of coding and correct ordering.
-
-plink --bfile preversion --keep-allele-order --make-bed --out postversion
-
-should work.
-""")
+        result = chrom
     return result
 
 def removeOnBP(fname, out):

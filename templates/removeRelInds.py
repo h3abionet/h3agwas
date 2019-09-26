@@ -12,7 +12,8 @@ EOL=chr(10)
 
 str_type = {"FID":str, "IID":str, "FID1":str, "IID1":str, "FID2":str, 'IID2':str}
 
-imissf = pd.read_csv(sys.argv[1],delim_whitespace=True,index_col=["FID","IID"],dtype=str_type)
+imissf = pd.read_csv(sys.argv[1],delim_whitespace=True,dtype=str_type)
+imissf.set_index(["FID","IID"],inplace=True)
 genomef = pd.read_csv(sys.argv[2],delim_whitespace=True,usecols=["FID1","IID1","FID2","IID2","PI_HAT"],dtype=str_type)
 
 outf   =open(sys.argv[3],"w")
@@ -30,10 +31,13 @@ def getDegrees(remove):
        x=tuple(row[["FID1","IID1"]].tolist())
        y=tuple(row[["FID2","IID2"]].tolist())
        if x in remove or y in remove : pass
-       deg[x]=deg[x]+1
-       deg[y]=deg[y]+1
-       rel[x].append(y)
-       rel[y].append(x)
+       try:
+           deg[x]=deg[x]+1
+           deg[y]=deg[y]+1
+           rel[x].append(y)
+           rel[y].append(x)
+       except:
+           print("saw the problem")
    return rel, deg
 
 
