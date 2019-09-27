@@ -99,7 +99,7 @@ params.gcta_num_cores = 10
 params.data=""
 
 
-params.big_time='200h'
+params.big_time='1000h'
 //ldsc
 params.ldsc_h2=0
 params.ldsc_h2_multi=0
@@ -837,6 +837,7 @@ gwas_type_gem2=Channel.from("1".split(",")).toList()
 process DoGemmah2Pval{
    memory params.gemma_mem_req
    cpus params.gemma_num_cores
+   time   params.big_time
    input :
       set file(gwas),file(bed),file(bim),file(fam) from gwas_file_gem
    publishDir "${params.output_dir}/gemmapval", overwrite:true, mode:'copy'

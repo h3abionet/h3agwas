@@ -136,7 +136,7 @@ params.sexinfo_available = "false"
 
 
 params.plink_mem_req = '750MB' // how much plink needs for this
-params.other_process_memory = '2G' // how much other processed need
+params.other_process_memory = '10G' // how much other processed need
 
 
 plink_mem_req = params.plink_mem_req
