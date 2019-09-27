@@ -71,7 +71,7 @@ def get10Best(result,pheno):
     return best
         
 
-result = pd.read_csv(inp,delim_whitespace=True)
+result = pd.read_csv(inp,delim_whitespace=True,usecols=["chr","rs","ps","beta","p_wald"])
 chroms = result.groupby("chr")
 
 fig, (ax1, ax2) =  plt.subplots(2, 1, sharey=True)
