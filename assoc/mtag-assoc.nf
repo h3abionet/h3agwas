@@ -183,6 +183,7 @@ gwasformat.collect().into { listgwasform_col1; listgwasform_col2}
 /*Mtag*/
 process doMTAG{
    memory params.mtag_mem_req
+   time params.big_time
   input :
    file(listfile) from listgwasform_col1
  publishDir "${params.output_dir}/mtag", overwrite:true, mode:'copy'
@@ -210,6 +211,7 @@ for (i = 0; i <(nbfile-1); i++){
 
 process doMTAG2by2{
    memory params.mtag_mem_req
+   time params.big_time
    input :
      file(listfile) from listgwasform_col2
      each poss from list_file2by2
