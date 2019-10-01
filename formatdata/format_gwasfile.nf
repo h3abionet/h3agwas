@@ -97,19 +97,17 @@ process getListeChro{
         input :
           file(gwas_res) from gwas_chrolist
         output :
-          stdout into chrolist
+          file("filechro") into chrolist
         script:
          sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
          """
-         #PosChro=`head -1 ${gwas_res}|awk $sep \'{for(Cmt=1;Cmt<=NF;Cmt++)print Cmt\"\\t\"\$Cmt}\'|grep -e \"\t\"${params.head_chr}\$|awk \'{print \$1}\'`
-         #sed \'1d\' ${gwas_res}|awk -v poschro=\$PosChro \'{print \$poschro}\'|uniq|sort|uniq
-         extractlistchro.py --input_file $gwas_res --chro_header CHR $sep
+         extractlistchro.py --input_file $gwas_res --chro_header CHR $sep > filechro
         """
 }
 
-chrolist2=Channel.create()
-chrolist.flatMap { list_str -> list_str.split() }.set { chrolist2 }
 
+chrolist2=Channel.create()
+chrolist.flatMap { list_str -> list_str.readLines()[0].split() }.set { chrolist2 }
 
 process ExtractChroGWAS{
     memory params.mem_req 
@@ -146,32 +144,36 @@ print("used plink file")
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
 fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+
+
+}else{
+bed=file('bed')
+bim=file('bim')
+fam=file('fam')
+}
+
 fileplk= Channel.create()
 Channel
     .from(file(bed),file(bim),file(fam))
     .buffer(size:3)
-    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
+    .map { a -> [a[0], a[1], a[2]] }
     .set { fileplk }
 
-
-}else{
-fileplk='PlkNone'
-}
 rsinfo_chroplk=rsinfo_chro.combine(fileplk)
 process MergeRsGwasChro{
     memory params.mem_req 
     input :
-      set val(chro), file(gwas),file(chrors), file(plk) from rsinfo_chroplk
+      set val(chro), file(gwas),file(chrors), file(bed), file(bim), file(fam) from rsinfo_chroplk
     output :
       file(outmerge) into gwas_rsmerge
     script :
      outmerge="merge_"+chro+".gwas"
-     bfileopt= (params.input_pat!="") ?  " --bfile "+plk[0].baseName : ""
+     bfileopt= (params.input_pat!="") ?  " --bfile "+bed.baseName : ""
      Nheadopt=(params.head_N!="") ? " --N_head ${params.head_N} " : ""
      Freqheadopt=(params.head_freq!="") ? " --freq_head ${params.head_freq} " : ""
 
      NheadNewopt=(params.headnew_N!="") ? " --Nnew_head ${params.headnew_N} " : ""
-     FreqheadNewopt=(params.headnew_freq!="") ? " --freqnew_head ${params.headnew_freq} " : ""
+     FreqNewheadopt=(params.headnew_freq!="") ? " --freqnew_head ${params.headnew_freq} " : ""
      """
      mergeforrs.py --input_gwas $gwas --input_rs $chrors  --out_file $outmerge --chro_head  ${params.headnew_chr} --bp_head  ${params.headnew_bp} --rs_head ${params.headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt
      """
@@ -185,10 +187,10 @@ process MergeAll{
       file(allfile) from gwas_rsmerge_all
    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
    output :
-      file(mergefile) 
+      file(fileout) 
    script :
      file1=allfile[0]
-     listefiles=liste_file.join(" ")
+     listefiles=allfile.join(" ")
      fileout=params.output
      """
      head -1 $file1 > $fileout
