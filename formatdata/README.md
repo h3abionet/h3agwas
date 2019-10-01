@@ -53,3 +53,18 @@ nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfil
 * `min_scoreinfo` : what score info minimum do you want : [default :0.6]
 * `output_dir` : directory of output : [default : impute2] 
 
+## format a gwas file `format_gwasfile.nf`
+### Requirement :
+* plink, bash, nextflow, python3 (library : panda)
+* singularity / dockers image : no test yet
+
+### what script done :
+* initial data a gwas format 
+* search rs on file to added new rs at each position (if not found add chro:pos)
+* added N and frequencies values if need and plink file gave
+* Change header, separator... etc
+
+### arguments :
+
+### arguments
+* 
