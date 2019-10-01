@@ -5,9 +5,11 @@
 
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
-This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc`
+This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
 
 ## what's news :
+* 01/10/19 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](assoc/README.md)
+  * file `formatdata/format_gwasfile.nf`
 * 19/09/19 : added in estimation of heritabilites option for Multiple variance components for boltlmm  [assoc](assoc/README.md)
 * 17/09/19 : added format and analysis by mtag in [assoc](assoc/README.md)
 * 16/09/19 : added two news nextflow files to convert data in [formatdata](formatdata/README.md):
@@ -62,7 +64,7 @@ for performing a genome-wide association study
 There are three separate workflows that make up *h3agwas*
 
 1. `call2plink`.  Conversion of Illumina genotyping reports with TOP/BOTTOM or FORWARD/REVERSE  calls into PLINK format, aligning the calls.
-   * see [README of call2plink](qc/)
+   * see [README of call2plink](call2plink/)
 
 2. `qc`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
    * see [README of qc](qc/)
@@ -98,6 +100,9 @@ There are three separate workflows that make up *h3agwas*
     * `assoc/meta-assoc.nf` : do meta analysis with summary statistics 
     * `assoc/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
     * `assoc/simul-assoc.nf` : simulation of bed file 
+
+4. `formatdata` : additional script to format data added some missing information etc...
+  *  see [README of formatdata/](formatdata/)
 
 
 ## Design principles

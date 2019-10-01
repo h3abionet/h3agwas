@@ -59,7 +59,7 @@ nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfil
 * singularity / dockers image : no test yet
 
 ### what script done :
-* initial data a gwas format 
+* initial data of gwas format transform in other files
 * search rs on file to added new rs at each position (if not found add chro:pos)
 * added N and frequencies values if need and plink file gave
 * Change header, separator... etc
@@ -99,8 +99,5 @@ nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfil
     * used plink information to compute freq and N and added in gwas file if `head_N` and/or `head_freq` not intialise
     * `input_dir` : plink directory
     * `input_pat` : plink basename
-    * `mem_req` : memory request for processes>
+  * `mem_req` : memory request for processes>
 
-
-### arguments
-* 
