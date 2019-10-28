@@ -130,13 +130,12 @@ if 'A2' in l_newhead :
   balchangA2=True
 listposfloat=[]
 for head in ['freqA1', 'Beta', 'Se', 'Pval', 'N']:
-   if head in l_infof :
-       newhead=l_oldhead[l_infof.index(head)]
+   if head in l_newhead:
+       newhead=l_oldhead[l_newhead.index(head)]
        listposfloat.append(head_inp.index(newhead))
 
 p_minf=float('-inf')
 p_pinf=float('inf')
-print(listposfloat)
 def checkfloat(tmp, listposfloat):
    for x in listposfloat :
       try :

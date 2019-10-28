@@ -121,6 +121,7 @@ p_pinf=float('inf')
 def checkfloat(tmp, listposfloat):
    for x in listposfloat :
       try :
+        print(tmp,x, len(tmp))
         resfl=float(tmp[x]) 
         if math.isnan(resfl) or resfl==p_minf or resfl==p_pinf:
            tmp[x]="NA"
