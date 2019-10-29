@@ -55,6 +55,7 @@ params.ma_inv_var_weigth=0
 params.ma_mem_req="10G"
 params.gwama_mem_req="20G"
 params.metasoft_mem_req="10G"
+params.big_time = '1000h'
 
 params.metasoft_pvalue_table="/opt/bin/HanEskinPvalueTable.txt"
 params.ma_metasoft_opt=""
@@ -154,6 +155,7 @@ if(params.gwama==1){
   process doGWAMA {
      label 'metaanalyse'
      memory gwama_mem_req
+     time params.big_time
     input :
       val(list_file) from liste_file_gwama
     publishDir "${params.output_dir}/gwama", overwrite:true, mode:'copy'
@@ -193,6 +195,7 @@ if(params.mrmega==1){
   process doMRMEGA {
     label 'metaanalyse'
     memory ma_mem_req
+    time params.big_time
     input :
       val(list_file) from liste_file_mrmega
     publishDir "${params.output_dir}/mrmega", overwrite:true, mode:'copy'
@@ -233,6 +236,7 @@ if(params.mrmega==1){
 if(params.metal==1){
 
   process doMetal {
+    time params.big_time
     label 'metaanalyse'
     memory ma_mem_req
     input :
@@ -275,6 +279,7 @@ if(params.metasoft==1){
 
   file_pvaltab=params.metasoft_pvalue_table
   process doMetaSoft {
+    time params.big_time
     memory ma_mem_req
     label 'metaanalyse'
     input :
@@ -294,6 +299,7 @@ if(params.metasoft==1){
       """
   }
   process showMetasoft {
+    time params.big_time
     memory metasoft_mem_req
     publishDir params.output_dir
     input:
