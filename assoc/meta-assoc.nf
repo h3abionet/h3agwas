@@ -54,7 +54,7 @@ params.ma_genomic_cont=0
 params.ma_inv_var_weigth=0
 params.ma_mem_req="10G"
 params.gwama_mem_req="20G"
-params.metasoft_mem_req="10G"
+params.metasoft_mem_req="20G"
 params.big_time = '1000h'
 
 params.metasoft_pvalue_table="/opt/bin/HanEskinPvalueTable.txt"
