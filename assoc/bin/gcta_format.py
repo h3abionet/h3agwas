@@ -87,7 +87,7 @@ if (args.n_header==None or args.freq_header==None) and args.bfile :
       freq_head="MAF"
    IsFreq=True
    IsN=True
-   result=result.merge(data_n,how="inner", on=rs_head)
+   result=result.merge(data_n,how="inner", left_on=rs_head, right_on="SNP")
 
 
 if args.chr :
