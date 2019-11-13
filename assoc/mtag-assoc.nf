@@ -31,7 +31,7 @@ checker = { fn ->
 def helps = [ 'help' : 'help' ]
 
 /*params*/
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "bin_mtag"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "bin_mtag", "opt_mtag"]
 
 allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2"]
 allowed_params+=allowed_params_head
@@ -61,6 +61,7 @@ params.list_N=""
 params.mtag_mem_req="15G"
 params.bin_mtag="mtag.py"
 params.cut_maf = 0.001
+params.opt_mtag =""
 
 
 params.help = false
@@ -223,7 +224,7 @@ process doMTAG2by2{
         file2=listfile[poss[1]]
         output=""+file1+"_"+file2
         """
-        python ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps
+        python ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps ${args.opt_mtag}
         """
 }
 }
