@@ -510,7 +510,7 @@ The key options are:
 *  `file_rs_buildrelat` : file with rs list (one by lines) to build genetics models (relatdness), for gemma `-snps` for boltlmm `--modelSnps`
 * `genetic_map_file` : genetic map used in boltlmm 
 
-By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
+You must specify what type of association test you wan -00  you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1.
 
  * `assoc` : should a chi2 test be used (0 or 1)
  * `fisher`: Fisher exact test
