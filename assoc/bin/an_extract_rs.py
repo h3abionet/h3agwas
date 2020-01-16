@@ -18,7 +18,7 @@ def parseArguments():
     parser.add_argument('--pos_header',type=str,required=True,help="pos header in inp files")
     parser.add_argument('--rs_header',type=str,required=True,help="rs header in inp files")
     parser.add_argument('--pval_header',type=str,required=True,help="pvalue header in inp files")
-    parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
+    parser.add_argument('--beta_header',type=str,required=False,help="beta header in inp files")
     parser.add_argument('--freq_header',type=str,required=False,help="frequencies header in inp files")
     parser.add_argument('--around_rs',type=float,required=True,help="around rs (pb)")
     parser.add_argument('--maf',type=float,default=0.0,help="minor allele frequencies")
@@ -42,7 +42,7 @@ elif args.list_rs != "" :
 else :
       sys.exit("args : inp_rs and list_rs not found\nexit\n")
 
-result = pd.read_csv(args.inp_resgwas,delim_whitespace=True)
+result = pd.read_csv(args.inp_resgwas,delim_whitespace=True, dtype={args.chro_header:str})
 #result=result[(result[args.freq_header]>args.maf) & (result[args.freq_header]<1-args.maf)]
 
 sub_result=result.loc[result[args.rs_header].isin(list_rs)]
@@ -72,5 +72,8 @@ for x in sub_result[args.rs_header] :
        small.columns=["#CHROM","BEGIN","END","MARKER_ID","PVALUE","MAF"]
     else :
        small.columns=["#CHROM","BEGIN","END","MARKER_ID","PVALUE"]
+    small.BEGIN = small.BEGIN.astype(int)
+    small.END = small.END.astype(int)
+    #small['#CHROM'] = small['#CHROM'].astype(int)
     small.to_csv(out_file, sep=TAB, header=True, index=False,na_rep="NA")
 

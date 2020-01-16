@@ -31,11 +31,7 @@ def addedplkinfo(args, datai, ChroHead, BpHead):
    data_n=pd.read_csv(plkfreqfil+".frq",delim_whitespace=True)
    del data_n['CHR']
    data_n=data_n.merge(bim, left_on='SNP', right_on='rsold')
-   print(data_n)
-   # CHR            SNP   A1   A2          MAF  NCHROBS
-   #SNP A1 A2 freq b se p N
    data_n['N']=data_n['NCHROBS']/2
-   #print(data_n)
    if args.N_head==None and args.freq_head==None:
       data_n=data_n[[ChroHead, BpHead,"N",'MAF']]
       data_n.columns=[ChroHead, BpHead, args.Nnew_head, args.freqnew_head]
@@ -47,7 +43,6 @@ def addedplkinfo(args, datai, ChroHead, BpHead):
       data_n.columns=[ChroHead, BpHead, args.freqnew_head]
    datai=datai.merge(data_n, on=[ChroHead, BpHead],how='left')
    return datai
-   #result=result.merge(data_n,how="left", left_on=rs_head, right_on="SNP")
 
 
 
@@ -61,14 +56,16 @@ def parseArguments():
     parser.add_argument('--chro_head',type=str,required=True,help="header of chromosome")
     parser.add_argument('--bp_head',type=str,required=True,help="head of postion")
     parser.add_argument('--rs_head',type=str,required=True,help="new head of rs")
+    parser.add_argument('--a1_head',type=str,required=True,help="head of postion")
+    parser.add_argument('--a2_head',type=str,required=True,help="new head of rs")
     parser.add_argument('--freq_head',type=str,required=False,help="new head of rs")
     parser.add_argument('--freqnew_head',type=str,default='Freq',required=False,help="new head of rs")
     parser.add_argument('--N_head',type=str,required=False,help="")
     parser.add_argument('--Nnew_head',type=str,default='N',required=False,help="")
     parser.add_argument('--bfile',type=str,required=False,help="plink file")
-    parser.add_argument('--keep',type=str,required=False,help="plink file")
-    parser.add_argument('--threads',type=str,default=1,required=False,help="plink file")
-    parser.add_argument('--N_value', type=str,required=False,help="plink file")
+    parser.add_argument('--keep',type=str,required=False,help="option keep for plink")
+    parser.add_argument('--threads',type=str,default=1,required=False,help="option threads for plink")
+    parser.add_argument('--N_value', type=str,required=False,help="added a N values")
     parser.add_argument('--bin_plk',type=str,required=False,help="plink binary", default='plink')
     args = parser.parse_args()
     return args
@@ -81,8 +78,8 @@ BPHead=args.bp_head
 RsHead=args.rs_head
 gwasres = pd.read_csv(args.input_gwas,delim_whitespace=True)
 inforrs=pd.read_csv(args.input_rs,header=None, delim_whitespace=True)
-inforrs.columns =[ChroHead,BPHead,RsHead]
-gwasres=inforrs.merge(gwasres, how='right',on=[ChroHead,BPHead])
+inforrs.columns =[ChroHead,BPHead,args.a1_head, args.a2_head, RsHead]
+gwasres=inforrs.merge(gwasres, how='right',on=[ChroHead,BPHead, args.a1_head, args.a2_head])
 gwasres.loc[gwasres[RsHead].isnull(),RsHead]=gwasres.loc[gwasres[RsHead].isnull(),ChroHead].astype('str')+":"+gwasres.loc[gwasres[RsHead].isnull(),BPHead].astype('str')
 gwasres[ChroHead]=gwasres[ChroHead].astype('str')
 if args.bfile and (args.N_head==None or args.freq_head==None):

@@ -38,7 +38,7 @@ PosEnt=args.pos_header
 RsEnt=args.rs_header
 PvalueEnt=args.pval_header
 BEnt=args.beta_header
-NameProg=args.info_prog
+NameProg=args.info_prog.replace("_","-")
 
 out_man = "%s-man.pdf"%base
 out_qq  = "%s-qq.pdf"%base

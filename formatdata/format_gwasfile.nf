@@ -74,6 +74,8 @@ params.headnew_N=""
 params.poshead_chro_inforef=0
 params.poshead_bp_inforef=1
 params.poshead_rs_inforef=2
+params.poshead_a1_inforef=3
+params.poshead_a2_inforef=4
 
 if(params.file_gwas==""){
 error('params.file_gwas: file contains gwas not found')
@@ -135,7 +137,7 @@ process ExtractRsIDChro{
     script :
       outrs="info_rs_"+chro+".rs"
     """
-    zcat $rsinfo | extractrsid_bypos.py --file_chrbp $gwas --out_file $outrs --ref_file stdin --chr $chro --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef}
+    zcat $rsinfo | extractrsid_bypos.py --file_chrbp $gwas --out_file $outrs --ref_file stdin --chr $chro --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef} 
     """ 
 }
 
@@ -175,7 +177,7 @@ process MergeRsGwasChro{
      NheadNewopt=(params.headnew_N!="") ? " --Nnew_head ${params.headnew_N} " : ""
      FreqNewheadopt=(params.headnew_freq!="") ? " --freqnew_head ${params.headnew_freq} " : ""
      """
-     mergeforrs.py --input_gwas $gwas --input_rs $chrors  --out_file $outmerge --chro_head  ${params.headnew_chr} --bp_head  ${params.headnew_bp} --rs_head ${params.headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt
+     mergeforrs.py --input_gwas $gwas --input_rs $chrors  --out_file $outmerge --chro_head  ${params.headnew_chr} --bp_head  ${params.headnew_bp} --rs_head ${params.headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt  --a1_head ${params.headnew_A1} --a2_head  ${params.headnew_A2}
      """
 
 }
