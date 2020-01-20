@@ -141,7 +141,7 @@ process ExtractRsIDChro{
     """ 
 }
 
-if(params.input_dir!="" && params.input_pat!=''){
+if(params.input_dir!="" || params.input_pat!=''){
 print("used plink file")
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
@@ -170,7 +170,7 @@ process MergeRsGwasChro{
       file(outmerge) into gwas_rsmerge
     script :
      outmerge="merge_"+chro+".gwas"
-     bfileopt= (params.input_pat!="") ?  " --bfile "+bed.baseName : ""
+     bfileopt= (params.input_pat!="" && params.input_dir!="") ?  " --bfile "+bed.baseName : ""
      Nheadopt=(params.head_N!="") ? " --N_head ${params.head_N} " : ""
      Freqheadopt=(params.head_freq!="") ? " --freq_head ${params.head_freq} " : ""
 

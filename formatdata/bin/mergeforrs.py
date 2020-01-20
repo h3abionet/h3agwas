@@ -78,9 +78,10 @@ BPHead=args.bp_head
 RsHead=args.rs_head
 gwasres = pd.read_csv(args.input_gwas,delim_whitespace=True)
 inforrs=pd.read_csv(args.input_rs,header=None, delim_whitespace=True)
-inforrs.columns =[ChroHead,BPHead,args.a1_head, args.a2_head, RsHead]
-gwasres=inforrs.merge(gwasres, how='right',on=[ChroHead,BPHead, args.a1_head, args.a2_head])
-gwasres.loc[gwasres[RsHead].isnull(),RsHead]=gwasres.loc[gwasres[RsHead].isnull(),ChroHead].astype('str')+":"+gwasres.loc[gwasres[RsHead].isnull(),BPHead].astype('str')
+inforrs.columns =[ChroHead,BPHead,args.a1_head+'_tmp', args.a2_head+'_tmp', RsHead]
+gwasres=inforrs.merge(gwasres, how='right',on=[ChroHead,BPHead])
+balise=gwasres[RsHead].isnull() | ((((gwasres[args.a1_head]==gwasres[args.a1_head+'_tmp']) & (gwasres[args.a2_head]==gwasres[args.a2_head+'_tmp'])) | ((gwasres[args.a2_head]==gwasres[args.a1_head+'_tmp']) & (gwasres[args.a1_head]==gwasres[args.a2_head+'_tmp'])))==False)
+gwasres.loc[balise,RsHead]=gwasres.loc[balise,ChroHead].astype('str')+":"+gwasres.loc[balise,BPHead].astype('str')
 gwasres[ChroHead]=gwasres[ChroHead].astype('str')
 if args.bfile and (args.N_head==None or args.freq_head==None):
    gwasres=addedplkinfo(args, gwasres, ChroHead,BPHead) 
