@@ -103,7 +103,7 @@ process getListeChro{
         script:
          sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
          """
-         extractlistchro.py --input_file $gwas_res --chro_header CHR $sep > filechro
+         extractlistchro.py --input_file $gwas_res --chro_header ${params.head_chr} $sep > filechro
         """
 }
 
