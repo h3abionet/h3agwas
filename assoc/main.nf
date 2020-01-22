@@ -531,8 +531,11 @@ if (params.fastlmm == 1) {
 	     set val(base), val(our_pheno2), file("$out") into fastlmm_manhatten_ch
 	 script :
 	     base=base_list[0]
-	     our_pheno = this_pheno.replace(/_|\/np.\w+/,"-").replace(/-$/,"")
-	     our_pheno2 = this_pheno.replace(/_|\/np.\w+/,"-").replace(/-$/,"").replaceAll(/^[0-9]+-/,"")
+	     //our_pheno = this_pheno.replace(/_|\/np.\w+/,"-").replace(/-$/,"")
+	     //our_pheno2 = this_pheno.replace(/_|\/np.\w+/,"-").replace(/-$/,"").replaceAll(/^[0-9]+-/,"")
+             our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+             our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+
 	     out = "$base-${our_pheno}.stat"
 	     fnames = list_file.join(" ")
 	     file1  = list_file[0]
@@ -557,8 +560,11 @@ if (params.fastlmm == 1) {
 	 set val(base), val(our_pheno2), file("$out") into fastlmm_manhatten_ch
        script:
 	 base = plinks[0].baseName
-	 our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
-	 our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+//	 our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+//	 our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+
+         our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+         our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
 	 covar_opt_fast =  (params.covariates) ?  " -covar $covariate" : ""
 	 out = "$base-$our_pheno"+".stat"
 	 """
@@ -754,9 +760,13 @@ if (params.boltlmm == 1) {
       set val(base), val(our_pheno), file("$outf") into bolt_manhatten_ch
     script:
       base = plinksbed.baseName
-      our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
-      our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
-      our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+      our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+      our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+      our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+
+//      our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+//      our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+//      our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       outimp  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
       out     = "$base-${our_pheno2}.stat" 
       outf    = (params.bolt_impute2filelist!="") ? outimp : out
@@ -874,7 +884,7 @@ if (params.gemma == 1){
       set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch
     script:
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
-       ourpheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
        our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
        data_nomissing     = "pheno-"+our_pheno+".pheno"
        list_ind_nomissing = "lind-"+our_pheno+".lind"
@@ -890,7 +900,7 @@ if (params.gemma == 1){
        out                = "$base-$our_pheno"
        dir_gemma          =  "gemma"
        """
-       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $ourpheno3 --dataout $data_nomissing \
+       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase  ${rs_plk_gem}
@@ -961,9 +971,9 @@ if (params.gemma_gxe == 1){
       file("${dir_gemma}/${out}.log.txt")
       set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch_gxe
     script:
-       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
-       our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
-       our_pheno3         = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
        data_nomissing     = "pheno-"+our_pheno+".pheno" 
        list_ind_nomissing = "lind-"+our_pheno+".lind"
        rel_matrix         = "newrel-"+our_pheno+".rel"
