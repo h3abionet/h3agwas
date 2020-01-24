@@ -576,10 +576,10 @@ if (params.fastlmm == 1) {
   }
 
   // this part is plotting done for any fastlmm mode
-
+  //, overwrite:true, mode:'copy'
   process showFastLmmManhatten {
     memory params.other_process_memory
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from fastlmm_manhatten_ch
     output:
@@ -788,7 +788,7 @@ if (params.boltlmm == 1) {
 
   process showBoltmmManhatten {
    memory params.other_process_memory
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from bolt_manhatten_ch
     output:
@@ -916,7 +916,7 @@ if (params.gemma == 1){
 
   process showGemmaManhatten {
     memory params.other_process_memory
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     label 'bigMem'
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch
@@ -1004,7 +1004,7 @@ if (params.gemma_gxe == 1){
 
   process showGemmaManhattenGxE { 
     memory params.other_process_memory
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch_gxe
     output:
@@ -1065,7 +1065,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
     set val(test), val(pheno_name), file(results) from out_ch.tap(log_out_ch)
     output:
       set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     script:
       base="cleaned-${test}"
       """
@@ -1105,7 +1105,7 @@ if (params.plink_gxe==1) {
 
   process showPlinkManhattenGxE {
     memory params.other_process_memory
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from res_plink_gxe
     output:
