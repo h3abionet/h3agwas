@@ -212,7 +212,7 @@ process PlotLocusZoom{
     script :
        rsnameout=rs.replace(':',"_")
        """
-       ${params.loczm_bin} --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} --gwas-cat whole-cat_significant-only --svg  -p out --no-date 
+       ${params.loczm_bin} --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date 
        """
 }
 
