@@ -1098,16 +1098,24 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
 if (params.plink_gxe==1) {
   data_ch_plk_gxe = Channel.fromPath(params.data)
   pheno_label_ch_gxe = Channel.from(params.pheno.split(","))
+   if(params.rs_list==""){
+        rsfile_pkgxe=file('NO_FILERS')
+     }else{
+        rsfile_plkgxe=file(params.rs_list)
+   }
+
+
   process computePlinkGxE {
     cpus num_assoc_cores
     time params.big_time
     input:
        set file(filebed),file(filebim),file(filefam) from assoc_ch_gxe
        file (phenof) from data_ch_plk_gxe
+       file(rsfile) from rsfile_plkgxe
     each pheno_name from pheno_label_ch_gxe
     publishDir "${params.output_dir}/plink_gxe", overwrite:true, mode:'copy'
     output:
-       set file("${out}.qassoc.gxe"),file("${outf}.notfind")
+       set file("${out}.qassoc.gxe"),file("${outftmp}.notfind")
        set val(base),val(pheno_name), file("$outf")  into res_plink_gxe
     script:
        pheno_name = pheno_name.replaceFirst("/.*","")
@@ -1115,11 +1123,12 @@ if (params.plink_gxe==1) {
        out        = "$base-${pheno_name}"
        outftmp       = "${out}.tmp.final.gxe"
        outf       = "${out}.qassoc.final.gxe"
+       rs_plk        =  (params.rs_list) ?  " --extract  $rsfile" : ""
        """
        PosCol=`head -1 $phenof|sed 's/[\\t ]/\\n/g'|grep -n $params.gxe|awk -F':' '{print \$1-2}'`
-       plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof
+       plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof $rs_plk
        merge_bim_gxeplink.py --plgxe ${out}.qassoc.gxe --bim $filebim --out $outftmp
-       added_freq_gxe.py --bfile $base --file_gxe $outftmp --pheno_file $phenof --pheno ${pheno_name} --pheno_gxe ${params.gxe} --out $outf --plk_cores ${params.num_assoc_cores} --gwas_chr CHR --gwas_rs SNP
+       added_freq_gxe.py --bfile $base --file_gxe $outftmp --pheno_file $phenof --pheno ${pheno_name} --pheno_gxe ${params.gxe} --out $outf --plk_cores ${num_assoc_cores} --gwas_chr CHR --gwas_rs SNP
 
 
        """
