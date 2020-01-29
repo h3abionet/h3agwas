@@ -246,6 +246,7 @@ rel_ch_fastlmm = Channel.create()
 pca_in_ch = Channel.create()
 assoc_ch  = Channel.create()
 assoc_ch_gxe  = Channel.create()
+assoc_ch_gxe_freq=Channel.create()
 raw_src_ch= Channel.create()
 
 Channel
@@ -286,7 +287,7 @@ if (thin+chrom) {
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
       /*JT Append initialisation boltlmm_assoc_ch */
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm)
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe)
     script:
        base = bed.baseName
        out  = base+"_t"
@@ -299,7 +300,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe, gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm) { a -> [a,a,a,a,a,a,a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm) { a -> [a,a,a,a,a,a,a,a] }
 }
 
 
@@ -969,7 +970,7 @@ if (params.gemma_gxe == 1){
     publishDir params.output_dir, overwrite:true, mode:'copy'
     output: 
       file("${dir_gemma}/${out}.log.txt")
-      set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch_gxe
+      set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into (gemma_manhatten_ch_gxe_i, gemma_manhatten_ch_gxe)
     script:
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
        our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
@@ -999,6 +1000,23 @@ if (params.gemma_gxe == 1){
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
        ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
        mv output ${dir_gemma}
+       """
+  } 
+  gemma_manhatten_ch_gxe_freq= gemma_manhatten_ch_gxe_i.combine(Channel.fromPath(params.data)).combine(assoc_ch_gxe_freq)
+  process AddedFreqGxEGemma{
+    cpus params.gemma_num_cores
+    memory params.gemma_mem_req
+    time   params.big_time
+    input:
+      set val(newbase), val(our_pheno), file(gemmares), file(data_file),file(plinks) from gemma_manhatten_ch_gxe_freq
+    publishDir "${params.output_dir}/gemma_gxe", overwrite:true, mode:'copy'
+    output:
+        file(gemmaresfreq) 
+    script :
+       base = plinks[0].baseName
+       gemmaresfreq=gemmares+'.withfreq' 
+       """
+       added_freq_gxe.py --bfile $base --file_gxe $gemmares --pheno_file $data_ch --pheno ${our_pheno} --pheno_gxe ${params.gxe} --out $gemmaresfreq  --plk_cores ${params.gemma_num_cores}
        """
   } 
 
@@ -1095,11 +1113,15 @@ if (params.plink_gxe==1) {
        pheno_name = pheno_name.replaceFirst("/.*","")
        base       = filebed.baseName
        out        = "$base-${pheno_name}"
+       outftmp       = "${out}.tmp.final.gxe"
        outf       = "${out}.qassoc.final.gxe"
        """
        PosCol=`head -1 $phenof|sed 's/[\\t ]/\\n/g'|grep -n $params.gxe|awk -F':' '{print \$1-2}'`
        plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof
-       merge_bim_gxeplink.py --plgxe ${out}.qassoc.gxe --bim $filebim --out $outf
+       merge_bim_gxeplink.py --plgxe ${out}.qassoc.gxe --bim $filebim --out $outftmp
+       added_freq_gxe.py --bfile $base --file_gxe $outftmp --pheno_file $phenof --pheno ${pheno_name} --pheno_gxe ${params.gxe} --out $outf --plk_cores ${params.num_assoc_cores} --gwas_chr CHR --gwas_rs SNP
+
+
        """
  }
 
