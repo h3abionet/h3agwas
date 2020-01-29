@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 
 # Merge PLINK GxE outpu with bim file 
 
@@ -28,7 +29,7 @@ read_bim=open(args.bim)
 read_gxe=open(args.plgxe)
 write_out=open(args.out,'w')
 write_out_notfind=open(args.out+".notfind",'w')
-ent=read_gxe.readline().replace('\n','')+"\t"+"POS\n"
+ent=re.sub('[ ]+','\t', re.sub('^[ ]+','',read_gxe.readline().replace('\n','')))+"\t"+"POS\n"
 write_out.write(ent)
 write_out_notfind.write(ent)
 
@@ -42,19 +43,19 @@ while bimline and gxeline :
       if not bimline :
         break
    if splgxeline[pos_rsgxe]=='.':
-      write_out_notfind.write(gxeline+"\tNA\n")
+      write_out_notfind.write(re.sub('[ ]+','\t', re.sub('^[ ]+','',gxeline))+"\tNA\n")
       (gxeline,splgxeline)=GetInfo(read_gxe)
       if not gxeline :
         break
    if splgxeline[pos_rsgxe]==splgxeline[pos_rsgxe]:
-      write_out.write(gxeline+"\t"+splbimline[pos_posbim]+"\n")
+      write_out.write(re.sub('[ ]+','\t', re.sub('^[ ]+','',gxeline))+"\t"+splbimline[pos_posbim]+"\n")
       (bimline,splbimline)=GetInfo(read_bim)
       (gxeline,splgxeline)=GetInfo(read_gxe)
    else :
       (bimline,splbimline)=GetInfo(read_bim)
 
 for line in read_gxe :
-    write_out_notfind.write(line+"\tNA\n") 
+    write_out_notfind.write(re.sub('[ ]+','\t', re.sub('^[ ]+','',line))+"\tNA\n")
  
 
 
