@@ -970,7 +970,7 @@ if (params.gemma_gxe == 1){
     publishDir params.output_dir, overwrite:true, mode:'copy'
     output: 
       file("${dir_gemma}/${out}.log.txt")
-      set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into (gemma_manhatten_ch_gxe_i, gemma_manhatten_ch_gxe)
+      set val(newbase), val(this_pheno), file("${dir_gemma}/${out}.assoc.txt") into (gemma_manhatten_ch_gxe_i, gemma_manhatten_ch_gxe)
     script:
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
        our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
@@ -1008,15 +1008,17 @@ if (params.gemma_gxe == 1){
     memory params.gemma_mem_req
     time   params.big_time
     input:
-      set val(newbase), val(our_pheno), file(gemmares), file(data_file),file(plinks) from gemma_manhatten_ch_gxe_freq
+      set val(newbase), val(our_pheno), file(gemmares), file(data_file),file(bed),file(bim),file(fam) from gemma_manhatten_ch_gxe_freq
     publishDir "${params.output_dir}/gemma_gxe", overwrite:true, mode:'copy'
     output:
         file(gemmaresfreq) 
     script :
-       base = plinks[0].baseName
+       base = bed.baseName
+       our_pheno2         = our_pheno.replaceAll(/^[0-9]+@@@/,"")
+       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
        gemmaresfreq=gemmares+'.withfreq' 
        """
-       added_freq_gxe.py --bfile $base --file_gxe $gemmares --pheno_file $data_ch --pheno ${our_pheno} --pheno_gxe ${params.gxe} --out $gemmaresfreq  --plk_cores ${params.gemma_num_cores}
+       added_freq_gxe.py --bfile $base --file_gxe $gemmares --pheno_file $data_ch --pheno ${our_pheno3} --pheno_gxe ${params.gxe} --out $gemmaresfreq  --plk_cores ${params.gemma_num_cores}
        """
   } 
 
@@ -1029,7 +1031,7 @@ if (params.gemma_gxe == 1){
       file("${out}*")  into report_gemma_ch_GxE
     script:
       our_pheno = this_pheno.replaceAll("_","-")
-      out = "C056$this_pheno"
+      out = "C056$our_pheno"
       """
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header chr --pos_header ps --rs_header rs --pval_header p_wald --beta_header beta --info_prog "Gemma,GxE: ${params.gxe}"
       """
