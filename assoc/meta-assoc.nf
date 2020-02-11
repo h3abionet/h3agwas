@@ -42,6 +42,7 @@ params.metal=0
 params.gwama=0
 params.metasoft=0
 params.mrmega=0
+params.pheno="not defined"
 
 // external binary definition
 params.metal_bin='metal'
@@ -175,7 +176,7 @@ if(params.gwama==1){
   }
   process showGWAMA {
     memory ma_mem_req
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       file(assoc) from res_gwama
     output:
@@ -259,7 +260,7 @@ if(params.metal==1){
   }
   process showMetal {
     memory ma_mem_req
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       file(assoc) from res_metal
     output:
@@ -301,7 +302,7 @@ if(params.metasoft==1){
   process showMetasoft {
     time params.big_time
     memory metasoft_mem_req
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       file(assoc) from res_metasoft
     output:

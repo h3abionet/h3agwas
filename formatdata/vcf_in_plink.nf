@@ -68,7 +68,8 @@ error('params.file_listvcf : file contains list vcf not found')
 /*read file to have list of channel for each vcf*/
 list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
 
-process formatvcf{
+if(params.min_scoreinfo>0){
+process formatvcfscore{
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time
@@ -85,6 +86,25 @@ process formatvcf{
     cp ${Ent}.bim ${Ent}.save.bim
     awk \'{if(\$2==\".\"){\$2=\$1\":\"\$4};print \$0}\' ${Ent}.save.bim > ${Ent}.bim
     """
+}
+}else{
+process formatvcf{
+  cpus params.max_plink_cores
+  memory params.plink_mem_req
+  time   params.big_time
+  input :
+     file(vcf) from list_vcf
+  output :
+     set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
+     file("${Ent}.bim") into listbimplink
+  script :
+    Ent=vcf.baseName
+    """
+    plink --vcf $vcf --recode --keep-allele-order --make-bed --out ${Ent} --threads ${params.max_plink_cores}
+    cp ${Ent}.bim ${Ent}.save.bim
+    awk \'{if(\$2==\".\"){\$2=\$1\":\"\$4};print \$0}\' ${Ent}.save.bim > ${Ent}.bim
+    """
+}
 }
 bimmerg=listbimplink.collect()
 process GetRsDup{
