@@ -330,7 +330,7 @@ process drawPCA {
       set file(eigvals), file(eigvecs) from pca_out_ch
     output:
       set file (output), file ("B040-pca.tex") into report_pca_ch
-    publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.{pdf,tex}"
+    publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
     script:
       base=eigvals.baseName
       cc_fname = 0
