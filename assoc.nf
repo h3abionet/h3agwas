@@ -1106,7 +1106,7 @@ else
   wflowversion="A local copy of the workflow was used"
 
 if(params.print_pca!=0){
-report_ch = report_ch.mix(report_pca_ch)
+  report_ch = report_ch.mix(report_pca_ch.flatten())
 }
 
 process doReport {
