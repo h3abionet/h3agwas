@@ -314,40 +314,8 @@ There is a template of a nextflow.config file called aux.config.template. This i
 
 Then fill in the details in the config that are required for your run. These are expained in more detail below.
 
-## 4.3 Using the Excel spreadsheet template
 
-**We plan on removing this -- it doesn't look like many people use this feature and it is very hard to keep in sync with the development of the workflow. If you think we are wrong and this is a useful feature please let us know by registering this an an issuse.**
-
-_Use of this is deprecated_
-
-For many users it may be convenient to use the Excel spreadsheet (config.xlsx and a read-only template file config.xlsx.template). This can be used just as an _aide-memoire_, but we also have an auxiliary program that converts the Excel spreadsheet into a config file. The program _config-gen/dist/config-gen.jar_ takes the spreadsheet and produces a config file.
-
-The spreadsheet has the following columns
-* A. a brief one-line description of the parameter;
-* B. the name of the parameter as found in the config file;
-* C. the default value that will be used by  the _config-gen_ program if no value specified in column E;
-* D. possibie alternate value the user might consider; 
-* E. the value that the user wants to use
-
-If you are using this semi-automated way of producing the config file, remember that to be fully reproducible the config file must be saved too. We suggest making a copy of the spreadsheet template file giving it an appropriate name.
-
-You need to enter something into column E.
-
-Remember this creates only the auxiliary config file -- you still need the main file
-
-To run the _config-gen_ program, you would for example say:
-
-`java -jar ./config-gen/dist/config-gen.jar nameofspreadsheet > run10.config`
-
-I suggest editing that by removing any lines you don't want to change.
-
-Then you would run your script by saying
-
-`nextflow run -c run10.config qc.nf`
-
-The _nextflow.config_ file will automatically be used, except for any additions or changes that are in the _run10.config_ file.
-
-## 4.4 Specifying options
+## 4.3 Specifying options
 
 When you run the the scripts there are a number of different options that you might want to use. These options are specified by using  the `-flag` or `--flag` notation. The flags with a single hyphen (e.g. `-resume`) are standard Nextflow options applicable to all Nextflow scripts. The flags with a double hyphen (e.g., `--pi_hat`) are options that are specific to _our_ scripts.  *Take care not to mix this up as it's an easy error to make, and may cause silent errors to occur.*
 
@@ -359,15 +327,15 @@ Almost all the workflow options that are in the _nextflow.config_ file can also 
 sets the maximim allowable per-SNP misisng to 4%. However, this should only be used when debugging and playing round. Rather, keep the options in the auxiliary config file that you save. By putting options on the command line you reduce reproducibility. (Using the parameters that change the mode of the running -- e.g. whether using docker or whether to produce a time line only affects time taken and auxiliary data rather than the substantive results).
 
 
-## 4.5 Partial execution and resuming execution
+## 4.4 Partial execution and resuming execution
 
 Often a workflow may fail in the middle of execution because there's a problem with data (perhaps a typo in the name of a file), or you may want to run the workflow with slightly different parameters. Nextflow is very good in detecting what parts of the workflow need to re-executed -- use the `-resume` option. 
 
-## 4.6 Cleaning up 
+## 4.5 Cleaning up 
 
 If you want to clean up your work directory, say `nextflow clean`.
 
-## 4.7 Workflow overview, and timing
+## 4.6 Workflow overview, and timing
 
 Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.html) for visualising and tracing workflow. See the Nextflow documentation for details. Two of the options are:
 
@@ -551,7 +519,7 @@ with pipeline, do a GxE interaction with Gemma and Plink, arguments :
 
 For example
 
-```nextflow run assoc.nf --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
+```nextflow run assoc.nf --input_pat sampleA --assoc 1 --logistic 1 --adjust 1```
 
 analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
 

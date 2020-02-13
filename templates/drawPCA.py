@@ -98,8 +98,25 @@ def draw(pc1,pc2,evecs,labels,phe):
    fig, ax = plt.subplots(figsize=(10,8))
 
 
+def outputTeX():
+     g=open("B040-pca.tex","w")
+     g.write(("""
+*-section{Principal Component Analysis of Participants}
+
+Figure *-ref{fig:pca} shows a PCA of the participants. This should be examined for possible structure.
+
+*-begin{figure}[htb]
+*-centering
+*-includegraphics[width=12cm]{%s}
+*-caption{PCA of participants}
+*-label{fig:pca}
+*-end{figure}
+
+     """%(args.output)).replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10)))
+     g.close()
 
 args = parseArguments()
 labels, phe =  getColours()
 evecs =  getEigens()
 draw(*evecs,labels,phe)
+outputTeX()
