@@ -193,7 +193,7 @@ different output is provided :
   * for phenotype simulation all missing values is discarded and replaced by more frequent allele
   * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
 
-## 5. Estimatiion of heritabilies
+## 5. Estimation of heritabilies
 
 This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, grmel of bolt and greml of gcta, gemma
 two distincs approaches should be considered :
@@ -259,6 +259,7 @@ The key options are:
   * need option `output_dir`, `output_pat`, `data` and `pheno` (if you want to estimate with covariable used : `covariates` option)
   * `gcta_h2_imp` : 0 :
    * `grm_cutoff` : `grm-cutoff` in gcta (alias of `--rel-cutoff`) If used in conjunction with a later calculation (see the order of operations page for details), --rel-cutoff excludes one member of each pair of samples with observed genomic relatedness greater than the given cutoff value (default 0.025) from the analysis. Alternatively, you can invoke this on its own to write a pruned list of sample IDs to plink.rel.id. [default : 0.025]
+   * `gcta_h2_grmfile` : extension of grm output for 3 files `gcta_h2_grmfile`.grm.bin, `gcta_h2_grmfile`.grm.id `gcta_h2_grmfile`.grm.N.bin otbained with command line : gcta64 --bfile plk --make-grm --out outhead, if `gcta_h2_grmfile` is empty default, pipeline will generate files and output will be in gctagrm folder 
   * `gcta_h2_imp` : 1 pipeline for imputed data (must be in 1)
     * for imputed data, we used algorithm of [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata) and build :
       * Step 1: segment based LD score
@@ -266,7 +267,7 @@ The key options are:
       * Step 3: making GRMs using SNPs stratified into different groups
       * steps was very long you can provide `gcta_h2_grmfile` option to skip with already snps stratified
       * `gcta_mem_reqmgrm` : option memory for the step
-  * `gcta_h2_grmfile` : if file not provide pipeline will do step described before[default None]
+    * `gcta_h2_mgrmfile` : if file not provide pipeline will do step described before[default None]
   * `gcta_mem_req` : [default 20GB]
   * `gcta_bin` : binary for gcta 
   * `gcta_h2_ldscore` [default 200kb]

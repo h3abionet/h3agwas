@@ -28,14 +28,14 @@ def helps = [ 'help' : 'help' ]
 allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gc10"]
 
 // define param for
-annotation_param=[ "file_gwas","gcta_bin","gcta_mem_req", "Nind"]
+annotation_param=[ "file_gwas", "Nind"]
 allowed_params+=annotation_param
 h2_param=[ "bolt_h2", "gcta_h2", "gcta_h2_imp","bolt_h2_multi"]
 allowed_params+=h2_param
 h2_bolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt"]
 h2_gemma=["gemma_h2_pval","gemma_num_cores", "gemma_mem_req", "gemma_h2", "gemma_h2_pval", "gemma_h2_typeest"]
-h2_ldsc=["ldsc_h2", "ldsc_h2_multi", "ldsc_mem_req","ldsc_h2opt", "genetic_map_file","dir_ref_ld_chr". "ldsc_bin","munge_sumstats_bin"]
-h2_gcta=["gcta_h2_multi", "grm_cutoff","multigrm_opt", "gcta_num_cores"]
+h2_ldsc=["ldsc_h2", "ldsc_h2_multi", "ldsc_mem_req","ldsc_h2opt", "genetic_map_file","dir_ref_ld_chr", "ldsc_bin","munge_sumstats_bin"]
+h2_gcta=["gcta_h2_multi", "grm_cutoff","multigrm_opt", "gcta_num_cores", "gcta_bin", "gcta_mem_req"]
 allowed_params+=h2_gemma
 allowed_params+=h2_bolt
 allowed_params+=h2_gcta
@@ -557,6 +557,7 @@ if(params.gcta_h2==1){
   if(params.gcta_h2_imp==0){
    //--reml-alg 0
    //Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.
+   if(params.gcta_h2_grmfile==""){
    process MakeGRM{
      cpus params.gcta_num_cores
      time params.big_time
@@ -565,22 +566,23 @@ if(params.gcta_h2==1){
         set file(bed), file(bim), file(fam)  from plink_ch_gcta_grm
      publishDir "${params.output_dir}/gctagrm", overwrite:true, mode:'copy'
      output :
-        file("tmp.ibc") into gcta_grm
+        set file("tmp.grm.bin"), file("tmp.grm.id"),  file("tmp.grm.N.bin") into gcta_grm
      script :
         plk=bed.baseName
         """
         ${params.gcta_bin} --bfile $plk --make-grm --out tmp --thread-num ${params.gcta_num_cores}
         """
-
-
    }
+  }else{
+  gcta_grm=Channel.fromPath("${params.gcta_h2_grmfile}.grm.id").combine(Channel.fromPath("${params.gcta_h2_grmfile}.grm.bin")).combine(Channel.fromPath("${params.gcta_h2_grmfile}.grm.N.bin"))
+  }
    filegrmcta_gcta=gcta_grm.combine(newdata_ch_gcta_grm)
    process doGRLEM{
      cpus params.gcta_num_cores
      time params.big_time
      memory params.gcta_mem_req
      input:
-        set file(grm),pheno, file(phef),file(covfile) from filegrmcta_gcta
+        set file(grm1),file(grm2), file(grm3),pheno, file(phef),file(covfile) from filegrmcta_gcta
     publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
      output :
        file("$output"+".hsq")
