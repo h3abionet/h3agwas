@@ -25,7 +25,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gc10"]
 
 // define param for
 annotation_param=[ "file_gwas","gcta_bin","gcta_mem_req", "Nind"]
@@ -33,7 +33,13 @@ allowed_params+=annotation_param
 h2_param=[ "bolt_h2", "gcta_h2", "gcta_h2_imp","bolt_h2_multi"]
 allowed_params+=h2_param
 h2_bolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt"]
+h2_gemma=["gemma_h2_pval","gemma_num_cores", "gemma_mem_req", "gemma_h2", "gemma_h2_pval", "gemma_h2_typeest"]
+h2_ldsc=["ldsc_h2", "ldsc_h2_multi", "ldsc_mem_req","ldsc_h2opt", "genetic_map_file","dir_ref_ld_chr". "ldsc_bin","munge_sumstats_bin"]
+h2_gcta=["gcta_h2_multi", "grm_cutoff","multigrm_opt", "gcta_num_cores"]
+allowed_params+=h2_gemma
 allowed_params+=h2_bolt
+allowed_params+=h2_gcta
+allowed_params+=h2_ldsc
 
 
 allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2", "head_n"]
@@ -72,7 +78,11 @@ params.head_beta="BETA"
 params.head_se="SE"
 params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
+
+//gcta grm option 
+params.grm_cutoff=0.025
 params.multigrm_opt=""
+params.gcta_num_cores = 10
 
 // bolt option default
 params.bolt_h2=0
@@ -95,7 +105,6 @@ params.list_snp=""
 //## info if need
 params.cut_info=0.6
 params.plink_mem_req="6GB"
-params.gcta_num_cores = 10
 params.data=""
 
 
@@ -115,6 +124,7 @@ params.gcta_mem_reqmgrm = "40GB"
 params.gcta_h2_imp=0
 params.gcta_h2_ldscore = 200
 params.gcta_h2_grmfile =""
+params.gcta_reml_alg=0
 
 //params gemma
 params.gemma_bin="gemma"
@@ -498,7 +508,7 @@ if (params.bolt_h2_multi==1){
 ///
 //////
 
-if(params.gcta_h2==1 || params.gcta_h2_imp==1){
+if(params.gcta_h2==1){
    gctabed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
    gctabim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
    gctafam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
@@ -512,10 +522,11 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
   fam_ch_gcta = Channel.create()
   bim_ch_gcta = Channel.create()
   plink_ch_gcta=Channel.create()
+  plink_ch_gcta_multigrm=Channel.create()
   plink_ch_gcta_grm=Channel.create()
   fam_ch_gcta_mult = Channel.create()
-  plink_ch_gcta_grm2 = Channel.create()
-  h2gcta_assoc_ch.separate (plink_ch_gcta, plink_ch_gcta_grm,plink_ch_gcta_grm2,fam_ch_gcta, fam_ch_gcta_mult) { a -> [ a, a,a,a[2], a[2]] }
+  plink_ch_gcta_multigrm2 = Channel.create()
+  h2gcta_assoc_ch.separate (plink_ch_gcta,plink_ch_gcta_grm ,plink_ch_gcta_multigrm,plink_ch_gcta_multigrm2,fam_ch_gcta, fam_ch_gcta_mult) { a -> [ a,a,a,a,a[2], a[2]] }
   data_h2gcta1=Channel.fromPath(params.data)
   data_h2gcta1_multi = Channel.fromPath(params.data)
   check_gcta = Channel.create()
@@ -533,7 +544,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
       file(fam) from fam_ch_gcta
     each this_pheno from pheno_cols_ch_gcta1
     output:
-      set val("$this_pheno"),file(phef), file(covfile) into newdata_ch_gcta
+      set val("$this_pheno"),file(phef), file(covfile) into (newdata_ch_gcta_multgrm, newdata_ch_gcta_grm) 
     script:
       base = fam.baseName
       phef = "${this_pheno}_gcta_n.phe"
@@ -543,20 +554,63 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
                           --pheno ${this_pheno} --phe_out ${phef} --form_out 4 --cov_out $covfile
       """
   }
+  if(params.gcta_h2_imp==0){
+   //--reml-alg 0
+   //Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.
+   process MakeGRM{
+     cpus params.gcta_num_cores
+     time params.big_time
+     memory params.gcta_mem_req
+     input:
+        set file(bed), file(bim), file(fam)  from plink_ch_gcta_grm
+     publishDir "${params.output_dir}/gctagrm", overwrite:true, mode:'copy'
+     output :
+        file("tmp.ibc") into gcta_grm
+     script :
+        plk=bed.baseName
+        """
+        ${params.gcta_bin} --bfile $plk --make-grm --out tmp --thread-num ${params.gcta_num_cores}
+        """
+
+
+   }
+   filegrmcta_gcta=gcta_grm.combine(newdata_ch_gcta_grm)
+   process doGRLEM{
+     cpus params.gcta_num_cores
+     time params.big_time
+     memory params.gcta_mem_req
+     input:
+        set file(grm),pheno, file(phef),file(covfile) from filegrmcta_gcta
+    publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
+     output :
+       file("$output"+".hsq")
+     script :
+        output=pheno.replace('_','-')+"_gcta"
+        """
+        ${params.gcta_bin} --reml  --grm tmp --pheno $phef  --grm-cutoff ${params.grm_cutoff}  --thread-num ${params.gcta_num_cores}  --out $output --reml-alg ${params.gcta_reml_alg}
+        if [ ! -f $output".hsq" ]
+        then
+        cat outmultgrlm > $output".hsq"
+        fi
+        """
+  }
+
+
+
+  }
+
    // multi grm in the case
   if(params.gcta_h2_imp==1){
    //case of file with 
    if(params.gcta_h2_grmfile!=""){
-    filegrmcta_gctai= Channel.fromPath(params.gcta_h2_grmfile)
+    filemultigrmcta_gctai= Channel.fromPath(params.gcta_h2_grmfile)
    }else{
-       /*to do*/
-       //       error("\n\n------\npipeline grm multi is not developped yet\n\n---\n")
        process GCTAComputeMultiGRM{
           cpus gcta_num_cores
           time params.big_time
           memory params.gcta_mem_reqmgrm
           input :
-            set file(bed),file(bim), file(fam) from plink_ch_gcta_grm 
+            set file(bed),file(bim), file(fam) from plink_ch_gcta_multigrm 
           publishDir "${params.output_dir}/gcta/grlem/", overwrite:true, mode:'copy'
           output :
             file("$out"+".score.ld") into grlmscoreld
@@ -579,7 +633,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
             stratify_segment.py --inp_ld  $scoreld --nb_split 4 --out snp_group
             """
        }
-       grlmstroupescorec=grlmstroupescore.flatMap().combine(plink_ch_gcta_grm2)
+       grlmstroupescorec=grlmstroupescore.flatMap().combine(plink_ch_gcta_multigrm2)
        process GCTAGRMByFile{
           input :
             set file(grmfile),file(bed),file(bim),file(fam) from grlmstroupescorec
@@ -597,24 +651,12 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
        }
       resgrlmfilec=resgrlmfile.collect()
       resgrlmhead=resgrlmhead.collect()
-      //process MergeFile{
-      //    input :
-      //      val(linfo) from resgrlmhead
-      //    output :
-      //      file("$fileout") into filegrmcta_gctai
-      //    script :
-      //      fileout="g"
-      //      lfile2=linfo.flatten().join("\n")
-      //      """
-      //      echo \"\"\"$lfile2 \"\"\"> $fileout
-      //      """
-      //}
       
       process MergeFile{
           input :
           val(linfo) from resgrlmfilec
           output :
-            file("$fileout") into filegrmcta_gctai
+            file("$fileout") into filemultigrmcta_gctai
           script :
             fileout="g"
             lfile2=linfo.flatten().join("\n")
@@ -623,14 +665,14 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
            """
      } 
    }
-   filegrmcta_gctai.into{ filegrmcta_gcta; filegrmcta_gcta_cor}
-   filegrmcta_gcta=filegrmcta_gcta.combine(newdata_ch_gcta)
+   filemultigrmcta_gctai.into{ filemultigrmcta_gcta; filemultigrmcta_gcta_cor}
+   filemultigrmcta_gcta=filemultigrmcta_gcta.combine(newdata_ch_gcta_multgrm)
    process doMultiGRM{
      cpus params.gcta_num_cores
      time params.big_time
      memory params.gcta_mem_req
      input:
-        set file(listfile),pheno, file(phef),file(covfile) from filegrmcta_gcta
+        set file(listfile),pheno, file(phef),file(covfile) from filemultigrmcta_gcta
     publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
      output :
        file("$output"+".hsq")
@@ -655,7 +697,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
       file(covariates) from data_h2gcta1_multi
       file(fam) from fam_ch_gcta_mult
     output:
-      set file(phef), file(covfile) into newdata_ch_gcta_multi
+      set file(phef), file(covfile) into newdata_ch_gcta_multgrm_multi
     script:
       base = fam.baseName
       phef = "all_gcta_n.phe"
@@ -676,8 +718,8 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
      time params.big_time
      memory params.gcta_mem_req
      input :
-       set file(phef), file(covfile) from newdata_ch_gcta_multi
-       file(filemult) from filegrmcta_gcta_cor
+       set file(phef), file(covfile) from newdata_ch_gcta_multgrm_multi
+       file(filemult) from filemultigrmcta_gcta_cor
     publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
      each poss from list_Cor
      output:
@@ -689,7 +731,7 @@ if(params.gcta_h2==1 || params.gcta_h2_imp==1){
         pos=pos+1
         pos2=pos2+1
         """
-        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  &> outmultgrlm 
+        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  --reml-alg ${params.gcta_reml_alg}  &> outmultgrlm 
         if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"

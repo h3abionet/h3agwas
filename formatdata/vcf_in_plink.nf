@@ -57,6 +57,7 @@ params.file_listvcf=""
 params.min_scoreinfo=0.6
 params.max_plink_cores = 8 
 params.plink_mem_req = '10GB' // how much plink needs for this
+params.other_mem_req = '10GB' // how much plink needs for this
 params.output_pat="out"
 params.output_dir="plink/"
 
@@ -108,6 +109,7 @@ process formatvcf{
 }
 bimmerg=listbimplink.collect()
 process GetRsDup{
+    memory params.other_mem_req
     input :
       file(bim) from bimmerg
     output :
@@ -156,7 +158,8 @@ process AddedCM{
        """
        chro=`head $bimi|awk '{print \$1}'|uniq`
        sed '1d' $map|awk -v chro=\$chro '{if(chro==\$1)print \$2"\\t"\$3"\\t"\$4}' >> $cm_shap
-       plink --bfile $headeri --keep-allele-order --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $header
+       plink --bfile $headeri --list-duplicate-vars ids-only suppress-first
+       plink --bfile $headeri --keep-allele-order --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $header  --exclude plink.dupvar
        """
 
 }

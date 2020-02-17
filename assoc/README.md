@@ -257,7 +257,9 @@ The key options are:
 * `gcta` : 
   * just version for high density of snps, described [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata)
   * need option `output_dir`, `output_pat`, `data` and `pheno` (if you want to estimate with covariable used : `covariates` option)
-  * `gcta_h2_imp` : pipeline for imputed data (must be in 1)
+  * `gcta_h2_imp` : 0 :
+   * `grm_cutoff` : `grm-cutoff` in gcta (alias of `--rel-cutoff`) If used in conjunction with a later calculation (see the order of operations page for details), --rel-cutoff excludes one member of each pair of samples with observed genomic relatedness greater than the given cutoff value (default 0.025) from the analysis. Alternatively, you can invoke this on its own to write a pruned list of sample IDs to plink.rel.id. [default : 0.025]
+  * `gcta_h2_imp` : 1 pipeline for imputed data (must be in 1)
     * for imputed data, we used algorithm of [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata) and build :
       * Step 1: segment based LD score
       * Step 2 : stratify the SNPs by LD scores of individual SNPs in R
@@ -269,7 +271,7 @@ The key options are:
   * `gcta_bin` : binary for gcta 
   * `gcta_h2_ldscore` [default 200kb]
   * `gcta_mem_reqmgrm` : [default 40GB]
-  
+  * `params.gcta_reml_alg` : see reml-alg :  Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.  [oa]
 
 
 ## 5. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
