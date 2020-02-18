@@ -8,7 +8,8 @@ The major change from Version 2 to Version 3 is the reorganisation of the repo s
 This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
 
 ## what's news :
-* 01/10/19 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](assoc/README.md)
+* 18/02/20 :  added fastgwa (software gcta) as assoc software  : [assoc](assoc/README.md)
+* 01/10/19 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](formatdata/README.md)
   * file `formatdata/format_gwasfile.nf`
 * 19/09/19 : added in estimation of heritabilites option for Multiple variance components for boltlmm  [assoc](assoc/README.md)
 * 17/09/19 : added format and analysis by mtag in [assoc](assoc/README.md)

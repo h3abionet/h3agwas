@@ -39,8 +39,8 @@ allowed_params+=ParamFast
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
 
-GxE_params=['fastgwa_qcov', "fastgwa_memory", "fastgwa_cpus", 'fastgwa']
-allowed_params+=GxE_params
+FastGWA_params=['fastgwa_qcov', "fastgwa_memory", "fastgwa_cpus", 'fastgwa']
+allowed_params+=FastGWA_params
 
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
@@ -137,7 +137,8 @@ params.fastgwa_cpus=5
 params.grm_nbpart=100
 params.fastgwa_qcov=""
 params.gcta64_bin = "gcta64"
-params.gcta_type="--fastGWA-mlm-exact"
+params.fastgwa_type="--fastGWA-mlm-exact"
+params.grm_cutoff =  0.05
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -1213,7 +1214,7 @@ process MergFastGWADoGRM{
       cat mgrm.part_*_*.grm.id > test_grm.grm.id
       cat mgrm.part_*_*.grm.bin > test_grm.grm.bin
       cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
-      ${params.gcta64_bin} --grm test_grm --make-bK-sparse 0.05 --out $head --thread-num ${params.fastgwa_cpus}
+      ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_cpus}
       """
 }
 //./${params.gcta64_bin} --bfile imputed_out --fastGWA-lmm-exact --grm-sparse imputed_grm --qcovar pca10.eigenvec --threads 30 --out imputed_exact_assoc --pheno imputed_out.phe
@@ -1254,7 +1255,7 @@ process FastGWARun{
      out                = "$base-$our_pheno"
      """
      all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfile --form_out 4
-     ${params.gcta64_bin} --bfile $base ${params.gcta_type}  --pheno $phef  $cov --threads ${params.fastgwa_cpus} --out $out --grm-sparse $head
+     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $cov --threads ${params.fastgwa_cpus} --out $out --grm-sparse $head
      """
 }
   process showFastGWAManhatten {
@@ -1302,7 +1303,7 @@ report_ch = report_fastlmm_ch.flatten().mix(pheno_report_ch.flatten())
                                      .mix(report_pca_ch.flatten())
 				     .mix(report_plink_ch.flatten())
 				     .mix(report_bolt_ch.flatten())
-				     .mix(fastgwa_manhatten_ch.flatten())
+				     .mix(report_fastgwa_ch.flatten())
 				     .mix(report_gemma_ch_GxE.flatten())
 				     .mix(report_plink_gxe.flatten())
                                      .mix(report_gemma_ch.flatten()).toList()
