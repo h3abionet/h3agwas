@@ -39,6 +39,8 @@ allowed_params+=ParamFast
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
 
+GxE_params=['fastgwa_qcov', "fastgwa_memory", "fastgwa_cpus", 'fastgwa']
+allowed_params+=GxE_params
 
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
@@ -128,6 +130,14 @@ params.plink_gxe=0
 params.max_plink_cores = 4
 params.rs_list=""
 params.gxe=""
+
+/**/
+params.fastgwa_memory="10G"
+params.fastgwa_cpus=5
+params.grm_nbpart=100
+params.fastgwa_qcov=""
+params.gcta64_bin = "gcta64"
+params.gcta_type="--fastGWA-mlm-exact"
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -247,6 +257,8 @@ pca_in_ch = Channel.create()
 assoc_ch  = Channel.create()
 assoc_ch_gxe  = Channel.create()
 assoc_ch_gxe_freq=Channel.create()
+grlm_assoc_ch = Channel.create()
+fastgwa_assoc_ch = Channel.create()
 raw_src_ch= Channel.create()
 
 Channel
@@ -287,7 +299,7 @@ if (thin+chrom) {
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
       /*JT Append initialisation boltlmm_assoc_ch */
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe)
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch)
     script:
        base = bed.baseName
        out  = base+"_t"
@@ -300,7 +312,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm) { a -> [a,a,a,a,a,a,a,a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch) { a -> [a,a,a,a,a,a,a,a,a,a] }
 }
 
 
@@ -764,10 +776,6 @@ if (params.boltlmm == 1) {
       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
-
-//      our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
-//      our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
-//      our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
       outimp  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
       out     = "$base-${our_pheno2}.stat" 
       outf    = (params.bolt_impute2filelist!="") ? outimp : out
@@ -1154,6 +1162,120 @@ if (params.plink_gxe==1) {
   report_plink_gxe=Channel.empty()
 }
 
+// Partition the GRM into 100 parts
+// ${params.gcta64_bin} --bfile test --make-grm-part 100 1 --thread-num 5 --out test
+// ${params.gcta64_bin} --bfile test --make-grm-part 100 2 --thread-num 5 --out test
+// ...
+// ${params.gcta64_bin} --bfile test --make-grm-part 100 100 --thread-num 5 --out test
+// # Merge all the parts together (Linux, Mac)
+// cat test.part_3_*.grm.id > test.grm.id
+// cat test.part_3_*.grm.bin > test.grm.bin
+// cat test.part_3_*.grm.N.bin > test.grm.N.bin
+// # Make a sparse GRM from the merged full-dense GRM
+// ${params.gcta64_bin} --grm test_grm --make-bK-sparse 0.05 --out test_sp_grm
+//
+if(params.fastgwa==1){
+process FastGWADoGRM{
+    memory params.fastgwa_memory
+    cpus params.fastgwa_cpus
+    input :
+     set file(bed),file(bim),file(fam) from grlm_assoc_ch
+   each mpart from 1..params.grm_nbpart
+   output : 
+    file("mgrm.part_*.grm.id") into idgrm
+    file("mgrm.part_*.grm.bin") into bingrm
+    file("mgrm.part_*.grm.N.bin") into nbingrm
+   script :
+     base   = bed.baseName
+     """
+     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_cpus} --out mgrm
+     """
+
+
+}
+
+idgrm_c=idgrm.collect()
+bingrm_c=bingrm.collect()
+nbingrm_c=nbingrm.collect()
+process MergFastGWADoGRM{
+    memory params.fastgwa_memory
+    cpus params.fastgwa_cpus
+    input :
+      file(idgrmallf) from idgrm_c
+      file(bingrmallf) from bingrm_c
+      file(nbingrmallf) from nbingrm_c
+    publishDir "${params.output_dir}/fastgwa/grm/", overwrite:true, mode:'copy'
+    output :
+      set val(head),file('test_sp_grm.grm.id'), file('test_sp_grm.grm.sp') into grm_all
+    script :
+      head='test_sp_grm' 
+      """
+      cat mgrm.part_*_*.grm.id > test_grm.grm.id
+      cat mgrm.part_*_*.grm.bin > test_grm.grm.bin
+      cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
+      ${params.gcta64_bin} --grm test_grm --make-bK-sparse 0.05 --out $head --thread-num ${params.fastgwa_cpus}
+      """
+}
+//./${params.gcta64_bin} --bfile imputed_out --fastGWA-lmm-exact --grm-sparse imputed_grm --qcovar pca10.eigenvec --threads 30 --out imputed_exact_assoc --pheno imputed_out.phe
+//if(params.fastgwa_qcov!=""){
+//fastgwa_qcov=Channel.fromPath(params.fastgwa_qcov)
+//}else{
+//fastgwa_qcov=file('NOFILE')
+//}
+data_ch_fastgwa= Channel.fromPath(params.data)
+
+
+pheno_spl_gcta=params.pheno.split(',')
+
+  if (params.covariates)
+     covariate_option = "--cov_list ${params.covariates}"
+  else
+     covariate_option = ""
+
+process FastGWARun{
+    memory params.fastgwa_memory
+    cpus params.fastgwa_cpus
+    input :
+       set val(head),file(alldigrm), file(allbingrm) from grm_all
+       set file(bed),file(bim),file(fam) from fastgwa_assoc_ch 
+       file(covariates) from data_ch_fastgwa
+    publishDir "${params.output_dir}/fastgwa/", overwrite:true, mode:'copy'
+    each this_pheno from pheno_spl_gcta
+    output :
+       set val(base), val(this_pheno), file('${out}.fastGWA') into fastgwa_manhatten_ch
+    script :
+     base=bed.baseName
+     phef = "${base}_fastgwa_n.phe"
+     covfile = "${base}_fastgwa_n.cov"
+     cov = (params.fastgwa_qcov!="") ?  " --qcovar $covfile " : ""
+     our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+     our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+     our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+     out                = "$base-$our_pheno"
+     """
+     all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfile --form_out 4
+     ${params.gcta64_bin} --bfile $base ${params.gcta_type}  --pheno $phef  $cov --threads ${params.fastgwa_cpus} --out $out --grm-sparse $head
+     """
+}
+  process showFastGWAManhatten {
+   memory params.other_process_memory
+    publishDir params.output_dir, overwrite:true, mode:'copy'
+    input:
+      set val(base), val(this_pheno), file(assoc) from fastgwa_manhatten_ch
+    output:
+      file("${out}*")  into report_fastgwa_ch
+    script:
+      our_pheno = this_pheno.replaceAll("_","-")
+      out = "C052-fastGWA-"+this_pheno
+      //CHR	SNP	POS	A1	A2	N	AF1	BETA	SE	P
+      """
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNP --pval_header P --beta_header BETA --info_prog fastGWA
+      """
+  }
+
+}
+
+
 
 
 
@@ -1180,6 +1302,7 @@ report_ch = report_fastlmm_ch.flatten().mix(pheno_report_ch.flatten())
                                      .mix(report_pca_ch.flatten())
 				     .mix(report_plink_ch.flatten())
 				     .mix(report_bolt_ch.flatten())
+				     .mix(fastgwa_manhatten_ch.flatten())
 				     .mix(report_gemma_ch_GxE.flatten())
 				     .mix(report_plink_gxe.flatten())
                                      .mix(report_gemma_ch.flatten()).toList()
