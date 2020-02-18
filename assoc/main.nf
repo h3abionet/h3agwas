@@ -135,7 +135,6 @@ params.gxe=""
 params.fastgwa_memory="10G"
 params.fastgwa_cpus=5
 params.grm_nbpart=100
-params.fastgwa_qcov=""
 params.gcta64_bin = "gcta64"
 params.fastgwa_type="--fastGWA-mlm-exact"
 params.grm_cutoff =  0.05
@@ -1243,7 +1242,7 @@ process FastGWARun{
     publishDir "${params.output_dir}/fastgwa/", overwrite:true, mode:'copy'
     each this_pheno from pheno_spl_gcta
     output :
-       set val(base), val(this_pheno), file('${out}.fastGWA') into fastgwa_manhatten_ch
+       set val(base), val(this_pheno), file("${out}.fastGWA") into fastgwa_manhatten_ch
     script :
      base=bed.baseName
      phef = "${base}_fastgwa_n.phe"
