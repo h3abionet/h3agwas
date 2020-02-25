@@ -39,7 +39,7 @@ allowed_params+=ParamFast
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
 
-FastGWA_params=['fastgwa_qcov', "fastgwa_memory", "fastgwa_cpus", 'fastgwa']
+FastGWA_params=["fastgwa_memory", "fastgwa_cpus", 'fastgwa']
 allowed_params+=FastGWA_params
 
 params.each { parm ->
@@ -132,6 +132,7 @@ params.rs_list=""
 params.gxe=""
 
 /**/
+params.fastgwa=0
 params.fastgwa_memory="10G"
 params.fastgwa_cpus=5
 params.grm_nbpart=100
@@ -1216,12 +1217,6 @@ process MergFastGWADoGRM{
       ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_cpus}
       """
 }
-//./${params.gcta64_bin} --bfile imputed_out --fastGWA-lmm-exact --grm-sparse imputed_grm --qcovar pca10.eigenvec --threads 30 --out imputed_exact_assoc --pheno imputed_out.phe
-//if(params.fastgwa_qcov!=""){
-//fastgwa_qcov=Channel.fromPath(params.fastgwa_qcov)
-//}else{
-//fastgwa_qcov=file('NOFILE')
-//}
 data_ch_fastgwa= Channel.fromPath(params.data)
 
 
@@ -1247,7 +1242,7 @@ process FastGWARun{
      base=bed.baseName
      phef = "${base}_fastgwa_n.phe"
      covfile = "${base}_fastgwa_n.cov"
-     cov = (params.fastgwa_qcov!="") ?  " --qcovar $covfile " : ""
+     cov = (params.covariates!="") ?  " --qcovar $covfile " : ""
      our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
      our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
      our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
@@ -1266,13 +1261,15 @@ process FastGWARun{
       file("${out}*")  into report_fastgwa_ch
     script:
       our_pheno = this_pheno.replaceAll("_","-")
-      out = "C052-fastGWA-"+this_pheno
+      out = "C052-fastGWA-"+our_pheno
       //CHR	SNP	POS	A1	A2	N	AF1	BETA	SE	P
       """
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNP --pval_header P --beta_header BETA --info_prog fastGWA
       """
   }
 
+}else{
+report_fastgwa_ch=Channel.empty()
 }
 
 
