@@ -60,7 +60,9 @@ for x in sub_result[args.rs_header] :
     infors.to_csv(out_gwas, sep=TAB, header=True, index=False,na_rep="NA")
     chro=infors[args.chro_header].tolist()[0]
     pos=infors[args.pos_header].tolist()[0]
-    small=result[(result[args.chro_header]==chro) & (result[args.pos_header]>(args.around_rs-pos)) & (result[args.pos_header]<(args.around_rs+pos))]
+    posbegin=pos-args.around_rs
+    posend=pos+args.around_rs
+    small=result[(result[args.chro_header]==chro) & (result[args.pos_header]>=posbegin) & (result[args.pos_header]<=posend)]
     maf=args.maf
     if args.freq_header :
        small=small[(small[args.rs_header]==x) | ((small[args.freq_header]>maf) & (small[args.freq_header]<(1-maf)))]
