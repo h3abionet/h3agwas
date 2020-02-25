@@ -33,10 +33,6 @@ def helps = [ 'help' : 'help' ]
 params.batch = "0"
 params.phenotype="0"
 params.samplesheet   = "0"
-if (params.samplesheet == 0)
-   samplesheet = "0"
-else
-   samplesheet = params.samplesheet
 if (params.idpat ==  "0") 
     idpat   = "(.*)"
 else
@@ -67,6 +63,8 @@ nullfile = [false,"False","false", "FALSE",0,"","0","null",null]
 
 
 def checkColumnHeader(fname, columns) {
+  if (workflow.profile == "awsbatch") return;
+  if (fname.contains("s3://")) return;
   if (nullfile.contains(fname)) return;
   new File(fname).withReader { line = it.readLine().tokenize() }  
   problem = false; 
@@ -82,6 +80,8 @@ def checkColumnHeader(fname, columns) {
 
 
 def checkSampleSheet(fname)  {
+  if (workflow.profile == "awsbatch") return;
+  if (fname.contains("s3://") )return;
   if (nullfile.contains(fname) || fname.contains(".xls")) return;
   new File(fname).withReader { line = it.readLine()}  
   problem  = false
@@ -104,7 +104,12 @@ def checkSampleSheet(fname)  {
   }
 }        
 
-checkSampleSheet(samplesheet)
+if (nullfile.contains(params.samplesheet))
+     samplesheet = "0"
+   else {
+      samplesheet = params.samplesheet
+     checkSampleSheet(samplesheet)
+   }
 
 idfiles = [params.batch,params.phenotype]
 idfiles.each { checkColumnHeader(it,['FID','IID']) }
@@ -247,7 +252,7 @@ configfile   = Channel.create()
 
 
 
-sample_sheet_ch = file(samplesheet)
+
 
 
 //---- Modification of variables for pipeline -------------------------------//
@@ -327,18 +332,37 @@ process inMD5 {
 }
 
 
-process sampleSheet {
-  input:
+println samplesheet
+if (samplesheet != "0")  {
+  sample_sheet_ch = file(samplesheet)
+
+  process sampleSheet {
+    input:
      file(sheet) from sample_sheet_ch
-  output:
+    output:
      file("poorgc10.lst") into poorgc10_ch
      file("plates") into report["poorgc10"]
-  script:
-   """
-    mkdir -p plates
-    sampleqc.py $sheet ${params.gc10} "${idpat}"  poorgc10.lst plates/crgc10.tex
-   """
-}
+    script:
+     """
+       mkdir -p plates
+       sampleqc.py $sheet ${params.gc10} "${idpat}"  poorgc10.lst plates/crgc10.tex
+      """
+    }
+} else {
+
+  process noSampleSheet {
+    output:
+     file("poorgc10.lst") into poorgc10_ch
+     file("plates") into report["poorgc10"]
+    script:
+     """
+       mkdir -p plates
+       sampleqc.py 0 0 0 poorgc10.lst plates/crgc10.tex
+      """
+    }
+
+}  
+  
 
 
 

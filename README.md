@@ -8,6 +8,7 @@ The major change from Version 2 to Version 3 is the reorganisation of the repo s
 This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
 
 ## what's news :
+* 21/02/20: support for awsbatch
 * 18/02/20 :  added fastgwa (software gcta) as assoc software  : [assoc](assoc/README.md)
 * 01/10/19 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](formatdata/README.md)
   * file `formatdata/format_gwasfile.nf`
@@ -576,10 +577,55 @@ Then when you create your cloud you say this on your local machine
   
   `nextflow -c scott.aws -c run10.config cloud create scottcluster -c 5`
 
-Note there are two uses of `-c`. The positions of these arguments are crucial. The first is an argument to _nextflow_ itself and gives a configuration file to nextflow to use. The second is an argument to _cloud create_ which says how many nodes should be created. 
+Note there are two uses of `-c`. The positions of these arguments are crucial. The first are arguments to _nextflow_ itself and gives the configuration files that nextflow to use. The second is an argument to _cloud create_ which says how many nodes should be created. 
 
 The _scott.aws_ file is not shared or put under git control. The _nextflow.config_ and _run10.config_ files can be archived, put under git control and so on because you _want_ to share and archive this information with o thers.
 
+## 5.7 Running on AWS Batch
+
+AWS Batch is a service layered on top of EC2 by Amazon which may make it easier and / or cheaper than using EC2. My personal view is that if you are only our pipeline on Amazon and you have reasonable Linux experience then the EC2 implementation above is probably easier. However, if you use or plan to use AWS Batch for other services then, AWS Batch is problem.
+
+
+### Step 1
+
+Create an AWS Batch queue and computing environment.  Setting up AWS
+Batch is beyond the scope of this document. You can look at [Amazon's
+documentation](https://docs.aws.amazon.com/batch/latest/userguide/create-job-queue.html)
+or the general documentation from BioNet.
+
+You also need to set up an S3 bucket for working space. Remember to set permissions on this bucket appropriately.
+
+### Step 2
+
+Create a nextflow config file with your personal information (this should not be put under git !). Set the `process.queue` to the name of the queue you created in the previous step and replace the `accessKey`, `secretKey` and `region` parameters with your values.
+
+```
+
+process.queue = 'queue_name'
+
+aws {
+    accessKey ='1PT3YGD76GNbiP1HSTYU'
+    secretKey = 'WHATEVERYOURSECRETKEYISGOESHERE'
+    region    ='eu-west-1'
+}
+
+```
+
+You can call your config file whatever you want, but for sake of the documentation below I'm assuming you called in `aws.config`.
+
+### Step 3
+
+
+
+Set up your other config files as required. Note that data you wish to process  can either be local or in an S3 bucket.
+
+### Step 4
+
+Run the job (in this example the _qc_ worfklow).  You need to specify the s3 bucket to be used and also the `awsbatch` profile
+
+```
+nextflow run -c aws.config -c job.job qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
+```
 
 #6. Dealing with errors
 
