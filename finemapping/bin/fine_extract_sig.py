@@ -31,9 +31,9 @@ def parseArguments():
     parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
     parser.add_argument('--se_header',type=str,required=True,help="beta header in inp files")
     parser.add_argument('--p_header',type=str,required=True,help="beta header in inp files")
-    parser.add_argument('--rs_header',type=str,required=True,help="beta header in inp files")
+    parser.add_argument('--rs_header',type=str,required=False,help="beta header in inp files")
     parser.add_argument('--a1_header',type=str,required=True,help="beta header in inp files")
-    parser.add_argument('--around_rs',type=float,required=True,help="beta header in inp files")
+    parser.add_argument('--around_rs',type=float,required=False,help="beta header in inp files")
     parser.add_argument('--a2_header',type=str,required=True,help="beta header in inp files")
     parser.add_argument('--freq_header',type=str,required=True,help="frequencies header in inp files")
     parser.add_argument('--maf',type=float,default=0.0,help="minor allele frequencies")
@@ -73,8 +73,14 @@ small=small.loc[small[args.pos_header].isin(listbim)]
 
 small=small[(small[args.rs_header]==rs) | ((small[args.freq_header]>maf) & (small[args.freq_header]<(1-maf)))]
 small=small[PosCol] 
-small.columns=["rsid","chromosome","position","allele1","allele2","maf", "beta", "se", "p"]
-small.sort_values(["position"])
+small['N']=args.n
+small.columns=["rsid","chromosome","position","allele1","allele2","maf", "beta", "se", "p","N"]
+small=small.sort_values(["position"])
+### for gcta
+smallgcta=small[["rsid","chromosome","position","allele1","allele2","maf", "beta", "se", 'p','N']]
+smallgcta=smallgcta.rename(columns={"rsid": "SNP", "chromosome": "chr", "position":'bp', 'allele1':'A1', 'allele2':'A2', 'beta':'b', 'maf':'freq'})
+out_gcta=args.out_head+'.gcta'
+smallgcta[['SNP','A1','A2','freq','b','se','p','N']].to_csv(out_gcta, sep=TAB, header=True, index=False,na_rep="NA")
 ## change freq and allele
 bal=small['maf']>0.5
 small['allele1_tmp']=small['allele1']
@@ -95,7 +101,6 @@ out_range=args.out_head+".range"
 small[["chromosome","position","position", 'rsid']].to_csv(out_range, sep=TAB, header=False, index=False,na_rep="NA")
 
 out_all=args.out_head+".all"
-small['N']=args.n
 small.to_csv(out_all, sep=TAB, header=True, index=False,na_rep="NA")
 
 out_range=args.out_head+".paintor"
@@ -107,9 +112,5 @@ out_pos=args.out_head+'.rs'
 small[["rsid"]].to_csv(out_pos, sep=" ", header=True, index=False,na_rep="NA")
 
 HeadGCTA=["SNP",'chr','bp',"A1","A2","b","se","p", 'N']
-smallgcta=small[["rsid","chromosome","position","allele1","allele2","maf", "beta", "se", 'p','N']]
 
-smallgcta=smallgcta.rename(columns={"rsid": "SNP", "chromosome": "chr", "position":'bp', 'allele1':'A1', 'allele2':'A2', 'beta':'b', 'maf':'freq'})
-out_gcta=args.out_head+'.gcta'
-smallgcta[['SNP','A1','A2','freq','b','se','p','N']].to_csv(out_gcta, sep=TAB, header=True, index=False,na_rep="NA")
 
