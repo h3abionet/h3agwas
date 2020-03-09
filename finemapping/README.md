@@ -29,33 +29,30 @@ The key options are:
 
 * `n_pop` : number individuals for data set pop [default : 10000]
 
+* `gwas_cat` : file of gwas catalog for plot 
+  * `headgc_chr` : chromosome header of gwas catalog
+  * `headgc_bp` : position head of gwas catalog
+
 * **binary** :
  * `finemap_bin` : finame binary 
  * `caviar_bin` : finame binary 
  * `caviar_bin` : finame binary 
- * n_causal_snp : for finemapping cond and xxx number causal max snps used
+ * `n_causal_snp` : for finemapping cond and xxx number causal max snps used
+* Cojo parameter :
+  * `gcta_mem_req`="6GB"
+  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ] (need to be implemented)
+  * `cojo_actual_geno` : If the individual-level genotype data of the discovery set are available (e.g. a single-cohort GWAS), you can use the discovery set as the reference sample. *option to avoid due to a various bug*  [default 0] (need to be implemented)
+  * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO) )(need to be implemented)
+
 
 ### Installation
 need locuszoom, _R_ : (ggplot2), python3
 
 For example
 
-```nextflow run finemapping/main.nf --input_pat raw-GWA-data```
+TODO
 
 analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
-
-
-
-
-
-Cojo parameter :
-  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ]
-  * `cojo_actual_geno` : If the individual-level genotype data of the discovery set are available (e.g. a single-cohort GWAS), you can use the discovery set as the reference sample. *option to avoid due to a various bug*  [default 0]
-  * `cojo_slct` : Perform a stepwise model selection procedure to select independently associated SNPs? 1 : yes 0 : no [default 1]
-    * `cojo_p` :  Threshold p-value to declare a genome-wide significant hit. The default value is 5e-8 if not specified. This option is only valid in conjunction with the option `cojo_slct`.
-    * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO)
-  * `cojo_top_snps_chro` :  Perform a stepwise model selection procedure to select a fixed number of independently associated SNPs by chromosome without a p-value threshold.  [integer between 0 and n, to define top snp number. default : 0].
-  * `gcta_mem_req`="6GB"
 
 
 

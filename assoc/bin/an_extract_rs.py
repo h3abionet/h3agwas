@@ -52,7 +52,6 @@ if args.freq_header :
 else :
    PosCol=[args.chro_header, args.pos_header,  args.pos_header, args.rs_header, args.pval_header]
 for x in sub_result[args.rs_header] :
-    print(x)
     out_file=args.out_head+"_around.stat"
     out_gwas=args.out_head+"_gwas.stat"
     out_info=args.out_head+"_info.stat"

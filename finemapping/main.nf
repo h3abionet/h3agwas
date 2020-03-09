@@ -36,6 +36,7 @@ params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval"]
 params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req"]
+param_data=["gwas_cat"]
 allowed_params+=params_mf
 allowed_params+=params_cojo
 allowed_params+=params_filegwas
@@ -50,6 +51,9 @@ params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
+params.genes_file=""
+params.genes_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
+params.output="finemap"
 
 params.gcta_bin="gcta64"
 
@@ -67,8 +71,14 @@ params.head_se="SE"
 params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
 
+params.headgc_chr=""
+params.headgc_bp=""
+params.gwas_cat = ""
+
 params.cut_maf=0.01
 params.plink_mem_req="6GB"
+
+params.other_mem_req="10GB"
 
 // gcta parameters
 params.gcta_mem_req="15GB"
@@ -85,12 +95,15 @@ params.big_time='100h'
 params.threshold_p=5*10**-8
 params.n_causal_snp=3
 params.caviarbf_avalue="0.1,0.2,0.4"
+params.caviarbf_bin="caviarbf"
+params.modelsearch_caviarbf_bin="model_search"
 params.paintor_fileannot=""
 params.paintor_annot=""
 
 
 params.finemap_bin="finemap"
 params.caviarbf_bin="caviarbf"
+params.modelsearch_caviarbf_bin="model_search"
 params.paintor_bin="PAINTOR"
 params.plink_bin="plink"
 
@@ -143,6 +156,7 @@ process ExtractPositionGwas{
     file("${out}_caviar.z") into caviarbf_gwas
     file("${out}.paintor") into paintor_gwas
     file("${out}.range") into range_plink
+    file("${out}.all") into data_i
   script :
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     """
@@ -186,7 +200,7 @@ process ComputedFineMapCond{
     file(filez) from finemap_gwas_cond
   publishDir "${params.output_dir}/fm_cond", overwrite:true, mode:'copy'
   output :
-    file("${out}.snp") into res_dmcond
+    file("${out}.snp") into res_fmcond
     set file("${out}.config"), file("${out}.cred"), file("${out}.log_cond")
   script:
   fileconfig="config"
@@ -225,11 +239,14 @@ process ComputedCaviarBF{
     file(ld) from ld_caviarbf
   publishDir "${params.output_dir}/caviarbf", overwrite:true, mode:'copy'
   output :
-   file("$output") into res_caviarbf
+   file("${output}.marginal") into res_caviarbf
+   set file("$output"), file("${output}.statistics")
   script :
    output=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_caviarbf"
    """
    ${params.caviarbf_bin} -z ${filez} -r $ld  -t 0 -a ${params.caviarbf_avalue} -c ${params.n_causal_snp} -o ${output} -n ${params.n_pop}
+   nb=`cat ${filez}|wc -l `
+   ${params.modelsearch_caviarbf_bin} -i $output -p 0 -o $output -m \$nb
    """
 }
 if(params.paintor_fileannot=="" || params.paintor_annot==""){
@@ -238,23 +255,27 @@ paintor_fileannot=file('NOFILE')
 paintor_fileannot=Channel.fromPath(params.paintor_fileannot)
 }
 
+NCausalSnp=Channel.from(1..params.n_causal_snp)
 process ComputedPaintor{
    memory params.fm_mem_req
    input :
     file(filez) from paintor_gwas
     file(ld) from ld_paintor
     file(fileannot) from paintor_fileannot
-  each ncausal from 1..params.n_causal_snp
-  publishDir "${params.output_dir}/paintor_$ncausal", overwrite:true, mode:'copy'
+  each ncausal from NCausalSnp
+  publishDir "${params.output_dir}/paintor/", overwrite:true, mode:'copy'
   output :
-      set val(ncausal),file("${output}.results"), file("$BayesFactor") into res_paintor
+      set file("${output}.results"), file("$BayesFactor") into res_paintor
+      file(FileInfo) into infores_paintor
   script :
     output=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_paintor_$ncausal" 
     DirPaintor=output
     annot=(params.paintor_fileannot=="" || params.paintor_annot=="") ? "" : " -annotations ${fileannot}"
     BayesFactor=output+".BayesFactor"
+    FileInfo=output+".info"
+    Info="$ncausal;${output}.results;$BayesFactor"
     """
-    #mkdir -p $DirPaintor
+    echo "$Info" > $FileInfo
     echo $output > input.files
     cp $filez $output
     cp $ld $output".ld"
@@ -262,8 +283,9 @@ process ComputedPaintor{
     cp $fileannot $output".annotations"
     ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal $annot -num_samples  ${params.n_pop} -Lname $BayesFactor
     """
-    
 }
+res_paintor_ch=res_paintor.collect()
+infores_paintor_ch=infores_paintor.collect()
 
 
 process ComputedCojo{
@@ -274,7 +296,7 @@ process ComputedCojo{
      file(filez) from gcta_gwas
    publishDir "${params.output_dir}/cojo_gcta", overwrite:true, mode:'copy'
    output :
-     file("${output}.jma.cojo")  into paintor_fileannot
+     file("${output}.jma.cojo")  into res_cojo
      set file("${output}.cma.cojo"), file("${output}.ldr.cojo"), file("${output}.log")
    script :
     output=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_cojo"
@@ -284,12 +306,53 @@ process ComputedCojo{
     """
 
 }
-//process ComputedCojo{
-//}
-//-annotations "$ListHeadAnnot
-//echo "$Paintor -input $DirPaintor/input.files -in $DirPaintor -out $DirPaintorOut/ -Zhead Z -LDname ld -enumerate $maxcausalpaint -annotations "$ListHeadAnnot
-//cp $PWD/$rs".paintor" $DirPaintor/$rs
-//cp $PWD/$rs".annot" $DirPaintor/$rs".annotations"
-//cp $PWD/$rs".ld" $DirPaintor/
+if(params.genes_file==""){
+process GetGenesInfo{
+   output :
+      file(out) into genes_file_ch
+   publishDir "${params.output_dir}/data/", overwrite:true, mode:'copy'
+   script :
+     out="gencode.v19.genes"
+     """
+     wget -c ${params.genes_file_ftp}
+     zcat `basename ${params.genes_file_ftp}` > file_genes
+     change_genes.r file_genes
+     """
+}
+}else{
+genes_file_ch=Channel.fromPath(params.genes_file)
+}
 
+if(params.gwas_cat==""){
+       error("\n\n------\nError no file for gwas catalgo\n---\n")
+}
+gwascat_ch=Channel.fromPath(params.gwas_cat)
+
+process MergeResult{
+    memory params.other_mem_req
+    input :
+      file(paintor) from res_paintor_ch
+      file(infopaintor) from infores_paintor_ch
+      file(cojo) from res_cojo
+      file(caviarbf) from res_caviarbf
+      file(fmsss) from res_fmsss
+      file(fmcond) from res_fmcond
+      file(datai) from data_i
+      file(genes) from  genes_file_ch
+      file(gwascat) from gwascat_ch
+   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+    output :
+       set file("${out}.pdf"), file("${out}.all.out"), file("${out}.all.out")
+    script :
+      out=params.output
+      infopaint=infopaintor.join(" ")
+      """
+       #echo "$infopaint" |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > infopaint 
+       cat $infopaint > infopaint
+       echo "sss $fmsss" > infofinemap 
+       echo "cond $fmcond" >> infofinemap 
+       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${params.headgc_bp} --headchr_gc ${params.headgc_chr}  --listfinemap infofinemap  
+      """
+
+}
 
