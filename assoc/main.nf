@@ -1093,7 +1093,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
     input:
     set val(test), val(pheno_name), file(results) from out_ch.tap(log_out_ch)
     output:
-      set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink
+      set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink_ch
     publishDir params.output_dir, overwrite:true, mode:'copy'
     script:
       base="cleaned-${test}"
