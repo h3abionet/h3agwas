@@ -74,7 +74,7 @@ outfname = params.output_testing
 
 
 /* Do permutation testing -- 0 for none, otherwise give number */
-params.mperm = 1000
+params.mperm = 00
 
 /* Adjust for multiple correcttion */
 params.adjust = 0
@@ -770,7 +770,7 @@ if (params.boltlmm == 1) {
     publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
     each this_pheno from ind_pheno_cols_ch_bolt
     output:
-      file(out)
+      file(outbolt)
       set val(base), val(our_pheno), file("$outf") into bolt_manhatten_ch
     script:
       base = plinksbed.baseName
@@ -778,8 +778,8 @@ if (params.boltlmm == 1) {
       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
       outimp  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
-      out     = "$base-${our_pheno2}.stat" 
-      outf    = (params.bolt_impute2filelist!="") ? outimp : out
+      outbolt     = "$base-${our_pheno2}.stat" 
+      outf    = (params.bolt_impute2filelist!="") ? outimp : outbolt
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
       model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
@@ -789,7 +789,7 @@ if (params.boltlmm == 1) {
       boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp  " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
-      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$out\
+      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt\
            $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt}
       #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp |\
       #       grep -B 1 -E "^[ ]+h2" 1> $outReml 
@@ -1069,7 +1069,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
       script:
        base = "cleaned"
        pheno_name = pheno_name.replaceFirst("/.*","")
-       perm = (params.mperm == 0 ? "" : "mperm=${params.mperm}")
+       perm = (params.mperm == 0 ? "" : "--mperm=${params.mperm}")
        adjust = (params.adjust ? "--adjust" : "")
        outfname = "${pheno_name}"
        //test = test_choice 
@@ -1085,15 +1085,16 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
    }
 
 
-  log_out_ch = Channel.create()
+ // log_out_ch = Channel.create()
  
-  log_out_ch.subscribe { println "Completed plink test ${it[0]}" }
+  //log_out_ch.subscribe { println "Completed plink test ${it[0]}" }
  
   process drawPlinkResults { 
+    memory params.other_process_memory
     input:
-    set val(test), val(pheno_name), file(results) from out_ch.tap(log_out_ch)
+    set val(test), val(pheno_name), file(results) from out_ch//.tap(log_out_ch)
     output:
-      set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink_ch
+      set file("${base}*man*png"), file ("${base}*qq*png"), file("C050*tex") into report_plink
     publishDir params.output_dir, overwrite:true, mode:'copy'
     script:
       base="cleaned-${test}"
@@ -1101,6 +1102,8 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
       plinkDraw.py  C050 $base $test ${pheno_name} $gotcovar png
       """
   }
+
+report_plink_ch=report_plink.groupTuple()
 
 } else {
   report_plink_ch = Channel.empty()
