@@ -101,3 +101,32 @@ nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfil
     * `input_pat` : plink basename
   * `mem_req` : memory request for processes>
 
+## Pipeline : convert position hg38 in hg19
+nextflow run convert_posversiongenome.nf
+### what is doing?
+* if no file give download gwas catalog
+* extract positions of interest 
+*
+### arguments
+* `file_toconvert` : file to convert if empty download gwas catalog
+  * `link_gwas_cat`  : link to download gwas catalog [default : https://www.ebi.ac.uk/gwas/api/search/downloads/alternative ]
+  * `head_rs` : head rs to file to convert [default SNPS (gwas catalog)] 
+  * `head_bp` : head bp to file to convert [default SNPS (gwas catalog)] 
+  * `head_chro` : head bp to file to convert [default SNPS (gwas catalog)] 
+  * `sep` : separator used TAB, SPACE, "," ... ";" [default TAB]
+ 
+* file to extract rsinfomation with position :
+ * `file_ref_gzip` : must be in gzip example of file used : [here](ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/All_20180423.vcf.gz)
+    * `poshead_chro_inforef` psotion of column chromosome in file  [default : 0]
+    * `poshead_bp_inforef` : position of column where bp in file [default : 1]
+    * `poshead_rs_inforef` : position of column where rs in file  [default : 2]
+* `bin_crossmap` : crossmap [default ~/.local/bin/CrossMap.py]
+* `data_crossmap` : data to convert [default : "" ]
+  * if nothing will be download : 
+   * `link_data_crossmap` (http://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz)
+
+### installation :
+R : library
+pip3.6 install CrossMap --user
+pip3.6 install numpy==1.16.1 --user
+chmod +x ~/.local/bin/CrossMap.py
