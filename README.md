@@ -583,7 +583,7 @@ The _scott.aws_ file is not shared or put under git control. The _nextflow.confi
 
 ## 5.7 Running on AWS Batch
 
-AWS Batch is a service layered on top of EC2 by Amazon which may make it easier and / or cheaper than using EC2. My personal view is that if you are only our pipeline on Amazon and you have reasonable Linux experience then the EC2 implementation above is probably easier. However, if you use or plan to use AWS Batch for other services then, AWS Batch is problem.
+AWS Batch is a service layered on top of EC2 by Amazon which may make it easier and / or cheaper than using EC2. My personal view is that if you are only our pipeline on Amazon and you have reasonable Linux experience then the EC2 implementation above is probably easier. However, if you use or plan to use AWS Batch for other services then, AWS Batch is a definite option.
 
 
 ### Step 1
@@ -604,7 +604,7 @@ Create a nextflow config file with your personal information (this should not be
 process.queue = 'queue_name'
 
 aws {
-    accessKey ='1PT3YGD76GNbiP1HSTYU'
+    accessKey ='accessKey'
     secretKey = 'WHATEVERYOURSECRETKEYISGOESHERE'
     region    ='eu-west-1'
 }
