@@ -106,25 +106,37 @@ nextflow run convert_posversiongenome.nf
 ### what is doing?
 * if no file give download gwas catalog
 * extract positions of interest 
-*
+* used rs to search position see args `file_ref_gzip`
+* used crossmap to defined position s not found previously and strand : see `bin_crossmap` and `data_crossmap`
+* return file with new position
 ### arguments
+* `output_dir` : direction of output [default : output]
+* `output `: output : [default : out]
 * `file_toconvert` : file to convert if empty download gwas catalog
   * `link_gwas_cat`  : link to download gwas catalog [default : https://www.ebi.ac.uk/gwas/api/search/downloads/alternative ]
   * `head_rs` : head rs to file to convert [default SNPS (gwas catalog)] 
   * `head_bp` : head bp to file to convert [default SNPS (gwas catalog)] 
   * `head_chro` : head bp to file to convert [default SNPS (gwas catalog)] 
-  * `sep` : separator used TAB, SPACE, "," ... ";" [default TAB]
- 
+  * `sep` : separator used TAB, SPACE, "," [default TAB] (not allowed : ;)
+
 * file to extract rsinfomation with position :
  * `file_ref_gzip` : must be in gzip example of file used : [here](ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/All_20180423.vcf.gz)
     * `poshead_chro_inforef` psotion of column chromosome in file  [default : 0]
     * `poshead_bp_inforef` : position of column where bp in file [default : 1]
     * `poshead_rs_inforef` : position of column where rs in file  [default : 2]
+
 * `bin_crossmap` : crossmap [default ~/.local/bin/CrossMap.py]
 * `data_crossmap` : data to convert [default : "" ]
-  * if nothing will be download : 
-   * `link_data_crossmap` (http://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz)
+  * if no argument will be download : 
+   * hg38 in hg19 : `link_data_crossmap` (http://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz)
 
+###output ;
+* `{out}.tsv` : final file 
+* `{out}.multi.tsv` : more that one position have been found 
+* `{out}.detail.tsv` :  file before cleaning
+* `{out}.notfound.tsv` : fileswhere position not found
+* folder `datai` : contains files contains files download
+* folder `datatmp` : contains temporary file (extract of rs file)
 ### installation :
 R : library
 pip3.6 install CrossMap --user

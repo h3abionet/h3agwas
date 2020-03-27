@@ -88,7 +88,13 @@ DataM$PosBeginNew[Bal]<-DataM$PosDebNewCM[Bal]
 DataM$PosEndNew[Bal]<-DataM$PosFinNewCM[Bal]
 
 DataM$ChroNew<-gsub("chr","",DataM$ChroNew)
+tmpsup1<-table(DataM$Num)
+tmpsup1<-as.integer(names(tmpsup1[tmpsup1>1]))
+DataMMulti<-DataM[DataM$Num %in% tmpsup1,]
+DataM<-DataM[!(DataM$Num %in% tmpsup1),]
 DataM<-DataM[!is.na(DataM$ChroNew) ,!(names(DataM) %in% c("Num", "ChroNewCM","PosDebNewCM","PosFinNewCM","ChroNewRs","PosNewRs"))]
+
 write.table(DataM , sep="\t", row.names=F,col.names=T,file=paste(args[['out']],".tsv", sep='') )
+write.table(DataMMulti, sep="\t", row.names=F,col.names=T,file=paste(args[['out']],".multi.tsv", sep='') )
 
 
