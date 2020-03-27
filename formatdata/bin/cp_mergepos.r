@@ -80,8 +80,8 @@ DataM<-DataM[!(is.na(DataM$ChroNewCM) & is.na(DataM$ChroNewRs)),]
 write.table(DataM, file=paste(args[['out']],".detail.tsv", sep='') ,row.names=F, sep='\t',  col.names=T)
 
 DataM$ChroNew<-as.character(DataM$ChroNewRs)
-DataM$PosBeginNew<-DataM$PosDebNewRs
-DataM$PosEndNew<-DataM$PosFinNewRs
+DataM$PosBeginNew<-DataM$PosNewRs
+DataM$PosEndNew<-DataM$PosNewRs
 Bal<-is.na(DataM$ChroNew)
 DataM$ChroNew[Bal]<-DataM$ChroNewCM[Bal]
 DataM$PosBeginNew[Bal]<-DataM$PosDebNewCM[Bal]
