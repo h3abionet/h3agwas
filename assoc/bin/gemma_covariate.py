@@ -105,4 +105,4 @@ merge["intercept"]=1
 merge.reindex(["FID","IID","intercept"]+covariates)
 merge.to_csv(args.cov_out,sep=TAB,columns=["intercept"]+covariates,header=False,index=False,na_rep="NA")
 merge.to_csv(args.phe_out,sep=TAB,columns=pheno_labels,header=False,index=False,na_rep="NA")
-print(" ".join(list(map (lambda a: str(a[0]+1)+"-"+a[1], enumerate(phenos) ))),end="")
+print(" ".join(list(map (lambda a: str(a[0]+1)+"@@@"+a[1], enumerate(phenos) ))),end="")

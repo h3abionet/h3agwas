@@ -1,4 +1,17 @@
 #!/usr/bin/Rscript
+stat_box_data <- function(x) {
+  upper_limit=min(x, na.rm=T) - .05*min(x, na.rm=T)
+  return( 
+    data.frame(
+      y = 0.95 * upper_limit,
+      label = paste('count =', 
+                    format(length(x), big.mark = ",", decimal.mark = ".", scientific = FALSE), 
+                    '\n',
+                    'mean =', 
+                    format(round(mean(x), 3), big.mark = ",", decimal.mark = ".", scientific = FALSE))
+    )
+  )
+}
 ListPackNeed=c("ggpubr", "optparse", "gridExtra")
 ListPackNeedIn<-ListPackNeed[!ListPackNeed %in% rownames(installed.packages())]
 for(pack in ListPackNeedIn)if(pack %in% rownames(installed.packages()) == FALSE) {install.packages(pack, lib=.libPaths()[2], repos='http://cran.us.r-project.org')}
@@ -21,10 +34,15 @@ UnRes<-unique(datamerg$GENO)
 if(length(UnRes)==3){
 my_comparisons <- list(c(UnRes[1], UnRes[3]), c(UnRes[2], UnRes[3]), c(UnRes[1], UnRes[2]) )
 reskr<-kruskal.test(as.formula(paste(pheno,"~ GENO")), data = datamerg)
-p <- ggboxplot(datamerg, x = "GENO", y = pheno, color = "GENO", palette = "jco", title=title,subtitle=paste("Kruskal-Wallis test, p = ", as.characterspe(reskr$p.value),sep="")) + stat_compare_means(comparisons=my_comparisons)
+p <- ggboxplot(datamerg, x = "GENO", y = pheno, color = "GENO", palette = "jco", title=title,subtitle=paste("Kruskal-Wallis test, p = ", as.characterspe(reskr$p.value),sep=""))+stat_compare_means(comparisons=my_comparisons) + stat_summary(
+    fun.data = stat_box_data,
+    geom = "text")
 }else{
 my_comparisons <- list(c(UnRes[1], UnRes[2]))
-p <- ggboxplot(datamerg, x = "GENO", y = pheno, color = "GENO", palette = "jco") + stat_compare_means(comparisons=my_comparisons)
+p <- ggboxplot(datamerg, x = "GENO", y = pheno, color = "GENO", palette = "jco") + stat_compare_means(comparisons=my_comparisons) + stat_summary(
+    fun.data = stat_box_data, 
+    geom = "text"
+  )
 }
 p
 }

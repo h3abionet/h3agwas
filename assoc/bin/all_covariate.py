@@ -148,4 +148,4 @@ elif args.form_out == 4 :
 
 
 
-print(" ".join(list(map (lambda a: str(a[0]+1)+"-"+a[1], enumerate(phenos) ))),end="")
+print(" ".join(list(map (lambda a: str(a[0]+1)+"@@@"+a[1], enumerate(phenos) ))),end="")

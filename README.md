@@ -8,6 +8,7 @@ The major change from Version 2 to Version 3 is the reorganisation of the repo s
 This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
 
 ## what's news :
+* 27/03/20: added a modules to convert position between different genome version [formatdata](formatdata/README.md)
 * 21/02/20: support for awsbatch
 * 18/02/20 :  added fastgwa (software gcta) as assoc software  : [assoc](assoc/README.md)
 * 01/10/19 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](formatdata/README.md)

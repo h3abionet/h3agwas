@@ -170,6 +170,7 @@ def showResults():
         data = clean(pheno) + ".*assoc."+test
     data = glob.glob(data)
     if len(data)!=1:
+        print(data)
         print((EOL*3)+"---- Expected only one assoc file found <"+",".join(result)+">"+(EOL*3))
         sys.exit(17)
     data = data[0]
