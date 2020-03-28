@@ -43,6 +43,7 @@ By default a chi2 test for association is done. But you can do multiple differen
     *  `gemma_num_cores`: if gemma is used set this up to 8
     *  `gemma_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM (default : 6GB)
     *  `gemma_mat_rel` : file contains in gemma format matrix relatdness used by gemma  (format 1, see manual), matrix must be in same order than fam file. Avoid computation of relatdness by pipeline. 
+    * `gemma_multi` : option run gemma by chromosome separately (is not a loco). to increase time computation and used more cpus, 0 no 1 yes [default : 0 (No)]
  *  `boltlmm`: should boltlmm be used? 
     *  see [manual](https://data.broadinstitute.org/alkesgroup/BOLT-LMM/)
     * if SNPs is higher than 950,000, 950,000 SNPs are chosen randomly to build the model (see --modelSnps option in bolt)
