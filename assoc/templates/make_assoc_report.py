@@ -48,7 +48,7 @@ if len(sys.argv)<=1:
    sys.argv = "make_assoc_report.py ${params.pheno} $texf".split()
 
 pheno  = ", ".join(list(map(lambda x:"*-protect*-url{%s}"%x,sys.argv[1].split(","))))
-out    = sys.argv[2]
+#out    = sys.argv[2]
 
 
 

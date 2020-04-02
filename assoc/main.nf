@@ -937,6 +937,7 @@ if (params.gemma == 1){
        ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001
        mv output ${dir_gemma}
        rm $rel_matrix
+       rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
 }
      gemma_manhatten_ch_chro_merge=gemma_manhatten_ch_chro.groupTuple()
@@ -1002,6 +1003,7 @@ if (params.gemma == 1){
        ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 
        mv output ${dir_gemma}
        rm $rel_matrix
+       rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
   }
   }
@@ -1092,6 +1094,7 @@ if (params.gemma_gxe == 1){
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
        ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
        mv output ${dir_gemma}
+       rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
   } 
   gemma_manhatten_ch_gxe_freq= gemma_manhatten_ch_gxe_i.combine(Channel.fromPath(params.data)).combine(assoc_ch_gxe_freq)
