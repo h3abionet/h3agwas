@@ -125,6 +125,8 @@ params.gcta_h2_imp=0
 params.gcta_h2_ldscore = 200
 params.gcta_h2_grmfile =""
 params.gcta_reml_alg=0
+params.gcta_opt_multigrm_cor=""
+params.gcta_opt_grm_cor=""
 
 //params gemma
 params.gemma_bin="gemma"
@@ -452,9 +454,9 @@ if(params.bolt_h2){
       file(outReml)
     script:
       base = plinksbed.baseName
-      our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+      our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+@@@/,"")
       our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
-      our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+      our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+@@@/,"")
       outReml = "$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
       model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
@@ -647,7 +649,7 @@ if(params.gcta_h2==1){
             plk=bed.baseName
             out=grmfile.baseName
             """
-            ${params.gcta_bin} --bfile $plk --extract $grmfile --make-grm --out $out
+            ${params.gcta_bin} --bfile $plk --extract $grmfile --make-grm --out $out 
 
             """
        }
@@ -687,6 +689,7 @@ if(params.gcta_h2==1){
         cat outmultgrlm > $output".hsq"
         fi
         """
+  }
   }
   listpheno=params.pheno.split(",")
   nbpheno=listpheno.size()
@@ -733,7 +736,7 @@ if(params.gcta_h2==1){
         pos=pos+1
         pos2=pos2+1
         """
-        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  --reml-alg ${params.gcta_reml_alg}  &> outmultgrlm 
+        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  --reml-alg ${params.gcta_reml_alg}  ${params.gcta_opt_multigrm_cor} &> outmultgrlm  
         if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"
@@ -743,7 +746,6 @@ if(params.gcta_h2==1){
 
   }
 
-}
 }
 
 //////

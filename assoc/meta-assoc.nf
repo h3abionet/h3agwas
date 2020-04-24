@@ -42,7 +42,7 @@ params.metal=0
 params.gwama=0
 params.metasoft=0
 params.mrmega=0
-params.pheno="not defined"
+params.pheno="notdefined"
 
 // external binary definition
 params.metal_bin='metal'
