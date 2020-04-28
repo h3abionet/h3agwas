@@ -455,7 +455,7 @@ if(params.bolt_h2){
     script:
       base = plinksbed.baseName
       our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+@@@/,"")
-      our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+      our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+@@@/,"")
       our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+@@@/,"")
       outReml = "$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
@@ -854,6 +854,7 @@ if(params.gemma_h2==1){
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        ${params.gemma_bin} ${covar_opt_gemma}  -k $rel_matrix  -n 1 -p $phef -o $out -maf 0.0000001 -vc $gemtype
+       rm $newbase".fam" $newbase".bim" $newbase".bed"
        """
 
   }
@@ -905,6 +906,7 @@ process DoGemmah2Pval{
      awk \'{\$6=1;print \$0}\' $newplkbas".fam.tmp" > $newplkbas".fam"
      export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
      gemma -beta $gwas".new" -bfile  $newplkbas -vc $gemtype -o $out
+     rm $newplkbas".fam" $newplkbas".bim" $newplkbas".bed"
      """
 }
 
