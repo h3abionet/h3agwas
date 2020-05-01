@@ -3,7 +3,7 @@
 
 <img src="aux/H3ABioNetlogo2.jpg"/>
 
-# h3agwas Pipeline Version 2
+# H3Agwas Pipeline Version 2
 
 
 
