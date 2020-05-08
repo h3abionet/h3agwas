@@ -3,15 +3,15 @@
  * Authors       :
  *
  *
+ *      Jean-Tristan Brandenburg
  *      Scott Hazelhurst
  *      Shaun Aron
  *   	Rob Clucas
  *      Eugene de Beste
  *      Lerato Magosi
- *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2018
+ *  2015-2020
  *
  *
  * Description  : Nextflow pipeline for Wits GWAS.
@@ -341,21 +341,20 @@ if(params.print_pca!=0){
 	"""
    }
 
-   process drawPCA {
-       input:
-	 set file(eigvals), file(eigvecs) from pca_out_ch
-       output:
-	 set file ("${output}"), file("B040-pca.tex") into report_pca_ch
-       publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
-       script:
-	 base=eigvals.baseName
-	 cc_fname = 0
-	 cc       = 0
-	 col      = 0
-	 // also relies on "col" defined above
-	 output="${base}-pca.pdf"
-	 template "drawPCA.py"
-
+process drawPCA {
+    input:
+      set file(eigvals), file(eigvecs) from pca_out_ch
+    output:
+      set file (output), file ("B040-pca.tex") into report_pca_ch
+    publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
+    script:
+      base=eigvals.baseName
+      cc_fname = 0
+      cc       = 0
+      col      = 0
+      // also relies on "col" defined above
+      output="${base}-pca.pdf"
+      template "drawPCA.py"
    }
 }
 else {

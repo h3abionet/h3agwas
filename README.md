@@ -1,24 +1,24 @@
 
 <img src="aux/H3ABioNetlogo2.jpg"/>
 
-# h3agwas Pipeline Version 3
+# H3Agwas Pipeline Version 3
 
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
 This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
 
 ## what's news :
-* 27/03/20: added a modules to convert position between different genome version [formatdata](formatdata/README.md)
-* 21/02/20: support for awsbatch
-* 18/02/20 :  added fastgwa (software gcta) as assoc software  : [assoc](assoc/README.md)
-* 01/10/19 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](formatdata/README.md)
+* 2020-03-27: added a modules to convert position between different genome version [formatdata](formatdata/README.md)
+* 2020-02-20: support for awsbatch
+* 2020-02-20 :  added fastgwa (software gcta) as assoc software  : [assoc](assoc/README.md)
+* 2019-10-01 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](formatdata/README.md)
   * file `formatdata/format_gwasfile.nf`
-* 19/09/19 : added in estimation of heritabilites option for Multiple variance components for boltlmm  [assoc](assoc/README.md)
-* 17/09/19 : added format and analysis by mtag in [assoc](assoc/README.md)
-* 16/09/19 : added two news nextflow files to convert data in [formatdata](formatdata/README.md):
+* 2019/09/19 : added in estimation of heritabilites option for Multiple variance components for boltlmm  [assoc](assoc/README.md)
+* 2019/09/17 : added format and analysis by mtag in [assoc](assoc/README.md)
+* 2019/09/16 : added two news nextflow files to convert data in [formatdata](formatdata/README.md):
   * `formatdata/vcf_in_plink.nf` : format data in vcf for plink
   * `formatdata/vcf_in_impute2.nf` : extract impute2 data from vcf of sanger
-* 13/09/19 : update estimation of heritabilie in [assoc](assoc/README.md) to take account for each software when heritabilities can't be computed
+* 2019/09/10 : update estimation of heritability in [assoc](assoc/README.md) to take account for each software when heritabilities can't be computed
 
 ## Background
 
@@ -209,7 +209,7 @@ If you manage the workflow this way, you will run the scripts, as follows
 
 Change directory where you want to install the software and say
 
-    `git clone https://github.com/h3agwas`
+    `git clone https://github.com/h3abionet/h3agwas.git`
 
 This will create a directory called _h3agwas_ with all the necesssary code.
 If you manage the workflow this way, you will run the scripts this way:
@@ -233,7 +233,7 @@ and the various parameters to be used are specified in the
 _nextflow.config_ files in assoc, qc and call2plink folder.  The details will be explained in another
 section.
 
-If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.sip and unzip
+If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.zip and unzip
 
 
 The sample data to be used is in the _input_ directory (in PLINK
@@ -369,6 +369,7 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
     `nextflow run <pipeline name> -with-timeline time.html`
 
     This is useful for seeing how long different parts of your process took. Also useful is peak virtual memory used, which you may need to know if running on very large data to ensure you have a big enough machine and specify the right parmeters.
+
 
 
 
@@ -762,7 +763,7 @@ We acknowledge funding by the National Institutes of Health through the NHGRI (U
 
 * We thank Sumir Panji and Nicola Mulder for their support and leadership
 * We thank Fourie Joubert at the University of Pretoria for hosting our initial hackathon.
->>>>>>> master
+
 
 ### Authors
 
