@@ -14,7 +14,7 @@ stat_box_data <- function(x) {
 }
 ListPackNeed=c("ggpubr", "optparse", "gridExtra")
 ListPackNeedIn<-ListPackNeed[!ListPackNeed %in% rownames(installed.packages())]
-for(pack in ListPackNeedIn)if(pack %in% rownames(installed.packages()) == FALSE) {install.packages(pack, lib=.libPaths()[2], repos='http://cran.us.r-project.org')}
+for(pack in ListPackNeedIn)if(pack %in% rownames(installed.packages()) == FALSE) {install.packages(pack, lib= Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')}
 library("ggpubr")
 library("optparse")
 require(gridExtra)
