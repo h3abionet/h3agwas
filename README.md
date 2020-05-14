@@ -41,10 +41,6 @@ In addition to this README we have the following material available
 * A short video overview of the pipeline can be found at http://www.bioinf.wits.ac.za/gwas/h3agwas.mp4
 * A handout from a lecture can be found at http://www.bioinf.wits.ac.za/gwas/gwas-comp-handout.pdf
 
-### Restrictions
-This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
-* it is not robust when X chromosome data is not available
-* the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
 
 ## Outline of documentation
 ### main documentation
@@ -768,7 +764,7 @@ We acknowledge funding by the National Institutes of Health through the NHGRI (U
 
 ### Authors
 
-Scott Hazelhurst, Lerato E. Magosi, Shaun Aron, Rob Clucas, Jean-Tristan Brandenburg, Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
+Scott Hazelhurst, Jean-Tristan Brandenburg, Lerato E. Magosi, Shaun Aron, Rob Clucas,  Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
 
 We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
 

@@ -11,6 +11,11 @@ called, for example, by running `nextflow run qc`.
 
 The output of the QC is a set of PLINK files that can be used for GWAS, as well as PDF report that describes the QC steps.
 
+### Restrictions
+This version has been run on real data sets and works. However, not all cases have been thoroughly tested. In particular
+* it is not robust when X chromosome data is not available
+* the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
+
 ## 1 Input/Output :  PLINK format
 
 Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  The key Nextflow parameters to set are:
