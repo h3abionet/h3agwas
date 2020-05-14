@@ -1,16 +1,30 @@
 
-
-
 <img src="aux/H3ABioNetlogo2.jpg"/>
 
-# H3Agwas Pipeline Version 2
+# H3Agwas Pipeline Version 3
+
+The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
 
+This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
+
+## What's new :
+* 2020-03-27: added a modules to convert position between different genome version [formatdata](formatdata/README.md)
+* 2020-02-20: support for awsbatch
+* 2020-02-20 :  added fastgwa (software gcta) as assoc software  : [assoc](assoc/README.md)
+* 2019-10-01 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](formatdata/README.md)
+  * file `formatdata/format_gwasfile.nf`
+* 2019/09/19 : added in estimation of heritabilites option for Multiple variance components for boltlmm  [assoc](assoc/README.md)
+* 2019/09/17 : added format and analysis by mtag in [assoc](assoc/README.md)
+* 2019/09/16 : added two news nextflow files to convert data in [formatdata](formatdata/README.md):
+  * `formatdata/vcf_in_plink.nf` : format data in vcf for plink
+  * `formatdata/vcf_in_impute2.nf` : extract impute2 data from vcf of sanger
+* 2019/09/10 : update estimation of heritability in [assoc](assoc/README.md) to take account for each software when heritabilities can't be computed
 
 ## Background
 
-H3Agwas is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). h3aGWAS uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
 
+h3aGWAS is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). h3aGWAS uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
 
 
 The original version of the H3Agwas was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.  
@@ -32,33 +46,32 @@ This version has been run on real data sets and works. However, not all cases ha
 * it is not robust when X chromosome data is not available
 * the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
 
-
-
 ## Outline of documentation
-
+### main documentation
 1. Features
 2. Installing the pipeline
 3. A quick start example
 4. The Nextflow configuration file
-5. The QC pipeline: `qc.nf`
-6. A simple association testing pipeline: `assoc.nf`
-7. Converting Illumina genotyping reports to PLINK: `topbottom.nf`
-8. Advanced options: Docker, PBS, Singularity, Amazon EC2
-9. Dealing with errors
-10. Auxiliary Programs
+5. Running the workflow in different environments and Advanced options: Docker, PBS, Singularity, Amazon EC2
+6. Dealing with errors
+7. Auxiliary Programs
+8. Acknowledgement, Copyright and general
 
-# 1. Features
 
-## 1.1 Goals of the h3agwas pipeline
+# 1.  Features
+
+##  Goals of the h3agwas pipeline
 
 The goals of this pipeline is to have a portable and robust pipeline
 for performing a genome-wide association study
 
 There are three separate workflows that make up *h3agwas*
 
-1. `topbottom.nf`.  Conversion of Illumina genotyping reports with TOP/BOTTOM or FORWARD/REVERSE  calls into PLINK format, aligning the calls.
+1. `call2plink`.  Conversion of Illumina genotyping reports with TOP/BOTTOM or FORWARD/REVERSE  calls into PLINK format, aligning the calls.
+   * see [README of call2plink](call2plink/)
 
-2. `qc.nf`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
+2. `qc`: Quality control of the data. This is the focus of the pipeline. It takes as input PLINK data and has the following functions
+   * see [README of qc](qc/)
 
    * Sample QC tasks checking:
 
@@ -77,17 +90,26 @@ There are three separate workflows that make up *h3agwas*
        * differential missingness
        * Hardy Weinberg Equilibrium deviations
 
-3.  `assoc.nf`: Association study. A simple analysis association study is done. The purpose of this is to give users an introduction to their data. Real studies, particularly those of the H3A consortium will have to handle compex co-variates and particular population study. We encourage users of our pipeline to submit thieir analysis for the use of other scientists.
+3. `assoc`: Association study. A simple analysis association study is done. The purpose of this is to give users an introduction to their data. Real studies, particularly those of the H3A consortium will have to handle compex co-variates and particular population study. We encourage users of our pipeline to submit their analysis for the use of other scientists.
+   * see [README of assoc/](assoc/)
   * Basic PLINK association tests, producing manhattan and qqplots
   * CMH association test - Association analysis, accounting for clusters
   * permutation testing
   * logistic regression
   * Efficient Mixed Model Association testing with gemma, boltlmm or fastlmm
+  * Gene environment association with gemma or plink
+  * Other scripts gave for post analysis :
+    * `assoc/cojo-assoc.nf` : do Conditional & joint (COJO) analysis of GWAS summary statistics without individual-level genotype data with gcta
+    * ̀ assoc/esth2-assoc.nf` : estimate heritability and co-heritabilie with gcta, ldsc, gemma and bolt
+    * `assoc/meta-assoc.nf` : do meta analysis with summary statistics 
+    * `assoc/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
+    * `assoc/simul-assoc.nf` : simulation of bed file 
+
+4. `formatdata` : additional script to format data added some missing information etc...
+  *  see [README of formatdata/](formatdata/)
 
 
-
-
-## 1.2 Design principles
+## Design principles
 
 The goal of the H3ABionet GWAS pipeline is to provide a portable and robust pipeline for reproducble genome-wide association studies.
 
@@ -165,7 +187,7 @@ The following code needs to be installed and placed in a directory on the user's
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
 * python 3.6 or later. pandas, numpy, scipy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
-If you want to run the `assoc.nf` pipeline then you should install gemma if you are using those options.
+If you want to run the `assoc` pipeline then you should install gemma if you are using those options.
 
 ## 2.5 Installing the workflow
 
@@ -180,9 +202,9 @@ To download the workflow you can say
 If we update the workflow, the next time you run it, you will get a warning message. You can do another pull to bring it up to date.
 
 If you manage the workflow this way, you will run the scripts, as follows
-* `nextflow run h3abionet/h3agwas/topbottom.nf ..... `
-* `nextflow run h3abionet/h3agwas/qc.nf ..... `
-* `nextflow run h3abionet/h3agwas/assoc.nf ..... `
+* `nextflow run h3abionet/h3agwas/call2plink ..... `
+* `nextflow run h3abionet/h3agwas/qc ..... `
+* `nextflow run h3abionet/h3agwas/assoc ..... `
 
 ### 2.5.2 Managing with Git
 
@@ -192,9 +214,9 @@ Change directory where you want to install the software and say
 
 This will create a directory called _h3agwas_ with all the necesssary code.
 If you manage the workflow this way, you will run the scripts this way:
-* `nextflow run SOME-PATH/topbottom.nf ..... `
-* `nextflow run SOME-PATH/qc.nf ..... `
-* `nextflow run SOME-PATH/assoc.nf ..... `
+* `nextflow run SOME-PATH/call2plink ..... `
+* `nextflow run SOME-PATH/qc ..... `
+* `nextflow run SOME-PATH/assoc ..... `
 
 where _SOME-PATH_ is a relative or absolute path to where the workflow was downloaded.
 
@@ -202,14 +224,14 @@ where _SOME-PATH_ is a relative or absolute path to where the workflow was downl
 
 # 3. Quick start example
 
-This section shows a simple run of the `qc.nf` pipeline that
+This section shows a simple run of the `qc` pipeline that
 should run out of the box if you have installed the software or
 Docker. More details and general configuration will be shown later.
 
 This section illustrates how to run the pipeline on a small sample data
 file with default parameters.  For real runs, the data to be analysed
 and the various parameters to be used are specified in the
-_nextflow.config_ file.  The details will be explained in another
+_nextflow.config_ files in assoc, qc and call2plink folder.  The details will be explained in another
 section.
 
 If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.zip and unzip
@@ -232,14 +254,14 @@ This requires that all software dependancies have been installed.
 
 We also assume the _sample_ directory with data is in the current working directory
 
-`nextflow run h3abionet/h3agwas/qc.nf`
+`nextflow run h3abionet/h3agwas/qc`
 
 
 ### 3.1.2 If you downloaded using Git
 
 Change directory to the directory in which the workflow was downloaded
 
-`nextflow run  qc.nf`
+`nextflow run  qc`
 
 ## 3.2 Remarks
 
@@ -248,13 +270,13 @@ _sampleA.pdf_ file, a record of the analysis can be found.
 
 In order, to run the workflow on another PLINK data set, say _mydata.{bed,bim,fam}_, say
 
-`nextflow run  qc.nf --input_pat mydata`
+`nextflow run  qc --input_pat mydata`
 
-(or `nextflow run  h3abionet/h3agwas/qc.nf --input_pat mydata` : **for simplicity for the rest of the tutorial we'll only present the one way of running the workflow -- you should use the method that is appropriate for you**)
+(or `nextflow run  h3abionet/h3agwas/qc --input_pat mydata` : **for simplicity for the rest of the tutorial we'll only present the one way of running the workflow -- you should use the method that is appropriate for you**)
 
 If the data is another directory, and you want to the data to go elsehwere:
 
-`nextflow run  qc.nf --input_pat mydata --input_dir /data/project10/ --output_dir ~/results `
+`nextflow run  qc --input_pat mydata --input_dir /data/project10/ --output_dir ~/results `
 
 There are many other options that can be passed on the the command-line. Options can also be given in the _config_ file (explained below). We recommend putting options in the configuration file since these can be archived, which makes the workflow more portable
 
@@ -262,7 +284,7 @@ There are many other options that can be passed on the the command-line. Options
 
 Execute 
 
-`nextflow run  qc.nf -profile docker`
+`nextflow run  qc -profile docker`
 
 Please note that the _first_ time you run the workflow using Docker,  the Docker images will be downloaded. *Warning:* This will take about 1GB of bandwidth which will consume bandwidth and will take time depending on your network connection. It is only the first time that the workflow runs that the image will be downloaded.
 
@@ -297,13 +319,13 @@ your config files.
 
 You can use the _-c_ option specify another configuration file in addition to the nextflow.config file
 
-```nextflow run -c data1.config qc.nf```
+```nextflow run -c data1.config qc``
 
 
 **This is highly recommended.** We recommend that you keep the `nextflow.config` file as static as possible, perhaps not even modifying it from the default config. Then  for any
  run or data set, have a much smaller config file that only specifies the changes you want made. The base `nextflow.config` file will typically contain config options that are best set by the h3aGWAS developers (e.g., the names of the docker containers) or default GWAS options that are unlikely to change. In your separate config file, you will specify the run-specific options, such as data sets, directories or particular GWAS parameters you want. Both configuration files should be specified. For example, suppose I create a sub-directory within the directory where the nextflow file is (probably called h3agwas). Within the h3agwas directory I keep my nexflow.config file and the nextflow file itself. From the sub-directory, I run the workflow by saying:
 
-```nextflow run  -c data1.config ../qc.nf```
+```nextflow run  -c data1.config ../qc```
 
 This will automatically use the `nextflow.config` file in either the current or parent directory. Note that the the config files are processed in order: if an option is set into two config files, the latter one takes precedence.
 
@@ -322,7 +344,7 @@ When you run the the scripts there are a number of different options that you mi
 
 Almost all the workflow options that are in the _nextflow.config_ file can also be passed on the command line and they will then override anything in the config like. For example
 
-```nextflow run qc.nf   --cut_miss  0.04```
+```nextflow run qc --cut_miss  0.04```
 
 sets the maximim allowable per-SNP misisng to 4%. However, this should only be used when debugging and playing round. Rather, keep the options in the auxiliary config file that you save. By putting options on the command line you reduce reproducibility. (Using the parameters that change the mode of the running -- e.g. whether using docker or whether to produce a time line only affects time taken and auxiliary data rather than the substantive results).
 
@@ -341,7 +363,7 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
 
 * A nice graphic of a run of your workflow
 
-    `nextflow run qc.nf -with-dag quality-d.pdf`
+    `nextflow run qc -with-dag quality-d.pdf`
 
 * A timeline of your workflow and individual processes (produced as an html file).
 
@@ -352,316 +374,30 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
 
 
 
-
-# 5 The QC pipeline: `qc.nf`
-
-
-This section describes the various ways in which the pipeline can be run and various options. Usually options are specified in the _nextflow.config_ file (or which ever file you use). However, you can also pass parameters to the Nextflow script on the command-line. Parameters on the command line over-ride any parameters specified in the config file.
-
-
-The main pipeline is the PLINK QC pipeline. It takes as input PLINK bed,bim,fam files and performs quality control on  the data according to the parameters specified in the config file.
-
-The Nextflow script file is called *qc.nf*. This could be
-called, for example, by running `nextflow run qc.nf`.
-
-The output of the QC is a set of PLINK files that can be used for GWAS, as well as PDF report that describes the QC steps.
-
-## 5.1 Input/Output :  PLINK format
-
-Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  The key Nextflow parameters to set are:
-
-* `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
-* input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
-* `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
-* `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id).  Provide either absolute file path or relative to where you are running. In a previous version this was relative to input_dir, which is not right.
-See [https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)](https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)) for a discussion.
-
-* `output`: the base name of the output files. *This cannot be the same as the input!!!*
-
-## 5.2 Overview of the workflow
-
-The QC process consists of:
-
-* removing duplicate markers;
-* indentifying indviduals for whom there is discordant sex information;
-* removing individuals with too high missingness or excessive heterozygosity;
-* detecting whether there are any related individuals and removing enough to ensure that there are not related pairs;
-* removing SNPs with too low MAF, or too high missingness, or anomalous HWE, or SNPs where there is a high differential missingness between cases and controls;
-* a PCA of the resultant data is computed;
-* a detailed report of the QC process is done.
-
-## 5.3 Additional QC Parameters
-
-The following parameters control QC
-
-*  `sexinfo_available`: `true` or `false`. If we don't have sex information then we cannot do the check for discordant genotype. Note that it does not make sense (and is an error) to have sexinfo_available set to true when there is no X-chromosme data in the file;
-*  `f_low_male` and `f_hi_female`. Discordant sex genotype is done on the X-chromosome using the non-recombining parts. F, the in-breeding coefficient of the X-chromosome is computed. If F is above `f_low_male`, the individual is predicted to be male; if F is below `f_hi_female`, the individual is predicted to be female. Anyone in between is flagged. These cut-off values are arbitrary and especially in large samples you are likely to find a range of F values. However, a large number of discrepant values probably indicates a sample mishandle error.  The PLINK default values (0.8 and 0.2) are the default parameters of the pipeline.
-*  `cut_het_high`: What is the maximum allowable heterozygosity for individualsl;
-*  `cut_het_low`: minimum
-*   `cut_maf `: the minimum minor allele frequency a SNP must have to be included
-*   `cut_diff_miss `: allowable differential missingness between cases and controls;
-*   `cut_geno`: maximum allowable per-SNP mssingness
-*   `cut_mind`: maximum allowable per-individual missingness
-*   `cut_hwe`: minimum allowable per-SNP Hardy-Weinberg Equilibrium p-value 
-*   `pi_hat`:  maximum allowable relatedness
-*   `remove_on_bp`: the first step in the pipeline is to remove duplicate SNPs. There are two ways of detecting duplicates. First, if SNPs have duplicate names (column 1 -- numbering from 0 -- of the bim file). We always remove duplicate SNPs based on this since PLINK gets very upset otherwise. Second, if they are at the same chromosome and base position. If this variable is set to 1, then duplicates based on chromosome or base position are removed too.
-*   `batch`: if you want to do QC at a batch level, you need to specify a file with the batch information. This should be a standard PLINK phenotype file (with labels as the first line). If you specify "false" or 0, then no batch-analysis is done. Typically batch information relates to the batches in which samples were genotyped is not intrinsic to the data (e.g. you genotype the first 2500 samples that are available).
-*   `batch_col`: the column label of the file to be used.
-*   `phenotype`: default is 'false'. If you are doing batch analysis you may wish to show how different sub-groups perform in QC with respect to the batch. You will then specify a PLINK-style phenotype file (with labels as the first name).  For example, if you have a multi-site project, you may choose to use the site information as a phenotype. Other possibilities are sex and self-identified group. If you specify "false" or 0, no categorisation will be done.
-* `pheno_col` is the column label of the column in  the phenotype file which should be used.
-*  `case_control` : This is the name of a PLINK-style phenotype file with labels in the first line. This is a compulsory parameter. The QC process uses the case/control status of individuals. A principal component analysis is done. We do not expect typically overall that there will be difference between cases and controls. The PC-analysis tests that this is so. Of course, you need to apply your mind to the result as YMMV. If your study has several case/control categories, choose an appropriate one that will give insight. If you only have continuous measures (e.g., BMI), then discretise and make an artificial case-control category. Remember, this is for QC purposes not to find interesting biology.
-* `case_control_col`: this is the label of the column.
-
-Several of the above parameters make reference to a phenotype file. Of course, these can be to the same phenotype file, but probably using different columns.
-
-### Filtering by GenCall 10 score
-
-If your sample sheet contains a column with the GC10 score (it must be called `10%_GC_Score`), you can filter out all individuals who have a GC10 score below a specified value. 
-
-Please read (the Illumina explanation)[https://www.illumina.com/Documents/products/technotes/technote_gencall_data_analysis_software.pdf] if you are not clear about this.
-
-To do this you need to give a file with the GC10 score (usually it will be in the sample sheet from the sequencing centre). This can either be an Excel or CSV (comma-separated) file.  The header line must contain a column `10%_GC_Score` and a column called `Institute Sample Label` which matches the IDs found in your PLINK file  (an alternative is that there are columns `Sample Label` and `Well` which when concatenated with an underscore give you the ID). The following parameters are relevant
-
-* `samplesheet` : Give the name of the file here. Put 0 (the default) if no samplesheet and then this filtering is not done.
-* `gc10`: this is the gc10 score that will be used as the cut-off. The default is 0.4, which is may be too low, but you should definitely think about it.
-* `idpat`: Naming conventions differ from sequencing centre to sequencing centre. You may be lucky and the ID in the "Institute Sample Label` matches exactly the FID, IID columns in yoour PLINK data, but more often than not, there is some mangling. For example, it's often the case that the "Institute Sample Label" value contains the sample plate, well _and_ your study ID (e.g. WP00030101_H02_BBC3666 -- with the BBC3666 ID being in your PLINK data). The `idpat` specifies a regular expression that is used to extract out the ID you want. Two common patterns that are likely to be used are
-   * `(.*)`  This is the default. This says that the ID as it appears in the sample sheet in the column "Institute Sample Label" _is_ the same as in your PLINK data. If you are so lucky, you need not do anything or even set `idpat` explicitly. 
-   * `.*_(.*)` : this is for the case where the value in "Insitute Sample Label` is in the format PlateLabel_Well_SampleID and it says, ignore everything up to and including the last underscore and then everything else is the ID
-   * If you have something else, you'll have to figure out how to either create a better sample sheet or pick the right regex. For Pythonites, the regular expression should contain exactly one pair of parenthesis which will be used by Python's regex features to extract out the ID.
-
-
-## 5.4 Performance parameters
-
-There are three parameters that are important control performance. You probably won't need to change this, but feel free.
-
-* `plink_mem_req` : specify in MB or GB how much memory your processes that use PLINK require;
-*  `other_mem_req` : specify how much other processes need;
-*  `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
-
-
-## 5.5 Output
-
-A PDF report can be found in the output directory. This describes the process as well as what the inputs and outputs were.
-
-Note that one issue that sometimes occurs in analysis is that there may over time be multple copies of the same file, perhaps with minor differences. To help version control, the PDF report captures the md5 checksums of inputs and outputs.
-
-
-# 6. Simple association test pipeline: `assoc.nf`
-
-This workflow has been extensively expanded by Jean-Tristan Brandenburg
-
-An association study is a complex analysis and each analysis has to consider
-* the disease/phenotype being studied and its mode of inheritance
-* population structure
-* other covariates
-
-For this reason it is difficult to build a high quality, generic pipeline to do an association study. 
-
-The purpose of this pipeline is to perform a very superficial initial analysis that can be used as one piece of information to guide a rigorous analysis. Of course, we would encourage users to build their own Nextflow script for their rigorous analysis, perhaps using our script as a start.
-
-Our script, *assoc.nf* takes as input PLINK files that have been through quality control and 
-* does a principal component analysis on the data, and produces pictures from that; 
-* performs a simple association test giving odds ratio and  raw and adjusted _p_ values
-
-## Running
-
-The pipeline is run: `nextflow run assoc.nf`
-
-The key options are:
-* `input_dir`, `output_dir`: where input and output goes to and comes from;
-* `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
-* `data`: a tab-separated file that contains phenotype data for your particpants. The row is a header line, with one participant per line after that. The first two columns should FID IID followed by any phenotype values you want to use for testing or for covariates. It can contain other data too -- as long as the ones that you need are in this file.
-* `pheno`: a comma-separated list of phenotypes that you want to test. Each phenotype is tested separately. If you wish to do a transform to the phenottype, you can suffix the phenotype with _/function_ where function is a numpy function. For example you might say `--pheno bmi/np.log` which will apply the log function to the phenotype. Any numpy function can be used, typical uses being np.log and np.sqrt. We plan to support user provision of a user-given function.
-* `covariates`: a comma-separated list of phenotypes that you want to use
-* `exclude_snps` option to exclude some snps active just for boltlmm (see `--exclude` in boltlmm manual) : SNP ID must be first column (default none)
-*  `print_pca` : by default pipeline compute and print pca (`print_pca`=1), if you want avoid this step (`print_pca` = 0)
-*  `file_rs_buildrelat` : file with rs list (one by lines) to build genetics models (relatdness), for gemma `-snps` for boltlmm `--modelSnps`
-* `genetic_map_file` : genetic map used in boltlmm 
-
-You must specify what type of association test you wan -00  you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1.
-
- * `assoc` : should a chi2 test be used (0 or 1)
- * `fisher`: Fisher exact test
- *  `linear`: should linear regreession be used?
- *  `logistic`: should linear regression be used?
- *  `gemma`: should gemma be used?
-    *  see [manual](www.xzlab.org/software/GEMMAmanual.pdf)
-    *  `gemma_num_cores`: if gemma is used set this up to 8
-    *  `gemma_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM (default : 6GB)
-    *  `gemma_mat_rel` : file contains in gemma format matrix relatdness used by gemma  (format 1, see manual), matrix must be in same order than fam file. Avoid computation of relatdness by pipeline. 
- *  `boltlmm`: should boltlmm be used? 
-    *  see [manual](https://data.broadinstitute.org/alkesgroup/BOLT-LMM/)
-    * if SNPs is higher than 950,000, 950,000 SNPs are chosen randomly to build the model (see --modelSnps option in bolt)
-    * `bolt_covariates_type` : for bolt need to define if covariate is binary (0) or continue (1), a comma-separated list as same order than covariates 
-    * `bolt_ld_score_file` : A table of reference LD scores for boltlmm is needed to calibrate the BOLT-LMM statistic (option in boltlmm --LDscoresFile),to choice a specific column in Ld file you can use `bolt_ld_scores_col` option (by default : LDSCORE) if option is not provided --LDscoresUseChip used.
-    * `bolt_use_missing_cov` : option to "missing indicator method", by default no activate (0), to activate (1) (--covarUseMissingIndic option in boltlmm), which adds indicator variables demarcating missing status as additional covariates.
-    * `bolt_num_cores` if bolt is used set this up to 8
-    * `bolt_mem_req` memory required for boltlmm, (default : 6GB)
-    * impute2 data in bolt  :
-      * bolt_impute2filelist : list of impute2 files, each line contains : `chronumber` `file`, file must be in full pattern
-      *`bolt_impute2fidiid` : list of individual in same order than bolt_impute2filelist
- *  `fastlmm`: should fastlmm be used?
-    *  see [manual](https://github.com/MicrosoftGenomics/FaST-LMM)
-    * `fastlmm_num_cores`: if fastmll is used set this up to 8
-    * `fastlmm_mem_req`: memory required for fasttlmm (default : 15GB)
-    * `fastlmm_multi` : memory used by fastmll is very big and increase with snp number, option run fastlmm by chromosome, with relatedness matrix computed before with gemma (-gk 1) 
-    * `fastlmmc_bin` : should change binary for fastlmmc (default fastlmmc)
-and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want to adjust for multiple testing 
-
-* `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
-* `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
-
-with pipeline, do a GxE interaction with Gemma and Plink, arguments :
-  * `gxe` : environmental variables to do gxe analysis with `pheno`, must be coded in 1 and 2 for plink
-  * `gemma_gxe` : GxE interation with gemma [default : 0], see  `covariates` to add covariates in gemma models
-  * `plink_gxe` : GxE interation with plink (see option -gxe, in [plink manual](http://zzz.bwh.harvard.edu/plink/anal.shtml#qtgxe)) [default : 0], no covariate could be provided.
-
-
-For example
-
-```nextflow run assoc.nf --input_pat sampleA --assoc 1 --logistic 1 --adjust 1```
-
-analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
-
-Other flags are:
-* `thin`. You can set this to a floating point number in the range (0, 1] and then the PLINK data files are thinned leaving only that proportion of the SNPs. This allows pipeline to be tested with a small proportion of the data This is probably only needed for debugging purposes and usually this should not be be set.
-* `chrom`. Only do testing on this chromosome.
-
-# 7. Converting from Illumina genotyping reports in TOP/BOTTOM or Forward foramtformat
-
-This workflow is run by 
-
-```nextflow run topbottom.nf```
-
-and converts from an Illumina TOP/BOTTOM or FORWARD call file. Together with auxiliary input data, this file is first converted into a raw PLINK file and then the PLINK file is aligned to a strand, and then convered into binary PLINK format. This process can take a very long time.
-
-If you don't understand these formats, the bad news is that you really should. See  S. C. Nelson, K. F. Doheny, C. C. Laurie, and D. B. Mirel, "Is 'forward' the same as 'plus'?...and other adventures in SNP allele nomenclature." Trends in Genetics, vol. 28, no. 8, pp. 361-363, 2012. http://dx.doi.org/10.1016/j.tig.2012.05.002  The good news is that you are no talone
-
-Essentially the problem since the reference genome changes over time, what is on the forward strand of one reference could become the reverse in the next. Not likely but could and does happen. Thus what someone sees as a SNP with A/C alleles could become a SNP with T/G alleles etc. For SNPs with A/C alleles we can easily see when something's flipped but if the allele is an A/T or C/G allele we can't differentiate between alternate alleles and reverse complements.
-
-Two common methods that are used to disambiguuate this are to call
-* with respect to the entry in dbSNP -- usually the way in which the discoverer reported it. This submission to dbSNP will contain the flanking regions of the SNP. Usually this is will be in the smae orientation as the reference genome, but often is not 
-* Illumina's TOP/BOTTOM format which uses the SNP and/or flanking region (see the reference given)
-
- 
-This process is expensive because:
-
-* the top/bottom or forward file is a very bulky and inefficient format
-* we convert first to PLINK using the inefficenct PED format
-
-As an example, on a 2.5m SNP-chip with 10k individuals, you are looking at over 200 CPU-hours.
-
-17 January 2017: this code has been completely reworked to make it more efficient and with fewer dependancies. But it is also less  powerful. There is other code, such as Don Armstrong's code and another option is the unofficially supported Illumina code https://github.com/Illumina/GTCtoVCF.  You can go back to the older code
-
-## Input 
-
-You require the following input
-* the actual call files from Illumina
-* `input_dir`: the directories where the Illumina genotyping reports can be found. Unix-style globs allowed
-
-e.g. `params.input_dir = "/project/HumCVD/Batches/Batch*/Batch*Reports/"`
-
-* `input_pat`. The files that inside these directories.
-
-e.g. `params.input_pat = "*gtReport*.csv.gz"`
-
-* `output`: the base name of the PLINK output file
-
-e.g. `params.output = "cvd-rawcalls"`
-
-* `manifest`: The chip manifest file. This is crucial. You can find examples here: https://support.illumina.com/downloads.html, but you may have to ask Illumina for the correct vrsion.
-
-* `chipdescription`: this is a standard file produced by Illumina for your chip which contains not only the chromosome/coordinate of each SNP but also the genomic position (measured in centimorgans). If you don't have this -- give the manifest file. All will work except your bim files will not contain genonomic positoin
-
-* `samplesheet`: This is Excel spreadsheet or CSV (comma-separated only) that Illumina or a genotyping centre provides which details each perfson in the study for whom you have genotyping results. If you don't have it, you can set this variable to 0 or the empty string, in which case the output PLINK fam file will have unknown values for sex and phenotype.  Alternatively, if you don't have it, you can make your own. Note that if the suffix is ".xls" or ".xlsx" the code assumes it's an Excel file otherwise a comma-separated set of values.
-
-There are three columns that are important: "Institute Sample Label", "Manifest Sex" and "Batch Comment". These must be there. The _label_ is the ID of the person. In the current workflow this ID is used for both the FID and IID. If you have a family study you may need to manually change the fam file.
-
-
-Please note that *we expect all entries in the sample IDs etc to be alphanumeric 0-9, Latin letters (NO accents!), underscore, space, hyphen*. The code may break otherwise.
-
-* `idpat`. Default is "0" or "" (ignore). By default, we use the sample ID as found in the genotype report and sample sheet. PLINK fam files require a double barrelled name (FID IID) -- we just double the ID as found. However, this may not be ideal since
-the Illumina IDs in the sample ID are typically a long string some of  the components of which will not be useful when you are analysing the result. You can change the sample ID by providing a Python-style regular expression which decribes the components. The regex groups describe the components. If there is one group, it is doubled. If there are two groups, then those become the FID and IID. Only one or two groups are permissible. 
-
-For example, suppose the ID as found in the Illumina input data is `WG0680781-DNA_A02_ABCDE`, if you use ".*_(.+)" as the idpat, then the FID IID used would be ABCDE ABCDE. If you used "(\\w+)_DNA_(\\w+)_" then the FID IIS used would be "WG0680781 A02". Note how we need to escape the backslash twice.
-
-
-Unfortunately we experience that genotyping centres have different formats and that you can even get the same centre changing the labels of columns of the report. Using the `sheet_columns` parameter you can make adjustmens.
-
-* `params.sheet_columns`: this should be a file name. The file should explain what the column labels in your sample sheet are. The format is shown in the example below, where the default values are given (if you are happy with all of them you don't need the `sheet_columns` parameter -- if you are happy with some of them only put the ones you want to change). Here we are saying that the _sex_ as provided by the manifest is found in a column called "Manifest Sex", the sample is found in a column "Institute Sample Label" and so on. The first four are required by the workflow. If you don't have batch information, you can define `batch` as 0
-
-````
-sex=Manifest Sex
-sample_label=Institute Sample Label
-plate=Sample Plate
-well=Well
-batch=Batch Comment
-````
-
-* `output_align`. This can be one of three values: _dbsnp_, _ref_, and _db2ref_. dnsnp and ref assume that the input is in TOP/BOT format. If dbsnp, the output will be aligned to the dbSNP report, if "ref", the output will be aligned to a given reference strand. Many of the SNPs will be flipped (e.g. an A/C SNP will become G/T; and A/T SNP will become T/A).   _db2ref_ assumes the input is in FORWARD format and aligns to to the given reference genome.
-
-* `strandreport`: This is an Illumina-style strand report. It is not needed if you choose "ref" above, but it is needed for the others.
-
-* `refererence`: This is the name of a file that gives the reference allele for each SNP on the chip.  This is only useful if the "ref" option is used for `output_align`, and is optional in this case. Note that the difference between aligning and the use of the reference. Aligning will decide which strand of the reference genome as found in the Illumina genotyping teh alleles can be found on. For example, if the genotyping report gives the two options as A and C, aligning checks whether this is A and C on the + strand of the reference genome or (and so will be A and C in the output bim file) or whther this is A and C on the $-$ strand of the reference genome and so should be reported as T and G. This is done using information in the chip manifest file. The second step is to know which allele is the reference allele and which is the alternate allele.
-
-A reference file suitable for the H3A chip can be found here http://www.bioinf.wits.ac.za/data/h3agwas/. Two formats for the reference file are supported: (1) simple -- two columns, no header row, the first column ins the SNP ID, the second the reference allele; and (2) complex -- >= two columns, one header row, the header row must contain a column label SNP and a column label Base for the SNP ID and reference allele respectively, all other columns are ignored.
-
-* `batch_col`: For this workflow, the `batch_col` parameter is a column in the `samplesheet` that should be used to extract out out the 6-th column of the `fam` file, or the phenotype. This allows you do do batch analysis. Of course, you can choose anything you like to be the "batch". The default value is 0, which means just set the 6-th column of the fam file to -9.  One special case: If the contents of the column is of the form "Batch n", then only the _n_ is returned.
-
-* `samplesize`: This was  included mainly for development purposes but _perhaps_ might be helpful to some users. This allows you sample only the first _n_ people in each genotype report. This allows you to extract out a small subset of the data for testing purposes. The default is 0, which means that *all* individuals will be generated.
-
-
-### Advanced features for sample handling
-
-* `mask`: This is a file of sample IDs that you want excluded from your data. These should be IDs given in the _Institute Sample Label_ of the sample sheet. The file should contain at least one column, possibly with other columns white-space delimited. Only the first column is used the other columns are ignored.
-
-* `replicates`: This is a file of sample IDs that are biological replicates. You will often include biological replicates for genotyping -- the label as given in the _Institute Sample Label_ column will of course be different, but once you have extracted out the sample ID using the _idpat_ field above, all the replicates for the same individual will then have the same sample id. For samples that have replicates you should choose one of the samples to be the canonical one and then identify the others as being the replicates with the labels 
-
-* `newpat`: This is experimental and only should be used with care. Suppose, completely hypothetically, there's a sample mix-up. The person you called "X3RTY" is actually "UYT0AV" who is actually "R2D2" and so on. You can fix your sample-sheet but the genotyping calls still have the same (wrong) values. If you have chosen your _Institute Sample_Label_ so that it contains both the ID and the plate and well then our scripts can help you. If not, good luck to you.
-    * set _idpat_ to a regular expression that gives the plate ID, well as the FID and IID. This will give you the id uniquely determined by the plate and the well.
-    * fix your sample sheet -- just fix the _Institute Sample Label_ field. 
-    * Choose your _newpat_ as a regular expression that extracts out the correct ID from this. Our workflow will use the plate and well in your sample sheet to produce to match the plate/well from the genotype calling phase to the correct ID. (If you look in the working directory of the fixFam process the .command.out file will show you all the matches)
-
-
-## Output
-
-The output are a set of PLINK files (bed, bim, fam, log).
-
-In addition, there may be a file with a _.badsnps_. If you chose to align against the reference genome, these are the SNPs for which the reference allele is inconsistent with the two allele choices in the data. For example, the reference allele is A and the choice of alleles in the data is C/T.  Hopefully this will be a small number (a thousand or so). There are a number of reasons why this may be the case;
-
-* There is a problem in the chip. Chip design and some SNPs are hard to design for. This may result in some SNPs coordinates that mismatch with the probe design, or for which the strand alignment is unclear.
-* There is a problem with the reference file you provided.
-
-Possible ways forward:
-* if you have tens of thousands of such SNPs, then there's a problem which must be resolved.
-* if you have one or two thousand or less, then for population structure studies, just remove the SNPs from the data.
-* if you are doing a GWAS, you can leave them in but if you find interesting matches check carefully whether the SNP is on this list. If it is you need to be carefully study the SNP (looking at the reference genome, strand file, etc to see why it mismatched and looking at the image files).
-* if you are doing imputation from the data, it's probably best to remove them unless you have a specific need for a particular SNP.
-
-
-# 8. Running the workflow in different environments
+# 5. Running the workflow in different environments
 
 In the  quick start we gave an overview of running our workflows in different environments. Here we go through all the options, in a little more detail
 
-## 8.1 Running natively on a machine
+
+## 5.1 Running natively on a machine
 
 This option requires that all dependancies have been installed. You run the code by saying
 
 ````
-nextflow run qc.nf
+nextflow run qc
 ````
 
 You can add that any extra parameters at the end.
 
-## 8.2 Running  on a local machine with Docker
+
+## 5.2 Running  on a local machine with Docker
 
 This requires the user to have docker installed.
 
-Run by `nextlow run qc.nf -profile docker`
+Run by `nextlow run qc -profile docker`
 
 
-
-## 8.3 Running on a cluster 
+## 5.3 Running on a cluster 
 
 Nextflow supports execution on clusters using standard resource managers, including Torque/PBS, SLURM and SGE. Log on to the head node of the cluster, and execute the workflow as shown below. Nextflow submits the jobs to the cluster on your behalf, taking care of any dependancies. If your job is likely to run for a long time because you've got really large data sets, use a tool like _screen_ to allow you to control your session without timing out.
 
@@ -691,42 +427,41 @@ and  then use this as the profile.
 We assume all the data is visible to all nodes in the swarm. Log into the head node of the Swarm and run your chosed workflow -- for example
 
 
-## 8.4 Running on Docker Swarm
+## 5.4 Running on Docker Swarm
 
 We have tested our workflow on different Docker Swarms. How to set up Docker Swarm is beyond the scope of this tutorial, but if you have a Docker Swarm, it is easy to run. From the head node of your Docker swarm, run
 
 ```
-nextflow run qc.nf -profile dockerSwarm
+nextflow run qc -profile dockerSwarm
 ```
 
-## 8.5 Singularity
+## 5.5 Singularity
 
 
 Our workflows now run easily with Singularity.
 
-`nextflow run qc.nf -profile singularity`
+`nextflow run qc -profile singularity`
 
 or
 
-`nextflow run qc.nf -profile pbsSingularity`
+`nextflow run qc -profile pbsSingularity`
 
 By default the user's ${HOME}/.singularity will be used as the cache for Singularity images. If you want to use something else, change the `singularity.cacheDir` parameter in the config file.
 
-## Running on a cluster with Docker or Singularity
 
 If you have a cluster which runs Docker, you can get the best of both worlds by editing the queue variable in the _pbsDocker_ stanza, and then running
 
 ```
-nextflow run qc.nf -profile option
+nextflow run qc -profile option
 ```
 
 where _option_ is one of _pbsDocker_, _pbsSingularity_, _slurmDocker_ or _slurmSingularity_. If you use a different scheduler, read the Nextflow documentation on schedulers, and then use what we have in the _nextflow.config_ file as a template to tweak.
 
-## 8.5 Other container services
+## 5.5 Other container services
 
 We are unlikely to support udocker unless Nextflow does. See this link for a discussion https://www.nextflow.io/blog/2016/more-fun-containers-hpc.html
 
-## 8.6 Running on Amazon EC2
+## 5.6 Running on Amazon EC2
 
 
 Nextflow supports execution on Amazon EC2. Of course, you can do your own custom thing on Amazon EC2, but there is direct support from Nextflow and  we provide an Amazon AMI that allows you to use Amazon very easilyl. This discussion assumes you are familiar with Amazon and EC2 and shows you how to run the workflow on EC2:
@@ -816,7 +551,7 @@ Login in the master node using the following command:
    Of course, you can also use other parameters (e.g. -resume or --work_dir). For your own run you will want to use your nextflow.config file.
 
 
-   By default, running the workflow like this runs the `qc.nf` script. If you want to run one of the other scripts you would say `nextflow run  h3abionet/h3agwas/topbottom.nf` or `nextflow run h3abionet/h3agwas/assoc.nf` etc. 
+   __ Need to change : By default, running the workflow like this runs the `qc` script. If you want to run one of the other scripts you would say `nextflow run  h3abionet/h3agwas/topbottom.nf` or `nextflow run h3abionet/h3agwas/assoc.nf` etc. __
 
 
 7. The output of the default runcan be found in` /mnt/shared/output`. The file sampleA.pdf is a report of the analysis that was done.
@@ -845,12 +580,57 @@ Then when you create your cloud you say this on your local machine
   
   `nextflow -c scott.aws -c run10.config cloud create scottcluster -c 5`
 
-Note there are two uses of `-c`. The positions of these arguments are crucial. The first is an argument to _nextflow_ itself and gives a configuration file to nextflow to use. The second is an argument to _cloud create_ which says how many nodes should be created. 
+Note there are two uses of `-c`. The positions of these arguments are crucial. The first are arguments to _nextflow_ itself and gives the configuration files that nextflow to use. The second is an argument to _cloud create_ which says how many nodes should be created. 
 
 The _scott.aws_ file is not shared or put under git control. The _nextflow.config_ and _run10.config_ files can be archived, put under git control and so on because you _want_ to share and archive this information with o thers.
 
+## 5.7 Running on AWS Batch
 
-#9. Dealing with errors
+AWS Batch is a service layered on top of EC2 by Amazon which may make it easier and / or cheaper than using EC2. My personal view is that if you are only our pipeline on Amazon and you have reasonable Linux experience then the EC2 implementation above is probably easier. However, if you use or plan to use AWS Batch for other services then, AWS Batch is a definite option.
+
+
+### Step 1
+
+Create an AWS Batch queue and computing environment.  Setting up AWS
+Batch is beyond the scope of this document. You can look at [Amazon's
+documentation](https://docs.aws.amazon.com/batch/latest/userguide/create-job-queue.html)
+or the general documentation from BioNet.
+
+You also need to set up an S3 bucket for working space. Remember to set permissions on this bucket appropriately.
+
+### Step 2
+
+Create a nextflow config file with your personal information (this should not be put under git !). Set the `process.queue` to the name of the queue you created in the previous step and replace the `accessKey`, `secretKey` and `region` parameters with your values.
+
+```
+
+process.queue = 'queue_name'
+
+aws {
+    accessKey ='accessKey'
+    secretKey = 'WHATEVERYOURSECRETKEYISGOESHERE'
+    region    ='eu-west-1'
+}
+
+```
+
+You can call your config file whatever you want, but for sake of the documentation below I'm assuming you called in `aws.config`.
+
+### Step 3
+
+
+
+Set up your other config files as required. Note that data you wish to process  can either be local or in an S3 bucket.
+
+### Step 4
+
+Run the job (in this example the _qc_ worfklow).  You need to specify the s3 bucket to be used and also the `awsbatch` profile
+
+```
+nextflow run -c aws.config -c job.job qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
+```
+
+#6. Dealing with errors
 
 One problem with our current workflow is that error messages can be obscure. Errors can be caused by
 * bugs in our code
@@ -917,11 +697,11 @@ If you are still stuck you can ask for help at two places
    https://github.com/h3abionet/h3agwas/issues
 
 
-# 9. Auxiliary Programs
+# 7. Auxiliary Programs
 
 These are in the aux directory
 
-## 9.1 updateFam.py
+## 7.1 updateFam.py
 
 Can be used to update fam files. You probably won't need it, but others might find it useful. The intended application might be that there's been a mix-up of sample IDs and you want to correct.  The program takes four parameters: the original sample sheet, a new sample sheet (only has to include those elements that have changed), the original fam file, and then the base of a newfam file name.  The program takes the plate and well as the authorative ID of a sample. For every row in the updated sheet, the program finds the plate and well, looks up the corresponded entry in the original sheet, and then replaces that associated ID in the fam file. For example, if we have
 
@@ -941,11 +721,11 @@ Then the new fam file has the AAAAA entry replaced with the BBBBB entry
 
 Three files are output: a fam file, an error file (the IDs of individuals who are in th e sample sheet but not the fam file are output), and a switch file (containing all the changes that were made). Some problems like duplicate entries are detected.
 
-## 9.2 getRunsTimes.pl (By Harry Noyes)
+## 7.2 getRunsTimes.pl (By Harry Noyes)
 
 Nextflow has great options for showing resourc usage. However, you have to remember to set those option when you run.  It's easy to forget to do this. This very useful script by Harry Noyes (harry@liverpool.ac.uk) parses the .nextflow.log file  for you
 
-## 9.3 make_ref.py 
+## 7.3 make_ref.py 
 
 Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
 
@@ -958,7 +738,7 @@ The program checks each SNP given in the manifest file by the chromosome and pos
 The wrn file are SNPs which are probably OK but have high slippage (these are in the ref file)
 The err file are the SNPs which don't match.
 
-## 9.6 plates.py
+## 7.4 plates.py
 
 This is used to depict where on the plates particular samples are. This is very useful for looking at problems in the data. If for example you find a bunch of sex mismatches this is most likely due to misplating. This script is a quick way of looking at the problem and seeing whether the errors are close together or spread out. There are two input arguments
 
@@ -976,155 +756,15 @@ batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
 In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
 
 
-
-# 10 Simulation pipeline: `simul-assoc.nf`
-
-This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *simul-assoc.nf* takes as input PLINK files that have been through quality control and
-  * Simulate quantitative phenotypes with [phenosim](https://www.ncbi.nlm.nih.gov/pubmed/21714868) based on genetics data 
-  * perform a GWAS on  phenotype simulated using gemma, boltlmm.
-  * Perform summary statistics.
-
-## Installation
-a version of _phenosim_ adapted is already in nextflow binary, write in python2. plink, gemma and bolt must be installed 
-
-## Running
-
-The pipeline is run: `nextflow run simul-assoc.nf`
-
-The key options are:
-  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
-  * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
-  * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
-  * num_cores : cores number used 
-  * ph_mem_req : memory request for phenosim
-  *  Simulation option :
-     * `phs_nb_sim` : simulation number (default : 5) 
-     * `phs_quant_trait` :  quantitative trait simulation : 1, qualitative not develop yet (default : 1, -q option in phenosim)
-     * Quantitative trait option :
-        * `ph_nb_qtl` : number of simulated QTN (default: 2, option -n in phenosim)
-        * `ph_list_qtl` : proportion of variance explained by each QTNs, separate the values by commas (default : 0.05 -q in phenosim)
-        * `ph_maf_r` :  MAF range for causal markers (upper and lower bound, separated by a comma, no space) (default: 0.05,1.0, -maf_r in phenosim)
-        * option to do a linear transformation of phenotype with co factor of external data and normatisation:
-           * ph_normalise : perform a normalisation (1) or not 0 (Default)
-           * each phenotype i be normalise using newpheno = norm(pheno)+var0i*a+var1i*b+ ... + intercept
-           * `ph_cov_norm` : contains coefficients for relation separed by a comma (ex "sex=0.2,age=-0.1)
-           * `data` : contains cofactor data for each individuals used to normalise with 
-           * `ph_cov_range` : normalisation range for initial phenotype
-           * `ph_intercept` : intercept
-  * Association option :
-     * `boltlmm` : 1 perform boltlmm (default 0), see boltlmm option in _assoc.nf_
-     * `gemma` : 1 perform gemma (default 0)  see gemma option in _assoc.nf_
-     * `covariates` : covariates to include in model (if ph_normalise is 1)
-  * Statistics option :
-     * `ph_alpha_lim` : list of alpha used to computed significance (separated by comma)  
-     * `ph_windows_size` : windows size around position used to simulate phenotype to define if was detected, in bp ex 1000bp in CM ex 0.1CM
-
-## output 
-different output is provided :
-   * simul folder : contains position used to defined phenotype 
-   * in boltlmm/gemma folder,  res_boltlmm/gemma.stat  contains summary stat for each alpha:
-      * we defined `windows true` as the windows around snp used to build phenotype (size is defined previously)
-      * `nsig_simall_alpha` : number significant snp in all windows true 
-      * `nsig_sim_alpha` :   number windows true where at least one snps is significant
-      * `nsig_simaround_alpha` : number significant windows true where one snp is significant and has been excluded snps used to build pheno
-      * `nsig_nosim_alpha` : snp significant snp not in windows true
-      * `nsnp` : snp number total  in dataset
-      * `nsnpsima` : snp number used to build phenotype (see ph_nb_qtl)
-   * in boltlmm/gemma/simul/ : contains p.value compute for each simulation
-
-#Note 
-  * for phenotype simulation all missing values is discarded and replaced by more frequent allele
-  * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
-
-
-
-
-# 11 MetaAnalysis pipeline : `meta-assoc.nf`
-
-This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
-
-## Installation
-need python3, METAL, GWAMA, MR-MEGA and MetaSoft
-
-## Running
-The pipeline is run: `nextflow run meta-assoc.nf`
-
-
-The key options are:
-  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
-  * `input`, `output` and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
-  * `output_dir` = "all"
-  * meta analysis option :
-     * `metal` : 1 perform metal (default 0) 
-     * `gwama` : 1 perform gwama (default 0)
-     * `metasoft` : 1 perform metasoft(default 0)   
-       * `metasoft_pvalue_table` : for metasoft need files :  _HanEskinPvalueTable.txt_ 
-     * `mrmega` : 1 perform MR-MEGA (default 0)
-  * `file_config` 
-     * describe all informations for each gwas result used for meta analysis 
-     * file is comma separated (csv), each line is to describe one file 
-     * header of config file is : rsID,Chro,Pos,A1,A2,Beta,Se,Pval,N,freqA1,direction,Imputed,Sep,File,IsRefFile
-       * `rsID` : column name for rsID in gwas file
-       * `Chro` : column name for Chro in gwas file
-       * `Pos` : column name for Pos in gwas file
-       * `A1` :  column name for reference allele in gwas file
-       * `A2` :  column name for alternative allele in gwas file
-       * `Beta` :  column name for B values in gwas file
-       * `Se` :  column name for sterr values in gwas file
-       * `N` : column name for size in gwas file
-       * `freqA1` : column name for freqA1 or maf in gwas file
-       * `direction` : column name of strand for association -/+  in gwas file
-       * `Imputed` :  column name of imputed or not for position in gwas file
-       * `Sep` : what separator is in gwas file :
-         * you could use characters as ; . : but to avoid some trouble you can use :
-           * COM : for comma
-           * TAB : for tabulation
-           * WHI : for white space
-       * `File` : gwas file with full path 
-       * `IsRefFile` : you need to define a reference file to define what rs should be considered in other files
-       * if one of the column is missing in your GWAS file, replace by _NA_
-  * optional option :
-     * binaries : 
-       * `metal_bin` : binarie for metal (default : _metal_ ) 
-       * `gwama_bin` :  binarie for gwam ( default : _GWAMA__ )
-       * `metasoft_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
-       * `mrmega_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
-     * options softwares :
-       * `ma_metasoft_opt` : append other option in metasoft command line(default : null)
-       * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
-       * `ma_inv_var_weigth`: do a invert variance weight usefull for metal (default, 0)
-       * `ma_random_effect` : do mixed model (default 1)
-       * `ma_mrmega_pc` : how many pcs used for mrmega (default : 4)
-       * `ma_mrmega_opt` : append other option in MR-MEGA command line (default : null)
-## specificity 
-### MR-MEGA
-MR-MEGA need chromosomes, positions and N (sample number) for each position, so in pipeline referent file (in file_config, 1 in IsRefFile) must be have chromosome and poosition 
-
-
-# 12 annotation pipeline: `annot-assoc.nf`
-This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype
-
-## Installation
-need locuszoom, _R_ : (ggplot2), python3
-
-## Running
-The pipeline is run: `nextflow run annot-assoc.nf`
-
-The key options are:
-  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
-  * input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
-  * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
-
-
-# 13. Acknowledgement, Copyright and general
+# 8. Acknowledgement, Copyright and general
 
 ## Acknowledgement
 
 We acknowledge funding by the National Institutes of Health through the NHGRI (U41HG006941). The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.
 
 * We thank Sumir Panji and Nicola Mulder for their support and leadership
-* We thank Fourie Joubert at the University of Pretoria for hosting our initital hackathon.
->>>>>>> master
+* We thank Fourie Joubert at the University of Pretoria for hosting our initial hackathon.
+
 
 ### Authors
 
