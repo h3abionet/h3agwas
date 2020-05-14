@@ -22,7 +22,7 @@ The key options are:
 * `input_dir`, `output_dir`: where input and output goes to and comes from;
 * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
 * `file_gwas` : file contains summary stat of gwas :
- * ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+ * `head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
  * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
  * `head_rs` : rs header column [default : "SNP"]
  * `head_beta` : beta header colum [default : "BETA"]
@@ -45,8 +45,9 @@ The key options are:
  * Todo
 * **binary** :
  * `finemap_bin` : finame binary 
- * `caviar_bin` : finame binary 
- * `caviar_bin` : finame binary 
+ * `paintor_bin` : finame binary 
+ * `plink_bin` : finame binary 
+ * `gcta_bin` : finame binary 
  * `n_causal_snp` : for finemapping cond and xxx number causal max snps used
 
 ### Installation
