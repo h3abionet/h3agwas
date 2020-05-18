@@ -590,8 +590,9 @@ if(params.gcta_h2==1){
        file("$output"+".hsq")
      script :
         output=pheno.replace('_','-')+"_gcta"
+        cov = (params.covariates!="") ?  " --qcovar $covfile " : ""
         """
-        ${params.gcta_bin} --reml  --grm tmp --pheno $phef  --grm-cutoff ${params.grm_cutoff}  --thread-num ${params.gcta_num_cores}  --out $output --reml-alg ${params.gcta_reml_alg}
+        ${params.gcta_bin} --reml  --grm tmp --pheno $phef  --grm-cutoff ${params.grm_cutoff}  --thread-num ${params.gcta_num_cores}  --out $output --reml-alg ${params.gcta_reml_alg} $cov
         if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"
@@ -733,10 +734,11 @@ if(params.gcta_h2==1){
         pos=poss[0]
         pos2=poss[1]
         output=listpheno[pos].replace('_','-')+"_"+listpheno[pos2].replace('_','-')
+        cov = (params.covariates!="") ?  " --qcovar $covfile " : ""
         pos=pos+1
         pos2=pos2+1
         """
-        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  --reml-alg ${params.gcta_reml_alg}  ${params.gcta_opt_multigrm_cor} &> outmultgrlm  
+        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  --reml-alg ${params.gcta_reml_alg}  ${params.gcta_opt_multigrm_cor} $cov  &> outmultgrlm  
         if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"

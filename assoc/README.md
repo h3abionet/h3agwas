@@ -266,24 +266,28 @@ The key options are:
   * `bolt_mem_req` memory required for boltlmm, (default : 6GB)
   * `bolt_h2_multi`  : to have multi variance between traits [ default : 0]
 * `gcta` : 
-  * just version for high density of snps, described [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata)
-  * need option `output_dir`, `output_pat`, `data` and `pheno` (if you want to estimate with covariable used : `covariates` option)
-  * `gcta_h2_imp` : 0 :
-   * `grm_cutoff` : `grm-cutoff` in gcta (alias of `--rel-cutoff`) If used in conjunction with a later calculation (see the order of operations page for details), --rel-cutoff excludes one member of each pair of samples with observed genomic relatedness greater than the given cutoff value (default 0.025) from the analysis. Alternatively, you can invoke this on its own to write a pruned list of sample IDs to plink.rel.id. [default : 0.025]
-   * `gcta_h2_grmfile` : extension of grm output for 3 files `gcta_h2_grmfile`.grm.bin, `gcta_h2_grmfile`.grm.id `gcta_h2_grmfile`.grm.N.bin otbained with command line : gcta64 --bfile plk --make-grm --out outhead, if `gcta_h2_grmfile` is empty default, pipeline will generate files and output will be in gctagrm folder 
-  * `gcta_h2_imp` : 1 pipeline for imputed data (must be in 1)
+  * general option :
+   * `output_dir` : plink directory  
+   * `output_pat` : basename plink
+   * `data` : data phenotypes
+   * `pheno` : pheno to estimate h2 
+   * `covariates` : covariate to estimate heritabilities
+   * `gcta_mem_req` : [default 20GB]
+   * `gcta_bin` : binary for gcta 
+   * `gcta_h2_ldscore` [default 200kb]
+   * `gcta_h2_imp` : 0 : version for low density of snps as dna chip
+   * `gcta_h2_imp` : 1 version for high density of snps as data imputed, described [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata) with au 
+    * `gcta_h2_grmfile` : extension of grm output for 3 files `gcta_h2_grmfile`.grm.bin, `gcta_h2_grmfile`.grm.id `gcta_h2_grmfile`.grm.N.bin otbained with command line : gcta64 --bfile plk --make-grm --out outhead, if `gcta_h2_grmfile` is empty default, pipeline will generate files and output will be in gctagrm folder, __if not present will be generated__ : 
     * for imputed data, we used algorithm of [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata) and build :
+     * `grm_cutoff` : `grm-cutoff` in gcta (alias of `--rel-cutoff`) If used in conjunction with a later calculation (see the order of operations page for details), --rel-cutoff excludes one member of each pair of samples with observed genomic relatedness greater than the given cutoff value (default 0.025) from the analysis. Alternatively, you can invoke this on its own to write a pruned list of sample IDs to plink.rel.id. [default : 0.025]
       * Step 1: segment based LD score
       * Step 2 : stratify the SNPs by LD scores of individual SNPs in R
       * Step 3: making GRMs using SNPs stratified into different groups
       * steps was very long you can provide `gcta_h2_grmfile` option to skip with already snps stratified
       * `gcta_mem_reqmgrm` : option memory for the step
     * `gcta_h2_mgrmfile` : if file not provide pipeline will do step described before[default None]
-  * `gcta_mem_req` : [default 20GB]
-  * `gcta_bin` : binary for gcta 
-  * `gcta_h2_ldscore` [default 200kb]
-  * `gcta_mem_reqmgrm` : [default 40GB]
-  * `params.gcta_reml_alg` : see reml-alg :  Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.  [oa]
+   * `gcta_mem_reqmgrm` : [default 40GB]
+   * `params.gcta_reml_alg` : see reml-alg :  Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.  [oa]
 
 
 ## 5. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
