@@ -34,7 +34,8 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","covariat
 params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin"]
 params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"]
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
-params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval"]
+params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
+parqams_paintor=["paintor_fileannot", "paintor_listfileannot"]
 params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req"]
 param_data=["gwas_cat"]
 allowed_params+=params_mf
@@ -70,6 +71,7 @@ params.head_beta="BETA"
 params.head_se="SE"
 params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
+params.head_n=""
 
 params.headgc_chr=""
 params.headgc_bp=""
@@ -96,7 +98,8 @@ params.threshold_p=5*10**-8
 params.n_causal_snp=3
 params.caviarbf_avalue="0.1,0.2,0.4"
 params.paintor_fileannot=""
-params.paintor_annot=""
+params.paintor_listfileannot=""
+//params.paintor_annot=""
 
 
 params.finemap_bin="finemap"
@@ -155,6 +158,7 @@ process ExtractPositionGwas{
     file("${out}.paintor") into paintor_gwas
     file("${out}.range") into range_plink
     file("${out}.all") into data_i
+    file("${out}.pos") into paintor_gwas_annot
   script :
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     """
@@ -247,13 +251,38 @@ process ComputedCaviarBF{
    ${params.modelsearch_caviarbf_bin} -i $output -p 0 -o $output -m \$nb
    """
 }
-if(params.paintor_fileannot=="" || params.paintor_annot==""){
-paintor_fileannot=file('NOFILE')
-}else{
-paintor_fileannot=Channel.fromPath(params.paintor_fileannot)
-}
 
 NCausalSnp=Channel.from(1..params.n_causal_snp)
+baliseannotpaint=0
+if(params.paintor_fileannot!=""){
+paintor_fileannot=Channel.fromPath(params.paintor_fileannot)
+paintor_fileannotplot=Channel.fromPath(params.paintor_fileannot)
+baliseannotpaint=1
+}else{
+ if(params.paintor_listfileannot!=""){
+  baliseannotpaint=1
+  paintor_listfileannot=Channel.fromPath(params.paintor_listfileannot)
+  process paintor_selectannot{
+   input :
+    file(listinfo) from paintor_listfileannot
+    file(list_loc) from paintor_gwas_annot
+   publishDir "${params.output_dir}/paintor/annot", overwrite:true, mode:'copy'
+   output :
+    file(out) into (paintor_fileannot, paintor_fileannotplot)
+   script :
+   outtmp="tmp.res"
+   out="annotationinfo"
+   """
+   head -1 $list_loc > $outtmp
+   sed '1d' $list_loc |awk '{print "chr"\$0}' >> $outtmp
+   annotate_locus_paint.py --input $listinfo  --locus $outtmp --out $out --chr chromosome --pos position
+   """
+  }
+} else{
+paintor_fileannot=file('NOFILE')
+paintor_fileannotplot=file('NOFILE')
+}
+}
 process ComputedPaintor{
    memory params.fm_mem_req
    input :
@@ -268,7 +297,7 @@ process ComputedPaintor{
   script :
     output=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_paintor_$ncausal" 
     DirPaintor=output
-    annot=(params.paintor_fileannot=="" || params.paintor_annot=="") ? "" : " -annotations ${fileannot}"
+    annot=(baliseannotpaint==0) ? "" : " -annotations ${fileannot}"
     BayesFactor=output+".BayesFactor"
     FileInfo=output+".info"
     Info="$ncausal;${output}.results;$BayesFactor"
@@ -279,7 +308,7 @@ process ComputedPaintor{
     cp $ld $output".ld"
     paint_annotation.py $fileannot $output 
     cp $fileannot $output".annotations"
-    ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal $annot -num_samples  ${params.n_pop} -Lname $BayesFactor
+    ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal -num_samples  ${params.n_pop} -Lname $BayesFactor
     """
 }
 res_paintor_ch=res_paintor.collect()
@@ -338,18 +367,19 @@ process MergeResult{
       file(datai) from data_i
       file(genes) from  genes_file_ch
       file(gwascat) from gwascat_ch
+      file(pfileannot) from paintor_fileannotplot
    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
     output :
        set file("${out}.pdf"), file("${out}.all.out"), file("${out}.all.out")
     script :
       out=params.output
       infopaint=infopaintor.join(" ")
+      pfileannot= (baliseannotpaint==0) ? "":" --paintor_fileannot $pfileannot "
       """
-       #echo "$infopaint" |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > infopaint 
        cat $infopaint > infopaint
        echo "sss $fmsss" > infofinemap 
        echo "cond $fmcond" >> infofinemap 
-       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${params.headgc_bp} --headchr_gc ${params.headgc_chr}  --listfinemap infofinemap  
+       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${params.headgc_bp} --headchr_gc ${params.headgc_chr}  --listfinemap infofinemap  $pfileannot
       """
 
 }

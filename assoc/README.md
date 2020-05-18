@@ -275,6 +275,7 @@ The key options are:
    * `gcta_mem_req` : [default 20GB]
    * `gcta_bin` : binary for gcta 
    * `gcta_h2_ldscore` [default 200kb]
+   * `gcta_h2_multi` : computed co heritability between phenotype 
    * `gcta_h2_imp` : 0 : version for low density of snps as dna chip
    * `gcta_h2_imp` : 1 version for high density of snps as data imputed, described [here](https://cnsgenomics.com/software/gcta/#GREMLinWGSorimputeddata) with au 
     * `gcta_h2_grmfile` : extension of grm output for 3 files `gcta_h2_grmfile`.grm.bin, `gcta_h2_grmfile`.grm.id `gcta_h2_grmfile`.grm.N.bin otbained with command line : gcta64 --bfile plk --make-grm --out outhead, if `gcta_h2_grmfile` is empty default, pipeline will generate files and output will be in gctagrm folder, __if not present will be generated__ : 
