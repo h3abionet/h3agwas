@@ -683,8 +683,9 @@ if(params.gcta_h2==1){
        file("$output"+".hsq")
      script :
         output=pheno.replace('_','-')+"_gcta"
+        covargcta= (params.covariates=="")? "" : " --qcovar  $covfile "
         """
-        ${params.gcta_bin} --reml ${params.multigrm_opt} --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output &> outmultgrlm
+        ${params.gcta_bin} --reml ${params.multigrm_opt} --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output $covargcta &> outmultgrlm
         if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"
@@ -916,3 +917,4 @@ process DoGemmah2Pval{
 
 
 }
+
