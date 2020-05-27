@@ -37,7 +37,7 @@ params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
 parqams_paintor=["paintor_fileannot", "paintor_listfileannot"]
 params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req"]
-param_data=["gwas_cat"]
+param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
 allowed_params+=params_mf
 allowed_params+=params_cojo
 allowed_params+=params_filegwas
@@ -84,9 +84,8 @@ params.other_mem_req="10GB"
 
 // gcta parameters
 params.gcta_mem_req="15GB"
-params.cojo_p=1e-7
-params.cojo_wind=10000
 params.gcta_cpus_req = 1
+
 params.fm_cpus_req = 5
 params.fm_mem_req = "20G"
 params.cojo_slct=1
@@ -148,6 +147,7 @@ gwas_file=Channel.fromPath(params.file_gwas)
 // plink 
 
 process ExtractPositionGwas{
+  memory params.other_mem_req
   input :
      file(filegwas) from gwas_file
      set file(bed),file(bim),file(fam) from gwas_extract_plk
@@ -160,9 +160,13 @@ process ExtractPositionGwas{
     file("${out}.all") into data_i
     file("${out}.pos") into paintor_gwas_annot
   script :
+    freq= (params.head_freq=="") ? "":" --freq_header ${params.head_freq} "
+    nheader= (params.head_n=="") ? "":" --n_header ${params.head_n}"
+    nvalue= (params.n_pop=="") ? "":" --n ${params.n_pop}"
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
+    bfile=bed.baseName
     """
-    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --freq_header  ${params.head_freq} --bim_file  $bim --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  --n ${params.n_pop}
+    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nheader $nvalue --bin_plk ${params.plink_bin}
     """
 }
 

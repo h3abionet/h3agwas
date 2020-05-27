@@ -45,7 +45,7 @@ chr = []
 positions = []
 for snps in locus_file:
     temp = snps.strip().split()
-    positions.append(int(temp[pos_ind]))
+    positions.append(int(float(temp[pos_ind])))
     chr.append(temp[chr_ind])
 
 all_annotations = []
