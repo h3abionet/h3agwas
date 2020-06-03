@@ -39,6 +39,7 @@ allowed_params = ['file_bed', 'file_vcf', 'file_ref']
 //params.file_vcf=""
 params.input_dir=""
 params.input_pat=""
+params.info_rs=""
 
 inpat = "${params.input_dir}/${params.input_pat}"
 
@@ -52,9 +53,13 @@ Channel
 
 #plink --bfile /spaces/wenlongchen/version3/qc_dnachip_round02/output/gwas_input --geno 0.01 --hwe 0.0001 --snps-only --maf 0.01 --mind 0.01 --make-bed --out temp1 --threads 12
 
+
 process extractrsname{
   input :
-    file(bim) from 
+    file(bim) from biminiral
+  output :
+    file(rsinfo) into listinfors
+  script :
   
 
 }
@@ -69,6 +74,7 @@ process convertInVcf {
    script:
      base= plink[0].baseName
      """
+       
      """
  }
 
