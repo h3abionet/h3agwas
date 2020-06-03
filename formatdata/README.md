@@ -142,3 +142,6 @@ R : library
 pip3.6 install CrossMap --user
 pip3.6 install numpy==1.16.1 --user
 chmod +x ~/.local/bin/CrossMap.py
+
+## Pipeline : 
+
