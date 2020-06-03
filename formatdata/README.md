@@ -143,5 +143,10 @@ pip3.6 install CrossMap --user
 pip3.6 install numpy==1.16.1 --user
 chmod +x ~/.local/bin/CrossMap.py
 
-## Pipeline : 
+## Pipeline : prepareforimp.nf
+
+### argument :
+* `input_dir`
+* `input_pat`
+* `output_dir` : direction of output [default : output]
 
