@@ -149,4 +149,5 @@ chmod +x ~/.local/bin/CrossMap.py
 * `input_dir`
 * `input_pat`
 * `output_dir` : direction of output [default : output]
+* `file_ref_gzip`
 
