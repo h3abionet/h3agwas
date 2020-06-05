@@ -67,7 +67,6 @@ Channel
       .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
       .separate(plkinit, biminitial) { a -> [a,a[1]] }
 
-//plink --bfile /spaces/wenlongchen/version3/qc_dnachip_round02/output/gwas_input --geno 0.01 --hwe 0.0001 --snps-only --maf 0.01 --mind 0.01 --make-bed --out temp1 --threads 12
 
 rs_infogz=Channel.fromPath(params.file_ref_gzip)
 process extractrsname{
@@ -98,11 +97,11 @@ process convertrsname{
   out=plk+"_newrs"
   tmprs="filers"
   tmprsnodup="filers_nodup"
-  extract=params.delet_notref=='F' ? "" : " --extract keep"
+  extract=params.deleted_notref=='F' ? "" : " --extract keep"
   """
   awk '{print \$1"\t"\$4}' $rsinfo > $tmprs
   biv_del_dup.py $tmprs  $tmprsnodup
-  awk '{print \$1}' $rsinfo > keep
+  awk '{print \$5}' $rsinfo > keep
   plink --keep-allele-order --noweb $extract --bfile $plk --make-bed --out $out --update-name $tmprsnodup -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
   """
 }
@@ -120,11 +119,9 @@ process deletedmultianddel{
     plk=bed.baseName
     out=plk+"_nomulti"
     """
-    biv_del_badallele.r $bim rstodel
+    biv_selgoodallele.r $bim rstodel
     plink --keep-allele-order --make-bed --bfile $plk --out $out -maf 0.0000000000000000001 --exclude rstodel --threads ${params.max_plink_cores}
     """  
-
-
 }
 
 process refallele{
@@ -132,15 +129,15 @@ process refallele{
    cpus params.max_plink_cores
    input :
     set file(bed), file(bim), file(fam) from plk_noindel
-    set file(infors) from l_infors2
+    file(infors) from l_infors2
    output :
     set file("${out}.bed"),file("${out}.bim"),file("${out}.fam") into plk_alleleref
   script :
     plk=bed.baseName
     out=plk+"_refal"
     """
-    awk '{\$4"\t"$NF}' $infors > alleref
-    plink --bfile $plk --make-bed --out $out --threads ${params.max_plink_cores} --reference-allele alleref
+    awk '{print \$5"\t"\$6}' $infors > alleref
+    plink --bfile $plk --make-bed --out $out --threads ${params.max_plink_cores} --a2-allele alleref
     """
 }
 
@@ -156,7 +153,7 @@ process convertInVcf {
      base=bed.baseName
      out="${params.out}"
      """
-    plink --bfile ${base} --threads ${params.max_plink_cores} --recode vcf --out $base --keep-allele-order --snps-only --threads ${params.max_plink_cores}
+    plink --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
      bcftools sort  ${out}.vcf -O z > ${out}.vcf.gz
      """
  }
@@ -168,12 +165,13 @@ process checkfixref{
   input :
     file(vcf) from vcfi
     file(hg) from hgref
-  publishDir "${params.output_dir}/check/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/check/Bcftools", overwrite:true, mode:'copy'
   output :
-    file("${params.out}.checkbcf") 
+    file("${params.out}.checkbcf*") 
   script :
     """
-    bcftools +fixref $vcf -- -f $hgref > ${params.out}".checkbcf"
+    samtools faidx $hg
+    bcftools +fixref $vcf -- -f $hg 1> ${params.out}".checkbcf.out" 2> ${params.out}".checkbcf.err"
     """
 }
 
@@ -181,13 +179,14 @@ process checkVCF{
   input :
     file(vcf) from vcfi2
     file(hg) from hgref2
-  publishDir "${params.output_dir}/check/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/check/CheckVCF", overwrite:true, mode:'copy'
   output :
     file("${out}*") 
   script :
     out="${params.out}_check"
     """
-    checkVCF.py -r $hg -o $out $your_VCF
+    samtools faidx $hg
+    checkVCF.py -r $hg -o $out $vcf
     """
 }
 
