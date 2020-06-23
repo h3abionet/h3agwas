@@ -35,10 +35,10 @@ The key options are:
 By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
 
  * `assoc` : should a chi2 test be used (0 or 1)
- * `fisher`: Fisher exact test
- *  `linear`: should linear regreession be used?
- *  `logistic`: should linear regression be used?
- *  `gemma`: should gemma be used?
+ * `fisher`: Fisher exact test (default 0)
+ *  `linear`: should linear regreession be used?  (default 0)
+ *  `logistic`: should linear regression be used? (default 0)
+ *  `gemma`: should gemma be used? (default 0)
     *  see [manual](www.xzlab.org/software/GEMMAmanual.pdf)
     *  `gemma_num_cores`: if gemma is used set this up to 8
     *  `gemma_mem_req`: For 10k samples, 2 million SNPs, we needed 4GB of RAM (default : 6GB)
