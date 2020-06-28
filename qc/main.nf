@@ -171,6 +171,7 @@ remove_on_bp    = params.remove_on_bp
 allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10"]
 
 
+
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
     	println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
@@ -192,6 +193,8 @@ if (params.help) {
   }
   System.exit(-1)
 }
+
+
 
 def getSubChannel = { parm, parm_name, col_name ->
   if ((parm==0) || (parm=="0") || (parm==false) || (parm=="false")) {
@@ -223,12 +226,14 @@ def fromPathReplicas = { fname, num ->
 
 
 
-
 if (params.case_control) {
   ccfile = params.case_control
   Channel.fromPath(ccfile).into { cc_ch; cc2_ch }
   col    = params.case_control_col
   diffpheno = "--pheno cc.phe --pheno-name $col"
+  if (params.case_control.toString().contains("s3://")) {
+       println "Case control file is in s3 so we can't check it"
+  } else 
   if (! file(params.case_control).exists()) {
      error("\n\nThe file <${params.case_control}> given for <params.case_control> does not exist")
     } else {
@@ -291,6 +296,8 @@ if ( nullfile.contains(params.sexinfo_available) ) {
  * not by order given, we check that they exist and then 
  * send the all the files to raw_ch and just the bim file to bim_ch */
 inpat = "${params.input_dir}/${params.input_pat}"
+
+
 
 Channel
    .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
