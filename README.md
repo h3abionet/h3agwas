@@ -206,7 +206,7 @@ If you manage the workflow this way, you will run the scripts, as follows
 
 Change directory where you want to install the software and say
 
-    `git clone https://github.com/h3abionet/h3agwas.git`
+    git clone https://github.com/h3abionet/h3agwas.git
 
 This will create a directory called _h3agwas_ with all the necesssary code.
 If you manage the workflow this way, you will run the scripts this way:
@@ -222,7 +222,7 @@ where _SOME-PATH_ is a relative or absolute path to where the workflow was downl
 
 This section shows a simple run of the `qc` pipeline that
 should run out of the box if you have installed the software or
-Docker. More details and general configuration will be shown later.
+Docker or Singularity. More details and general configuration will be shown later.
 
 This section illustrates how to run the pipeline on a small sample data
 file with default parameters.  For real runs, the data to be analysed
@@ -230,27 +230,30 @@ and the various parameters to be used are specified in the
 _nextflow.config_ files in assoc, qc and call2plink folder.  The details will be explained in another
 section.
 
-If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.zip and unzip
 
-
-The sample data to be used is in the _input_ directory (in PLINK
-format as _sampleA.bed_, _sampleA.bim_, _sampleA.fam_). The default
+Our quick start example will fetch the data from an Amazon S3 bucket,
+but if you'd prefer then you use locally installed sample. If you have
+downloaded the software using Git, you can find the sample data in the
+directory. Otherwise you can download the files from
+http://www.bioinf.wits.ac.za/gwas/sample.zip and unzip The sample data
+to be used is in the _input_ directory (in PLINK format as
+_sampleA.bed_, _sampleA.bim_, _sampleA.fam_). The default
 _nextflow.config_ file uses this, and so you can run the workflow
-through with this example. Note that this is a very small PLINK data set 
-with no X-chromosome information and no sex checking is done.
-
-
+through with this example. Note that this is a very small PLINK data
+set with no X-chromosome information and no sex checking is done.
 
 
 ## 3.1 Running on your local computer 
 
-This requires that all software dependancies have been installed. 
+This requires that all software dependancies have been installed (see later for singularity or docker) 
 
 ### 3.1.1 If you downloaded using Nextflow
 
 We also assume the _sample_ directory with data is in the current working directory
 
-`nextflow run h3abionet/h3agwas/qc`
+`nextflow run h3abionet/h3agwas/qc/main.nf --input_dir=s3://h3abionet/sample`
+
+If you have downloaded the sample data and the directory with the sample data is a sub-directory of your working directory, you could just say: `nextflow run h3abionet/h3agwas/qc/main.nf --input_dir=s3://h3abionet/sample`
 
 
 ### 3.1.2 If you downloaded using Git
@@ -278,9 +281,10 @@ There are many other options that can be passed on the the command-line. Options
 
 ## 3.3 Running with Docker on your local computer
 
-Execute 
+Just add `-profile docker` to your run command -- for example, 
 
-`nextflow run  qc -profile docker`
+* `nextflow run  qc -profile docker`   or
+* `nextflow run h3abionet/h3agwas/qc/main.nf --input_dir=s3://h3abionet/sample`
 
 Please note that the _first_ time you run the workflow using Docker,  the Docker images will be downloaded. *Warning:* This will take about 1GB of bandwidth which will consume bandwidth and will take time depending on your network connection. It is only the first time that the workflow runs that the image will be downloaded.
 
@@ -289,7 +293,7 @@ More options are shown later.
 
 ##3.4 Running multiple workflows at the same time
 
-You may at some point want to run multiple, _independent_ workflows at the same time (e.g. different data). This is possible. However, each run should be started in a different working directory. You can refer to the scripts and even the data in the same diretory, but the directories from which you run the `nextflow run` command should be different.
+You may at some point want to run multiple, _independent_ executions of the workflows at the same time (e.g. different data). This is possible. However, each run should be started in a different working directory. You can refer to the scripts and even the data in the same diretory, but the directories from which you run the `nextflow run` command should be different.
 
 
 # 4 The Nextflow configuration file

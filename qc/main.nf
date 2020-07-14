@@ -3,7 +3,7 @@
 /*
  * Authors       :
  *
- *
+ *      Jean-Tristan Brandenburg
  *      Shaun Aron
  *      Rob Clucas
  *      Eugene de Beste
@@ -13,12 +13,13 @@
  *      Abayomi Mosaku
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2018
+ *  2015-2020
  *
  *
  * Description  : Nextflow pipeline for Wits GWAS.
  *
- *(C) University of the Witwatersrand, Johannesburg, 2016-2018 on behalf of the H3ABioNet Consortium
+ *(C) University of the Witwatersrand, Johannesburg, 2016-2020
+ *    on behalf of the H3ABioNet Consortium
  *This is licensed under the MIT Licence. See the "LICENSE" file for details
  */
 
@@ -28,7 +29,20 @@ import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
 
+outfname = params.output_dir+"/"+params.output+".bed"
+outbed = file(outfname);
+if (outbed.exists()) {
+    println "\n\n============================================"
+    println "Ideally the output directory should be empty"
+    println "We do not want to overwrite something valuable"
+    println "Definitely there should not be a file "+outfname
+    println "There may be other files"
+    println "Please use a different output directory or empty (be careful)  "+\
+            params.output_dir
+    System.exit(-1)
+}
 
+    
 
 
 
@@ -131,7 +145,7 @@ else
   wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","initmaf","inithwe","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1","poorgc10"]
+repnames = ["dups","initmaf","inithwe","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1","poorgc10"]
 
 
 
@@ -286,11 +300,6 @@ if ( nullfile.contains(params.sexinfo_available) ) {
 
 
 
-
-
-
-
-
 /* Get the input files -- could be a glob
  * We match the bed, bim, fam file -- order determined lexicographically
  * not by order given, we check that they exist and then 
@@ -299,11 +308,20 @@ inpat = "${params.input_dir}/${params.input_pat}"
 
 
 
+if (inpat.contains("s3://")) {
+  print "Here"
+  this_checker = { it -> return it}
+} else {
+  this_checker = checker
+}
+
 Channel
-   .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
+   .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true)
+    { file -> file.baseName }  \
       .ifEmpty { error "No matching plink files" }        \
-      .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
+      .map { a -> [this_checker(a[1]), this_checker(a[2]), this_checker(a[3])] }\
       .separate(raw_ch, bim_ch, inpmd5ch) { a -> [a,a[1],a] }
+
   
 
 
@@ -417,8 +435,6 @@ process removeDuplicateSNPs {
   input:
   set file(bed), file(bim), file(fam) from raw_ch
   file(dups) from  duplicates_ch
-  publishDir params.output_dir, pattern: "$logfile", \
-             overwrite:true, mode:'copy'
 
   output:
     set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
@@ -869,8 +885,7 @@ process removeSkewSnps {
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${output}.{bed,bim,fam}") into (qc4A_ch,qc4B_ch,qc4C_ch)
-    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into report["cleaned"] 
-    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into forconvertvcf
+    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into (forconvertvcf, rep_ch)
   script:
   base = plinks[0].baseName
   output = params.output.replace(".","_")
@@ -878,6 +893,9 @@ process removeSkewSnps {
   plink $K --bfile $base $sexinfo --exclude $failed --make-bed --out $output
   """
 }
+
+
+report["cleaned"] = rep_ch
 
 process convertInVcf {
    memory plink_mem_req
