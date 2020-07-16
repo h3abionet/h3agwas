@@ -156,7 +156,7 @@ process convertInVcf {
      out="${params.out}"
      """
     plink --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
-     ${params.bin_samtools} sort  ${out}.vcf -O z > ${out}.vcf.gz
+     ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}.vcf.gz
      """
  }
 
