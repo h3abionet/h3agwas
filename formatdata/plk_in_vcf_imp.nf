@@ -48,6 +48,8 @@ params.poshead_bp_inforef=1
 params.poshead_rs_inforef=2
 params.poshead_a1_inforef=3
 params.poshead_a2_inforef=4
+params.bin_bcftools="bcftools"
+params.bin_samtools="samtools"
 
 params.plink_mem_req="10GB"
 params.max_plink_cores="5"
@@ -154,7 +156,7 @@ process convertInVcf {
      out="${params.out}"
      """
     plink --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
-     bcftools sort  ${out}.vcf -O z > ${out}.vcf.gz
+     ${params.bin_samtools} sort  ${out}.vcf -O z > ${out}.vcf.gz
      """
  }
 
@@ -170,8 +172,8 @@ process checkfixref{
     file("${params.out}.checkbcf*") 
   script :
     """
-    samtools faidx $hg
-    bcftools +fixref $vcf -- -f $hg 1> ${params.out}".checkbcf.out" 2> ${params.out}".checkbcf.err"
+    ${params.bin_samtools} faidx $hg
+    ${params.bin_bcftools} +fixref $vcf -- -f $hg 1> ${params.out}".checkbcf.out" 2> ${params.out}".checkbcf.err"
     """
 }
 
@@ -185,7 +187,7 @@ process checkVCF{
   script :
     out="${params.out}_check"
     """
-    samtools faidx $hg
+    ${params.bin_samtools} faidx $hg
     checkVCF.py -r $hg -o $out $vcf
     """
 }
