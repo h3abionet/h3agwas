@@ -41,7 +41,7 @@ params.input_dir="$PWD"
 params.input_pat=""
 params.file_ref_gzip=""
 params.deleted_notref = "T"
-params.out= "out"
+params.output= "out"
 
 params.poshead_chro_inforef=0
 params.poshead_bp_inforef=1
@@ -99,11 +99,12 @@ process convertrsname{
   out=plk+"_newrs"
   tmprs="filers"
   tmprsnodup="filers_nodup"
-  extract=params.deleted_notref=='F' ? "" : " --extract keep"
+  extract=params.deleted_notref=='F' ? "" : " --extract range keep"
   """
   awk '{print \$1"\t"\$4}' $rsinfo > $tmprs
   biv_del_dup.py $tmprs  $tmprsnodup
-  awk '{print \$5}' $rsinfo > keep
+  #awk '{print \$5}' $rsinfo > keep
+  awk '{print \$1"\t"\$2"\t"\$2"\t"\$5}' $rsinfo > keep
   plink --keep-allele-order --noweb $extract --bfile $plk --make-bed --out $out --update-name $tmprsnodup -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
   """
 }
@@ -153,7 +154,7 @@ process convertInVcf {
   publishDir "${params.output_dir}/vcf/", overwrite:true, mode:'copy'
    script:
      base=bed.baseName
-     out="${params.out}"
+     out="${params.output}"
      """
     plink --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
      ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}.vcf.gz
@@ -169,11 +170,11 @@ process checkfixref{
     file(hg) from hgref
   publishDir "${params.output_dir}/check/Bcftools", overwrite:true, mode:'copy'
   output :
-    file("${params.out}.checkbcf*") 
+    file("${params.output}.checkbcf*") 
   script :
     """
     ${params.bin_samtools} faidx $hg
-    ${params.bin_bcftools} +fixref $vcf -- -f $hg 1> ${params.out}".checkbcf.out" 2> ${params.out}".checkbcf.err"
+    ${params.bin_bcftools} +fixref $vcf -- -f $hg 1> ${params.output}".checkbcf.out" 2> ${params.output}".checkbcf.err"
     """
 }
 
@@ -185,7 +186,7 @@ process checkVCF{
   output :
     file("${out}*") 
   script :
-    out="${params.out}_check"
+    out="${params.output}_check"
     """
     ${params.bin_samtools} faidx $hg
     checkVCF.py -r $hg -o $out $vcf
