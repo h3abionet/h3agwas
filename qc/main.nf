@@ -29,17 +29,16 @@ import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
 
-outfname = params.output_dir+"/"+params.output+".bed"
-outbed = file(outfname);
-if (outbed.exists()) {
-    println "\n\n============================================"
-    println "Ideally the output directory should be empty"
-    println "We do not want to overwrite something valuable"
-    println "Definitely there should not be a file "+outfname
-    println "There may be other files"
-    println "Please use a different output directory or empty (be careful)  "+\
-            params.output_dir
-    System.exit(-1)
+
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
 }
 
     
@@ -514,8 +513,7 @@ process identifyIndivDiscSexinfo {
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     file(logfile) into  report["failedsex"]
-     file(logfile) into  failed_sex_ch1
+     file(logfile) into  (rep_failed_sex_ch, failed_sex_ch1)
      set file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
      file("${base}.hwe") into hwe_stats_ch
   validExitStatus 0, 1
@@ -539,7 +537,7 @@ process identifyIndivDiscSexinfo {
      """
 }
 
-
+report["failedsex"] = rep_failed_sex_ch
 
 process generateSnpMissingnessPlot {
   memory other_mem_req
@@ -727,8 +725,7 @@ process findRelatedIndiv {
      file (missing) from ind_miss_ch2
      file (ibd_genome) from find_rel_ch
   output:
-     file(outfname) into (related_indivs_ch1,related_indivs_ch2) // removeRel, batchReport
-     file(outfname) into report["related"]
+     file(outfname) into (related_indivs_ch1,related_indivs_ch2, rep_rel_ch) 
   publishDir params.output_dir, overwrite:true, mode:'copy'
   script:
      base = missing.baseName
@@ -736,6 +733,7 @@ process findRelatedIndiv {
      template "removeRelInds.py"
 }
 
+report["related"] = rep_rel_ch
 
 process calculateSampleHeterozygosity {
    memory plink_mem_req
@@ -743,7 +741,6 @@ process calculateSampleHeterozygosity {
       file(nodups) from qc2C_ch
 
    publishDir params.output_dir, overwrite:true, mode:'copy'
-
    output:
       set file("${hetf}.het"), file("${hetf}.imiss") into (hetero_check_ch, plot1_het_ch)
       file("${hetf}.imiss") into missing_stats_ch
@@ -778,8 +775,7 @@ process getBadIndivsMissingHet {
   input:
     set file(het), file(imiss) from hetero_check_ch
   output:
-    file(outfname) into failed_miss_het
-    file(outfname) into report["misshetremf"]
+    file(outfname) into (failed_miss_het, fmreport)
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.txt"
   script:
     base = het.baseName
@@ -787,7 +783,7 @@ process getBadIndivsMissingHet {
     template "select_miss_het_qcplink.py"
 }
 
-
+report["misshetremf"] = fmreport
 
 
 
@@ -882,10 +878,10 @@ process removeSkewSnps {
   input:
     file (plinks) from qc3B_ch
     file(failed) from skewsnps_ch
-  publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${output}.{bed,bim,fam}") into (qc4A_ch,qc4B_ch,qc4C_ch)
-    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into (forconvertvcf, rep_ch)
+    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), \
+        file("${output}.log") into (forconvertvcf, rep_ch)
   script:
   base = plinks[0].baseName
   output = params.output.replace(".","_")

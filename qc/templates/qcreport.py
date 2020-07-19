@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Scott Hazelhurst, 2016
+# Scott Hazelhurst, 2016-2020
 # Creates a PDF report for QC
 # 
 # (c) University of the Witwatersand, Johannesburg on behalf of the H3ABioinformatics Network Consortium

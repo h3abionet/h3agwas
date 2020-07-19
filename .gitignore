@@ -1,3 +1,4 @@
+aws*config
 .git/
 .nextflow*
 .idea*

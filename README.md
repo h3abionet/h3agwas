@@ -159,13 +159,13 @@ We now explore these in details
 ## 2.2 Pre-requisites
 
 **All** modes of h3agwas have the following requirements
-* Java 8
+* Java 8 or later
 * Nextflow. To install Nextflow, run the command below. It creates a _nextflow_ executable in the directory you ran the command. Move the executable to a directory on the system or user PATH and make it executable. You need to be running Nextflow 27 (January 2018) or later.
     `curl -fsSL get.nextflow.io | bash`
 
   If you don't have curl (you can use wget)
 
-* Git 
+* Git (this probably is already installed)
 
 ## 2.3 Installing with Docker or Singularity
 
@@ -183,7 +183,7 @@ The following code needs to be installed and placed in a directory on the user's
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
 * python 3.6 or later. pandas, numpy, scipy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
-If you want to run the `assoc` pipeline then you should install gemma if you are using those options.
+If you want to run the `assoc` pipeline then you should install gemma,fastlmm if you are using those options.
 
 ## 2.5 Installing the workflow
 
@@ -291,7 +291,7 @@ Please note that the _first_ time you run the workflow using Docker,  the Docker
 
 More options are shown later.
 
-##3.4 Running multiple workflows at the same time
+## 3.4 Running multiple workflows at the same time
 
 You may at some point want to run multiple, _independent_ executions of the workflows at the same time (e.g. different data). This is possible. However, each run should be started in a different working directory. You can refer to the scripts and even the data in the same diretory, but the directories from which you run the `nextflow run` command should be different.
 
@@ -627,14 +627,14 @@ Set up your other config files as required. Note that data you wish to process  
 Run the job (in this example the _qc_ worfklow).  You need to specify the s3 bucket to be used and also the `awsbatch` profile
 
 ```
-nextflow run -c aws.config -c job.job qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
+nextflow run -c aws.config -c job.config qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
 ```
 
-#6. Dealing with errors
+# 6. Dealing with errors
 
 One problem with our current workflow is that error messages can be obscure. Errors can be caused by
 * bugs in our code
-* you doing something odd
+* your doing something odd
 
 There are two related problems. When a Nextflow script fails for some reason, Nextflow prints out in _great_ detail what went wrong. Second, we don't always catch mistakes that the user makes gracefully.
 
@@ -770,11 +770,14 @@ We acknowledge funding by the National Institutes of Health through the NHGRI (U
 
 Scott Hazelhurst, Jean-Tristan Brandenburg, Lerato E. Magosi, Shaun Aron, Rob Clucas,  Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
 
-We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
+We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine, and the many users at the Sydney Brenner Institute for Molecular Bioscience for their patience and suggestion.
 
-### License
+### Licence
 This software is licensed under the MIT Licence.
 
+### Funding
+
+We acknowledge the support from the NIH NHGRI H3ABioNet (U24HG006941)   and AWI-Gen   (U54HG006938)
 
 ### Download
 
