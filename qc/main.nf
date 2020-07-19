@@ -878,10 +878,10 @@ process removeSkewSnps {
   input:
     file (plinks) from qc3B_ch
     file(failed) from skewsnps_ch
+  publishDir params.output_dir, overwrite:true, mode:'copy'  
   output:
-    file("${output}.{bed,bim,fam}") into (qc4A_ch,qc4B_ch,qc4C_ch)
-    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), \
-        file("${output}.log") into (forconvertvcf, rep_ch)
+    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") \
+      into (qc4A_ch, qc4B_ch, qc4C_ch, qc_rep_ch)
   script:
   base = plinks[0].baseName
   output = params.output.replace(".","_")
@@ -891,18 +891,18 @@ process removeSkewSnps {
 }
 
 
-report["cleaned"] = rep_ch
+report["cleaned"] = qc_rep_ch
 
 process convertInVcf {
    memory plink_mem_req
    cpus max_plink_cores
    input :
-    file(plink) from forconvertvcf
+     set file(bed), file(bim), file(fam), file (log) from qc4A_ch
    publishDir params.output_dir, overwrite:true, mode:'copy'
    output :
     file("${base}.vcf")  
    script:
-     base= plink[0].baseName
+     base= bed.baseName
      """
      plink --bfile ${base} --threads ${max_plink_cores} --recode vcf --out $base
      """
@@ -913,7 +913,7 @@ process convertInVcf {
 process calculateMaf {
   memory plink_mem_req
   input:
-    file(plinks) from qc4C_ch
+    set  file(bed), file(bim), file(fam), file(log) from qc4C_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.frq"
 
@@ -921,7 +921,7 @@ process calculateMaf {
     file "${base}.frq" into maf_plot_ch
 
   script:
-    base = plinks[0].baseName
+    base = bed.baseName
     out  = base.replace(".","_")
     """
       plink --bfile $base $sexinfo  --freq --out $out
@@ -986,15 +986,12 @@ process generateHwePlot {
 process outMD5 {
   memory other_mem_req
   input:
-     file plink from qc4B_ch
+     set file(bed), file(bim), file(fam), file(log) from qc4B_ch
   output:
      file(out) into report["outmd5"]
   echo true
   script:
-       bed = plink[0]
-       bim = plink[1]
-       fam = plink[2]
-       out  = "${plink[0].baseName}.md5"
+       out  = "${bed.baseName}.md5"
        template "md5.py"
 }
 
