@@ -26,6 +26,7 @@ def parseArguments():
     parser.add_argument('--chro',type=str,required=False, help="list rs", default="")
     parser.add_argument('--begin',type=float,required=False, help="list rs")
     parser.add_argument('--end',type=float,required=False, help="list rs")
+    parser.add_argument('--min_pval',type=float,required=False, help="list rs")
     parser.add_argument('--chro_header',type=str,required=True,help="chro header in inp files")
     parser.add_argument('--pos_header',type=str,required=True,help="pos header in inp files")
     parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
@@ -69,6 +70,8 @@ out_fileZ=args.out_head+"_caviar.z"
 
 listbim=extractinfobim(chro, begin,end,args.bim_file)
 small=result[(result[args.chro_header]==chro) & (result[args.pos_header]>=begin) & (result[args.pos_header]<=end)]
+if args.min_pval and small[args.p_header].min()> args.min_pval:
+   sys.exit('min pval '+str(args.min_pval)+'>'+' min(p) '+ str(small[args.p_header].min()))
 small=small.loc[small[args.pos_header].isin(listbim)]
 
 small=small[(small[args.rs_header]==rs) | ((small[args.freq_header]>maf) & (small[args.freq_header]<(1-maf)))]

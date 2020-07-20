@@ -154,13 +154,14 @@ process ExtractPositionGwas{
     file("${out}_caviar.z") into caviarbf_gwas
     file("${out}.paintor") into paintor_gwas
     file("${out}.range") into range_plink
-    file("${out}.all") into data_i
+    file("${out}.all") into (data_i, data_check)
   script :
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     """
-    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --freq_header  ${params.head_freq} --bim_file  $bim --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  --n ${params.n_pop}
+    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --freq_header  ${params.head_freq} --bim_file  $bim --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  --n ${params.n_pop} --min_pval ${params.threshold_p}
     """
 }
+
 
 process SubPlink{
   input :
