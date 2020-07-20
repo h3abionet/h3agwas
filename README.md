@@ -198,9 +198,9 @@ To download the workflow you can say
 If we update the workflow, the next time you run it, you will get a warning message. You can do another pull to bring it up to date.
 
 If you manage the workflow this way, you will run the scripts, as follows
-* `nextflow run h3abionet/h3agwas/call2plink ..... `
-* `nextflow run h3abionet/h3agwas/qc ..... `
-* `nextflow run h3abionet/h3agwas/assoc ..... `
+* `nextflow run h3abionet/h3agwas/call2plink/main.nf ..... `
+* `nextflow run h3abionet/h3agwas/qc/main.nf ..... `
+* `nextflow run h3abionet/h3agwas/assoc/main.nf ..... `
 
 ### 2.5.2 Managing with Git
 
