@@ -6,7 +6,16 @@
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
 
-This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
+This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/main.nf`
+
+
+## Brief introduction
+
+In addition to this README we have a detailed tutorial and videos 
+* These can be found at http://www.bioinf.wits.ac.za/gwas
+
+
+
 
 ## What's new :
 * 2020-03-27: added a modules to convert position between different genome version [formatdata](formatdata/README.md)
@@ -24,7 +33,7 @@ This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, yo
 ## Background
 
 
-h3aGWAS is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). h3aGWAS uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
+H3Agwas is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). H3Agwas uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
 
 
 The original version of the H3Agwas was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.  
@@ -35,11 +44,6 @@ We have moved all scripts from Python 2 to Python 3, so you will need to have Py
 _Please ignore the Wiki in this version which refers to version 1_
 
 
-## Brief introduction
-
-In addition to this README we have the following material available
-* A short video overview of the pipeline can be found at http://www.bioinf.wits.ac.za/gwas/h3agwas.mp4
-* A handout from a lecture can be found at http://www.bioinf.wits.ac.za/gwas/gwas-comp-handout.pdf
 
 
 ## Outline of documentation
@@ -143,7 +147,7 @@ We expect that many of our users will use Docker. However, we recognise that thi
 
 Similarily we support Singularity. Although it's a new feature, we've tested it two different organisaitons and it's worked flawlessly
 
-# 2. Installing h3aGWAS
+# 2. Installing H3Agwas
 
 ## 2.1 Background
 
@@ -323,7 +327,7 @@ You can use the _-c_ option specify another configuration file in addition to th
 
 
 **This is highly recommended.** We recommend that you keep the `nextflow.config` file as static as possible, perhaps not even modifying it from the default config. Then  for any
- run or data set, have a much smaller config file that only specifies the changes you want made. The base `nextflow.config` file will typically contain config options that are best set by the h3aGWAS developers (e.g., the names of the docker containers) or default GWAS options that are unlikely to change. In your separate config file, you will specify the run-specific options, such as data sets, directories or particular GWAS parameters you want. Both configuration files should be specified. For example, suppose I create a sub-directory within the directory where the nextflow file is (probably called h3agwas). Within the h3agwas directory I keep my nexflow.config file and the nextflow file itself. From the sub-directory, I run the workflow by saying:
+ run or data set, have a much smaller config file that only specifies the changes you want made. The base `nextflow.config` file will typically contain config options that are best set by the H3Agwas developers (e.g., the names of the docker containers) or default GWAS options that are unlikely to change. In your separate config file, you will specify the run-specific options, such as data sets, directories or particular GWAS parameters you want. Both configuration files should be specified. For example, suppose I create a sub-directory within the directory where the nextflow file is (probably called h3agwas). Within the h3agwas directory I keep my nexflow.config file and the nextflow file itself. From the sub-directory, I run the workflow by saying:
 
 ```nextflow run  -c data1.config ../qc```
 
