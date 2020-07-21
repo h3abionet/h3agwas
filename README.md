@@ -319,7 +319,7 @@ your config files.
 
 You can use the _-c_ option specify another configuration file in addition to the nextflow.config file
 
-```nextflow run -c data1.config qc``
+```nextflow run -c data1.config qc```
 
 
 **This is highly recommended.** We recommend that you keep the `nextflow.config` file as static as possible, perhaps not even modifying it from the default config. Then  for any
@@ -768,7 +768,12 @@ We acknowledge funding by the National Institutes of Health through the NHGRI (U
 
 ### Authors
 
-Scott Hazelhurst, Jean-Tristan Brandenburg, Lerato E. Magosi, Shaun Aron, Rob Clucas,  Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
+Current team: Scott Hazelhurst, Jean-Tristan Brandenburg, Lindsay Clark, Obokula Smile, Michael Ebo Turkson, Michael Thompson, 
+
+H3ABioNet Pipelines team leadership: Christopher Fields,  Shakuntala Baichoo, Sumir Panji, Gerrit Botha.
+
+
+Past members and contributors: Lerato E. Magosi, Shaun Aron, Rob Clucas,  Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
 
 We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine, and the many users at the Sydney Brenner Institute for Molecular Bioscience for their patience and suggestion.
 

@@ -1065,4 +1065,9 @@ process produceReports {
 }
 
 
-final_ch.subscribe { b=it.baseName; println "The output report is called ${params.output_dir}/${b}.pdf"}
+
+final_ch.subscribe { b=it.baseName; 
+  new File("emptyZ0batch.txt").delete();
+  new File("emptyZ0pheno.txt").delete();
+  new File("xxemptyZ0pheno.txt").delete();
+  println "The output report is called ${params.output_dir}/${b}.pdf"}
