@@ -144,11 +144,13 @@ process refallele{
     """
 }
 
+hgrefconv=Channel.fromPath(params.reffasta)
 process convertInVcf {
    memory params.plink_mem_req
    cpus params.max_plink_cores
    input :
     set file(bed), file(bim), file(fam) from plk_alleleref
+    file(fast) from hgrefconv
    output :
     file("${out}.vcf.gz")  into (vcfi, vcfi2)
   publishDir "${params.output_dir}/vcf/", overwrite:true, mode:'copy'
@@ -156,12 +158,13 @@ process convertInVcf {
      base=bed.baseName
      out="${params.output}"
      """
-    plink --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
-     ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}.vcf.gz
+     plink --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores} 
+     ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}_tmp.vcf.gz
+     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m top
      """
  }
 
-if(params.reffasta!=""){
+#if(params.reffasta!=""){
 hgref=Channel.fromPath(params.reffasta)
 hgref2=Channel.fromPath(params.reffasta)
 process checkfixref{
@@ -193,4 +196,4 @@ process checkVCF{
     """
 }
 
-}
+#}
