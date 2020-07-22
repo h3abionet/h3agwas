@@ -42,8 +42,10 @@ params.input_pat=""
 params.file_ref_gzip=""
 params.deleted_notref = "T"
 params.output= "out"
+params.output_dir= "out"
 
 params.poshead_chro_inforef=0
+params.parralchro = 0
 params.poshead_bp_inforef=1
 params.poshead_rs_inforef=2
 params.poshead_a1_inforef=3
@@ -59,6 +61,7 @@ inpat = "${params.input_dir}/${params.input_pat}"
 println inpat
 plkinit=Channel.create()
 biminitial=Channel.create()
+biminitial_extractref=Channel.create()
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
 fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
@@ -67,7 +70,7 @@ Channel
    .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
       .ifEmpty { error "No matching plink files" }        \
       .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
-      .separate(plkinit, biminitial) { a -> [a,a[1]] }
+      .separate(plkinit, biminitial, biminitial_extractref) { a -> [a,a[1], a[1]] }
 
 
 rs_infogz=Channel.fromPath(params.file_ref_gzip)
@@ -83,6 +86,19 @@ process extractrsname{
     awk '{print \$1" "\$4" "\$5" "\$6}' $bim > temp_pos
     zcat $rsinfo | extractrsid_bypos.py --file_chrbp temp_pos --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
     """
+}
+
+fastaextractref=Channel.fromPath(params.reffasta)
+process extractpositionfasta{
+ input :
+    file(bim) from biminitial_extractref
+    file(fasta) from fastaextractref
+  script :
+    """
+    extract_ref_bimf.py --bim $bim --fasta $fasta --out tmp
+    """
+
+
 }
 
 process convertrsname{
@@ -134,7 +150,7 @@ process refallele{
     set file(bed), file(bim), file(fam) from plk_noindel
     file(infors) from l_infors2
    output :
-    set file("${out}.bed"),file("${out}.bim"),file("${out}.fam") into plk_alleleref
+    set file("${out}.bed"),file("${out}.bim"),file("${out}.fam") into (plk_alleleref, plk_chrocount)
   script :
     plk=bed.baseName
     out=plk+"_refal"
@@ -145,6 +161,7 @@ process refallele{
 }
 
 hgrefconv=Channel.fromPath(params.reffasta)
+if(params.parralchro==0){
 process convertInVcf {
    memory params.plink_mem_req
    cpus params.max_plink_cores
@@ -164,6 +181,62 @@ process convertInVcf {
      ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m top &> reportfixref
      """
  }
+}else{
+
+process CounChro{
+  input :
+       set file(bed), file(bim), file(fam) from plk_chrocount
+  output :
+        stdout into chrolist
+  script :
+    """
+    awk '{print \$1}' $bim|uniq 
+    """
+}
+
+check2 = Channel.create()
+ListeChro=chrolist.flatMap { list_str -> list_str.split() }.tap ( check2)
+
+process convertInVcfChro{
+   memory params.plink_mem_req
+   cpus params.max_plink_cores
+   input :
+      set file(bed), file(bim), file(fam) from plk_alleleref
+      file(fast) from hgrefconv
+   each chro from ListeChro
+   publishDir "${params.output_dir}/vcf/rep/", overwrite:true, mode:'copy', pattern: "*.rep"
+   output : 
+     file("${out}.rep") 
+     file("${out}.vcf.gz") into vcf_chro
+   script:
+     base=bed.baseName
+     out="${params.output}"+"_"+chro
+     """
+     plink  --chr $chro --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
+     ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}_tmp.vcf.gz
+     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m top &> $out".rep"
+     """
+}
+
+vcf=vcf_chro.collect()
+
+
+process mergevcf{
+  cpus params.max_plink_cores
+  input :
+   val(allfile) from vcf   
+  publishDir "${params.output_dir}/vcf/", overwrite:true, mode:'copy'
+  output :
+     file("${out}.vcf.gz")  into (vcfi, vcfi2)
+  script :
+    fnames = allfile.join(" ")
+    out="${params.output}"
+    """  
+    bcftools concat -Oz -o ${out}.vcf.gz --threads ${params.max_plink_cores} $fnames
+    """
+}
+
+}
 
 //if(params.reffasta!=""){
 hgref=Channel.fromPath(params.reffasta)
