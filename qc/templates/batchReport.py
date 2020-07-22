@@ -334,8 +334,8 @@ def getVClose(gfrm,pfrm,pheno_col):
         #if re.search("_replicate_",row[0]+row[2]): continue
         #if re.search("_MSK_",row[1]+row[3]): continue
         if row[1][-4:-1]=="DUP" or row[3][-4:-1]=="DUP": continue
-        pairA=pfrm.loc[row[0],row[1]][pheno_col]
-        pairB=pfrm.loc[row[2],row[3]][pheno_col]
+        pairA=pfrm.loc[row[0],row[1]][pheno_col].values[0]
+        pairB=pfrm.loc[row[2],row[3]][pheno_col].values[0]
         curr = curr+TAB.join([row[0],row[1],pairA,\
                               row[2],row[3],pairB,\
                               str(row[4])])+EOL
