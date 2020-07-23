@@ -322,6 +322,7 @@ process GetGenesInfo{
 genes_file_ch=Channel.fromPath(params.genes_file)
 }
 
+
 if(params.gwas_cat==""){
        error("\n\n------\nError no file for gwas catalgo\n---\n")
 }
