@@ -336,6 +336,9 @@ def getVClose(gfrm,pfrm,pheno_col):
         if row[1][-4:-1]=="DUP" or row[3][-4:-1]=="DUP": continue
         pairA=pfrm.loc[row[0],row[1]][pheno_col]
         pairB=pfrm.loc[row[2],row[3]][pheno_col]
+        if type(pairA)!=str: # hack to handle fake phenos -- this should be fixed upstream
+            pairA = pairA.values[0]
+            pairB = pairB.values[0]
         curr = curr+TAB.join([row[0],row[1],pairA,\
                               row[2],row[3],pairB,\
                               str(row[4])])+EOL
