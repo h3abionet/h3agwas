@@ -82,7 +82,7 @@ def get10Best(result):
         best = best + row
     return best
 
-result = pd.read_csv(inp,delim_whitespace=True, keep_default_na=True, na_values=["nan","nane-nan"])
+result = pd.read_csv(inp,delim_whitespace=True, keep_default_na=True, na_values=["nan","nane-nan", "NA"])
 
 result[PvalueEnt] = result[PvalueEnt].astype(float)
 sort_p = -np.log10(result[PvalueEnt].sort_values())
