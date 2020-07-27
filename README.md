@@ -9,7 +9,8 @@ The major change from Version 2 to Version 3 is the reorganisation of the repo s
 This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
 
 ## What's new :
-* 2020-06-03: News nextflow modules to transform plink file in vcf file with check allele for imputation[assoc](formatdata/README.md)
+* 2020-07-27: News nextflow modules to transform vcf impute format in bimbam[formatdata](formatdata/README.md)
+* 2020-06-03: News nextflow modules to transform plink file in vcf file with check allele for imputation[formatdata](formatdata/README.md)
 * 2020-05-18: fixed bug in gcta to computed heribilities [assoc](assoc/README.md)
 * 2020-03-27: added a modules to convert position between different genome version [formatdata](formatdata/README.md)
 * 2020-02-20: support for awsbatch
