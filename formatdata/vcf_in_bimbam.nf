@@ -33,6 +33,7 @@ params.min_scoreinfo=0.6
 params.max_plink_cores = 8
 params.genotype_field="GP"
 params.qctoolsv2_bin="qctool_v2"
+params.bcftools_bin="bcftools"
 
 
 
@@ -56,14 +57,14 @@ process formatvcfinimpute2{
   memory params.plink_mem_req
   time   params.big_time
   input :
-     file(vcf) from vcf_filt
+     file(vcf) from list_vcf
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
-     file("${Ent}.impute2.gz") 
+     file("${Ent}.bimbam") 
   script :
     Ent=vcf.baseName
     """
-    bcftools view -i 'INFO>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype bimbam_dosage -og ${Ent}.bimbam
+    ${params.bcftools_bin} view -i 'INFO>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype bimbam_dosage -og ${Ent}.bimbam -filetype vcf
     """
 }
 

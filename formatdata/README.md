@@ -143,6 +143,17 @@ pip3.6 install CrossMap --user
 pip3.6 install numpy==1.16.1 --user
 chmod +x ~/.local/bin/CrossMap.py
 
+## Pipeline : vcf_in_bimbam.nf
+transform vcf in bimbam format after filters for quality.
+###arguments
+* `file_listvcf` : file contains each bgzip vcf files to merge, one by line [default : none]
+* `min_scoreinfo` : what score info minimum do you want : [default :0.6]
+* `output_dir` : directory of output : [default : impute2]
+* `genotype_field` : genotype field in vcf file [default : GP]
+* `qctoolsv2_bin`  : qctools v2 binary [default :qctool_v2]
+* `bcftools_bin` : bcftools bin [default : bcftools]
+
+
 ## Pipeline : prepareforimp.nf
 
 ### argument :
