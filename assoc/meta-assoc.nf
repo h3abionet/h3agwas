@@ -225,7 +225,7 @@ if(params.mrmega==1){
     script:
       out = "mrmega"
       """
-      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header "MarkerName" --pval_header "P-value_association" --beta_header "Effects" --info_prog "MRMEGA"
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header "MarkerName" --pval_header "P-value_association" --beta_header "lnBF" --info_prog "MRMEGA"
       """
   }
   report_ch = report_ch.flatten().mix(report_mrmega.flatten())
