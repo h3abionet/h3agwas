@@ -60,6 +60,7 @@ params.plink_mem_req = '10GB' // how much plink needs for this
 params.other_mem_req = '10GB' // how much plink needs for this
 params.output_pat="out"
 params.output_dir="plink/"
+params.genetic_maps=""
 
 
 
