@@ -1,6 +1,7 @@
 # h3agwas
 
 Change for person B
+Change for B
 Change for person B
 
 
@@ -15,7 +16,7 @@ h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney
 
 
 ## Documentation 
-
+Chaneg for B
 Installation, Examples and tutorials for witsGWAS can be found in the wiki
 
 ## Features
@@ -73,3 +74,4 @@ witsGWAS is offered under the MIT license. See LICENSE.txt.
 `git clone https://github.com/h3abionet/h3agwas`
 
 ### References
+B
