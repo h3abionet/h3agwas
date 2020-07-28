@@ -12,6 +12,13 @@ h3aGWAS is a simple human GWAS analysis workflow originally built at the [Sydney
 
 ## Documentation 
 
+A
+A
+A
+A
+A
+
+
 Installation, Examples and tutorials for witsGWAS can be found in the wiki
 
 ## Features
