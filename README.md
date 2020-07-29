@@ -6,7 +6,16 @@
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
 
-This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/assoc.nf`
+This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/main.nf`
+
+
+## Brief introduction
+
+In addition to this README we have a detailed tutorial and videos 
+* These can be found at http://www.bioinf.wits.ac.za/gwas
+
+
+
 
 ## What's new :
 * 2020-07-27: News nextflow modules to transform vcf impute format in bimbam[formatdata](formatdata/README.md)
@@ -27,7 +36,7 @@ This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, yo
 ## Background
 
 
-h3aGWAS is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). h3aGWAS uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
+H3Agwas is a simple human GWAS analysis workflow for data quality control (QC) and basic association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). H3Agwas uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
 
 
 The original version of the H3Agwas was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.  
@@ -38,11 +47,6 @@ We have moved all scripts from Python 2 to Python 3, so you will need to have Py
 _Please ignore the Wiki in this version which refers to version 1_
 
 
-## Brief introduction
-
-In addition to this README we have the following material available
-* A short video overview of the pipeline can be found at http://www.bioinf.wits.ac.za/gwas/h3agwas.mp4
-* A handout from a lecture can be found at http://www.bioinf.wits.ac.za/gwas/gwas-comp-handout.pdf
 
 
 ## Outline of documentation
@@ -146,7 +150,7 @@ We expect that many of our users will use Docker. However, we recognise that thi
 
 Similarily we support Singularity. Although it's a new feature, we've tested it two different organisaitons and it's worked flawlessly
 
-# 2. Installing h3aGWAS
+# 2. Installing H3Agwas
 
 ## 2.1 Background
 
@@ -162,13 +166,13 @@ We now explore these in details
 ## 2.2 Pre-requisites
 
 **All** modes of h3agwas have the following requirements
-* Java 8
+* Java 8 or later
 * Nextflow. To install Nextflow, run the command below. It creates a _nextflow_ executable in the directory you ran the command. Move the executable to a directory on the system or user PATH and make it executable. You need to be running Nextflow 27 (January 2018) or later.
     `curl -fsSL get.nextflow.io | bash`
 
   If you don't have curl (you can use wget)
 
-* Git 
+* Git (this probably is already installed)
 
 ## 2.3 Installing with Docker or Singularity
 
@@ -186,7 +190,7 @@ The following code needs to be installed and placed in a directory on the user's
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
 * python 3.6 or later. pandas, numpy, scipy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
-If you want to run the `assoc` pipeline then you should install gemma if you are using those options.
+If you want to run the `assoc` pipeline then you should install gemma,fastlmm if you are using those options.
 
 ## 2.5 Installing the workflow
 
@@ -201,15 +205,15 @@ To download the workflow you can say
 If we update the workflow, the next time you run it, you will get a warning message. You can do another pull to bring it up to date.
 
 If you manage the workflow this way, you will run the scripts, as follows
-* `nextflow run h3abionet/h3agwas/call2plink ..... `
-* `nextflow run h3abionet/h3agwas/qc ..... `
-* `nextflow run h3abionet/h3agwas/assoc ..... `
+* `nextflow run h3abionet/h3agwas/call2plink/main.nf ..... `
+* `nextflow run h3abionet/h3agwas/qc/main.nf ..... `
+* `nextflow run h3abionet/h3agwas/assoc/main.nf ..... `
 
 ### 2.5.2 Managing with Git
 
 Change directory where you want to install the software and say
 
-    `git clone https://github.com/h3abionet/h3agwas.git`
+    git clone https://github.com/h3abionet/h3agwas.git
 
 This will create a directory called _h3agwas_ with all the necesssary code.
 If you manage the workflow this way, you will run the scripts this way:
@@ -225,7 +229,7 @@ where _SOME-PATH_ is a relative or absolute path to where the workflow was downl
 
 This section shows a simple run of the `qc` pipeline that
 should run out of the box if you have installed the software or
-Docker. More details and general configuration will be shown later.
+Docker or Singularity. More details and general configuration will be shown later.
 
 This section illustrates how to run the pipeline on a small sample data
 file with default parameters.  For real runs, the data to be analysed
@@ -233,27 +237,30 @@ and the various parameters to be used are specified in the
 _nextflow.config_ files in assoc, qc and call2plink folder.  The details will be explained in another
 section.
 
-If you have downloaded the software using Git, you can find the sample data in the directory. Otherwise you can download the files from http://www.bioinf.wits.ac.za/gwas/sample.zip and unzip
 
-
-The sample data to be used is in the _input_ directory (in PLINK
-format as _sampleA.bed_, _sampleA.bim_, _sampleA.fam_). The default
+Our quick start example will fetch the data from an Amazon S3 bucket,
+but if you'd prefer then you use locally installed sample. If you have
+downloaded the software using Git, you can find the sample data in the
+directory. Otherwise you can download the files from
+http://www.bioinf.wits.ac.za/gwas/sample.zip and unzip The sample data
+to be used is in the _input_ directory (in PLINK format as
+_sampleA.bed_, _sampleA.bim_, _sampleA.fam_). The default
 _nextflow.config_ file uses this, and so you can run the workflow
-through with this example. Note that this is a very small PLINK data set 
-with no X-chromosome information and no sex checking is done.
-
-
+through with this example. Note that this is a very small PLINK data
+set with no X-chromosome information and no sex checking is done.
 
 
 ## 3.1 Running on your local computer 
 
-This requires that all software dependancies have been installed. 
+This requires that all software dependancies have been installed (see later for singularity or docker) 
 
 ### 3.1.1 If you downloaded using Nextflow
 
 We also assume the _sample_ directory with data is in the current working directory
 
-`nextflow run h3abionet/h3agwas/qc`
+`nextflow run h3abionet/h3agwas/qc/main.nf --input_dir=s3://h3abionet/sample`
+
+If you have downloaded the sample data and the directory with the sample data is a sub-directory of your working directory, you could just say: `nextflow run h3abionet/h3agwas/qc/main.nf --input_dir=s3://h3abionet/sample`
 
 
 ### 3.1.2 If you downloaded using Git
@@ -281,18 +288,19 @@ There are many other options that can be passed on the the command-line. Options
 
 ## 3.3 Running with Docker on your local computer
 
-Execute 
+Just add `-profile docker` to your run command -- for example, 
 
-`nextflow run  qc -profile docker`
+* `nextflow run  qc -profile docker`   or
+* `nextflow run h3abionet/h3agwas/qc/main.nf --input_dir=s3://h3abionet/sample`
 
 Please note that the _first_ time you run the workflow using Docker,  the Docker images will be downloaded. *Warning:* This will take about 1GB of bandwidth which will consume bandwidth and will take time depending on your network connection. It is only the first time that the workflow runs that the image will be downloaded.
 
 
 More options are shown later.
 
-##3.4 Running multiple workflows at the same time
+## 3.4 Running multiple workflows at the same time
 
-You may at some point want to run multiple, _independent_ workflows at the same time (e.g. different data). This is possible. However, each run should be started in a different working directory. You can refer to the scripts and even the data in the same diretory, but the directories from which you run the `nextflow run` command should be different.
+You may at some point want to run multiple, _independent_ executions of the workflows at the same time (e.g. different data). This is possible. However, each run should be started in a different working directory. You can refer to the scripts and even the data in the same diretory, but the directories from which you run the `nextflow run` command should be different.
 
 
 # 4 The Nextflow configuration file
@@ -318,11 +326,11 @@ your config files.
 
 You can use the _-c_ option specify another configuration file in addition to the nextflow.config file
 
-```nextflow run -c data1.config qc``
+```nextflow run -c data1.config qc```
 
 
 **This is highly recommended.** We recommend that you keep the `nextflow.config` file as static as possible, perhaps not even modifying it from the default config. Then  for any
- run or data set, have a much smaller config file that only specifies the changes you want made. The base `nextflow.config` file will typically contain config options that are best set by the h3aGWAS developers (e.g., the names of the docker containers) or default GWAS options that are unlikely to change. In your separate config file, you will specify the run-specific options, such as data sets, directories or particular GWAS parameters you want. Both configuration files should be specified. For example, suppose I create a sub-directory within the directory where the nextflow file is (probably called h3agwas). Within the h3agwas directory I keep my nexflow.config file and the nextflow file itself. From the sub-directory, I run the workflow by saying:
+ run or data set, have a much smaller config file that only specifies the changes you want made. The base `nextflow.config` file will typically contain config options that are best set by the H3Agwas developers (e.g., the names of the docker containers) or default GWAS options that are unlikely to change. In your separate config file, you will specify the run-specific options, such as data sets, directories or particular GWAS parameters you want. Both configuration files should be specified. For example, suppose I create a sub-directory within the directory where the nextflow file is (probably called h3agwas). Within the h3agwas directory I keep my nexflow.config file and the nextflow file itself. From the sub-directory, I run the workflow by saying:
 
 ```nextflow run  -c data1.config ../qc```
 
@@ -626,14 +634,14 @@ Set up your other config files as required. Note that data you wish to process  
 Run the job (in this example the _qc_ worfklow).  You need to specify the s3 bucket to be used and also the `awsbatch` profile
 
 ```
-nextflow run -c aws.config -c job.job qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
+nextflow run -c aws.config -c job.config qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
 ```
 
-#6. Dealing with errors
+# 6. Dealing with errors
 
 One problem with our current workflow is that error messages can be obscure. Errors can be caused by
 * bugs in our code
-* you doing something odd
+* your doing something odd
 
 There are two related problems. When a Nextflow script fails for some reason, Nextflow prints out in _great_ detail what went wrong. Second, we don't always catch mistakes that the user makes gracefully.
 
@@ -767,13 +775,21 @@ We acknowledge funding by the National Institutes of Health through the NHGRI (U
 
 ### Authors
 
-Scott Hazelhurst, Jean-Tristan Brandenburg, Lerato E. Magosi, Shaun Aron, Rob Clucas,  Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
+Current team: Scott Hazelhurst, Jean-Tristan Brandenburg, Lindsay Clark, Obokula Smile, Michael Ebo Turkson, Michael Thompson, 
 
-We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine.
+H3ABioNet Pipelines team leadership: Christopher Fields,  Shakuntala Baichoo, Sumir Panji, Gerrit Botha.
 
-### License
+
+Past members and contributors: Lerato E. Magosi, Shaun Aron, Rob Clucas,  Eugene de Beste, Aboyomini Mosaku, Don Armstrong and the Wits Bioinformatics team
+
+We thank Harry Noyes from the University of Liverpool and Ayton Meintjes from UCT who both spent significant effort being testers of the pipleine, and the many users at the Sydney Brenner Institute for Molecular Bioscience for their patience and suggestion.
+
+### Licence
 This software is licensed under the MIT Licence.
 
+### Funding
+
+We acknowledge the support from the NIH NHGRI H3ABioNet (U24HG006941)   and AWI-Gen   (U54HG006938)
 
 ### Download
 

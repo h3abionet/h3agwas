@@ -151,26 +151,26 @@ ldsc_mem_req=params.ldsc_mem_req
 params.help = false
 
 def getConfig = {
-  all_files = workflow.configFiles.unique()
+ all_files = workflow.configFiles.unique()
   text = ""
   all_files.each { fname ->
-      base = fname.baseName
-      curr = "\n\n*-subsection{*-protect*-url{$base}}@.@@.@*-footnotesize@.@*-begin{verbatim}"
-      file(fname).eachLine { String line ->
-        if (line.contains("secretKey")) { line = "secretKey='*******'" }
-        if (line.contains("accessKey")) { line = "accessKey='*******'" }
-        curr = curr + "@.@"+line
-      }
-      curr = curr +"@.@*-end{verbatim}\n"
-      text = text+curr
+   base = fname.baseName
+    curr = "\n\n*-subsection{*-protect*-url{$base}}@.@@.@*-footnotesize@.@*-begin{verbatim}"
+    file(fname).eachLine { String line ->
+     if (line.contains("secretKey")) { line = "secretKey='*******'" }
+     if (line.contains("accessKey")) { line = "accessKey='*******'" }
+     curr = curr + "@.@"+line
+    }
+   curr = curr +"@.@*-end{verbatim}\n"
+    text = text+curr
   }
-  return text
+ return text
 }
 
 // Checks if the file exists
 checker = { fn ->
-   if (fn.exists())
-       return fn;
+ if (fn.exists())
+  return fn;
     else
        error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
@@ -186,19 +186,19 @@ println "Testing for gwas file : ${params.file_gwas}\n"
 //////
 
 if(params.ldsc_h2==1){
-println "ldsc_h2"
-if(params.file_gwas==""){
-error("\n\n------\nbCan't do ldsc without file_gwas\n\n---\n")
-}
-gwas_file_ldsc=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}
-if(params.head_n=="" && params.Nind==0){
+ println "ldsc_h2"
+ if(params.file_gwas==""){
+  error("\n\n------\nbCan't do ldsc without file_gwas\n\n---\n")
+ }
+ gwas_file_ldsc=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}
+ if(params.head_n=="" && params.Nind==0){
        error("\n\n------\nheader_n or Nind paramaters must be allowed\n\n---\n")
-}
-if(params.dir_ref_ld_chr==""){
+ }
+ if(params.dir_ref_ld_chr==""){
        error("\n\n------\ndir_ref_ld_chr must be allowed with full path\n\n---\n")
 
-}
-process DoLDSC{
+ }
+ process DoLDSC{
    memory ldsc_mem_req
    input :
       file(gwas) from gwas_file_ldsc
@@ -216,13 +216,13 @@ process DoLDSC{
 }
 }
 if(params.ldsc_h2_multi==1){
-println "ldsc_h2_multi"
-if(params.file_gwas==""){
-error("---------------\n ldsc_h2_multi=1 and file_gwas is null\n\n---------------")
-}
-gwas_file_1 = Channel.fromPath(params.file_gwas.split(",")[0])
-if(params.list_snp==""){
-process GetSnpList{
+ println "ldsc_h2_multi"
+ if(params.file_gwas==""){
+  error("---------------\n ldsc_h2_multi=1 and file_gwas is null\n\n---------------")
+ }
+ gwas_file_1 = Channel.fromPath(params.file_gwas.split(",")[0])
+ if(params.list_snp==""){
+  process GetSnpList{
    time params.big_time
    input :
       file(gwas) from gwas_file_1
@@ -231,66 +231,61 @@ process GetSnpList{
    script :
      out="info_poschro.list"
      """
-     ma_extract_rsid.py --input_file $gwas --out_file $out --info_file rsID:${params.head_rs},A1:${params.head_A1},A2:${params.head_A2}	--ldsc
+     ma_extract_rsid.py --input_file $gwas --out_file $out --info_file rsID:${params.head_rs},A1:${params.head_A1},A2:${params.head_A2} --ldsc
      """
-}
-}else{
-list_file_pos=Channel.fromPath(params.list_snp)
-}
+  }
+ }else{
+  list_file_pos=Channel.fromPath(params.list_snp)
+ }
 
-//list_gwas_multi=params.file_gwas.split(",").each{file(it)}.combine(list_file_pos)
-//println list_gwas_multi
-// toList? work als
-list_gwas_multi=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(list_file_pos)
-
-process FormatLDSC{
+  list_gwas_multi=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(list_file_pos)
+  process FormatLDSC{
    time params.big_time
    memory ldsc_mem_req
    input :
-      set file(gwas), file(infopos) from list_gwas_multi
+    set file(gwas), file(infopos) from list_gwas_multi
    output :
-     file("$out"+".sumstats.gz") into (list_gwas_formatldsc, list_gwas_formatldsc2)
+    file("$out"+".sumstats.gz") into (list_gwas_formatldsc, list_gwas_formatldsc2)
    script :
-     out=gwas.baseName.replace('_','-')
-     NInfo=params.head_n=="" ? " --N ${params.Nind} " : "--N-col ${params.head_n} " 
-     """
-     ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp ${params.head_rs} --p ${params.head_pval} \
-     --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --merge-alleles $infopos 
-     """
-}
+    out=gwas.baseName.replace('_','-')
+    NInfo=params.head_n=="" ? " --N ${params.Nind} " : "--N-col ${params.head_n} " 
+    """
+    ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp ${params.head_rs} --p ${params.head_pval} \
+    --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --merge-alleles $infopos 
+    """
+  }
 
-
-list_gwas_formatldsc3=list_gwas_formatldsc.collect()
-process DoCorrLDSC{
-   time params.big_time
-   memory ldsc_mem_req
-   input :
-     file(listfilegwas) from list_gwas_formatldsc3
-   publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
+ list_gwas_formatldsc3=list_gwas_formatldsc.collect()
+ process DoCorrLDSC{
+  time params.big_time
+  memory ldsc_mem_req
+  input :
+   file(listfilegwas) from list_gwas_formatldsc3
+  publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
    each pos from 1..params.file_gwas.split(",").size()
-   output :
-     file("$out"+".log")
-   script :
-     filegwas=listfilegwas[pos-1]
-     listfilegwas.remove((pos-1))
-     listfil=filegwas+","+listfilegwas.join(',')
-     out = filegwas.baseName.replace('_','-')+"_ldsc_mc"
-     println listfil
-     println filegwas
-     """
-     ${params.ldsc_bin} --rg $listfil \
-     --ref-ld-chr ${params.dir_ref_ld_chr}\
-     --w-ld-chr  ${params.dir_ref_ld_chr} \
-     --out  $out
-     """ 
-}
+  output :
+    file("$out"+".log")
+  script :
+    filegwas=listfilegwas[pos-1]
+    listfilegwas.remove((pos-1))
+    listfil=filegwas+","+listfilegwas.join(',')
+    out = filegwas.baseName.replace('_','-')+"_ldsc_mc"
+    println listfil
+    println filegwas
+    """
+    ${params.ldsc_bin} --rg $listfil \
+    --ref-ld-chr ${params.dir_ref_ld_chr}\
+    --w-ld-chr  ${params.dir_ref_ld_chr} \
+    --out  $out
+    """ 
+  }
 }
 
 
-  /*
+/*
    @Input
-   args: cofactor args separate by a comma
-   infoargs: type of cofactor separate by a comma : 0 for qualitative, 1 for quantitative
+args: cofactor args separate by a comma
+infoargs: type of cofactor separate by a comma : 0 for qualitative, 1 for quantitative
    output : cofactor for boltlmm was formating to take account qualitative and quantitative
    */
    def boltlmmCofact(args,infoargs) {
@@ -330,7 +325,7 @@ process DoCorrLDSC{
 //////
 
 if(params.bolt_h2){
-    println "ldsc_bolt_h2"
+    println "bolt_h2"
     bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
     bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
     fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()

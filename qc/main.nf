@@ -3,7 +3,7 @@
 /*
  * Authors       :
  *
- *
+ *      Jean-Tristan Brandenburg
  *      Shaun Aron
  *      Rob Clucas
  *      Eugene de Beste
@@ -13,12 +13,13 @@
  *      Abayomi Mosaku
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2018
+ *  2015-2020
  *
  *
  * Description  : Nextflow pipeline for Wits GWAS.
  *
- *(C) University of the Witwatersrand, Johannesburg, 2016-2018 on behalf of the H3ABioNet Consortium
+ *(C) University of the Witwatersrand, Johannesburg, 2016-2020
+ *    on behalf of the H3ABioNet Consortium
  *This is licensed under the MIT Licence. See the "LICENSE" file for details
  */
 
@@ -29,6 +30,18 @@ import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
 
 
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
+}
+
+    
 
 
 
@@ -67,7 +80,7 @@ nullfile = [false,"False","false", "FALSE",0,"","0","null",null]
 
 def checkColumnHeader(fname, columns) {
   if (workflow.profile == "awsbatch") return;
-  if (fname.contains("s3://")) return;
+  if (fname.toString().contains("s3://")) return;
   if (nullfile.contains(fname)) return;
   new File(fname).withReader { line = it.readLine().tokenize() }  
   problem = false; 
@@ -131,7 +144,7 @@ else
   wflowversion="A local copy of the workflow was used"
 
 report = new LinkedHashMap()
-repnames = ["dups","initmaf","inithwe","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1","poorgc10"]
+repnames = ["dups","initmaf","inithwe","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1","poorgc10"]
 
 
 
@@ -171,6 +184,7 @@ remove_on_bp    = params.remove_on_bp
 allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10"]
 
 
+
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
     	println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
@@ -192,6 +206,8 @@ if (params.help) {
   }
   System.exit(-1)
 }
+
+
 
 def getSubChannel = { parm, parm_name, col_name ->
   if ((parm==0) || (parm=="0") || (parm==false) || (parm=="false")) {
@@ -223,12 +239,14 @@ def fromPathReplicas = { fname, num ->
 
 
 
-
 if (params.case_control) {
   ccfile = params.case_control
   Channel.fromPath(ccfile).into { cc_ch; cc2_ch }
   col    = params.case_control_col
   diffpheno = "--pheno cc.phe --pheno-name $col"
+  if (params.case_control.toString().contains("s3://")) {
+       println "Case control file is in s3 so we can't check it"
+  } else 
   if (! file(params.case_control).exists()) {
      error("\n\nThe file <${params.case_control}> given for <params.case_control> does not exist")
     } else {
@@ -281,22 +299,28 @@ if ( nullfile.contains(params.sexinfo_available) ) {
 
 
 
-
-
-
-
-
 /* Get the input files -- could be a glob
  * We match the bed, bim, fam file -- order determined lexicographically
  * not by order given, we check that they exist and then 
  * send the all the files to raw_ch and just the bim file to bim_ch */
 inpat = "${params.input_dir}/${params.input_pat}"
 
+
+
+if (inpat.contains("s3://")) {
+  print "Here"
+  this_checker = { it -> return it}
+} else {
+  this_checker = checker
+}
+
 Channel
-   .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true){ file -> file.baseName }  \
+   .fromFilePairs("${inpat}.{bed,bim,fam}",size:3, flat : true)
+    { file -> file.baseName }  \
       .ifEmpty { error "No matching plink files" }        \
-      .map { a -> [checker(a[1]), checker(a[2]), checker(a[3])] }\
+      .map { a -> [this_checker(a[1]), this_checker(a[2]), this_checker(a[3])] }\
       .separate(raw_ch, bim_ch, inpmd5ch) { a -> [a,a[1],a] }
+
   
 
 
@@ -410,8 +434,6 @@ process removeDuplicateSNPs {
   input:
   set file(bed), file(bim), file(fam) from raw_ch
   file(dups) from  duplicates_ch
-  publishDir params.output_dir, pattern: "$logfile", \
-             overwrite:true, mode:'copy'
 
   output:
     set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
@@ -491,8 +513,7 @@ process identifyIndivDiscSexinfo {
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     file(logfile) into  report["failedsex"]
-     file(logfile) into  failed_sex_ch1
+     file(logfile) into  (rep_failed_sex_ch, failed_sex_ch1)
      set file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
      file("${base}.hwe") into hwe_stats_ch
   validExitStatus 0, 1
@@ -516,7 +537,7 @@ process identifyIndivDiscSexinfo {
      """
 }
 
-
+report["failedsex"] = rep_failed_sex_ch
 
 process generateSnpMissingnessPlot {
   memory other_mem_req
@@ -704,8 +725,7 @@ process findRelatedIndiv {
      file (missing) from ind_miss_ch2
      file (ibd_genome) from find_rel_ch
   output:
-     file(outfname) into (related_indivs_ch1,related_indivs_ch2) // removeRel, batchReport
-     file(outfname) into report["related"]
+     file(outfname) into (related_indivs_ch1,related_indivs_ch2, rep_rel_ch) 
   publishDir params.output_dir, overwrite:true, mode:'copy'
   script:
      base = missing.baseName
@@ -713,6 +733,7 @@ process findRelatedIndiv {
      template "removeRelInds.py"
 }
 
+report["related"] = rep_rel_ch
 
 process calculateSampleHeterozygosity {
    memory plink_mem_req
@@ -720,7 +741,6 @@ process calculateSampleHeterozygosity {
       file(nodups) from qc2C_ch
 
    publishDir params.output_dir, overwrite:true, mode:'copy'
-
    output:
       set file("${hetf}.het"), file("${hetf}.imiss") into (hetero_check_ch, plot1_het_ch)
       file("${hetf}.imiss") into missing_stats_ch
@@ -755,8 +775,7 @@ process getBadIndivsMissingHet {
   input:
     set file(het), file(imiss) from hetero_check_ch
   output:
-    file(outfname) into failed_miss_het
-    file(outfname) into report["misshetremf"]
+    file(outfname) into (failed_miss_het, fmreport)
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.txt"
   script:
     base = het.baseName
@@ -764,7 +783,7 @@ process getBadIndivsMissingHet {
     template "select_miss_het_qcplink.py"
 }
 
-
+report["misshetremf"] = fmreport
 
 
 
@@ -859,11 +878,10 @@ process removeSkewSnps {
   input:
     file (plinks) from qc3B_ch
     file(failed) from skewsnps_ch
-  publishDir params.output_dir, overwrite:true, mode:'copy'
+  publishDir params.output_dir, overwrite:true, mode:'copy'  
   output:
-    file("${output}.{bed,bim,fam}") into (qc4A_ch,qc4B_ch,qc4C_ch)
-    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into report["cleaned"] 
-    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") into forconvertvcf
+    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") \
+      into (qc4A_ch, qc4B_ch, qc4C_ch, qc_rep_ch)
   script:
   base = plinks[0].baseName
   output = params.output.replace(".","_")
@@ -872,16 +890,19 @@ process removeSkewSnps {
   """
 }
 
+
+report["cleaned"] = qc_rep_ch
+
 process convertInVcf {
    memory plink_mem_req
    cpus max_plink_cores
    input :
-    file(plink) from forconvertvcf
+     set file(bed), file(bim), file(fam), file (log) from qc4A_ch
    publishDir params.output_dir, overwrite:true, mode:'copy'
    output :
     file("${base}.vcf")  
    script:
-     base= plink[0].baseName
+     base= bed.baseName
      """
      plink --bfile ${base} --threads ${max_plink_cores} --recode vcf --out $base
      """
@@ -892,7 +913,7 @@ process convertInVcf {
 process calculateMaf {
   memory plink_mem_req
   input:
-    file(plinks) from qc4C_ch
+    set  file(bed), file(bim), file(fam), file(log) from qc4C_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.frq"
 
@@ -900,7 +921,7 @@ process calculateMaf {
     file "${base}.frq" into maf_plot_ch
 
   script:
-    base = plinks[0].baseName
+    base = bed.baseName
     out  = base.replace(".","_")
     """
       plink --bfile $base $sexinfo  --freq --out $out
@@ -965,15 +986,12 @@ process generateHwePlot {
 process outMD5 {
   memory other_mem_req
   input:
-     file plink from qc4B_ch
+     set file(bed), file(bim), file(fam), file(log) from qc4B_ch
   output:
      file(out) into report["outmd5"]
   echo true
   script:
-       bed = plink[0]
-       bim = plink[1]
-       fam = plink[2]
-       out  = "${plink[0].baseName}.md5"
+       out  = "${bed.baseName}.md5"
        template "md5.py"
 }
 
@@ -1047,4 +1065,9 @@ process produceReports {
 }
 
 
-final_ch.subscribe { b=it.baseName; println "The output report is called ${params.output_dir}/${b}.pdf"}
+
+final_ch.subscribe { b=it.baseName; 
+  new File("emptyZ0batch.txt").delete();
+  new File("emptyZ0pheno.txt").delete();
+  new File("xxemptyZ0pheno.txt").delete();
+  println "The output report is called ${params.output_dir}/${b}.pdf"}

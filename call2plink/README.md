@@ -41,7 +41,7 @@ e.g. `params.input_pat = "*gtReport*.csv.gz"`
 
 e.g. `params.output = "cvd-rawcalls"`
 
-* `manifest`: The chip manifest file. This is crucial. You can find examples here: https://support.illumina.com/downloads.html, but you may have to ask Illumina for the correct vrsion.
+* `manifest`: The chip manifest file. This is crucial. You can find examples here: https://emea.illumina.com/products/by-type/microarray-kits.html, but you may have to ask Illumina for the correct vrsion.
 
 * `chipdescription`: this is a standard file produced by Illumina for your chip which contains not only the chromosome/coordinate of each SNP but also the genomic position (measured in centimorgans). If you don't have this -- give the manifest file. All will work except your bim files will not contain genonomic positoin
 

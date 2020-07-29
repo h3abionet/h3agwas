@@ -50,6 +50,7 @@ params.gwama_bin='GWAMA'
 params.mrmega_bin='MR-MEGA'
 params.metasoft_bin="/opt/bin/Metasoft.jar"
 
+params.ma_mrmega_pc=2
 params.ma_random_effect=1
 params.ma_genomic_cont=0
 params.ma_inv_var_weigth=0
@@ -61,7 +62,6 @@ params.big_time = '1000h'
 params.metasoft_pvalue_table="/opt/bin/HanEskinPvalueTable.txt"
 params.ma_metasoft_opt=""
 
-params.ma_mrmega_pc=4
 params.ma_mrmega_opt=""
 
 params.covariates=""
@@ -152,7 +152,7 @@ liste_file_mrmega=liste_file_mrmega.collect()
 
 
 if(params.gwama==1){
-  //config channel
+ h//config channel
   process doGWAMA {
      label 'metaanalyse'
      memory gwama_mem_req
@@ -225,7 +225,7 @@ if(params.mrmega==1){
     script:
       out = "mrmega"
       """
-      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header "rs_number" --pval_header "p-value" --beta_header "beta" --info_prog "MRMEGA"
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header "MarkerName" --pval_header "P-value_association" --beta_header "lnBF" --info_prog "MRMEGA"
       """
   }
   report_ch = report_ch.flatten().mix(report_mrmega.flatten())

@@ -60,6 +60,7 @@ def parseArguments():
     parser.add_argument('--chro',type=str,required=False, help="list rs", default="")
     parser.add_argument('--begin',type=float,required=False, help="list rs")
     parser.add_argument('--end',type=float,required=False, help="list rs")
+    parser.add_argument('--min_pval',type=float,required=False, help="list rs")
     parser.add_argument('--chro_header',type=str,required=True,help="chro header in inp files")
     parser.add_argument('--n_header',type=str,required=False,help="chro header in inp files")
     parser.add_argument('--pos_header',type=str,required=True,help="pos header in inp files")
@@ -109,6 +110,8 @@ TAB=chr(9)
 
 listbim=extractinfobim(chro, begin,end,args.bfile+".bim")
 small=result[(result[args.chro_header]==chro) & (result[args.pos_header]>=begin) & (result[args.pos_header]<=end)]
+if args.min_pval and small[args.p_header].min()> args.min_pval:
+   sys.exit('min pval '+str(args.min_pval)+'>'+' min(p) '+ str(small[args.p_header].min()))
 small=small.loc[small[args.pos_header].isin(listbim)]
 
 if args.n : 

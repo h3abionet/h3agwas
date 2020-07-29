@@ -166,9 +166,10 @@ process ExtractPositionGwas{
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     bfile=bed.baseName
     """
-    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nheader $nvalue --bin_plk ${params.plink_bin}
+    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --freq_header  ${params.head_freq} --bim_file  $bim --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  --n ${params.n_pop} --min_pval ${params.threshold_p}
     """
 }
+
 
 process SubPlink{
   input :
@@ -353,6 +354,7 @@ process GetGenesInfo{
 }else{
 genes_file_ch=Channel.fromPath(params.genes_file)
 }
+
 
 if(params.gwas_cat==""){
        error("\n\n------\nError no file for gwas catalgo\n---\n")

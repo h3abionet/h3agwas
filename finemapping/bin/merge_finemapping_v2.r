@@ -115,6 +115,7 @@ listhead<-'log10bf_fm'
 }else if(!is.null(opt[['listfinemap']])){
 listfile<-read.table(opt[['listfinemap']], stringsAsFactors=F)
 listhead<-c()
+cat(nrow(listfile))
 for(CmtF in 1:nrow(listfile)){
 if(length(readLines(listfile$V2[CmtF]))>0){
 Head<-listfile$V1[CmtF]
@@ -206,7 +207,7 @@ listheadplot<-c(listheadplot,'p_caviarbf')
 
 ## fine mapping
 tmpfm<-getfm(datainwork, opt)
-print("boon")
+
 datainwork<-tmpfm[['data']]
 listheadprint=c(listheadprint , gsub("log10bf_" ,"", tmpfm[['listhead']]))
 listheadplot<-c(listheadplot,tmpfm[['listhead']])

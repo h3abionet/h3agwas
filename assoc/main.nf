@@ -1264,20 +1264,29 @@ if (params.plink_gxe==1) {
 // ${params.gcta64_bin} --grm test_grm --make-bK-sparse 0.05 --out test_sp_grm
 //
 if(params.fastgwa==1){
+     if(params.file_rs_buildrelat==""){
+        filers_matrel_mat_fast_GWA=file('NO_FILE')
+     }else{
+        filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat)
+     }
+
 process FastGWADoGRM{
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
     input :
      set file(bed),file(bim),file(fam) from grlm_assoc_ch
+     file file_rs from filers_matrel_mat_GWA
    each mpart from 1..params.grm_nbpart
    output : 
     file("mgrm.part_*.grm.id") into idgrm
     file("mgrm.part_*.grm.bin") into bingrm
     file("mgrm.part_*.grm.N.bin") into nbingrm
    script :
+     rs_list = params.file_rs_buildrelat!="" ? " --extract  $file_rs " : ""
+
      base   = bed.baseName
      """
-     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_cpus} --out mgrm
+     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_cpus} --out mgrm $rs_list
      """
 
 
