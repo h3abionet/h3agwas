@@ -80,7 +80,7 @@ params.gwas_cat = ""
 params.cut_maf=0.01
 params.plink_mem_req="6GB"
 
-params.other_mem_req="10GB"
+params.other_mem_req="20GB"
 
 // gcta parameters
 params.gcta_mem_req="15GB"
