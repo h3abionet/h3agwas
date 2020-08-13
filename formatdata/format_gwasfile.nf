@@ -170,7 +170,7 @@ process MergeRsGwasChro{
       file(outmerge) into gwas_rsmerge
     script :
      outmerge="merge_"+chro+".gwas"
-     bfileopt= (params.input_pat!="" && params.input_dir!="") ?  " --bfile "+bed.baseName : ""
+     bfileopt= (params.input_pat!="" || params.input_dir!="") ?  " --bfile "+bed.baseName : ""
      Nheadopt=(params.head_N!="") ? " --N_head ${params.head_N} " : ""
      Freqheadopt=(params.head_freq!="") ? " --freq_head ${params.head_freq} " : ""
 

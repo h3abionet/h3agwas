@@ -166,7 +166,7 @@ process ExtractPositionGwas{
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     bfile=bed.baseName
     """
-    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --freq_header  ${params.head_freq} --bim_file  $bim --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  --n ${params.n_pop} --min_pval ${params.threshold_p}
+    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --freq_header  ${params.head_freq} --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  --n ${params.n_pop} --min_pval ${params.threshold_p}
     """
 }
 
