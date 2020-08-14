@@ -288,7 +288,7 @@ if(params.metasoft==1){
       //file(file_pvaltab) from filepvaltable
     publishDir "${params.output_dir}/metasoft", overwrite:true, mode:'copy'
     output :
-      set file("${out}.meta"),file("${out}.res"),file("${out}.log"), file("${out}.files"), file("${out}.format.res")
+      set file("${out}.meta"),file("${out}.res"),file("${out}.log"), file("${out}.files"), file("${out}.format.res"), file("${out}.pivot")
       file("${out}.format.res")  into res_metasoft
     script :
       out = "metasoft_res"

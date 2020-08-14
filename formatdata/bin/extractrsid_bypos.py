@@ -70,7 +70,7 @@ if args.chr :
        spla2=spl[posa2].split(',')
        if ((chrodic[infopos][0] in spla1) and (chrodic[infopos][1] in spla2)) or  ((chrodic[infopos][0] in spla2) and (chrodic[infopos][1] in spla1)) :
           write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs] +" "+spl[posa1]+'\n')
-       #chrolist.remove(infopos)
+          chrolist.remove(infopos)
      #if len(chrolist)==0 :
      #  break
 else :
@@ -84,7 +84,7 @@ else :
        spla2=spl[posa2].split(',')
        if (chrodic[infopos][0] in spla1 and chrodic[infopos][1] in spla2) or  (chrodic[infopos][0] in spla2 and chrodic[infopos][1] in spla1) :
          write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs]+" "+spl[posa1]+'\n')
-       #chrolist.remove(infopos)
+         chrolist.remove(infopos)
      #if len(chrolist)==0 :
      #  break
 
