@@ -1,5 +1,5 @@
 
-<img src="aux/H3ABioNetlogo2.jpg"/>
+<img src="auxfiles/H3ABioNetlogo2.jpg"/>
 
 # H3Agwas Pipeline Version 3
 
@@ -47,6 +47,11 @@ We have moved all scripts from Python 2 to Python 3, so you will need to have Py
 _Please ignore the Wiki in this version which refers to version 1_
 
 
+## Questions and feeback
+
+Problems with the workflow should be raised as a GitHub repo. (If you think the probem is the workflow)
+
+If you need help with using the workflow, please log a call with the [H3A Help Disk](https://www.h3abionet.org/categories/communications/helpdesk)
 
 
 ## Outline of documentation
@@ -737,7 +742,7 @@ Nextflow has great options for showing resourc usage. However, you have to remem
 Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
 
 
-`python3 make_ref.py aux/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
+`python3 make_ref.py auxfiles/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
 
 
 The program checks each SNP given in the manifest file by the chromosome and position number and then checks that the probe given in the manifest file actually matches the reference genome at that point. Minor slippage is acceptable because of indels.
@@ -764,6 +769,13 @@ In our example, we assumed the ID can found in the column "Institute Sample Labe
 
 
 # 8. Acknowledgement, Copyright and general
+
+## Citing this workflow
+
+If you use this workflow, please cite the following paper
+
+* Baichoo S, Souilmi Y, Panji S, Botha G, Meintjes A, Hazelhurst S, Bendou H, De Beste E, Mpangase P, Souiai O, Alghali M, Yi L, O'Connor B, Crusoe M, Armstrong D, Aron S, Joubert D, Ahmed A, Mbiyavanga M, Van Heusden P, Magosi, L, Zermeno, J, Mainzer L, Fadlelmola F, Jongeneel CV, and Mulder N. (2018) Developing reproducible bioinformatics analysis workflows for heterogenous computing environments to support African genomics, *BMC Bioinformatics* **19**, 457, 13 pages, doi:10.1186/s12859-018-2446-1.
+
 
 ## Acknowledgement
 
@@ -795,4 +807,4 @@ We acknowledge the support from the NIH NHGRI H3ABioNet (U24HG006941)   and AWI-
 
 `git clone https://github.com/h3abionet/h3agwas`
 
-### References
+
