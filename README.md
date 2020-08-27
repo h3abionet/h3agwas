@@ -49,7 +49,7 @@ _Please ignore the Wiki in this version which refers to version 1_
 
 ## Questions and feeback
 
-Problems with the workflow should be raised as a GitHub repo. (If you think the probem is the workflow)
+Problems with the workflow should be raised as an issue on this  GitHub repo. (If you think the probem is the workflow)
 
 If you need help with using the workflow, please log a call with the [H3A Help Disk](https://www.h3abionet.org/categories/communications/helpdesk)
 
