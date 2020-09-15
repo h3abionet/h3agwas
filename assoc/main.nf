@@ -147,7 +147,7 @@ params.input_pat  = 'raw-GWA-data'
 params.sexinfo_available = "false"
 
 
-params.plink_mem_req = '750MB' // how much plink needs for this
+params.plink_mem_req = '6GB' // how much plink needs for this
 params.other_process_memory = '10G' // how much other processed need
 
 
