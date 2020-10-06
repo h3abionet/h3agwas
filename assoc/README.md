@@ -65,20 +65,20 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
  * plink gwas option :
     * `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
     * `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
+ * `fastGWA` :  do an analyse with fastGWA (GCTA), specific option [fastGWA manual](https://cnsgenomics.com/software/gcta/#fastGWA)
+   * fastgwa  (if 1 perfom fastGWA, otherwise no [default 0])
+   * `fastgwa_type` : [default : --fastGWA-mlm-exact]
+   * `fastgwa_memory` : memory for fastgwa and grm [default: 10G] 
+   * `fastgwa_cpus` : cpus for fastgw and grm [default: 5]
+   * to build grm :
+    * `grm_nbpart` : nb part to build grm [default : 100]
+    * `gcta64_bin` : binary for gcta64 [default : gcta64] 
+    * `grm_cutoff` : cutoff value for  grm matrix (using option --make-bK-sparse) [default : 100]
 
 with pipeline, do a GxE interaction with Gemma and Plink, arguments :
   * `gxe` : environmental variables to do gxe analysis with `pheno`, must be coded in 1 and 2 for plink
   * `gemma_gxe` : GxE interation with gemma [default : 0], see  `covariates` to add covariates in gemma models
   * `plink_gxe` : GxE interation with plink (see option -gxe, in [plink manual](http://zzz.bwh.harvard.edu/plink/anal.shtml#qtgxe)) [default : 0], no covariate could be provided.
-  * `fastGWA` :  do an analyse with fastGWA (GCTA), specific option [fastGWA manual](https://cnsgenomics.com/software/gcta/#fastGWA)
-    * fastgwa  (if 1 perfom fastGWA, otherwise no [default 0])
-    * to build grm :
-    * `fastgwa_type` : [default : --fastGWA-mlm-exact]
-    * `fastgwa_memory` : memory for fastgwa and grm [default: 10G] 
-    * `fastgwa_cpus` : cpus for fastgw and grm [default: 5]
-    * `grm_nbpart` : nb part to build grm [default : 100]
-    * `gcta64_bin` : binary for gcta64 [default : gcta64] 
-    * `grm_cutoff` : cutoff value for  grm matrix (using option --make-bK-sparse) [default : 100]
 
 
 
