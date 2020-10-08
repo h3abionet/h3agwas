@@ -159,9 +159,9 @@ elif args.form_out == 4 :
       covqual=[]
       cmt=0
       for typecov in splcov:
-         if typecov =="0":
+         if typecov =="1":
              covquant.append(covtmp[cmt])
-         elif typecov== "1":
+         elif typecov== "0":
              covqual.append(covtmp[cmt])
          else :
              print('error : type covariable different of 0 (qualitatif) and 1 (quantitatif) '+typecov)

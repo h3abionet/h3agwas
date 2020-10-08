@@ -689,8 +689,13 @@ if (params.boltlmm == 1) {
   pheno_cols_ch_bolt.flatMap { list_str -> list_str.split() }.tap ( check_bolt) .set { ind_pheno_cols_ch_bolt }
 
 
+  if(params.bolt_covariates_type=="" & params.covariates_type!=""){
+    bolt_covariates_type=params.covariates_type
+  }else{
+  bolt_covariates_type=params.bolt_covariates_type
+  }
    if (params.covariates) 
-      cov_bolt = boltlmmCofact(params.covariates,params.bolt_covariates_type)
+      cov_bolt = boltlmmCofact(params.covariates,bolt_covariates_type)
    else
       cov_bolt= ""
 
