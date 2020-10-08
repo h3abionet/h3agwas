@@ -33,7 +33,7 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_me
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
 ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin"]
 allowed_params+=ParamBolt
-ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin"]
+ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin", "covariates_type"]
 allowed_params+=ParamFast
 /*Gxe : */
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
@@ -140,6 +140,8 @@ params.grm_nbpart=100
 params.gcta64_bin = "gcta64"
 params.fastgwa_type="--fastGWA-mlm-exact"
 params.grm_cutoff =  0.05
+params.covariates_type=""
+params.gcta_grmfile=""
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -422,7 +424,7 @@ if (params.data != "") {
 
 /*JT : Case fastlmm => if yes*/
 if (params.fastlmm == 1) {
-  data_ch_fastlmm = Channel.fromPath(params.data)
+  data_ch_fastlmm = Channel.fromPath(params.data, checkIfExists:true)
   if(params.fastlmmc_bin=="")fastlmmc="fastlmmc"
   else fastlmmc=params.fastlmmc_bin
 
@@ -463,7 +465,7 @@ if (params.fastlmm == 1) {
      if(params.file_rs_buildrelat==""){
         filers_matrel_mat_fast=file('NO_FILE')
      }else{
-        filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat)
+        filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
      }
 
      process getRelForFastLMM {
@@ -661,7 +663,7 @@ if (params.boltlmm == 1) {
   fam_ch_bolt = Channel.create()
   bim_ch_bolt = Channel.create()
   boltlmm_assoc_ch.separate (plink_ch_bolt, fam_ch_bolt, bim_ch_bolt, bim_ch_bolt_snpchoice) { a -> [ a, a[2], a[1],a[1]] }
-  data_ch_bolt = Channel.fromPath(params.data)
+  data_ch_bolt = Channel.fromPath(params.data, checkIfExists:true)
   if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
   else
@@ -711,10 +713,10 @@ if (params.boltlmm == 1) {
       """
   }
   /*    nb_snp= CountLinesFile(base+".bim") */
-  if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps)
+  if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
   else rs_ch_exclude_bolt=file('NO_FILE')
   if(params.file_rs_buildrelat!=""){
-      filers_matrel=Channel.fromPath(params.file_rs_buildrelat)
+      filers_matrel=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
       BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
   }else{
       BoltNbMaxSnps=1000000
@@ -734,20 +736,20 @@ if (params.boltlmm == 1) {
 
   } 
   if(params.bolt_impute2filelist!=""){
-  Impute2FileList=Channel.fromPath(params.bolt_impute2filelist)
-  Impute2FID = Channel.fromPath(params.bolt_impute2fidiid)
+  Impute2FileList=Channel.fromPath(params.bolt_impute2filelist, checkIfExists:true)
+  Impute2FID = Channel.fromPath(params.bolt_impute2fidiid, checkIfExists:true)
   }else{
   Impute2FileList=file('NO_FILE1')
   Impute2FID = file('NO_FILE2')
   }
   if(params.bolt_ld_score_file!=""){
-     Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file)
+     Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
   }else{
      Bolt_ld_score = file('NO_FILE3')
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
-     Bolt_genetic_map= Channel.fromPath(params.genetic_map_file)
+     Bolt_genetic_map= Channel.fromPath(params.genetic_map_file, checkIfExists:true)
   }else{
      Bolt_genetic_map = file('NO_FILE4')
   }
@@ -831,7 +833,7 @@ if (params.gemma+params.gemma_gxe>0) {
    if(params.file_rs_buildrelat==""){
         filers_matrel_mat_gem=file('NO_FILE')
      }else{
-        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
+        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
    }
 
   rel_ch_gemma = Channel.create()
@@ -860,8 +862,8 @@ if (params.gemma+params.gemma_gxe>0) {
        """
   }
   }else{
-   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel) 
-   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel) 
+   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true) 
+   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true) 
   }
 }
 
@@ -1031,7 +1033,7 @@ if (params.gemma == 1){
 
 
 if (params.gemma_gxe == 1){
-  data_ch_gxe = Channel.fromPath(params.data)
+  data_ch_gxe = Channel.fromPath(params.data, checkIfExists:true)
    
   if (params.gemma_gxe) 
     gxe_option = "--gxe ${params.gxe}"
@@ -1096,7 +1098,7 @@ if (params.gemma_gxe == 1){
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
   } 
-  gemma_manhatten_ch_gxe_freq= gemma_manhatten_ch_gxe_i.combine(Channel.fromPath(params.data)).combine(assoc_ch_gxe_freq)
+  gemma_manhatten_ch_gxe_freq= gemma_manhatten_ch_gxe_i.combine(Channel.fromPath(params.data, checkIfExists:true)).combine(assoc_ch_gxe_freq)
   process AddedFreqGxEGemma{
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
@@ -1195,7 +1197,7 @@ report_plink_ch=report_plink.groupTuple()
 }
 
 if (params.plink_gxe==1) {
-  data_ch_plk_gxe = Channel.fromPath(params.data)
+  data_ch_plk_gxe = Channel.fromPath(params.data, checkIfExists:true)
   pheno_label_ch_gxe = Channel.from(params.pheno.split(","))
    if(params.rs_list==""){
         rsfile_pkgxe=file('NO_FILERS')
@@ -1267,10 +1269,11 @@ if(params.fastgwa==1){
      if(params.file_rs_buildrelat==""){
         filers_matrel_mat_fast_GWA=file('NO_FILE')
      }else{
-        filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat)
+        filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
      }
 
-process FastGWADoGRM{
+if(params.gcta_grmfile==""){
+ process FastGWADoGRM{
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
     input :
@@ -1288,14 +1291,13 @@ process FastGWADoGRM{
      """
      ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_cpus} --out mgrm $rs_list
      """
+ }
 
 
-}
-
-idgrm_c=idgrm.collect()
-bingrm_c=bingrm.collect()
-nbingrm_c=nbingrm.collect()
-process MergFastGWADoGRM{
+  idgrm_c=idgrm.collect()
+  bingrm_c=bingrm.collect()
+  nbingrm_c=nbingrm.collect()
+  process MergFastGWADoGRM{
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
     input :
@@ -1313,8 +1315,11 @@ process MergFastGWADoGRM{
       cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
       ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_cpus}
       """
+  }
+}else{
+  grm_all=Channel.from("${params.gcta_grmfile}").combine(Channel.fromPath("${params.gcta_grmfile}.grm.id", checkIfExists:true).combine(Channel.fromPath("${params.gcta_grmfile}.grm.sp", checkIfExists:true)))
 }
-data_ch_fastgwa= Channel.fromPath(params.data)
+data_ch_fastgwa= Channel.fromPath(params.data, checkIfExists:true)
 
 
 pheno_spl_gcta=params.pheno.split(',')
@@ -1324,6 +1329,8 @@ pheno_spl_gcta=params.pheno.split(',')
   else
      covariate_option = ""
 
+balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
+balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
 process FastGWARun{
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
@@ -1338,15 +1345,18 @@ process FastGWARun{
     script :
      base=bed.baseName
      phef = "${base}_fastgwa_n.phe"
-     covfile = "${base}_fastgwa_n.cov"
-     cov = (params.covariates!="") ?  " --qcovar $covfile " : ""
+     covfilequant= "${base}_fastgwa_n.cov"
+     covfilequal = "${base}_fastgwa_n.covqual"
+     covquant_fastgwa = (balquantcov) ?  " --qcovar $covfilequant " : ""
      our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
      our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
      our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
      out                = "$base-$our_pheno"
+     covqual_fastgwa = (balqualcov) ? " --covar $covfilequal " : ""
+     covqual_cov = (balqualcov) ? " --cov_type ${params.covariates_type} --covqual_file $covfilequal " : ""
      """
-     all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfile --form_out 4
-     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $cov --threads ${params.fastgwa_cpus} --out $out --grm-sparse $head
+     all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
+     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_cpus} --out $out --grm-sparse $head $covqual_fastgwa
      """
 }
   process showFastGWAManhatten {
