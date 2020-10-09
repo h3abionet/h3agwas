@@ -129,7 +129,7 @@ process CrossMapLaunch{
    script : 
     poscrossmap='convert_crossmap.cross'
     """
-    python3.6 ${params.bin_crossmap} bed $CrossMapRef $posI  $poscrossmap".tmp"
+    ${params.bin_crossmap} bed $CrossMapRef $posI  $poscrossmap".tmp"
     awk '{if(NF>5){for(Cmt=6;Cmt<=NF;Cmt++)\$5=\$5";"\$Cmt};print \$1"\\t"\$2"\\t"\$3"\\t"\$4"\\t"\$5}' $poscrossmap".tmp" > $poscrossmap
     """
 }
