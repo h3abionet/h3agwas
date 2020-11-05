@@ -65,18 +65,19 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
  * plink gwas option :
     * `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
     * `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
-  * `fastGWA` :  do an analyse with fastGWA (GCTA), specific option [fastGWA manual](https://cnsgenomics.com/software/gcta/#fastGWA)
+ * `fastGWA` :  do an analyse with fastGWA (GCTA), specific option [fastGWA manual](https://cnsgenomics.com/software/gcta/#fastGWA)
    * fastgwa  (if 1 perfom fastGWA, otherwise no [default 0])
-   * to build grm :
    * `fastgwa_type` : [default : --fastGWA-mlm-exact]
    * `fastgwa_memory` : memory for fastgwa and grm [default: 10G] 
    * `fastgwa_cpus` : cpus for fastgw and grm [default: 5]
    * `covariates_type` : similar to `bolt_covariates_type`, give for each covariable type of covariable qualitatif (0) or quantitatif (1), must be len of covariates, if nothing, consider all covariable just as quantitatif covariable  [default ""] 
    *  grm :
     * `gcta_grmfile` : index of file with grm with `gcta_grmfile`.grm.id and `gcta_grmfile`.grm.sp, if extension will not here, grm will build see below
-    * `grm_nbpart` : nb part to build grm [default : 100]
-    * `gcta64_bin` : binary for gcta64 [default : gcta64] 
-    * `grm_cutoff` : cutoff value for  grm matrix (using option --make-bK-sparse) [default : 100]
+    * to build grm :
+     * `grm_nbpart` : nb part to build grm [default : 100]
+     * `gcta64_bin` : binary for gcta64 [default : gcta64] 
+     * `grm_cutoff` : cutoff value for  grm matrix (using option --make-bK-sparse) [default : 100]
+  * `gcta64_bin` : binary for gcta64 [default : gcta64] 
 
 with pipeline, do a GxE interaction with Gemma and Plink, arguments :
   * `gxe` : environmental variables to do gxe analysis with `pheno`, must be coded in 1 and 2 for plink
@@ -372,3 +373,4 @@ TODO
       * `input_pat` : input pattern of plink file
       * `input_dir` : input dir of plink file
     * list_n : need to be implemented 
+
