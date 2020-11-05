@@ -80,7 +80,7 @@ params.gwas_cat = ""
 params.cut_maf=0.01
 params.plink_mem_req="6GB"
 
-params.other_mem_req="10GB"
+params.other_mem_req="20GB"
 
 // gcta parameters
 params.gcta_mem_req="15GB"
@@ -186,9 +186,10 @@ process SubPlink{
 }
 
 process ComputedLd{
+   memory params.other_mem_req
    input : 
       set file(bed),file(bim),file(fam) from subplink_ld
-   output :
+  output :
        file("$outld") into (ld_fmcond, ld_fmsss,ld_caviarbf, ld_paintor)
    script :
     outld=params.chro+"_"+params.begin_seq+"_"+params.end_seq+".ld"
