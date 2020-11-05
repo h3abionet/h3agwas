@@ -373,3 +373,4 @@ TODO
       * `input_pat` : input pattern of plink file
       * `input_dir` : input dir of plink file
     * list_n : need to be implemented 
+
