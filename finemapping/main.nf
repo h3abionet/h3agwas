@@ -186,9 +186,10 @@ process SubPlink{
 }
 
 process ComputedLd{
+   memory params.other_mem_req
    input : 
       set file(bed),file(bim),file(fam) from subplink_ld
-   output :
+  output :
        file("$outld") into (ld_fmcond, ld_fmsss,ld_caviarbf, ld_paintor)
    script :
     outld=params.chro+"_"+params.begin_seq+"_"+params.end_seq+".ld"
