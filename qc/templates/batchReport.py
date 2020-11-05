@@ -339,8 +339,8 @@ def getVClose(gfrm,pfrm,pheno_col):
         if type(pairA)!=str: # hack to handle fake phenos -- this should be fixed upstream
             pairA = pairA.values[0]
             pairB = pairB.values[0]
-        curr = curr+TAB.join([row[0],row[1],pairA,\
-                              row[2],row[3],pairB,\
+        curr = curr+TAB.join([row[0],row[1],str(pairA),\
+                              row[2],row[3],str(pairB),\
                               str(row[4])])+EOL
     return curr
 

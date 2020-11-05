@@ -93,8 +93,8 @@ def gChrom= { x ->
 
   process illumina2lgen {
     maxForks params.max_forks
-    memory '2GB'
-    time   '12h'
+    memory params.indiv_memory_req
+    time   params.time_req
     input:
        set file(report), file(array) from report.combine(array)
     output:
@@ -105,7 +105,7 @@ def gChrom= { x ->
         output = report.baseName
         """
         hostname
-        topbot2plink.py $array $report $samplesize '$idpat' $output
+        topbottom.py $array $report $samplesize '$idpat' $output
         """
  }
 
@@ -137,6 +137,8 @@ def gChrom= { x ->
      file(bed) from bed_ch.toList()
      file(bim) from bim_ch.toList()
      file(fam) from fam_ch.toList()
+   memory params.combined_memory_req
+   time   params.time_req
    output:
      set file("raw.bed"), file("raw.fam"), file("raw.log") into plink_src
      file("rawraw.bim") into fill_in_bim_ch

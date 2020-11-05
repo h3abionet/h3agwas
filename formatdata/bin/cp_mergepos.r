@@ -66,7 +66,10 @@ Data$PosEndI<-PosEnd
 Data$ChrI<-Chr
 Data$Num<-1:nrow(Data)
 
-DataCrossMap<-read.table(FileRsCros,header=F)
+LineCrossMap<-readLines(FileRsCros);nbcol<-sapply(strsplit(LineCrossMap, split="\t"),function(x)length(x))
+LineCrossMap<-LineCrossMap[nbcol==5]
+writeLines(LineCrossMap, con='tmplaflkjv')
+DataCrossMap<-read.table('tmplaflkjv',header=F)
 names(DataCrossMap)<-c("ChroNewCM","PosDebNewCM","PosFinNewCM",'Strand' ,"Num")
 
 DataRs<-read.table(FileRsRes,sep="\t")

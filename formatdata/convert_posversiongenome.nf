@@ -36,7 +36,6 @@ params.sep="TAB"
 params.rs_info=""
 params.poshead_rs_inforef=2
 params.poshead_bp_inforef=3
-params.poshead_bp_inforef=0
 params.file_ref_gzip=""
 params.link_rs_info="ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/All_20180423.vcf.gz"
 params.bin_crossmap="~/.local/bin/CrossMap.py"
@@ -46,13 +45,16 @@ params.link_data_crossmap='http://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOv
 
 if(params.file_toconvert==""){
 process DlGwasCT{
-   output :
-       file(fileconvert) into (file_convert_ch_ext, file_convert_ch)
    publishDir "${params.output_dir}/datai/", overwrite:true, mode:'copy'
+   output :
+       file("${fileconvert}err")
+       file(fileconvert) into (file_convert_ch_ext, file_convert_ch)
    script :
+      fileconverti="gwas_catalog_i.tsv"
       fileconvert="gwas_catalog.tsv"
       """
-      wget -O $fileconvert ${params.link_gwas_cat}
+      wget -O $fileconverti ${params.link_gwas_cat}
+      check_colfile.py $fileconverti $fileconvert
       """
 }
 }else{
@@ -127,7 +129,7 @@ process CrossMapLaunch{
    script : 
     poscrossmap='convert_crossmap.cross'
     """
-    python3.6 ${params.bin_crossmap} bed $CrossMapRef $posI  $poscrossmap".tmp"
+    ${params.bin_crossmap} bed $CrossMapRef $posI  $poscrossmap".tmp"
     awk '{if(NF>5){for(Cmt=6;Cmt<=NF;Cmt++)\$5=\$5";"\$Cmt};print \$1"\\t"\$2"\\t"\$3"\\t"\$4"\\t"\$5}' $poscrossmap".tmp" > $poscrossmap
     """
 }

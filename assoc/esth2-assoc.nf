@@ -97,6 +97,8 @@ params.bolt_impute2filelist=""
 params.bolt_impute2fidiid=""
 params.bolt_otheropt=""
 params.bolt_h2_multi=0
+params.gcta_grmfile=""
+
 
 
 params.cut_maf=0.01
@@ -150,6 +152,10 @@ max_plink_cores = params.max_plink_cores
 ldsc_mem_req=params.ldsc_mem_req
 params.help = false
 
+if(params.gcta_h2_grmfile=="" && params.gcta_grmfile!=""){
+params.gcta_h2_grmfile=params.gcta_grmfile
+}
+
 def getConfig = {
  all_files = workflow.configFiles.unique()
   text = ""
@@ -190,7 +196,7 @@ if(params.ldsc_h2==1){
  if(params.file_gwas==""){
   error("\n\n------\nbCan't do ldsc without file_gwas\n\n---\n")
  }
- gwas_file_ldsc=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}
+ gwas_file_ldsc=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it ,checkIfExists:true)}
  if(params.head_n=="" && params.Nind==0){
        error("\n\n------\nheader_n or Nind paramaters must be allowed\n\n---\n")
  }
@@ -220,7 +226,7 @@ if(params.ldsc_h2_multi==1){
  if(params.file_gwas==""){
   error("---------------\n ldsc_h2_multi=1 and file_gwas is null\n\n---------------")
  }
- gwas_file_1 = Channel.fromPath(params.file_gwas.split(",")[0])
+ gwas_file_1 = Channel.fromPath(params.file_gwas.split(",")[0], checkIfExists:true)
  if(params.list_snp==""){
   process GetSnpList{
    time params.big_time
@@ -235,12 +241,13 @@ if(params.ldsc_h2_multi==1){
      """
   }
  }else{
-  list_file_pos=Channel.fromPath(params.list_snp)
+  list_file_pos=Channel.fromPath(params.list_snp,checkIfExists:true) 
  }
 
-  list_gwas_multi=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(list_file_pos)
+  list_gwas_multi=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it, checkIfExists:true)}.combine(list_file_pos)
   process FormatLDSC{
    time params.big_time
+   memory params.ldsc_mem_req
    memory ldsc_mem_req
    input :
     set file(gwas), file(infopos) from list_gwas_multi
@@ -800,8 +807,8 @@ if(params.gemma_h2==1){
        """
   }
   }else{
-   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel)
-   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel)
+   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true)
+   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true)
   }
 
   if (params.covariates)
@@ -867,7 +874,7 @@ if(params.gemma_h2_pval==1){
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
         .set { gemmapval_assoc_ch }
 
-gwas_file_gem=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(gemmapval_assoc_ch)
+gwas_file_gem=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it,checkIfExists:true)}.combine(gemmapval_assoc_ch)
 
 // for 2 we need a zcat file 
 
