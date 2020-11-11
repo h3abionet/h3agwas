@@ -152,7 +152,7 @@ liste_file_mrmega=liste_file_mrmega.collect()
 
 
 if(params.gwama==1){
- h//config channel
+ //config channel
   process doGWAMA {
      label 'metaanalyse'
      memory gwama_mem_req
