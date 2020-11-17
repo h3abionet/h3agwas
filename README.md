@@ -18,6 +18,7 @@ In addition to this README we have a detailed tutorial and videos
 
 
 ## What's new :
+* 2020-11-17: add module nf to convert vcf in bgen format [formatdata](formatdata/README.md)
 * 2020-07-27: add covariable qualitatif to fastgwa [assoc](assoc/README.md)
 * 2020-07-27: News nextflow modules to transform vcf impute format in bimbam[formatdata](formatdata/README.md)
 * 2020-06-03: News nextflow modules to transform plink file in vcf file with check allele for imputation[formatdata](formatdata/README.md)
