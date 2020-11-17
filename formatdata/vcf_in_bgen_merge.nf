@@ -50,11 +50,12 @@ process filter_vcf{
   input :
      file(vcf) from list_vcf
   output :
-     file("${Ent}") into list_vcf_filt
+     set file("${Ent}"), file("${Ent}.csi") into list_vcf_filt
   script :
     Ent=vcf.baseName+"_filter.vcf.gz"
     """
     ${params.bcftools_bin} view -i 'INFO>${params.min_scoreinfo}' $vcf -Oz > $Ent
+    ${params.bcftools_bin} index $Ent
     """
 }
 lcf=list_vcf_filt.collect()
@@ -72,8 +73,8 @@ process mergeall{
     
 }
 process formatvcfinbgen{
-  cpus params.max_plink_cores
-  memory params.plink_mem_req
+  cpus params.max_cores
+  memory params.mem_req
   time   params.big_time
   input :
      file(vcf) from merge_vcf
