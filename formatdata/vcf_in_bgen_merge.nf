@@ -25,13 +25,14 @@ import java.security.MessageDigest;
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ['file_listvcf', 'min_scoreinfo', "output_dir", "max_plink_cores"]
+allowed_params = ['file_listvcf', 'min_scoreinfo', "output_dir", "max_cores"]
 
-params.plink_mem_req = '10GB' // how much plink needs for this
+params.mem_req = '10GB' // how much plink needs for this
 params.output_dir="bgen/"
+params.output="bgen"
 params.file_listvcf=""
 params.min_scoreinfo=0.6
-params.max_plink_cores = 8
+params.max_cores = 8
 params.genotype_field="GP"
 params.qctoolsv2_bin="qctool_v2"
 params.bcftools_bin="bcftools"
@@ -42,23 +43,47 @@ error('params.file_listvcf : file contains list vcf not found')
 }
 list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
 
-process formatvcfinbgen{
+process filter_vcf{
+  cpus params.max_cores
+  memory params.mem_req
+  time   params.big_time
+  input :
+     file(vcf) from list_vcf
+  output :
+     file("${Ent}") into list_vcf_filt
+  script :
+    Ent=vcf.baseName+"_filter.vcf.gz"
+    """
+    ${params.bcftools_bin} view -i 'INFO>${params.min_scoreinfo}' $vcf -Oz > $Ent
+    """
+}
+lcf=list_vcf_filt.collect()
 
-
+process mergeall{
+  input :
+     file(allfile) from lcf
+  output :
+     file($out) into merge_vcf
+   script :
+    out="all.vcf.gz"
+    """
+    ${params.bcftools_bin} merge *vcf.gz -Oz -o $out
+    """
+    
 }
 process formatvcfinbgen{
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time
   input :
-     file(vcf) from list_vcf
+     file(vcf) from merge_vcf
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
-     file("${Ent}.bimbam")
+     file("${Ent}.bgen")
   script :
-    Ent=vcf.baseName
+    Ent="${params.output}"
     """
-    ${params.bcftools_bin} view -i 'INFO>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype bgen -og ${Ent}.bgen -filetype vcf 
+    ${params.qctoolsv2_bin} -g $vcf -vcf-genotype-field ${params.genotype_field} -ofiletype bgen -og ${Ent}.bgen -filetype vcf 
     """
 }
 
