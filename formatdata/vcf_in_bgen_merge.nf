@@ -61,14 +61,16 @@ process filter_vcf{
 lcf=list_vcf_filt.collect()
 
 process mergeall{
+  time   params.big_time
+  memory params.mem_req
   input :
      file(allfile) from lcf
   output :
-     file($out) into merge_vcf
+     file("$out") into merge_vcf
    script :
     out="all.vcf.gz"
     """
-    ${params.bcftools_bin} merge *vcf.gz -Oz -o $out
+    ${params.bcftools_bin} concat *vcf.gz -Oz -o $out
     """
     
 }
