@@ -1205,9 +1205,9 @@ if (params.plink_gxe==1) {
   data_ch_plk_gxe = Channel.fromPath(params.data, checkIfExists:true)
   pheno_label_ch_gxe = Channel.from(params.pheno.split(","))
    if(params.rs_list==""){
-        rsfile_pkgxe=file('NO_FILERS')
+        rsfile_plkgxe=file('NO_FILERS')
      }else{
-        rsfile_plkgxe=file(params.rs_list)
+        rsfile_plkgxe=file(params.rs_list, checkIfExists=true)
    }
 
 
