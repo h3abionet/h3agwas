@@ -1213,6 +1213,7 @@ if (params.plink_gxe==1) {
 
   process computePlinkGxE {
     cpus num_assoc_cores
+    memory plink_mem_req
     time params.big_time
     input:
        set file(filebed),file(filebim),file(filefam) from assoc_ch_gxe
