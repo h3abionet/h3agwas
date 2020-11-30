@@ -1078,7 +1078,7 @@ process doGemmaGxEChro{
     publishDir params.output_dir, overwrite:true, mode:'copy'
     output:
       file("${dir_gemma}/${out}.log.txt")
-      set val(newbase), val(this_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch_chro_gxe
+      set val(our_pheno), file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro_gxe
     script:
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
        our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
