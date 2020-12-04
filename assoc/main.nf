@@ -1078,7 +1078,7 @@ process doGemmaGxEChro{
     publishDir params.output_dir, overwrite:true, mode:'copy'
     output:
       file("${dir_gemma}/${out}.log.txt")
-      set val(our_pheno), file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro_gxe
+      set val(our_pheno3), file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro_gxe
     script:
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
        our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
@@ -1314,7 +1314,7 @@ if (params.plink_gxe==1) {
        rs_plk        =  (params.rs_list) ?  " --extract  $rsfile" : ""
        """
        PosCol=`head -1 $phenof|sed 's/[\\t ]/\\n/g'|grep -n $params.gxe|awk -F':' '{print \$1-2}'`
-       plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof $rs_plk
+       plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof $rs_plk  --keep-allele-order 
        merge_bim_gxeplink.py --plgxe ${out}.qassoc.gxe --bim $filebim --out $outftmp
        added_freq_gxe.py --bfile $base --file_gxe $outftmp --pheno_file $phenof --pheno ${pheno_name} --pheno_gxe ${params.gxe} --out $outf --plk_cores ${num_assoc_cores} --gwas_chr CHR --gwas_rs SNP
 
