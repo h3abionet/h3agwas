@@ -313,6 +313,7 @@ The key options are:
   * meta analysis option :
      * `metal` : 1 perform metal (default 0)
      * `gwama` : 1 perform gwama (default 0)
+     * `plink` : 1 perform perform meta analyse in plink(default 0)
      * `metasoft` : 1 perform metasoft(default 0)
        * `metasoft_pvalue_table` : for metasoft need files :  _HanEskinPvalueTable.txt_
      * `mrmega` : 1 perform MR-MEGA (default 0)
@@ -345,7 +346,8 @@ The key options are:
        * `gwama_bin` :  binarie for gwam ( default : _GWAMA__ )
        * `metasoft_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
        * `mrmega_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
-     * options softwares :
+       * `plink_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
+     * options software :
        * `ma_metasoft_opt` : append other option in metasoft command line(default : null)
        * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
        * `ma_inv_var_weigth`: do a invert variance weight usefull for metal (default, 0)

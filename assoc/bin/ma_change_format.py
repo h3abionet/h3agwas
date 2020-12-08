@@ -129,10 +129,26 @@ if 'A2' in l_newhead :
   ps_A2_inp=head_inp.index(A2_inp)
   balchangA2=True
 listposfloat=[]
-for head in ['freqA1', 'Beta', 'Se', 'Pval', 'N']:
+headplk=['FREQ','BETA', 'SE', 'P', 'N']
+headlist=['freqA1', 'Beta', 'Se', 'Pval', 'N']
+cmthead=0
+l_newheadplk=[x for x in l_newhead]
+for head in headlist:
    if head in l_newhead:
-       newhead=l_oldhead[l_newhead.index(head)]
+       indexlhead=l_newhead.index(head)
+       l_newheadplk[indexlhead]=headplk[cmthead]
+       newhead=l_oldhead[indexlhead]
        listposfloat.append(head_inp.index(newhead))
+   cmthead+=1
+
+#print(l_newheadplk)
+#print(l_newhead)
+
+l_newheadplk=[x.upper() for x in l_newheadplk]
+if 'RSID' in l_newheadplk :
+ l_newheadplk[l_newheadplk.index('RSID')]='SNP'
+else :
+  exit
 
 p_minf=float('-inf')
 p_pinf=float('inf')
@@ -147,9 +163,12 @@ def checkfloat(tmp, listposfloat):
    return tmp
 
 write=open(args.out_file,'w')
+writeplk=open(args.out_file+'.plk','w')
 if baliserepchrpos :
    l_newhead+=["CHRO", "POS"]
+   l_newheadplk+=["CHR", "BP"]
    write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
+   writeplk.write(sep_out.join([x.upper() for x in l_newheadplk])+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
      if  spl[ps_rsId_inp] in ls_rs :
@@ -161,8 +180,10 @@ if baliserepchrpos :
        tmp=[checknull(spl[x]) for x in ps_head]
        tmp+=ls_rs_dic[spl[ps_rsId_inp]]
        write.write(sep_out.join(tmp)+"\n")
+       writeplk.write(sep_out.join(tmp)+"\n")
 elif args.rs_ref :
    write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
+   writeplk.write(sep_out.join([x.upper() for x in l_newheadplk])+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
      spl=checkfloat(spl, listposfloat)
@@ -172,8 +193,10 @@ elif args.rs_ref :
        if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
+       writeplk.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
 else :
    write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
+   writeplk.write(sep_out.join([x.upper() for x in l_newheadplk])+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
      spl=checkfloat(spl, listposfloat)
@@ -182,3 +205,4 @@ else :
      if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
      write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
+     writeplk.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
