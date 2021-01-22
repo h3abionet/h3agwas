@@ -18,6 +18,7 @@ In addition to this README we have a detailed tutorial and videos
 
 
 ## What's new :
+* 2021-01-22:  create utils folder to add Metasoft binary and utils (server down)
 * 2020-12-08: add meta analyse with plink [assoc](assoc/README.md)
 * 2020-12-01: add plink GxE, add estimation of beta and se [assoc](assoc/README.md)
 * 2020-11-17: add module nf to convert vcf in bgen format [formatdata](formatdata/README.md)
