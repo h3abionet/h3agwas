@@ -20,6 +20,11 @@ params.output_align   = 'ref'
 params.mask_type      = 0
 params.sheet_columns  = 0
 
+params.idpat=0
+params.indiv_memory_req="2GB"
+params.combined_memory_req="8GB"
+params.time_req="12h"
+
 params.newpat = 0
 params.mask = 0
 params.replicates = 0
