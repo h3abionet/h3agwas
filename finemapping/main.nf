@@ -44,7 +44,7 @@ allowed_params+=params_cojo
 allowed_params+=params_filegwas
 allowed_params+=params_bin
 allowed_params+=params_memcpu
-allowed_params+=params_gccat
+allowed_params+=param_gccat
 
 
 
