@@ -38,11 +38,13 @@ params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "he
 parqams_paintor=["paintor_fileannot", "paintor_listfileannot"]
 params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req"]
 param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
+param_gccat=["headgc_chr", "headgc_bp", "headgc_bp"]
 allowed_params+=params_mf
 allowed_params+=params_cojo
 allowed_params+=params_filegwas
 allowed_params+=params_bin
 allowed_params+=params_memcpu
+allowed_params+=params_gccat
 
 
 
@@ -59,7 +61,7 @@ params.output="finemap"
 params.gcta_bin="gcta64"
 
 // paramater
-params.n_pop=10000
+params.n_pop=25000
 
 // params file input
 params.head_pval = "P_BOLT_LMM"
