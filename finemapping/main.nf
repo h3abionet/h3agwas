@@ -25,6 +25,24 @@ checker = { fn ->
     else
        error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
+nullfile = [false,"False","false", "FALSE",0,"","0","null",null]
+def checkColumnHeader(fname, columns) {
+  if (workflow.profile == "awsbatch") return;
+  if (fname.toString().contains("s3://")) return;
+  if (nullfile.contains(fname)) return;
+  new File(fname).withReader { line = it.readLine().tokenize() }
+  problem = false;
+  columns.each { col ->
+    if (! line.contains(col) & col!='') {
+      println "The file <$fname> does not contain the column <$col>";
+      problem=true;
+    }
+    if (problem)
+      System.exit(2)
+  }
+}
+
+
 
 
 
@@ -35,16 +53,18 @@ params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin"
 params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"]
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
-parqams_paintor=["paintor_fileannot", "paintor_listfileannot"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req"]
+params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
+params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin"]
 param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
-param_gccat=["headgc_chr", "headgc_bp", "headgc_bp"]
+param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp"]
 allowed_params+=params_mf
 allowed_params+=params_cojo
 allowed_params+=params_filegwas
 allowed_params+=params_bin
 allowed_params+=params_memcpu
 allowed_params+=param_gccat
+allowed_params+=params_paintorcav
+allowed_params+=param_data
 
 
 
@@ -145,9 +165,9 @@ plink_subplk=Channel.create()
 raw_src_ch.separate( gwas_extract_plk, plink_subplk) { a -> [ a, a] }
 
 
-gwas_file=Channel.fromPath(params.file_gwas)
+gwas_file=Channel.fromPath(params.file_gwas,checkIfExists:true)
 // plink 
-
+checkColumnHeader(params.file_gwas, [params.head_beta, params.head_se, params.head_A1,params.head_A2, params.head_freq, params.head_chr, params.head_bp, params.head_rs, params.head_pval, params.head_n])
 process ExtractPositionGwas{
   memory params.other_mem_req
   input :
@@ -168,7 +188,7 @@ process ExtractPositionGwas{
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     bfile=bed.baseName
     """
-    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --freq_header  ${params.head_freq} --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  --n ${params.n_pop} --min_pval ${params.threshold_p}
+    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq  --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nvalue --min_pval ${params.threshold_p} $nheader
     """
 }
 
@@ -198,7 +218,7 @@ process ComputedLd{
     plk=bed.baseName
     """
      ${params.plink_bin} --r2 square0 yes-really -bfile $plk -out "tmp"
-    sed 's/\\t/ /g' tmp.ld > $outld
+    sed 's/\\t/ /g' tmp.ld | sed 's/nan/0/g' > $outld
     """
 }
 

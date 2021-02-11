@@ -11,12 +11,16 @@ import os
 def extractinfobim(chro, begin, end,bimfile):
    readbim=open(bimfile) 
    listpos=[]
+   listref=[]
+   listalt=[]
    for line in readbim :
       splline=line.split()
       pos=int(splline[3])
       if chro == splline[0] and pos>=begin and pos<=end :
          listpos.append(pos)
-   return listpos
+         listref.append(splline[4])
+         listalt.append(splline[5])
+   return (listpos, listref, listalt)
 
 def appendfreq(bfile, result, freq_header,rs_header, n_header, chr_header,bp_header, bin_plk, keep, threads) :
    plkfreqfil=os.path.basename(bfile)
@@ -108,8 +112,14 @@ TAB=chr(9)
 ##rsid chromosome position allele1 allele2 maf beta se
 
 
-listbim=extractinfobim(chro, begin,end,args.bfile+".bim")
+(listbim, listalt, listref)=extractinfobim(chro, begin,end,args.bfile+".bim")
+
 small=result[(result[args.chro_header]==chro) & (result[args.pos_header]>=begin) & (result[args.pos_header]<=end)]
+
+small=pd.merge(small, pd.DataFrame({"pos":listbim, 'altbim232':listalt, 'refbim232':listref}),left_on=args.pos_header, right_on="pos" )
+print(small)
+small=small[((small['altbim232']==small[args.a1_header]) & (small['refbim232']==small[args.a2_header])) | ((small['altbim232']==small[args.a2_header]) & (small['refbim232']==small[args.a1_header]))]
+
 if args.min_pval and small[args.p_header].min()> args.min_pval:
    sys.exit('min pval '+str(args.min_pval)+'>'+' min(p) '+ str(small[args.p_header].min()))
 small=small.loc[small[args.pos_header].isin(listbim)]
