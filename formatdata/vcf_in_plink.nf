@@ -27,7 +27,7 @@ import java.security.MessageDigest;
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ['file_listvcf', 'min_scoreinfo', "output_pat", "output_dir"]
+allowed_params = ['file_listvcf', 'min_scoreinfo', "output_pat", "output_dir", "do_stat"]
 
 
 params.help = false
@@ -60,7 +60,9 @@ params.plink_mem_req = '10GB' // how much plink needs for this
 params.other_mem_req = '10GB' // how much plink needs for this
 params.output_pat="out"
 params.output_dir="plink/"
+params.statfreq_vcf="%AN %AC"
 params.genetic_maps=""
+params.do_stat=true
 
 
 
@@ -69,6 +71,38 @@ error('params.file_listvcf : file contains list vcf not found')
 }
 /*read file to have list of channel for each vcf*/
 list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
+list_vcf2=Channel.fromPath(file(params.file_listvcf).readLines())
+
+if(params.do_stat){
+process computedstat{
+ memory params.plink_mem_req
+  time   params.big_time
+  input :
+     file(vcf) from list_vcf2
+  output :
+     file("${Ent}") into listchrostat
+  script :
+    Ent=vcf.baseName+".stat"
+    """
+    bcftools query -f '%CHROM %REF %ALT %POS %INFO/INFO ${params.statfreq_vcf}\n' $vcf > $Ent
+    """
+}
+statmerg=listchrostat.collect()
+
+process dostat{
+ input :
+    file(allstat) from statmerg
+ publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+ output :
+   file('${fileout}*')
+ script :
+  fileout=params.output_pat+"_report"
+  allfile=allstat.join(',') 
+  """
+  stat_vcf.py  --out $fileout --min_score ${params.min_scoreinfo} --list_files $allfile
+  """
+}
+}
 
 if(params.min_scoreinfo>0){
 process formatvcfscore{
@@ -89,6 +123,8 @@ process formatvcfscore{
     awk \'{if(\$2==\".\"){\$2=\$1\":\"\$4};print \$0}\' ${Ent}.save.bim > ${Ent}.bim
     """
 }
+
+
 }else{
 process formatvcf{
   cpus params.max_plink_cores

@@ -1,4 +1,26 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
 
+
+1.1
+date	2021.02.16.06.11.27;	author jeantristan;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@
 /*
  * Authors       :
  *
@@ -271,3 +293,4 @@ process checkVCF{
 }
 
 //}
+@

@@ -12,11 +12,17 @@
   * rename duplicate rs or . by chro
   * added cm in bim files if file `genetic_map` give in argumen, 
   * merge all chromosome in plink format
+  * give a report with analyse of frequencie and score
 ### arguments :
 * `file_listvcf` : file contains each bgzip vcf files to merge, one by line [default : none]
 * `min_scoreinfo` : what score info minimum do you want : [default :0.6]
 * `output_pat` : pattern of output for bed final file [default : out]
 * `output_dir` : directory of output : [default : plink] 
+* `do_stat` : by default true make stat using frequencies and score 
+ * statfreq_vcf : 
+  * pattern used in Info to computed frequencies  ([default : "%AN %AC" with AN total and AC alternative number]) 
+  * can be two value NAll NAlt, where frequencies computed as Nalt/NAll
+  * can be one value frequencies
 * `genetic_maps` : genetics maps to added map in bim file, if not provided, map doesn't added in bim, must be not compressed :
  * file for [hg19](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg19.txt.gz) 
  * file for [hg17](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg17.txt.gz)
