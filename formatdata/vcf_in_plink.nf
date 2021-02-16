@@ -94,7 +94,7 @@ process dostat{
     file(allstat) from statmerg
  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
  output :
-   file('${fileout}*')
+   file("${fileout}*")
  script :
   fileout=params.output_pat+"_report"
   allfile=allstat.join(',') 
