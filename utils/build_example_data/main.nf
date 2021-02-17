@@ -10,7 +10,7 @@ import java.nio.file.Paths
  *  2015-2019
  *
  *
- * Description  : Nextflow pipeline for extract dataset of 1000 genomes
+ * Description  : Nextflow pipeline for extract datatuple of 1000 genomes
  *
  */
 
@@ -45,9 +45,12 @@ params.pos_allgeno=""
 params.plk_cpus=10
 params.maf = 0.05
 params.thin = 0.01
+params.simu_hsq=0.3
+params.simu_rep=10
 params.gwas_cat=""
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 params.list_pheno="Type 2 diabetes"
+params.gcta_bin="gcta64"
 listchro=getlistchro(params.list_chro)
 listchro_ch=Channel.from(listchro)
 listchro_ch2=Channel.from(listchro)
@@ -60,9 +63,9 @@ listchro_ch=listchro_ch.combine(Channel.fromPath(params.pos_allgeno, checkIfExis
 
 process Dl1000G{
    input :
-      set val(chro), file(pos_geno) from listchro_ch 
+      tuple val(chro), file(pos_geno) from listchro_ch 
    output :
-       set val(chro), file("${file1000G}") into file1000G
+       tuple val(chro), file("${file1000G}") into file1000G
    script :
       file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
       """
@@ -73,9 +76,9 @@ process Dl1000G{
 process transfvcfInBed1000G{
    cpus params.plk_cpus
    input :
-     set val(chro), file(vcf1000) from file1000G
+     tuple val(chro), file(vcf1000) from file1000G
    output :
-     set val(chro), file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro
+     tuple val(chro), file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro
    script :
      out="chrtmp_"+chro
      """
@@ -86,9 +89,9 @@ process transfvcfInBed1000G{
 process cleanPlinkFile{
     cpus params.plk_cpus
     input :
-     set val(chro), file(bim), file(fam), file(bed) from plk_chro
+     tuple val(chro), file(bim), file(fam), file(bed) from plk_chro
     output : 
-     set file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro_cl
+     tuple file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro_cl
     script :
      plk=bim.baseName
      out="chr_"+chro
@@ -105,29 +108,38 @@ process mergePlinkFile{
    cpus params.plk_cpus
    input :
       val(allfile) from plk_chro_flt
-   publishDir "${params.output_dir}/",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/geno_all/",  overwrite:true, mode:'copy'
    output :
-     set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch
+     tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch
    script : 
      println allfile
      allfile2=allfile.toList().collect {it.toString().replaceFirst(~/\.[^\.]+$/, '')}
      allfile2=allfile2.unique()
      firstbed=allfile2[0]
      allfile2.remove(0)
-     out=params.fileplkout
+     nbfile = allfile2.size()
+     out=params.output/
      """ 
+     if [ $nbfile == "0" ]
+     then
+     cp ${firstbed}.fam ${out}.fam
+     cp ${firstbed}.bed ${out}.bed
+     cp ${firstbed}.bim ${out}.bim
+     else
      echo "${allfile2.join('\n')}" > listbedfile
-     plink --bfile ${allfile2[0]}  --keep-allele-order --threads ${params.plk_cpus} --merge-list listbedfile --make-bed --out $out
+     plink --bfile $firstbed  --keep-allele-order --threads ${params.plk_cpus} --merge-list listbedfile --make-bed --out $out
+     fi
+
      """
 }
 //
 //process thindata{
 //   cpus params.plk_cpus
 //   input :
-//     set file(bed), file(bim), file(fam) from allplkres_ch
+//     tuple file(bed), file(bim), file(fam) from allplkres_ch
 //   publishDir "${params.output_dir}/",  overwrite:true, mode:'copy'
 //   output :
-//     set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") 
+//     tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") 
 //   script :
 //      basename=bed.baseName
 //      out=basename+"_"+params.thin+"_"+params.maf
@@ -158,9 +170,9 @@ listchro_ch_gwascat=listchro_ch_gwascat.combine(gwascat_pos)
 
 process Dl1000G_GC{
    input :
-      set val(chro), file(pos_geno) from listchro_ch_gwascat
+      tuple val(chro), file(pos_geno) from listchro_ch_gwascat
    output :
-       set val(chro), file("${file1000G}") into file1000G_gwasc
+       tuple val(chro), file("${file1000G}")  into file1000G_gwasc
    script :
       file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
       """
@@ -170,10 +182,11 @@ process Dl1000G_GC{
 
 process transfvcfInBed1000G_GC{
    cpus params.plk_cpus
+   errorStrategy 'ignore'
    input :
-     set val(chro), file(vcf1000) from file1000G_gwasc
+     tuple val(chro), file(vcf1000)  from file1000G_gwasc
    output :
-     set val(chro), file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro_gc
+     tuple val(chro), file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro_gc
    script :
      out="chrtmp_"+chro
      """
@@ -184,9 +197,9 @@ process transfvcfInBed1000G_GC{
 process cleanPlinkFile_GC{
     cpus params.plk_cpus
     input :
-     set val(chro), file(bim), file(fam), file(bed) from plk_chro_gc
+     tuple val(chro), file(bim), file(fam), file(bed) from plk_chro_gc
     output : 
-     set file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro_cl_gc
+     tuple file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro_cl_gc
     script :
      plk=bim.baseName
      out="chr_"+chro
@@ -207,17 +220,42 @@ process mergePlinkFile_GC{
       val(allfile) from plk_chro_flt_gc
    publishDir "${params.output_dir}/plink_gc/",  overwrite:true, mode:'copy'
    output :
-     set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch_gc
+     tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch_gc
    script :
      println allfile
      allfile2=allfile.toList().collect {it.toString().replaceFirst(~/\.[^\.]+$/, '')}
      allfile2=allfile2.unique()
      firstbed=allfile2[0]
      allfile2.remove(0)
-     out=params.fileplkout
+     nbfile=allfile2.size()
+     out=params.output
      """
+     if [ $nbfile == "0" ]
+     then
+     cp ${firstbed}.fam ${out}.fam
+     cp ${firstbed}.bed ${out}.bed
+     cp ${firstbed}.bim ${out}.bim
+     else
      echo "${allfile2.join('\n')}" > listbedfile
-     plink --bfile ${allfile2[0]}  --keep-allele-order --threads ${params.plk_cpus} --merge-list listbedfile --make-bed --out $out
+     plink --bfile $firstbed  --keep-allele-order --threads ${params.plk_cpus} --merge-list listbedfile --make-bed --out $out
+     fi
      """
 }
 
+process simulate_pheno{
+   cpus params.plk_cpus
+   input :
+     tuple file(bed), file(bim), file(fam) from allplkres_ch_gc
+     file(gwascat) from gwascat_detail
+   publishDir "${params.output_dir}/plink_gc/pheno/",  overwrite:true, mode:'copy'
+   output :
+      file("$params.output*")
+   script :
+     plk=bed.baseName
+     out=params.output+".pheno"
+     outeffect=params.output+".effect.rs"
+     """
+     format_simulated.r --bim $bim --gc_her $gwascat --out $outeffect
+     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out $out --simu-rep ${params.simu_rep}
+     """
+}

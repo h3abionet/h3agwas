@@ -61,7 +61,7 @@ Data<-read.csv(opt[['file']], header=F, sep='\t')
 #lisp="Type 2 diabetes";lisc=c("22","21")
 format="USCS"
 if(format=="USCS"){
-chrohead="chrom";phenhead="trait";poshead="chromStart";OrBetaHead="orOrBeta";headCi95="ci95";pValueHead="pValue";nvalueHead="initSample";freqHead="riskAlFreq";rsHead="name"
+chrohead="chrom";phenhead="trait";poshead="chromEnd";OrBetaHead="orOrBeta";headCi95="ci95";pValueHead="pValue";nvalueHead="initSample";freqHead="riskAlFreq";rsHead="name";riskall="riskAllele"
 names(Data)<-c("bin", "chrom", "chromStart", "chromEnd", "name", "pubMedID", "author", "pubDate", "journal", "title", "trait", "initSample","replSample","region", "genes", "riskAllele", "riskAlFreq", "pValue", "pValueDesc", "orOrBeta", "ci95","platform", "cnv")
 }
 Data[,chrohead]<-gsub('chr', '',as.character(Data[,chrohead]))
@@ -101,8 +101,9 @@ Data2Sub<-Data2Sub[Data2Sub$order %in% Good,]
 
 write.csv(Data2Sub, file=paste(opt[['out']], '_all.csv',sep=''), row.names=F)
 
-Data2Sub<-Data2Sub[, c(chrohead,poshead,rsHead,'nsample.cat', 'beta.cat', 'sd.cat', 'z.cat', 'h2.cat', 'pvalue', 'risk.allele.af')]
-names(Data2Sub)[c(1,2, 3)]<-c("chro", "bp", 'rs')
+Data2Sub<-Data2Sub[, c(chrohead,poshead,rsHead,riskall,'nsample.cat', 'beta.cat', 'sd.cat', 'z.cat', 'h2.cat', 'pvalue', 'risk.allele.af')]
+names(Data2Sub)[c(1,2, 3,4)]<-c("chro", "bp", 'rs', "risk_allele")
+Data2Sub<-Data2Sub[order(Data2Sub$chro, Data2Sub$bp),]
 write.csv(Data2Sub, file=paste(opt[['out']], '_resume.csv',sep=''), row.names=F)
 
 write.table(Data2Sub[, c("chro", "bp", "bp", "rs")], file=paste(opt[['out']], '.bed',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
