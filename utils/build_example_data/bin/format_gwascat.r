@@ -55,17 +55,17 @@ opt = parse_args(opt_parser);
 #cnv 	N	enum('Y', 'N') 	values 	Y if Copy Number Variant
 
 lisp<-unlist(strsplit(opt[['pheno']],','))
-lisc<-unlist(strsplit(opt[['chrom']],','))
+lisc<-unlist(strsplit(opt[['chro']],','))
 Data<-read.csv(opt[['file']], header=F, sep='\t')
 
 #lisp="Type 2 diabetes";lisc=c("22","21")
 format="USCS"
 if(format=="USCS"){
-chrohead="chrom";phenhead="trait";poshead="chromStart";OrBetaHead="orOrBeta";headCi95="ci95";pValueHead="pValue";nvalueHead="initSample";freqHead="riskAlFreq";rsHead
+chrohead="chrom";phenhead="trait";poshead="chromStart";OrBetaHead="orOrBeta";headCi95="ci95";pValueHead="pValue";nvalueHead="initSample";freqHead="riskAlFreq";rsHead="name"
 names(Data)<-c("bin", "chrom", "chromStart", "chromEnd", "name", "pubMedID", "author", "pubDate", "journal", "title", "trait", "initSample","replSample","region", "genes", "riskAllele", "riskAlFreq", "pValue", "pValueDesc", "orOrBeta", "ci95","platform", "cnv")
 }
 Data[,chrohead]<-gsub('chr', '',as.character(Data[,chrohead]))
-Data2<-Data[Data[,phenhead] %in% lisp & Data[,chrohead] %in% lisc,]
+Data2<-Data[tolower(as.character(Data[,phenhead])) %in% tolower(lisp) & Data[,chrohead] %in% lisc,]
 #c(2,3, 20,21,18,11)]
 if(nrow(Data2)==0){
 cat("no phenotype ",opt[['pheno']]," found in file \n")
@@ -92,8 +92,8 @@ Data2Sub$sd.cat<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96
 Data2Sub$sd.cat2<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96*sqrt(Data2Sub$nsample.cat)
 Data2Sub$z.cat<-Data2Sub$beta.cat/(Data2Sub$sd.cat)
 Data2Sub$h2.cat=computedher(Data2Sub$beta.cat, Data2Sub$sd.cat, Data2Sub$risk.allele.af,Data2Sub$nsample.cat)
-Data2Sub$pvalue<-as.numeric(as.character(Data2Sub$pvalue))
-Data2Sub<-Data2Sub[!is.na(Data2Sub$h2.cat) & !is.na(Data2Sub$pvalue),]
+Data2Sub$pvalue<-as.numeric(as.character(Data2Sub[,rsHead]))
+Data2Sub<-Data2Sub[!is.na(Data2Sub$h2.cat) & !is.na(Data2Sub[,pValueHead]),]
 Data2Sub<-Data2Sub[order(Data2Sub$h2.cat),]
 Data2Sub$order<-1:nrow(Data2Sub)
 Good<-aggregate(as.formula(paste("order~",chrohead,"+",poshead,sep="")), data=Data2Sub, min)$order
@@ -103,6 +103,7 @@ write.csv(Data2Sub, file=paste(opt[['out']], '_all.csv',sep=''), row.names=F)
 
 Data2Sub<-Data2Sub[, c(chrohead,poshead,rsHead,'nsample.cat', 'beta.cat', 'sd.cat', 'z.cat', 'h2.cat', 'pvalue', 'risk.allele.af')]
 names(Data2Sub)[c(1,2, 3)]<-c("chro", "bp", 'rs')
+write.csv(Data2Sub, file=paste(opt[['out']], '_resume.csv',sep=''), row.names=F)
 
-write.table(Data2Sub[, c("chro", "bp", "bp", "rs")], file=paste(opt[['out']], '.bed',sep=''), row.names=F, col.names=F, sep="\t")
-
+write.table(Data2Sub[, c("chro", "bp", "bp", "rs")], file=paste(opt[['out']], '.bed',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
+write.table(Data2Sub[, c("chro", "bp")], file=paste(opt[['out']], '.pos',sep=''), row.names=F, col.names=F, sep="\t", quote=F)

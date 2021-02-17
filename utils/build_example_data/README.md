@@ -11,7 +11,8 @@ The pipeline is run: `nextflow run utils/build_example_data/main.nassocf`
 The key options are:
 * `output_dir` : output direction
 * `pos_allgeno` : position extracted from all geno
-* `listchro`  : list chro extracted fromm 1000 genome
+* `list_chro`  : list chro extracted fromm 1000 genome
+* `list_pheno` : list pheno of gwas catalog to extract
 
 For example
 
