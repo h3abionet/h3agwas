@@ -83,8 +83,10 @@ IC<-data.frame(lower.cat=IC[,1], upper.cat=IC[,2])
 Data2Sub<-cbind(Data2Sub,IC)
 Data2Sub$nsample.cat<-sapply(strsplit(as.character(Data2Sub[,nvalueHead]),split="[ ]"),function(x)sum(as.integer(gsub(",", "",grep("[0-9]", x,value=T)))))
 Data2Sub$beta.cat<-as.numeric(as.character(Data2Sub[,OrBetaHead]))
-Data2Sub$lower.cat[Data2Sub$beta.cat>=1]<-log2(Data2Sub$lower.cat[Data2Sub$beta.cat>=1])
-Data2Sub$upper.cat[Data2Sub$beta.cat>=1]<-log2(Data2Sub$upper.cat[Data2Sub$beta.cat>=1])
+balisebeta<-!is.na(Data2$beta.cat) & Data2Sub$beta.cat>=1
+Data2Sub$lower.cat[balisebeta]<-log2(Data2Sub$lower.cat[balisebeta])
+Data2Sub$upper.cat[balisebeta]<-log2(Data2Sub$upper.cat[balisebeta])
+Data2Sub<-Data2Sub[!is.na(Data2Sub$beta.cat) & !is.na(Data2Sub$lower.cat) & !is.na(Data2Sub$upper.cat) & !is.na(Data2Sub$nsample.cat) ,]
 
 Data2Sub$beta.cat[Data2Sub$beta.cat>=1]<-log2(Data2Sub$beta.cat[Data2Sub$beta.cat>=1])
 Data2Sub$risk.allele.af<-as.numeric(as.character(Data2Sub[,freqHead]))
@@ -92,7 +94,7 @@ Data2Sub$sd.cat<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96
 Data2Sub$sd.cat2<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96*sqrt(Data2Sub$nsample.cat)
 Data2Sub$z.cat<-Data2Sub$beta.cat/(Data2Sub$sd.cat)
 Data2Sub$h2.cat=computedher(Data2Sub$beta.cat, Data2Sub$sd.cat, Data2Sub$risk.allele.af,Data2Sub$nsample.cat)
-Data2Sub$pvalue<-as.numeric(as.character(Data2Sub[,rsHead]))
+Data2Sub$pvalue<-as.numeric(as.character(Data2Sub[,pValueHead]))
 Data2Sub<-Data2Sub[!is.na(Data2Sub$h2.cat) & !is.na(Data2Sub[,pValueHead]),]
 Data2Sub<-Data2Sub[order(Data2Sub$h2.cat),]
 Data2Sub$order<-1:nrow(Data2Sub)
@@ -106,5 +108,8 @@ names(Data2Sub)[c(1,2, 3,4)]<-c("chro", "bp", 'rs', "risk_allele")
 Data2Sub<-Data2Sub[order(Data2Sub$chro, Data2Sub$bp),]
 write.csv(Data2Sub, file=paste(opt[['out']], '_resume.csv',sep=''), row.names=F)
 
-write.table(Data2Sub[, c("chro", "bp", "bp", "rs")], file=paste(opt[['out']], '.bed',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
+Data2SubBed<-Data2Sub[,c("chro", "bp", "rs")]
+Data2SubBed$bpbefore<-Data2SubBed$bp-1
+
+write.table(Data2SubBed[, c("chro", "bpbefore", "bp", "rs")], file=paste(opt[['out']], '.bed',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
 write.table(Data2Sub[, c("chro", "bp")], file=paste(opt[['out']], '.pos',sep=''), row.names=F, col.names=F, sep="\t", quote=F)

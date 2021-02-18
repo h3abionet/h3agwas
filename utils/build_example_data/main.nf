@@ -51,6 +51,13 @@ params.gwas_cat=""
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 params.list_pheno="Type 2 diabetes"
 params.gcta_bin="gcta64"
+
+params.clump_p1=0.0001 
+params.clump_p2=0.01 
+params.clump_r2=0.50 
+params.clump_kb=0.5
+
+
 listchro=getlistchro(params.list_chro)
 listchro_ch=Channel.from(listchro)
 listchro_ch2=Channel.from(listchro)
@@ -69,7 +76,9 @@ process Dl1000G{
    script :
       file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
       """
-      tabix -fh $Dir1000G/$file1000G -R $pos_geno |bgzip -c > $file1000G
+      #tabix -fh $Dir1000G/$file1000G -R $pos_geno |bgzip -c > $file1000G
+      awk -v chro=$chro '{if(\$1==chro)print \$1"\\t"\$2-1"\\t"\$2"\\t"\$1":"\$2}' $pos_geno > pos.bed 
+      bcftools view -R pos.bed $Dir1000G/$file1000G|bgzip -c > $file1000G
       """
 }
 
@@ -118,7 +127,7 @@ process mergePlinkFile{
      firstbed=allfile2[0]
      allfile2.remove(0)
      nbfile = allfile2.size()
-     out=params.output/
+     out=params.output
      """ 
      if [ $nbfile == "0" ]
      then
@@ -160,7 +169,7 @@ process GwasCatDl{
       out="gwascat_format"
       """
       wget -c ${params.gwas_cat_ftp} 
-      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` --pheno \"${params.list_pheno}\" --out $out  --chro ${params.list_chro}
+      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` --pheno \"${params.list_pheno}\" --out $out  --chro ${listchro.join(',')}
       """
 }
 //}
@@ -242,7 +251,7 @@ process mergePlinkFile_GC{
      """
 }
 
-process simulate_pheno{
+process format_simulated{
    cpus params.plk_cpus
    input :
      tuple file(bed), file(bim), file(fam) from allplkres_ch_gc
@@ -255,7 +264,8 @@ process simulate_pheno{
      out=params.output+".pheno"
      outeffect=params.output+".effect.rs"
      """
-     format_simulated.r --bim $bim --gc_her $gwascat --out $outeffect
-     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out $out --simu-rep ${params.simu_rep}
+     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb}
+
+     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out $out --simu-rep ${params.simu_rep} 
      """
 }
