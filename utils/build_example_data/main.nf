@@ -51,11 +51,14 @@ params.gwas_cat=""
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 params.list_pheno="Type 2 diabetes"
 params.gcta_bin="gcta64"
+params.simu_k=0.1
+params.simu_cc_p=0.5
+
 
 params.clump_p1=0.0001 
 params.clump_p2=0.01 
 params.clump_r2=0.50 
-params.clump_kb=0.5
+params.clump_kb=250
 
 
 listchro=getlistchro(params.list_chro)
@@ -256,16 +259,55 @@ process format_simulated{
    input :
      tuple file(bed), file(bim), file(fam) from allplkres_ch_gc
      file(gwascat) from gwascat_detail
-   publishDir "${params.output_dir}/plink_gc/pheno/",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/plink_gc/pheno_format/",  overwrite:true, mode:'copy'
    output :
+      tuple file(bed), file(bim), file(fam), file(outeffect) into (info_sim_qt, info_sim_ql)
+      file(fam) into fam_countnb
       file("$params.output*")
    script :
      plk=bed.baseName
-     out=params.output+".pheno"
      outeffect=params.output+".effect.rs"
      """
      format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb}
-
-     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out $out --simu-rep ${params.simu_rep} 
      """
 }
+
+def CountLinesFile(File){
+     BufferedReader reader = new BufferedReader(new FileReader(File));
+     int lines = 0;
+     while (reader.readLine() != null) lines++;
+     reader.close();
+     return(lines)
+}
+
+
+process simulation_quantitatif{
+   cpus params.plk_cpus
+   input :
+     tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_qt
+   publishDir "${params.output_dir}/plink_gc/quant_pheno/",  overwrite:true, mode:'copy'
+   output :
+      file("$params.output*")
+   script :
+     out=params.output+"_qt.pheno"
+     plk=bed.baseName
+     """
+     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out $out --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}
+     """
+}
+
+process simulation_qualitatif{
+   cpus params.plk_cpus
+   input :
+     tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_ql
+   publishDir "${params.output_dir}/plink_gc/qual_pheno/",  overwrite:true, mode:'copy'
+   output :
+      file("$params.output*")
+   script :
+     out=params.output+"_ql.pheno"
+     plk=bed.baseName
+     """
+     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-hsq ${params.simu_hsq} --out $out --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}  --simu-cc `estimated_cc.py $fam ${params.simu_k}`
+     """
+}
+
