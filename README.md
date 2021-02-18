@@ -18,7 +18,8 @@ In addition to this README we have a detailed tutorial and videos
 
 
 ## What's new :
-* 2021-02-16: add report to vcf in plink with analyse of frequencies and score  
+* 2021-02-18: add pipeline to build a example data using gwas catalog and 1000 genome [build\_example\_data](utils/build_example_data/README.md)
+* 2021-02-16: add report to vcf in plink with analyse of frequencies and score  [formatdata](formatdata/README.md)
 * 2021-01-22: create utils folder to add Metasoft binary and utils (server down)
 * 2020-12-08: add meta analyse with plink [assoc](assoc/README.md)
 * 2020-12-01: add plink GxE, add estimation of beta and se [assoc](assoc/README.md)
