@@ -165,32 +165,16 @@ process addSexFile{
  publishDir "${params.output_dir}/geno_all/",  overwrite:true, mode:'copy'
  output :
     tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch
-    file("$out")
+    file("$out*")
  script :
      out=params.output
      basename=bed.baseName
      """
      wget -c ${params.sex_info_file}
-     format_sex_forplk.r --file ${params.sex_info_file} --info ${params.sex_info} --out ${out}.sex --error ${params.sex_error}
-     plink --bfile $basename --keep-allele-order --threads ${params.nb_cpus} --make-bed --out $out  --update-sex ${out}.sex
+     format_sex_forplk.r --file ${params.sex_info_file} --info ${params.sex_info} --out ${out}_sex --error ${params.sex_error}
+     plink --bfile $basename --keep-allele-order --threads ${params.nb_cpus} --make-bed --out $out  --update-sex ${out}_sex
      """
 }
-//process thindata{
-//   cpus params.nb_cpus
-//   input :
-//     tuple file(bed), file(bim), file(fam) from allplkres_ch
-//   publishDir "${params.output_dir}/",  overwrite:true, mode:'copy'
-//   output :
-//     tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") 
-//   script :
-//      basename=bed.baseName
-//      out=basename+"_"+params.thin+"_"+params.maf
-//      """
-//      plink --bfile $basename --thin ${params.thin} --maf ${params.maf} --keep-allele-order --make-bed --out $out
-//      """
-//}
-//
-//if(params.gwas_cat=="")
 process GwasCatDl{
     publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
     output :
@@ -205,7 +189,6 @@ process GwasCatDl{
       format_gwascat.r --file `basename ${params.gwas_cat_ftp}` --pheno \"${params.list_pheno}\" --out $out  --chro ${listchro.join(',')}
       """
 }
-//}
 
 listchro_ch_gwascat=Channel.from(listchro_pheno)
 listchro_ch_gwascat=listchro_ch_gwascat.combine(gwascat_pos)
@@ -261,7 +244,7 @@ process mergePlinkFile_GC{
    cpus params.nb_cpus
    input :
       val(allfile) from plk_chro_flt_gc
-   publishDir "${params.output_dir}/plink_gc/",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/simul_pheno/datai/",  overwrite:true, mode:'copy'
    output :
      tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch_gc
    script :
@@ -290,7 +273,7 @@ process format_simulated{
    input :
      tuple file(bed), file(bim), file(fam) from allplkres_ch_gc
      file(gwascat) from gwascat_detail
-   publishDir "${params.output_dir}/plink_gc/pheno_format/",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/simul_pheno/pheno_format/",  overwrite:true, mode:'copy'
    output :
       tuple file(bed), file(bim), file(fam), file(outeffect) into (info_sim_qt, info_sim_ql)
       file(fam) into fam_countnb
@@ -303,27 +286,20 @@ process format_simulated{
      """
 }
 
-def CountLinesFile(File){
-     BufferedReader reader = new BufferedReader(new FileReader(File));
-     int lines = 0;
-     while (reader.readLine() != null) lines++;
-     reader.close();
-     return(lines)
-}
-
 
 process simulation_quantitatif{
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_qt
-   publishDir "${params.output_dir}/plink_gc/quant_pheno/",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/simul_pheno/quant_pheno/",  overwrite:true, mode:'copy'
    output :
       file("$params.output*")
    script :
      out=params.output+"_qt.pheno"
      plk=bed.baseName
      """
-     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out $out --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}
+     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out sim --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}
+     format_file_sim.r sim".phen" $out   
      """
 }
 
@@ -331,14 +307,15 @@ process simulation_qualitatif{
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_ql
-   publishDir "${params.output_dir}/plink_gc/qual_pheno/",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/simul_pheno/qual_pheno/",  overwrite:true, mode:'copy'
    output :
       file("$params.output*")
    script :
      out=params.output+"_ql.pheno"
      plk=bed.baseName
      """
-     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-hsq ${params.simu_hsq} --out $out --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}  --simu-cc `estimated_cc.py $fam ${params.simu_k}`
+     ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-hsq ${params.simu_hsq} --out sim --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}  --simu-cc `estimated_cc.py $fam ${params.simu_k}`
+     format_file_sim.r sim".phen" $out   
      """
 }
 
