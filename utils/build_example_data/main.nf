@@ -293,13 +293,13 @@ process simulation_quantitatif{
      tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_qt
    publishDir "${params.output_dir}/simul_pheno/quant_pheno/",  overwrite:true, mode:'copy'
    output :
-      file("$params.output*")
+      file("$out")
    script :
      out=params.output+"_qt.pheno"
      plk=bed.baseName
      """
      ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out sim --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}
-     format_file_sim.r sim".phen" $out   
+     format_file_sim.r --file sim".phen" --out $out   
      """
 }
 
@@ -309,13 +309,13 @@ process simulation_qualitatif{
      tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_ql
    publishDir "${params.output_dir}/simul_pheno/qual_pheno/",  overwrite:true, mode:'copy'
    output :
-      file("$params.output*")
+      file("$out")
    script :
      out=params.output+"_ql.pheno"
      plk=bed.baseName
      """
      ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-hsq ${params.simu_hsq} --out sim --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}  --simu-cc `estimated_cc.py $fam ${params.simu_k}`
-     format_file_sim.r sim".phen" $out   
+     format_file_sim.r --file sim".phen" --out $out   
      """
 }
 

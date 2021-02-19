@@ -14,7 +14,7 @@ opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
 Data<-read.table(opt[['file']],header=F)
-data[[data==-9]]<-NA
-names(Data)<-c('FID','IID', paste("pheno_",1:(nrow(Data)-2),sep=''))
+for(cmt in 3:ncol(Data))Data[Data[,cmt]==-9 ,cmt]<-NA
+names(Data)<-c('FID','IID', paste("pheno_",1:(ncol(Data)-2),sep=''))
 write.table(Data, row.names=F, col.names=T, sep='\t', quote=F, file=opt[['out']])
 
