@@ -295,15 +295,15 @@ def showFigs(figs):
        caps = list('abcdefghijklmnopqrtuvwxyzABCD')
        curr_cap=0
        for (i,(fig,label)) in enumerate(figs):
-          inner=inner+sub_fig_template%(label.replace('_','\\_'),fig)
+          inner=inner+sub_fig_template%(label.replace('_',' '),fig)
           if i%num_cols==1:
               inner=inner+"*-*-"
           if (i+1)%num_sub_figs_per_fig==0:
-              template= template + fig_template%(inner.replace('_','\\_'),caps[curr_cap])
+              template= template + fig_template%(inner.replace('_',' '),caps[curr_cap])
               inner=""
               curr_cap=curr_cap+1
        if (i+1)%num_sub_figs_per_fig !=0:
-           template= template + fig_template%(inner.replace('_','\\_'),caps[curr_cap])
+           template= template + fig_template%(inner.replace('_',' '),caps[curr_cap])
        else:
            curr_cap=curr_cap-1
        if curr_cap==0:
@@ -499,7 +499,7 @@ included with the given *-emph{mind} value. *-emph{HErr} is the number of hard e
 def detSexHeader(pfrm,missing_sex_columns):
     num_bands = len(missing_sex_columns) # missing rates supported
     tab_spec= "l"+(" r@{*-phantom{.}}r@{*-phantom{.}}r"*num_bands)
-    header1 = args.pheno_col.replace('_','\\_')
+    header1 = args.pheno_col.replace('_',' ')
     for n in missing_sex_columns:
        header1=header1+" & *-multicolumn{3}{c}{mind=%s}"%str(n)
     header1 = header1+"*-*-"
@@ -554,7 +554,7 @@ def detailedSexAnalysis(pfrm,missing_sex_columns):
        for grpname, gg in g:
            tbl = tbl+detSexGroup(gg,grpname,missing_sex_columns)
     return \
-        det_sex_analysis%(sex_fname,args.pheno_col.replace('_','\\_')) +\
+        det_sex_analysis%(sex_fname,args.pheno_col.replace('_',' ')) +\
         det_table%(header+(tbl,args.pheno_col))
 
        
