@@ -886,6 +886,7 @@ process removeSkewSnps {
 
 
 
+/*
 process convertInVcf {
    memory plink_mem_req
    cpus max_plink_cores
@@ -900,7 +901,7 @@ process convertInVcf {
      plink --bfile ${base} --threads ${max_plink_cores} --recode vcf --out $base
      """
 
-}
+}*/
 
 
 process calculateMaf {

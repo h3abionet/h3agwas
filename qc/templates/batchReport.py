@@ -74,7 +74,7 @@ res_template = """
 
  *-begin{table}[hb]*-centering
  *-begin{tabular}{l r r r r}*-hline
- %s & Num samples & Missing rate & %s poor & Sex Checkfail *-*-*-hline
+ *-url{%s} & Num samples & Missing rate & *-url{%s} poor & Sex Checkfail *-*-*-hline
 """
 
 
@@ -157,7 +157,7 @@ duplicate_table  = """
 *-label{table:vclose}
 *-endhead
 Individual 1 & Individual 2 & ##{*-widehat{*-pi}}## *-*-*-hline
-%s
+*-url{%s}
 *-end{longtable}
 
 """
@@ -214,9 +214,9 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
 def showResult(colname,num_samples,ave_miss,num_poor_i,problems,sex_report):
    t = res_template%(colname,"*-"+PCT)
    if type(problems) == type(None): 
-       template="%s & %d & %5.2f & %5.2f & n/a *-*-"
+       template="*-url{%s} & %d & %5.2f & %5.2f & n/a *-*-"
    else:
-       template="%s & %d & %5.2f & %5.2f & %5.2f *-*-"
+       template="*-url{%s} & %d & %5.2f & %5.2f & %5.2f *-*-"
    for r in ave_miss.index:
       if type(problems) == type(None):
          res = ( r, num_samples.loc[r],ave_miss.loc[r],num_poor_i.loc[r]['F_MISS'])
@@ -295,7 +295,7 @@ def showFigs(figs):
        caps = list('abcdefghijklmnopqrtuvwxyzABCD')
        curr_cap=0
        for (i,(fig,label)) in enumerate(figs):
-          inner=inner+sub_fig_template%(label,fig)
+          inner=inner+sub_fig_template%(label.replace('_','\\_'),fig)
           if i%num_cols==1:
               inner=inner+"*-*-"
           if (i+1)%num_sub_figs_per_fig==0:
@@ -397,7 +397,7 @@ def getRelatedPairs(pfrm,pheno_col,genome):
         keys=[" ALL"]
     for k in keys:
         rest = group[k]-ident.get(k,0)-sib.get(k,0)
-        rows = rows + "%s & %d & %d & %d & %d*-*-"%(k,group[k],ident.get(k,0),sib.get(k,0),rest)+EOL
+        rows = rows + "*-url{%s} & %d & %d & %d & %d*-*-"%(k,group[k],ident.get(k,0),sib.get(k,0),rest)+EOL
     rel_text=""
     if num_mixed > 0:
         rest = num_mixed-ident_mixed-sib_mixed
@@ -465,7 +465,7 @@ be taken with this.
 A summary of the detailed analysis is shown below. In the output, the
 file *-url{%s} is a CSV file that has sample ID, per-individual
 missingness rate in the raw data (*-verb!F_MISS! is the individual
-missingness rate *-emph{not} the F-statistic), the %s status, and
+missingness rate *-emph{not} the F-statistic), the *-url{%s} status, and
 whether that sample is hard (H) or soft error (S) for given tolerated
 per-individual genotyping error rates on the X-chromosome. A `-'
 indicates that the indivdual is filtered out at that rate of
@@ -479,7 +479,7 @@ are due to poor genotyping rates in individuals.
 det_table="""*-begin{table}[htb]*-centering
 
 *-begin{tabular}{%s}*-hline
-%s
+*-url{%s}
 %s*-*-*-hline
 %s*-hline
 *-end{tabular}
