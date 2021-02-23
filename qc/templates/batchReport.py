@@ -299,11 +299,11 @@ def showFigs(figs):
           if i%num_cols==1:
               inner=inner+"*-*-"
           if (i+1)%num_sub_figs_per_fig==0:
-              template= template + fig_template%(inner,caps[curr_cap])
+              template= template + fig_template%(inner.replace('_','\\_'),caps[curr_cap])
               inner=""
               curr_cap=curr_cap+1
        if (i+1)%num_sub_figs_per_fig !=0:
-           template= template + fig_template%(inner,caps[curr_cap])
+           template= template + fig_template%(inner.replace('_','\\_'),caps[curr_cap])
        else:
            curr_cap=curr_cap-1
        if curr_cap==0:
@@ -479,13 +479,13 @@ are due to poor genotyping rates in individuals.
 det_table="""*-begin{table}[htb]*-centering
 
 *-begin{tabular}{%s}*-hline
-*-url{%s}
+%s
 %s*-*-*-hline
 %s*-hline
 *-end{tabular}
 
 
-*-caption{Summary of anomalous sex calls. The results are shown for
+*-caption{ of anomalous sex calls. The results are shown for
 different values *-emph{mind} the maximum per-sample error rate
 tolerated in the X-chromosome (PLINK parameter). *-emph{mind}==1 means
 all SNPs included. *-emph{Tot} shows the number of individuals
@@ -499,7 +499,7 @@ included with the given *-emph{mind} value. *-emph{HErr} is the number of hard e
 def detSexHeader(pfrm,missing_sex_columns):
     num_bands = len(missing_sex_columns) # missing rates supported
     tab_spec= "l"+(" r@{*-phantom{.}}r@{*-phantom{.}}r"*num_bands)
-    header1 = args.pheno_col 
+    header1 = args.pheno_col.replace('_','\\_')
     for n in missing_sex_columns:
        header1=header1+" & *-multicolumn{3}{c}{mind=%s}"%str(n)
     header1 = header1+"*-*-"
@@ -554,7 +554,7 @@ def detailedSexAnalysis(pfrm,missing_sex_columns):
        for grpname, gg in g:
            tbl = tbl+detSexGroup(gg,grpname,missing_sex_columns)
     return \
-        det_sex_analysis%(sex_fname,args.pheno_col) +\
+        det_sex_analysis%(sex_fname,args.pheno_col.replace('_','\\_')) +\
         det_table%(header+(tbl,args.pheno_col))
 
        
