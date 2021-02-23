@@ -72,7 +72,7 @@ Channel
       .separate(plkinit, biminitial, biminitial_extractref) { a -> [a,a[1], a[1]] }
 
 
-rs_infogz=Channel.fromPath(params.file_ref_gzip)
+rs_infogz=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
 process extractrsname{
   input :
     file(bim) from biminitial
@@ -87,7 +87,7 @@ process extractrsname{
     """
 }
 
-fastaextractref=Channel.fromPath(params.reffasta)
+fastaextractref=Channel.fromPath(params.reffasta,checkIfExists:true)
 process extractpositionfasta{
  input :
     file(bim) from biminitial_extractref
@@ -159,11 +159,12 @@ process refallele{
     """
 }
 
-hgrefconv=Channel.fromPath(params.reffasta)
+hgrefconv=Channel.fromPath(params.reffasta,checkIfExists:true)
 if(params.parralchro==0){
 process convertInVcf {
    memory params.plink_mem_req
    cpus params.max_plink_cores
+   time params.big_time
    input :
     set file(bed), file(bim), file(fam) from plk_alleleref
     file(fast) from hgrefconv
@@ -175,9 +176,11 @@ process convertInVcf {
      base=bed.baseName
      out="${params.output}"
      """
+     mkdir -p tmp
      plink --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores} 
-     ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}_tmp.vcf.gz
-     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m top &> reportfixref
+     ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}_tmp.vcf.gz -T tmp/
+     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast T tmp/ -m top &> reportfixref
+     rm -rf tmp
      """
  }
 }else{
@@ -238,8 +241,8 @@ process mergevcf{
 }
 
 //if(params.reffasta!=""){
-hgref=Channel.fromPath(params.reffasta)
-hgref2=Channel.fromPath(params.reffasta)
+hgref=Channel.fromPath(params.reffasta, checkIfExists:true)
+hgref2=Channel.fromPath(params.reffasta, checkIfExists:true)
 process checkfixref{
   input :
     file(vcf) from vcfi
