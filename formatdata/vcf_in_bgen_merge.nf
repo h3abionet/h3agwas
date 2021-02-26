@@ -36,6 +36,7 @@ params.max_cores = 8
 params.genotype_field="GP"
 params.qctoolsv2_bin="qctool_v2"
 params.bcftools_bin="bcftools"
+params.score_imp="INFO"
 
 
 if(params.file_listvcf==""){
@@ -54,7 +55,7 @@ process filter_vcf{
   script :
     Ent=vcf.baseName+"_filter.vcf.gz"
     """
-    ${params.bcftools_bin} view -i 'INFO>${params.min_scoreinfo}' $vcf -Oz > $Ent
+    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf -Oz > $Ent
     ${params.bcftools_bin} index $Ent
     """
 }

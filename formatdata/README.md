@@ -18,6 +18,9 @@
 * `min_scoreinfo` : what score info minimum do you want : [default :0.6]
 * `output_pat` : pattern of output for bed final file [default : out]
 * `output_dir` : directory of output : [default : plink] 
+* `score_imp` : header of score imputation [default : INFO], for score info depend of software used on software of imptuation
+ * PBWT : INFO
+ * 
 * `do_stat` : by default true make stat using frequencies and score 
  * statfreq_vcf : 
   * pattern used in Info to computed frequencies  ([default : "%AN %AC" with AN total and AC alternative number]) 

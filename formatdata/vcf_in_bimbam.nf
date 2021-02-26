@@ -34,6 +34,7 @@ params.max_plink_cores = 8
 params.genotype_field="GP"
 params.qctoolsv2_bin="qctool_v2"
 params.bcftools_bin="bcftools"
+params.score_imp="INFO"
 
 
 
@@ -64,7 +65,7 @@ process formatvcfinbimbam{
   script :
     Ent=vcf.baseName
     """
-    ${params.bcftools_bin} view -i 'INFO>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype bimbam_dosage -og ${Ent}.bimbam -filetype vcf
+    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype bimbam_dosage -og ${Ent}.bimbam -filetype vcf
     """
 }
 

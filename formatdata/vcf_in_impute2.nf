@@ -56,7 +56,7 @@ process formatvcfinimpute2{
   script :
     Ent=vcf.baseName
     """
-    ${params.bcftools_bin} view -i 'INFO>${params.min_scoreinfo}' $vcf  | bcftools query -f '%CHROM %ID %POS %REF %ALT [ %GP]\\n' | awk '{if(\$2==\".\"){\$2=\$1\":\"\$3};\$1=\$2;print \$0}' |sed 's/,/ /g'|gzip > ${Ent}.impute2.gz
+    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf  | bcftools query -f '%CHROM %ID %POS %REF %ALT [ %GP]\\n' | awk '{if(\$2==\".\"){\$2=\$1\":\"\$3};\$1=\$2;print \$0}' |sed 's/,/ /g'|gzip > ${Ent}.impute2.gz
     """
 }
 

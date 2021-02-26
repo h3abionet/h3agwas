@@ -205,8 +205,8 @@ process convertInVcfChro{
    input :
       set file(bed), file(bim), file(fam) from plk_alleleref
       file(fast) from hgrefconv
+   publishDir "${params.output_dir}/vcf_bychro/", overwrite:true, mode:'copy'
    each chro from ListeChro
-   publishDir "${params.output_dir}/vcf/rep/", overwrite:true, mode:'copy', pattern: "*.rep"
    output : 
      file("${out}.rep") 
      file("${out}.vcf.gz") into vcf_chro

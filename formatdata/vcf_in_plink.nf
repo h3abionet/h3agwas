@@ -61,6 +61,7 @@ params.other_mem_req = '10GB' // how much plink needs for this
 params.output_pat="out"
 params.output_dir="plink/"
 params.statfreq_vcf="%AN %AC"
+params.score_imp="INFO"
 params.genetic_maps=""
 params.do_stat=true
 
@@ -84,7 +85,7 @@ process computedstat{
   script :
     Ent=vcf.baseName+".stat"
     """
-    bcftools query -f '%CHROM %REF %ALT %POS %INFO/INFO ${params.statfreq_vcf}\n' $vcf > $Ent
+    bcftools query -f '%CHROM %REF %ALT %POS %INFO/${params.score_imp} ${params.statfreq_vcf}\n' $vcf > $Ent
     """
 }
 statmerg=listchrostat.collect()
@@ -117,7 +118,7 @@ process formatvcfscore{
   script :
     Ent=vcf.baseName
     """
-    bcftools view -Ou -i 'INFO>${params.min_scoreinfo}' $vcf  | bcftools convert -Oz -o ${Ent}.vcf.gz
+    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf  | bcftools convert -Oz -o ${Ent}.vcf.gz
     plink --vcf ${Ent}.vcf.gz --recode --keep-allele-order --make-bed --out ${Ent} --threads ${params.max_plink_cores}
     cp ${Ent}.bim ${Ent}.save.bim
     awk \'{if(\$2==\".\"){\$2=\$1\":\"\$4};print \$0}\' ${Ent}.save.bim > ${Ent}.bim
