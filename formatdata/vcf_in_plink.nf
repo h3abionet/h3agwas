@@ -56,8 +56,8 @@ params.remove_on_bp  = 1
 params.file_listvcf=""
 params.min_scoreinfo=0.6
 params.max_plink_cores = 8 
-params.plink_mem_req = '10GB' // how much plink needs for this
-params.other_mem_req = '10GB' // how much plink needs for this
+#params.plink_mem_req = '10GB' // how much plink needs for this
+#params.other_mem_req = '10GB' // how much plink needs for this
 params.output_pat="out"
 params.output_dir="plink/"
 params.statfreq_vcf="%AN %AC"
@@ -91,6 +91,7 @@ process computedstat{
 statmerg=listchrostat.collect()
 
 process dostat{
+ memory params.plink_mem_req
  input :
     file(allstat) from statmerg
  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
