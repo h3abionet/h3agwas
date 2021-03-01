@@ -99,9 +99,9 @@ Other flags are:
 
 
 # Post-Analysis script 
-##1. Computed a p.value par permutation with gemma 
+## 1. Computed a p.value par permutation with gemma 
 
-##2. Conditional & joint (COJO) analysis of GWAS summary statistic
+## 2. Conditional & joint (COJO) analysis of GWAS summary statistic
 
 this section describes a pipeline in devloment, objectives is doing a conditional and joint association using GWAS summary data and gcta
 see [cojo](https://cnsgenomics.com/software/gcta/#COJO)
@@ -142,7 +142,7 @@ Cojo parameter :
   * `gcta_mem_req`="6GB"
 
 
-##3. Annotation of position 
+## 3. Annotation of position 
 
 This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype
 
