@@ -17,7 +17,7 @@ Our script, *assoc* takes as input PLINK files that have been through quality co
 * does a principal component analysis on the data, and produces pictures from that; 
 * performs a simple association test giving odds ratio and  raw and adjusted _p_ values
 
-## Running
+## 1. Running the main association testing
 
 The pipeline is run: `nextflow run assoc`
 
@@ -98,10 +98,11 @@ Other flags are:
 * `chrom`. Only do testing on this chromosome.
 
 
-# Post-Analysis script 
-##1. Computed a p.value par permutation with gemma 
+# 2. Post-Analysis script 
 
-##2. Conditional & joint (COJO) analysis of GWAS summary statistic
+## 2.1. Computed a p.value par permutation with gemma 
+
+## 2.2. Conditional & joint (COJO) analysis of GWAS summary statistic
 
 this section describes a pipeline in devloment, objectives is doing a conditional and joint association using GWAS summary data and gcta
 see [cojo](https://cnsgenomics.com/software/gcta/#COJO)
@@ -142,7 +143,7 @@ Cojo parameter :
   * `gcta_mem_req`="6GB"
 
 
-##3. Annotation of position 
+## 2.3. Annotation of position 
 
 This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype
 
@@ -150,7 +151,7 @@ This section describes a pipeline in devlopment, objectives is annotation of rs 
 need locuszoom, _R_ : (ggplot2), python3
 
 
-## 4. Simulation pipeline: `assoc/simul-assoc.nf`
+## 2.4. Simulation pipeline: `assoc/simul-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *assoc/simul-assoc.nf* takes as input PLINK files that have been through quality control and
   * Simulate quantitative phenotypes with [phenosim](https://www.ncbi.nlm.nih.gov/pubmed/21714868) based on genetics data
@@ -209,7 +210,7 @@ different output is provided :
   * for phenotype simulation all missing values is discarded and replaced by more frequent allele
   * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
 
-## 5. Estimation of heritabilies
+## 2.5. Estimation of heritabilies
 
 This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, grmel of bolt and greml of gcta, gemma
 two distincs approaches should be considered :
@@ -296,7 +297,7 @@ The key options are:
    * `params.gcta_reml_alg` : see reml-alg :  Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.  [oa]
 
 
-## 5. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
+# 3. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 
