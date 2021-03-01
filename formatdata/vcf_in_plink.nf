@@ -239,7 +239,7 @@ process AddedCM{
        """
        chro=`head $bimi|awk '{print \$1}'|uniq`
        sed '1d' $map|awk -v chro=\$chro '{if(chro==\$1)print \$2"\\t"\$3"\\t"\$4}' >> $cm_shap
-       awk '{print \$2}' $header".bim" | sort | uniq -d > duplicated_snps.snplist
+       awk '{print \$2}' $headeri".bim" | sort | uniq -d > duplicated_snps.snplist
        plink --bfile $headeri --exclude duplicated_snps.snplist --make-bed --keep-allele-order --out $headeri"_tmp"
        plink --bfile $headeri"_tmp" --list-duplicate-vars ids-only suppress-first
        plink --bfile $headeri"_tmp" --keep-allele-order --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $header  --exclude plink.dupvar
