@@ -286,7 +286,7 @@ if(params.metasoft==1){
   file_pvaltab=params.metasoft_pvalue_table
   process doMetaSoft {
     time params.big_time
-    memory ma_mem_req
+    memory metasoft_mem_req
     label 'metaanalyse'
     input :
       val(list_file) from liste_file_metasoft
