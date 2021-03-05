@@ -17,7 +17,7 @@ Our script, *assoc* takes as input PLINK files that have been through quality co
 * does a principal component analysis on the data, and produces pictures from that; 
 * performs a simple association test giving odds ratio and  raw and adjusted _p_ values
 
-## Running
+## 1. Running the main association testing
 
 The pipeline is run: `nextflow run assoc`
 
@@ -98,15 +98,66 @@ Other flags are:
 * `chrom`. Only do testing on this chromosome.
 
 
+<<<<<<< HEAD
 # Post-Analysis script 
 ##1. Computed a p.value par permutation with gemma 
 TODO
+=======
+# 2. Post-Analysis script 
+
+## 2.1. Computed a p.value par permutation with gemma 
+
+## 2.2. Conditional & joint (COJO) analysis of GWAS summary statistic
+
+this section describes a pipeline in devloment, objectives is doing a conditional and joint association using GWAS summary data and gcta
+see [cojo](https://cnsgenomics.com/software/gcta/#COJO)
+
+### Installation
+need python3, gcta 
+tested for singularity image: no
+### Running
+The pipeline is run: `nextflow run assoc/annot-assoc.nf`
+
+The key options are:
+  * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
+  * `output_dir` : output directory
+  * `output` : output pattern
+  * ̀ data` : same option that _assoc/main.nf_, file is optional, used if need select specific individus for gcta,  compute frequencies or N, if mission in `file_gwas`
+  * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+  * `pheno` : optional, header in data, if present select individuals with no missiong individual to keep individuals for computed frequencie or gcta
+  * `cut_maf` minor allele frequencies [ default : 0.0001]
+  * ̀`file_gwas` : file contains gwas result, if N or frequencies is not available, it is computed with plink file and `data` file, to change format header must be defined :
+    * ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+    * `head_freq` : freq header [ default : None], if not present computed with plink, (and data/pheno if present)
+    * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
+    * `head_rs` : rs header column [default : "SNP"]
+    * `head_beta` : beta header colum [default : "BETA"]
+    * `head_se`  : column for standard error of beta "SE"
+    * `head_A1` : column for A0 :[default : "ALLELE0" ]
+    * `head_A2` : column for A1 :[default : "ALLELE1" ]
+
+
+
+Cojo parameter :
+  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ]
+  * `cojo_actual_geno` : If the individual-level genotype data of the discovery set are available (e.g. a single-cohort GWAS), you can use the discovery set as the reference sample. *option to avoid due to a various bug*  [default 0]
+  * `cojo_slct` : Perform a stepwise model selection procedure to select independently associated SNPs? 1 : yes 0 : no [default 1]
+    * `cojo_p` :  Threshold p-value to declare a genome-wide significant hit. The default value is 5e-8 if not specified. This option is only valid in conjunction with the option `cojo_slct`.
+    * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO)
+  * `cojo_top_snps_chro` :  Perform a stepwise model selection procedure to select a fixed number of independently associated SNPs by chromosome without a p-value threshold.  [integer between 0 and n, to define top snp number. default : 0].
+  * `gcta_mem_req`="6GB"
+
+
+## 2.3. Annotation of position 
+
+This section describes a pipeline in devlopment, objectives is annotation of rs using annotation, locuszoom, and phenotype in function of genotype
+>>>>>>> 8933c79753c01b026291ad5777a84455a37dcd3f
 
 ### Installation
 need locuszoom, _R_ : (ggplot2), python3
 
 
-## 4. Simulation pipeline: `assoc/simul-assoc.nf`
+## 2.4. Simulation pipeline: `assoc/simul-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to estimate false positive and false negative with simulated phenotype, Our script, *assoc/simul-assoc.nf* takes as input PLINK files that have been through quality control and
   * Simulate quantitative phenotypes with [phenosim](https://www.ncbi.nlm.nih.gov/pubmed/21714868) based on genetics data
@@ -165,7 +216,7 @@ different output is provided :
   * for phenotype simulation all missing values is discarded and replaced by more frequent allele
   * phenosim use a lot of memory and time, subsample of snp/samples improve times / memory used
 
-## 5. Estimation of heritabilies
+## 2.5. Estimation of heritabilies
 
 This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, grmel of bolt and greml of gcta, gemma
 two distincs approaches should be considered :
@@ -252,7 +303,7 @@ The key options are:
    * `params.gcta_reml_alg` : see reml-alg :  Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.  [oa]
 
 
-## 5. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
+# 3. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 
