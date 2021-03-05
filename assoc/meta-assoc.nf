@@ -41,6 +41,7 @@ params.input_config=''
 params.metal=0
 params.gwama=0
 params.metasoft=0
+params.plink=0
 params.mrmega=0
 params.pheno="notdefined"
 
