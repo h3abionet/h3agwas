@@ -2,8 +2,12 @@
 
 
 ## What's new :
-* 2021-03-08 : re organise pipeline and Readme of :
- * meta-a
+* 2021-03-08 : re organise pipeline :
+ * estimation of heritabilities assoc/esth2-assoc.nf move at heritabilites/main.nf
+ * do a cojo using gcta : assoc/cojo-assoc.nf move at  finemapping/cojo-assoc.nf
+ * meta association assoc/meta-assoc.nf move at meta/meta-assoc.nf
+ * meta using mtag association assoc/mtag-assoc.nf move at meta/mtag-assoc.nf
+ * permutation assoc/permutation-assoc.nf move at utils/permutation/main.nf
 * 2021-02-18: add pipeline to build a example data using gwas catalog and 1000 genome [build\_example\_data](utils/build_example_data/README.md)
 * 2021-02-16: add report to vcf in plink with analyse of frequencies and score  [formatdata](formatdata/README.md)
 * 2021-01-22: create utils folder to add Metasoft binary and utils (server down)
