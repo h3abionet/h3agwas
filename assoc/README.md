@@ -29,11 +29,15 @@ The key options are:
 * `covariates`: a comma-separated list of phenotypes that you want to use
 * `exclude_snps` option to exclude some snps active just for boltlmm (see `--exclude` in boltlmm manual) : SNP ID must be first column (default none)
 *  `print_pca` : by default pipeline compute and print pca (`print_pca`=1), if you want avoid this step (`print_pca` = 0)
-*  `file_rs_buildrelat` : file with rs list (one by lines) to build genetics models (relatdness), for gemma `-snps` for boltlmm `--modelSnps`
 * `genetic_map_file` : genetic map used in boltlmm 
+* build relatdness and GRM, you have different way to buil matrix of relatdness for boltlmm, gemma, fast gwa or fastlmm
+  * by default all snps are used and for boltlmm 9,500,000 are shuffled 
+  * you can give a rs contains id or rs `file_rs_buildrelat` 
+  * you can used `sample_snps_rel` (default 0), will used plink to sample snps and 
+  *  `file_rs_buildrelat` : file with rs list (one by lines) to build genetics models (relatdness), for gemma `-snps` for boltlmm `--modelSnps`
+
 
 By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
-
  * `assoc` : should a chi2 test be used (0 or 1)
  * `fisher`: Fisher exact test (default 0)
  *  `linear`: should linear regreession be used?  (default 0)

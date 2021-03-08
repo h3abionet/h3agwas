@@ -404,7 +404,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
  }else{
 /* n*/
  if(params.file_rs_buildrelat==""){
-   balise_filers=0
+   balise_filers_rel=0
    filers_matrel_mat_fast=file('NO_FILE')
    filers_matrel_mat_GWA=file('NO_FILE')
    filers_matrel_mat_gem=file('NO_FILE')
@@ -884,7 +884,7 @@ if (params.gemma+params.gemma_gxe>0) {
     script:
        base = plinks[0].baseName
        famfile=base+".fam"
-       rs_list = balise_filers_rel==0 ? " -snps $file_rs " : ""
+       rs_list = balise_filers_rel==1 ? " -snps $file_rs " : ""
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
