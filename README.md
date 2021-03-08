@@ -104,8 +104,6 @@ There are three separate workflows that make up *h3agwas*
   * logistic regression
   * Efficient Mixed Model Association testing with gemma, boltlmm or fastlmm
   * Gene environment association with gemma or plink
-  * Other script :
-    * `assoc/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
 
 4. `meta` : meta analyse or mtag :
     * `meta/meta-assoc.nf` : do meta analysis with summary statistics 
@@ -122,6 +120,8 @@ There are three separate workflows that make up *h3agwas*
    * `utils/build_example_data/main.nf` : extract data set from vcf file and simulate dataset 
    * `utils/build_example_data/simul-assoc.nf` : simulation of phenotype using phenosim 
 
+8. `utils/permutatation` 
+  * `utils/permutation/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
 9. `formatdata` : additional script to format data added some missing information etc...
   *  see [README of formatdata/](formatdata/)
 
