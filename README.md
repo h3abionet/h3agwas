@@ -14,31 +14,22 @@ This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, yo
 In addition to this README we have a detailed tutorial and videos 
 * These can be found at http://www.bioinf.wits.ac.za/gwas
 
-
+pipeline do different step of GWAS :
+ * [Format input illuminat in plink format](call2plink/README.md)
+ * [Quality control of array input illuminat in plink format](qc/README.md)
+ * [Association using different software : gcta, plink, gemma, Bolt-LMM, FastLMM and GxE with gemma and plink](assoc/README.md)
+ * Post meta analyses script :
+  * [meta analyse script and mtag approach](meta/README.md)
+  * [Computation of heritabilities or variance explained of phenotype](heritabilities/README.md)
+  * [Finemapping and cojo extraction of windows ](finemapping/README.md)
+ * [Simulation of dataset](utils/build_example_data/README.md)
+ * [Format data differents dataset](formatdata//README.md) :
+  * plink in vcf to prepared your data at imputation 
+  * vcf in plink after imputation
 
 
 ## What's new :
-* 2021-02-18: add pipeline to build a example data using gwas catalog and 1000 genome [build\_example\_data](utils/build_example_data/README.md)
-* 2021-02-16: add report to vcf in plink with analyse of frequencies and score  [formatdata](formatdata/README.md)
-* 2021-01-22: create utils folder to add Metasoft binary and utils (server down)
-* 2020-12-08: add meta analyse with plink [assoc](assoc/README.md)
-* 2020-12-01: add plink GxE, add estimation of beta and se [assoc](assoc/README.md)
-* 2020-11-17: add module nf to convert vcf in bgen format [formatdata](formatdata/README.md)
-* 2020-07-27: add covariable qualitatif to fastgwa [assoc](assoc/README.md)
-* 2020-07-27: News nextflow modules to transform vcf impute format in bimbam[formatdata](formatdata/README.md)
-* 2020-06-03: News nextflow modules to transform plink file in vcf file with check allele for imputation[formatdata](formatdata/README.md)
-* 2020-05-18: fixed bug in gcta to computed heribilities [assoc](assoc/README.md)
-* 2020-03-27: added a modules to convert position between different genome version [formatdata](formatdata/README.md)
-* 2020-02-20: support for awsbatch
-* 2020-02-20 :  added fastgwa (software gcta) as assoc software  : [assoc](assoc/README.md)
-* 2019-10-01 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](formatdata/README.md)
-  * file `formatdata/format_gwasfile.nf`
-* 2019/09/19 : added in estimation of heritabilites option for Multiple variance components for boltlmm  [assoc](assoc/README.md)
-* 2019/09/17 : added format and analysis by mtag in [assoc](assoc/README.md)
-* 2019/09/16 : added two news nextflow files to convert data in [formatdata](formatdata/README.md):
-  * `formatdata/vcf_in_plink.nf` : format data in vcf for plink
-  * `formatdata/vcf_in_impute2.nf` : extract impute2 data from vcf of sanger
-* 2019/09/10 : update estimation of heritability in [assoc](assoc/README.md) to take account for each software when heritabilities can't be computed
+ * see [What's news](News.md)
 
 ## Background
 
@@ -113,15 +104,27 @@ There are three separate workflows that make up *h3agwas*
   * logistic regression
   * Efficient Mixed Model Association testing with gemma, boltlmm or fastlmm
   * Gene environment association with gemma or plink
-  * Other scripts gave for post analysis :
-    * `assoc/cojo-assoc.nf` : do Conditional & joint (COJO) analysis of GWAS summary statistics without individual-level genotype data with gcta
-    * ̀ assoc/esth2-assoc.nf` : estimate heritability and co-heritabilie with gcta, ldsc, gemma and bolt
-    * `assoc/meta-assoc.nf` : do meta analysis with summary statistics 
+  * Other script :
     * `assoc/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
-    * `assoc/simul-assoc.nf` : simulation of bed file 
 
-4. `formatdata` : additional script to format data added some missing information etc...
+4. `meta` : meta analyse or mtag :
+    * `meta/meta-assoc.nf` : do meta analysis with summary statistics 
+    * `meta/mtag.nf` : do mtag analysis with summary statistics 
+
+5. `heritabilities`
+    *  ̀heritabilities/esth2-assoc.nf` : estimate heritability and co-heritabilie with gcta, ldsc, gemma and bolt
+
+6. `finemapping` :
+    * `finemapping/main.nf` : performed meta analysis using different data set 
+    * `finemapping/cojo-assoc.nf` : do Conditional & joint (COJO) analysis of GWAS summary statistics without individual-level genotype data with gcta
+
+7. `utils/build_example_data` 
+   * `utils/build_example_data/main.nf` : extract data set from vcf file and simulate dataset 
+   * `utils/build_example_data/simul-assoc.nf` : simulation of phenotype using phenosim 
+
+9. `formatdata` : additional script to format data added some missing information etc...
   *  see [README of formatdata/](formatdata/)
+
 
 
 ## Design principles

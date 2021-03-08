@@ -1,0 +1,1 @@
+../../assoc/bin/gemma_relselind.py
