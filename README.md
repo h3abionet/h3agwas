@@ -19,13 +19,13 @@ pipeline do different step of GWAS :
  * [Quality control of array input illuminat in plink format](qc/README.md)
  * [Association using different software : gcta, plink, gemma, Bolt-LMM, FastLMM and GxE with gemma and plink](assoc/README.md)
  * Post meta analyses script :
-  * [meta analyse script and mtag approach](meta/README.md)
-  * [Computation of heritabilities or variance explained of phenotype](heritabilities/README.md)
-  * [Finemapping and cojo extraction of windows ](finemapping/README.md)
+   * [meta analyse script and mtag approach](meta/README.md)
+   * [Computation of heritabilities or variance explained of phenotype](heritabilities/README.md)
+   * [Finemapping and cojo extraction of windows ](finemapping/README.md)
  * [Simulation of dataset](utils/build_example_data/README.md)
  * [Format data differents dataset](formatdata//README.md) :
-  * plink in vcf to prepared your data at imputation 
-  * vcf in plink after imputation
+   * plink in vcf to prepared your data at imputation 
+   * vcf in plink after imputation
 
 
 ## What's new :

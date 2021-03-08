@@ -27,7 +27,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel"]
 
 
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -142,6 +142,7 @@ params.fastgwa_type="--fastGWA-mlm-exact"
 params.grm_cutoff =  0.05
 params.covariates_type=""
 params.gcta_grmfile=""
+params.sample_snps_rel=0
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -262,8 +263,10 @@ assoc_ch  = Channel.create()
 assoc_ch_gxe  = Channel.create()
 assoc_ch_gxe_freq=Channel.create()
 grlm_assoc_ch = Channel.create()
+ch_bolt_snpchoice=Channel.create()
 fastgwa_assoc_ch = Channel.create()
 raw_src_ch= Channel.create()
+ch_select_rs_format=Channel.create()
 
 Channel
     .from(file(bed),file(bim),file(fam))
@@ -303,7 +306,7 @@ if (thin+chrom) {
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
       /*JT Append initialisation boltlmm_assoc_ch */
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch)
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch, ch_bolt_snpchoice, ch_select_rs_format)
     script:
        base = bed.baseName
        out  = base+"_t"
@@ -316,7 +319,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch) { a -> [a,a,a,a,a,a,a,a,a,a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a] }
 }
 
 
@@ -378,7 +381,60 @@ covariate = ""
 gotcovar  = 0
 pheno     = ""
 
+/*Case where we sample builrelatdness*/
+balise_filers_rel=1
+if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
+ if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
+  process select_rs_format{
+     cpus max_plink_cores
+     memory plink_mem_req
+     time   params.big_time
+     input :
+       set file(bed),file(bim), file(fam) from ch_select_rs_format
+    output:
+       file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line
+     script:
+        base = bed.baseName
+        prune= "${base}-prune"
+        """
+        plink --bfile ${base} --indep-pairwise 100 20 0.1 --out $prune
+        """
+   }
+   BoltNbMaxSnps=filers_count_line.countLines()
+ }else{
+/* n*/
+ if(params.file_rs_buildrelat==""){
+   balise_filers=0
+   filers_matrel_mat_fast=file('NO_FILE')
+   filers_matrel_mat_GWA=file('NO_FILE')
+   filers_matrel_mat_gem=file('NO_FILE')
+   if(params.boltlmm==1){
+      BoltNbMaxSnps=1000000
+      process buildBoltFileSnpRel{
+         memory params.bolt_mem_req
+         time   params.big_time
+         input:
+           set file(bed),file(plinksbim), file(fam) from ch_bolt_snpchoice
+         output :
+           file(output) into filers_matrel_bolt
+         script :
+           output=plinksbim.baseName+".rs.choice"
+           """
+           shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
+           """
+      }
 
+  }
+
+  }else{
+        filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_matrel_bolt=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        if(params.boltlmm==1)BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
+        filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+  }
+ }
+}
 
  
 if (params.data != "") {
@@ -462,11 +518,6 @@ if (params.fastlmm == 1) {
   pheno_cols_ch_fastlmm.flatMap { list_str -> list_str.split() }.tap ( check) .set { ind_pheno_cols_ch }
 
   if(params.fastlmm_multi==1){
-     if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_fast=file('NO_FILE')
-     }else{
-        filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
-     }
 
      process getRelForFastLMM {
 	cpus params.fastlmm_num_cores
@@ -482,7 +533,7 @@ if (params.fastlmm == 1) {
 	   base = plinks[0].baseName
 	   fam = plinks[2]
 	   rel_fastlmm="rel_fastlmm.txt"
-           rs_list = params.file_rs_buildrelat!="" ? " -snps $file_rs " : ""
+           rs_list = balise_filers_rel== 1 ? " -snps $file_rs " : ""
 	   """
            cat $fam |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
 	   export OPENBLAS_NUM_THREADS=${params.fastlmm_num_cores}
@@ -620,7 +671,6 @@ if (params.fastlmm == 1) {
 /*JT : Case boltlmm => if yes*/
 
 
-
    /*JT Fonction to transforme argument for cofactor in gemma
    @Input 
    args: cofactor args separate by a comma
@@ -659,10 +709,9 @@ if (params.fastlmm == 1) {
 if (params.boltlmm == 1) {
 
   plink_ch_bolt = Channel.create()
-  bim_ch_bolt_snpchoice = Channel.create()
   fam_ch_bolt = Channel.create()
   bim_ch_bolt = Channel.create()
-  boltlmm_assoc_ch.separate (plink_ch_bolt, fam_ch_bolt, bim_ch_bolt, bim_ch_bolt_snpchoice) { a -> [ a, a[2], a[1],a[1]] }
+  boltlmm_assoc_ch.separate (plink_ch_bolt, fam_ch_bolt, bim_ch_bolt) { a -> [ a, a[2], a[1]] }
   data_ch_bolt = Channel.fromPath(params.data, checkIfExists:true)
   if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
@@ -720,26 +769,7 @@ if (params.boltlmm == 1) {
   /*    nb_snp= CountLinesFile(base+".bim") */
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
   else rs_ch_exclude_bolt=file('NO_FILE')
-  if(params.file_rs_buildrelat!=""){
-      filers_matrel=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
-      BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
-  }else{
-      BoltNbMaxSnps=1000000
-      process buildBoltFileSnpRel{
-         memory params.bolt_mem_req
-         time   params.big_time
-         input:
-           file(plinksbim) from bim_ch_bolt_snpchoice
-         output :
-           file(output) into filers_matrel
-         script :
-           output=plinksbim.baseName+".rs.choice"
-           """
-           shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
-           """
-      }
 
-  } 
   if(params.bolt_impute2filelist!=""){
   Impute2FileList=Channel.fromPath(params.bolt_impute2filelist, checkIfExists:true)
   Impute2FID = Channel.fromPath(params.bolt_impute2fidiid, checkIfExists:true)
@@ -769,7 +799,7 @@ if (params.boltlmm == 1) {
       val nb_snp from nbsnp_ch_bolt
       file(phef) from newdata_ch_bolt
       file(rs_exclude) from rs_ch_exclude_bolt
-      file(SnpChoiceMod) from filers_matrel
+      file(SnpChoiceMod) from filers_matrel_bolt
       file(imp2_filelist) from Impute2FileList 
       file(imp2_fid) from Impute2FID
       file(bolt_ld_score) from Bolt_ld_score
@@ -835,11 +865,6 @@ if (params.boltlmm == 1) {
 
 
 if (params.gemma+params.gemma_gxe>0) {
-   if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_gem=file('NO_FILE')
-     }else{
-        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
-   }
 
   rel_ch_gemma = Channel.create()
   gem_ch_gemma = Channel.create()
@@ -859,7 +884,7 @@ if (params.gemma+params.gemma_gxe>0) {
     script:
        base = plinks[0].baseName
        famfile=base+".fam"
-       rs_list = params.file_rs_buildrelat!="" ? " -snps $file_rs " : ""
+       rs_list = balise_filers_rel==0 ? " -snps $file_rs " : ""
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
@@ -1353,11 +1378,6 @@ if (params.plink_gxe==1) {
 // ${params.gcta64_bin} --grm test_grm --make-bK-sparse 0.05 --out test_sp_grm
 //
 if(params.fastgwa==1){
-     if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_fast_GWA=file('NO_FILE')
-     }else{
-        filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
-     }
 
 if(params.gcta_grmfile==""){
  process FastGWADoGRM{
@@ -1372,7 +1392,7 @@ if(params.gcta_grmfile==""){
     file("mgrm.part_*.grm.bin") into bingrm
     file("mgrm.part_*.grm.N.bin") into nbingrm
    script :
-     rs_list = params.file_rs_buildrelat!="" ? " --extract  $file_rs " : ""
+     rs_list = balise_filers_rel==1 ? " --extract  $file_rs " : ""
 
      base   = bed.baseName
      """
