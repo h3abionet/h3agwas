@@ -98,6 +98,3 @@ Other flags are:
 * `chrom`. Only do testing on this chromosome.
 
 
-# Post-Analysis script 
-##1. Computed a p.value par permutation with gemma 
-TODO
