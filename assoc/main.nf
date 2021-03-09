@@ -400,7 +400,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
         plink --bfile ${base} --indep-pairwise 100 20 0.1 --out $prune
         """
    }
-   BoltNbMaxSnps=filers_count_line.countLines()
+   //BoltNbMaxSnps=filers_count_line.countLines()
  }else{
 /* n*/
  if(params.file_rs_buildrelat==""){
@@ -409,7 +409,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
    filers_matrel_mat_GWA=file('NO_FILE')
    filers_matrel_mat_gem=file('NO_FILE')
    if(params.boltlmm==1){
-      BoltNbMaxSnps=1000000
+      //BoltNbMaxSnps=1000000
       process buildBoltFileSnpRel{
          memory params.bolt_mem_req
          time   params.big_time
@@ -429,7 +429,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
   }else{
         filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
         filers_matrel_bolt=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
-        if(params.boltlmm==1)BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
+        //if(params.boltlmm==1)BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
         filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
         filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
   }
@@ -819,15 +819,18 @@ if (params.boltlmm == 1) {
       outf    = (params.bolt_impute2filelist!="") ? outimp : outbolt
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
-      model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
+      model_snp  = "--modelSnps=$SnpChoiceMod "
       ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
       ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp  " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
-      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt\
-           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt}
+      BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`
+      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} \
+     --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt \
+    $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt} \
+      --maxModelSnps=\$BoltNbMaxSnps
       #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp |\
       #       grep -B 1 -E "^[ ]+h2" 1> $outReml 
       """
