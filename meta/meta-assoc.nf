@@ -61,6 +61,7 @@ params.gwama_mem_req="20G"
 params.metasoft_mem_req="20G"
 params.plink_mem_req="10G"
 params.big_time = '1000h'
+params.file_config=''
 
 params.metasoft_pvalue_table="/opt/bin/HanEskinPvalueTable.txt"
 params.ma_metasoft_opt=""
@@ -110,7 +111,7 @@ def configfile_analysis(file){
    }
  return([resFile,resInfo, NumRef])
 }
-
+checkexi=Channel.fromPath(params.file_config,checkIfExists:true)
 info_file=configfile_analysis(params.file_config)
 pos_file_ref=info_file[2]
 if(pos_file_ref==-1){
@@ -118,7 +119,7 @@ println "not file reference foud see in config file column IsRefFile"
 exit(0)
 }
 info_ref_rs=Channel.from(info_file[1][NumRef])
-file_info_ref_rs=Channel.fromPath(info_file[0][NumRef])
+file_info_ref_rs=Channel.fromPath(info_file[0][NumRef],checkIfExists:true)
 process GetRsFile{
     memory ma_mem_req
     input :
@@ -132,7 +133,7 @@ process GetRsFile{
         ma_extract_rsid.py --input_file $file_assoc_rs --out_file $file_rs --info_file $info_rs 
         """
 }
-liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).combine(file_rs_ref_chan)
+liste_filesi_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).combine(file_rs_ref_chan)
 
 
 process ChangeFormatFile {
