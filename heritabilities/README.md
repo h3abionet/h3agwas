@@ -1,15 +1,14 @@
 <img src="../auxfiles/H3ABioNetlogo2.jpg"/>
-#  Association pipeline: `heritabilities/main.nf`
-
-## 2.5. Estimation of heritabilies
+#Heritabilies estimation  : `heritabilities/main.nf`
 
 This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, grmel of bolt and greml of gcta, gemma
 two distincs approaches should be considered :
   * based on relatdness matrix and phenotype as gcta, bolt, gemma
   * based on gwas result as implemented in ldlc and gemma
 
+
 ### Installation
-need python3, gcta, ldlc, bolt and gemma
+need python3, gcta, ldlc, bolt and gemma, R with ggplot2
 
 ### Running
 The pipeline is run: `nextflow run assoc/esth2-assoc.nf`
@@ -86,8 +85,4 @@ The key options are:
     * `gcta_h2_mgrmfile` : if file not provide pipeline will do step described before[default None]
    * `gcta_mem_reqmgrm` : [default 40GB]
    * `params.gcta_reml_alg` : see reml-alg :  Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.  [oa]
-
-
-
-
 

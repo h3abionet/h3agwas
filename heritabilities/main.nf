@@ -936,7 +936,7 @@ process MergeH2{
        file(allfile) from report_ch    
    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
    output :       
-       set file("{params.output}.*")
+       file("{params.output}.*")
    script :
        allfile=allfile.join(',')
        """
