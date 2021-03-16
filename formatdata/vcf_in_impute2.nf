@@ -24,13 +24,14 @@ import java.security.MessageDigest;
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ['file_listvcf', 'min_scoreinfo']
+allowed_params = ['file_listvcf', 'min_scoreinfo', "output_dir", "max_plink_cores"]
 
 params.plink_mem_req = '10GB' // how much plink needs for this
-params.output_dir="mpute2/"
+params.output_dir="impute2/"
 params.file_listvcf=""
 params.min_scoreinfo=0.6
 params.max_plink_cores = 8
+params.bcftools_bin = "bcftools"
 
 
 
@@ -55,7 +56,7 @@ process formatvcfinimpute2{
   script :
     Ent=vcf.baseName
     """
-    bcftools view -i 'INFO>${params.min_scoreinfo}' $vcf  | bcftools query -f '%CHROM %ID %POS %REF %ALT [ %GP]\\n' | awk '{if(\$2==\".\"){\$2=\$1\":\"\$3};\$1=\$2;print \$0}' |sed 's/,/ /g'|gzip > ${Ent}.impute2.gz
+    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf  | bcftools query -f '%CHROM %ID %POS %REF %ALT [ %GP]\\n' | awk '{if(\$2==\".\"){\$2=\$1\":\"\$3};\$1=\$2;print \$0}' |sed 's/,/ /g'|gzip > ${Ent}.impute2.gz
     """
 }
 

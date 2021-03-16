@@ -30,7 +30,7 @@ def getDegrees(remove):
    for i,row in genomef.iterrows():
        x=tuple(row[["FID1","IID1"]].tolist())
        y=tuple(row[["FID2","IID2"]].tolist())
-       if x in remove or y in remove : pass
+       if x in remove or y in remove : continue
        try:
            deg[x]=deg[x]+1
            deg[y]=deg[y]+1

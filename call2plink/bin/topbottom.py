@@ -145,12 +145,22 @@ def getID(idreg,sample_id):
        sys.exit("Sample ID <%s> cannot be parsed by <%s>"%(sample_id,args.idpat))
     return sample_id
 
+def checkgzipfile(fname) :
+    GZIP_MAGIC_NUMBER = "1f8b"
+    f = open(fname)
+    isGz=f.read(2).encode("utf-8").hex() == GZIP_MAGIC_NUMBER
+    f.close()
+    return isGz
+
 
 def parseChipReport(snp_elt,array,fname,output):
     # how many lines do we need to skip
     # Looks like 10, but let's be sure
     idreg = re.compile(args.idpat)
-    f = gzip.open(fname,"rt")
+    if checkgzipfile(fname) :
+      f = gzip.open(fname,"rt")
+    else :
+      f = open(fname)
     head=0
     for line in f:
         head=head+1

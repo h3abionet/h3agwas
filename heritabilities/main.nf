@@ -4,10 +4,6 @@
  *
  *
  *      Scott Hazelhurst
- *      Shaun Aron
- *      Rob Clucas
- *      Eugene de Beste
- *      Lerato Magosi
  *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
@@ -66,6 +62,7 @@ params.munge_sumstats_bin="munge_sumstats.py"
 params.ldsc_bin="ldsc.py"
 outfname = params.output_testing
 params.file_rs_buildrelat = ""
+params.genetic_map_file=""
 
 params.file_gwas=""
 params.head_pval = "P_BOLT_LMM"
@@ -76,8 +73,8 @@ params.head_chr = "CHR"
 params.head_rs = "SNP"
 params.head_beta="BETA"
 params.head_se="SE"
-params.head_A1="ALLELE0"
-params.head_A2="ALLELE1"
+params.head_A1="ALLELE1"
+params.head_A2="ALLELE0"
 
 //gcta grm option 
 params.grm_cutoff=0.025
@@ -97,6 +94,8 @@ params.bolt_impute2filelist=""
 params.bolt_impute2fidiid=""
 params.bolt_otheropt=""
 params.bolt_h2_multi=0
+params.gcta_grmfile=""
+
 
 
 params.cut_maf=0.01
@@ -150,6 +149,10 @@ max_plink_cores = params.max_plink_cores
 ldsc_mem_req=params.ldsc_mem_req
 params.help = false
 
+if(params.gcta_h2_grmfile=="" && params.gcta_grmfile!=""){
+params.gcta_h2_grmfile=params.gcta_grmfile
+}
+
 def getConfig = {
  all_files = workflow.configFiles.unique()
   text = ""
@@ -190,7 +193,7 @@ if(params.ldsc_h2==1){
  if(params.file_gwas==""){
   error("\n\n------\nbCan't do ldsc without file_gwas\n\n---\n")
  }
- gwas_file_ldsc=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}
+ gwas_file_ldsc=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it ,checkIfExists:true)}
  if(params.head_n=="" && params.Nind==0){
        error("\n\n------\nheader_n or Nind paramaters must be allowed\n\n---\n")
  }
@@ -204,7 +207,7 @@ if(params.ldsc_h2==1){
       file(gwas) from gwas_file_ldsc
    publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
    output :
-     file("$out"+".log")
+     file("$out"+".log") into report_ldsc
    script :
      NInfo=params.head_n=="" ? " --N ${params.Nind} " : "--N-col ${params.head_n} " 
      out=gwas.baseName.replace('_','-')+"_ldsc"
@@ -212,15 +215,18 @@ if(params.ldsc_h2==1){
      ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out"_mg" --snp ${params.head_rs} --p ${params.head_pval} \
      --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --no-alleles
      ${params.ldsc_bin} --h2 $out"_mg.sumstats.gz" --ref-ld-chr ${params.dir_ref_ld_chr} --w-ld-chr ${params.dir_ref_ld_chr} --out $out ${params.ldsc_h2opt}
+     format_correlation.r $out".log" $out".stat" ldsc $gwas None
      """ 
 }
+}else{
+ report_ldsc=Channel.empty()
 }
 if(params.ldsc_h2_multi==1){
  println "ldsc_h2_multi"
  if(params.file_gwas==""){
   error("---------------\n ldsc_h2_multi=1 and file_gwas is null\n\n---------------")
  }
- gwas_file_1 = Channel.fromPath(params.file_gwas.split(",")[0])
+ gwas_file_1 = Channel.fromPath(params.file_gwas.split(",")[0], checkIfExists:true)
  if(params.list_snp==""){
   process GetSnpList{
    time params.big_time
@@ -235,12 +241,13 @@ if(params.ldsc_h2_multi==1){
      """
   }
  }else{
-  list_file_pos=Channel.fromPath(params.list_snp)
+  list_file_pos=Channel.fromPath(params.list_snp,checkIfExists:true) 
  }
 
-  list_gwas_multi=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(list_file_pos)
+  list_gwas_multi=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it, checkIfExists:true)}.combine(list_file_pos)
   process FormatLDSC{
    time params.big_time
+   memory params.ldsc_mem_req
    memory ldsc_mem_req
    input :
     set file(gwas), file(infopos) from list_gwas_multi
@@ -431,7 +438,6 @@ if(params.bolt_h2){
   }
 
 
-
   process doh2Bolt{
     cpus params.bolt_num_cores
     memory params.bolt_mem_req
@@ -447,6 +453,7 @@ if(params.bolt_h2){
     each this_pheno from ind_pheno_cols_ch_bolt
     output:
       file(outReml)
+      file("${outReml}_bolt.stat") into report_bolt
     script:
       base = plinksbed.baseName
       our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+@@@/,"")
@@ -461,6 +468,7 @@ if(params.bolt_h2){
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
       bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 $outReml
+     format_correlation.r $outReml $outReml"_bolt.stat" bolt ${our_pheno} None
       """
   }
 
@@ -496,6 +504,8 @@ if (params.bolt_h2_multi==1){
       """
   }
 }
+}else{
+report_bolt=Channel.empty()
 }
 
 //////
@@ -574,7 +584,7 @@ if(params.gcta_h2==1){
   gcta_grm=Channel.fromPath("${params.gcta_h2_grmfile}.grm.id").combine(Channel.fromPath("${params.gcta_h2_grmfile}.grm.bin")).combine(Channel.fromPath("${params.gcta_h2_grmfile}.grm.N.bin"))
   }
    filegrmcta_gcta=gcta_grm.combine(newdata_ch_gcta_grm)
-   process doGRLEM{
+   process doGRLEM_GCTA{
      cpus params.gcta_num_cores
      time params.big_time
      memory params.gcta_mem_req
@@ -583,14 +593,17 @@ if(params.gcta_h2==1){
     publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
      output :
        file("$output"+".hsq")
+       file("${output}_gcta.stat") into report_gcta
      script :
         output=pheno.replace('_','-')+"_gcta"
+        cov = (params.covariates!="") ?  " --qcovar $covfile " : ""
         """
-        ${params.gcta_bin} --reml  --grm tmp --pheno $phef  --grm-cutoff ${params.grm_cutoff}  --thread-num ${params.gcta_num_cores}  --out $output --reml-alg ${params.gcta_reml_alg}
+        ${params.gcta_bin} --reml  --grm tmp --pheno $phef  --grm-cutoff ${params.grm_cutoff}  --thread-num ${params.gcta_num_cores}  --out $output --reml-alg ${params.gcta_reml_alg} $cov
         if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"
         fi
+        format_correlation.r  ${output}.hsq ${output}_gcta.stat gcta ${pheno} None
         """
   }
 
@@ -620,7 +633,7 @@ if(params.gcta_h2==1){
             ${params.gcta_bin} --bfile $plk --ld-score-region ${params.gcta_h2_ldscore} --out $out  --thread-num ${gcta_num_cores}
             """
        } 
-       println "GCTAStrat"
+
        process GCTAStrat {
           input :
              file(scoreld) from grlmscoreld
@@ -677,8 +690,9 @@ if(params.gcta_h2==1){
        file("$output"+".hsq")
      script :
         output=pheno.replace('_','-')+"_gcta"
+        covargcta= (params.covariates=="")? "" : " --qcovar  $covfile "
         """
-        ${params.gcta_bin} --reml ${params.multigrm_opt} --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output &> outmultgrlm
+        ${params.gcta_bin} --reml ${params.multigrm_opt} --mgrm $listfile --pheno $phef  --thread-num ${params.gcta_num_cores}  --out $output $covargcta &> outmultgrlm
         if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"
@@ -728,10 +742,11 @@ if(params.gcta_h2==1){
         pos=poss[0]
         pos2=poss[1]
         output=listpheno[pos].replace('_','-')+"_"+listpheno[pos2].replace('_','-')
+        cov = (params.covariates!="") ?  " --qcovar $covfile " : ""
         pos=pos+1
         pos2=pos2+1
         """
-        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  --reml-alg ${params.gcta_reml_alg}  ${params.gcta_opt_multigrm_cor} &> outmultgrlm  
+        ${params.gcta_bin} --reml --mgrm $filemult --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  --reml-alg ${params.gcta_reml_alg}  ${params.gcta_opt_multigrm_cor} $cov  &> outmultgrlm  
         if [ ! -f $output".hsq" ]
         then
         cat outmultgrlm > $output".hsq"
@@ -797,8 +812,8 @@ if(params.gemma_h2==1){
        """
   }
   }else{
-   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel)
-   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel)
+   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true)
+   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true)
   }
 
   if (params.covariates)
@@ -822,7 +837,8 @@ if(params.gemma_h2==1){
     each gemtype from gwas_type_gem1
    publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
     output:
-      file("output/*")
+      file("output/${out}.log.txt") 
+      file("${out}_gemma.stat") into report_gemma
     script:
        our_pheno2         = this_pheno.replaceAll(/^[0-9]+-/,"")
        ourpheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
@@ -837,7 +853,6 @@ if(params.gemma_h2==1){
        dir_gemma          =  "gemma"
        base = bed.baseName
        inp_fam = base+".fam"
-      
        newbase= "tmp"
       // check if list phenotype is same order than rel matric
        """
@@ -849,10 +864,13 @@ if(params.gemma_h2==1){
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        ${params.gemma_bin} ${covar_opt_gemma}  -k $rel_matrix  -n 1 -p $phef -o $out -maf 0.0000001 -vc $gemtype
+       format_correlation.r output/$out".log.txt" $out"_gemma.stat" gemma ${our_pheno} $gemtype
        rm $newbase".fam" $newbase".bim" $newbase".bed"
        """
 
   }
+}else{
+report_gemma=Channel.empty()
 }
 if(params.gemma_h2_pval==1){
 
@@ -864,7 +882,7 @@ if(params.gemma_h2_pval==1){
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
         .set { gemmapval_assoc_ch }
 
-gwas_file_gem=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it)}.combine(gemmapval_assoc_ch)
+gwas_file_gem=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it,checkIfExists:true)}.combine(gemmapval_assoc_ch)
 
 // for 2 we need a zcat file 
 
@@ -886,6 +904,7 @@ process DoGemmah2Pval{
    each gemtype from gwas_type_gem2
    output :
        file("output/*")
+       file("${out}_gemmah2.stat") into report_gemmah2
    script :
      NInfo=params.head_n=="" ? " --n_header ${params.head_n}   " : ""
      out=gwas.baseName+"_gemm_"+gemtype.replace('_','-')
@@ -900,12 +919,29 @@ process DoGemmah2Pval{
      cp $newplkbas".fam" $newplkbas".fam.tmp" 
      awk \'{\$6=1;print \$0}\' $newplkbas".fam.tmp" > $newplkbas".fam"
      export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-     gemma -beta $gwas".new" -bfile  $newplkbas -vc $gemtype -o $out
+     ${params.gemma_bin} -beta $gwas".new" -bfile  $newplkbas -vc $gemtype -o $out
+     format_correlation.r output/$out".log.txt" $out"_gemmah2.stat" gemmah2 $gwas $gemtype
      rm $newplkbas".fam" $newplkbas".bim" $newplkbas".bed"
      """
 }
 
 
 
+}
+
+report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).toList()
+
+process MergeH2{
+   input :
+       file(allfile) from report_ch    
+   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+   output :       
+       file("{params.output}.*")
+   script :
+       allfile=allfile.join(',')
+       """
+       merge_allfile.r $allfile ${params.output}
+       """
 
 }
+

@@ -129,10 +129,18 @@ if 'A2' in l_newhead :
   ps_A2_inp=head_inp.index(A2_inp)
   balchangA2=True
 listposfloat=[]
-for head in ['freqA1', 'Beta', 'Se', 'Pval', 'N']:
+headcmd=['freqA1', 'Beta', 'Se', 'Pval', 'N']
+headplk=['FREQ','BETA', 'SE', 'P', 'N']
+
+cmthead=0
+for head in headcmd:
    if head in l_newhead:
-       newhead=l_oldhead[l_newhead.index(head)]
+       indexlhead=l_newhead.index(head)
+       newhead=l_oldhead[indexlhead]
+       l_newhead[indexlhead]=headplk[cmthead]
        listposfloat.append(head_inp.index(newhead))
+   cmthead+=1
+        
 
 p_minf=float('-inf')
 p_pinf=float('inf')

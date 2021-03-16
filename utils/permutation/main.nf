@@ -70,8 +70,6 @@ outfname = params.output_testing
 /* Defines the path where any scripts to be executed can be found.
  */
 
-
-
 /* Do permutation testing -- 0 for none, otherwise give number */
 params.mperm = 1000
 

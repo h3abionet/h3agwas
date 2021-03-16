@@ -1,0 +1,1 @@
+../../assoc/bin/gcta_format.py

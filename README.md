@@ -1,5 +1,5 @@
 
-<img src="aux/H3ABioNetlogo2.jpg"/>
+<img src="auxfiles/H3ABioNetlogo2.jpg"/>
 
 # H3Agwas Pipeline Version 3
 
@@ -14,21 +14,22 @@ This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, yo
 In addition to this README we have a detailed tutorial and videos 
 * These can be found at http://www.bioinf.wits.ac.za/gwas
 
-
+pipeline do different step of GWAS :
+ * [Format input illuminat in plink format](call2plink/README.md)
+ * [Quality control of array input illuminat in plink format](qc/README.md)
+ * [Association using different software : gcta, plink, gemma, Bolt-LMM, FastLMM and GxE with gemma and plink](assoc/README.md)
+ * Post meta analyses script :
+   * [meta analyse script and mtag approach](meta/README.md)
+   * [Computation of heritabilities or variance explained of phenotype](heritabilities/README.md)
+   * [Finemapping and cojo extraction of windows ](finemapping/README.md)
+ * [Simulation of dataset](utils/build_example_data/README.md)
+ * [Format data differents dataset](formatdata//README.md) :
+   * plink in vcf to prepared your data at imputation 
+   * vcf in plink after imputation
 
 
 ## What's new :
-* 2020-03-27: added a modules to convert position between different genome version [formatdata](formatdata/README.md)
-* 2020-02-20: support for awsbatch
-* 2020-02-20 :  added fastgwa (software gcta) as assoc software  : [assoc](assoc/README.md)
-* 2019-10-01 : added in transform data a nextflow script to format output of GWAS with added your own rs, frequencies, N etc...  (usefull for post analysis) : [formatdata](formatdata/README.md)
-  * file `formatdata/format_gwasfile.nf`
-* 2019/09/19 : added in estimation of heritabilites option for Multiple variance components for boltlmm  [assoc](assoc/README.md)
-* 2019/09/17 : added format and analysis by mtag in [assoc](assoc/README.md)
-* 2019/09/16 : added two news nextflow files to convert data in [formatdata](formatdata/README.md):
-  * `formatdata/vcf_in_plink.nf` : format data in vcf for plink
-  * `formatdata/vcf_in_impute2.nf` : extract impute2 data from vcf of sanger
-* 2019/09/10 : update estimation of heritability in [assoc](assoc/README.md) to take account for each software when heritabilities can't be computed
+ * see [What's news](News.md)
 
 ## Background
 
@@ -44,6 +45,11 @@ We have moved all scripts from Python 2 to Python 3, so you will need to have Py
 _Please ignore the Wiki in this version which refers to version 1_
 
 
+## Questions and feeback
+
+Problems with the workflow should be raised as an issue on this  GitHub repo. (If you think the probem is the workflow)
+
+If you need help with using the workflow, please log a call with the [H3A Help Disk](https://www.h3abionet.org/categories/communications/helpdesk)
 
 
 ## Outline of documentation
@@ -98,15 +104,27 @@ There are three separate workflows that make up *h3agwas*
   * logistic regression
   * Efficient Mixed Model Association testing with gemma, boltlmm or fastlmm
   * Gene environment association with gemma or plink
-  * Other scripts gave for post analysis :
-    * `assoc/cojo-assoc.nf` : do Conditional & joint (COJO) analysis of GWAS summary statistics without individual-level genotype data with gcta
-    * ̀ assoc/esth2-assoc.nf` : estimate heritability and co-heritabilie with gcta, ldsc, gemma and bolt
-    * `assoc/meta-assoc.nf` : do meta analysis with summary statistics 
-    * `assoc/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
-    * `assoc/simul-assoc.nf` : simulation of bed file 
 
-4. `formatdata` : additional script to format data added some missing information etc...
+4. `meta` : meta analyse or mtag :
+    * `meta/meta-assoc.nf` : do meta analysis with summary statistics 
+    * `meta/mtag.nf` : do mtag analysis with summary statistics 
+
+5. `heritabilities`
+    *  ̀heritabilities/esth2-assoc.nf` : estimate heritability and co-heritabilie with gcta, ldsc, gemma and bolt
+
+6. `finemapping` :
+    * `finemapping/main.nf` : performed meta analysis using different data set 
+    * `finemapping/cojo-assoc.nf` : do Conditional & joint (COJO) analysis of GWAS summary statistics without individual-level genotype data with gcta
+
+7. `utils/build_example_data` 
+   * `utils/build_example_data/main.nf` : extract data set from vcf file and simulate dataset 
+   * `utils/build_example_data/simul-assoc.nf` : simulation of phenotype using phenosim 
+
+8. `utils/permutatation` 
+  * `utils/permutation/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
+9. `formatdata` : additional script to format data added some missing information etc...
   *  see [README of formatdata/](formatdata/)
+
 
 
 ## Design principles
@@ -734,7 +752,7 @@ Nextflow has great options for showing resourc usage. However, you have to remem
 Makes a reference genome in a format the the pipeline can use. The first argument is a directory that contains FASTA files for each chromosome; the second is the strand report, the third is the manifest report, the fourt in the base of othe output files.
 
 
-`python3 make_ref.py aux/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
+`python3 make_ref.py auxfiles/37/ H3Africa_2017_20021485_A3_StrandReport_FT.txt H3Africa_2017_20021485_A3.csv h3aref201812`
 
 
 The program checks each SNP given in the manifest file by the chromosome and position number and then checks that the probe given in the manifest file actually matches the reference genome at that point. Minor slippage is acceptable because of indels.
@@ -761,6 +779,13 @@ In our example, we assumed the ID can found in the column "Institute Sample Labe
 
 
 # 8. Acknowledgement, Copyright and general
+
+## Citing this workflow
+
+If you use this workflow, please cite the following paper
+
+* Baichoo S, Souilmi Y, Panji S, Botha G, Meintjes A, Hazelhurst S, Bendou H, De Beste E, Mpangase P, Souiai O, Alghali M, Yi L, O'Connor B, Crusoe M, Armstrong D, Aron S, Joubert D, Ahmed A, Mbiyavanga M, Van Heusden P, Magosi, L, Zermeno, J, Mainzer L, Fadlelmola F, Jongeneel CV, and Mulder N. (2018) Developing reproducible bioinformatics analysis workflows for heterogenous computing environments to support African genomics, *BMC Bioinformatics* **19**, 457, 13 pages, doi:10.1186/s12859-018-2446-1.
+
 
 ## Acknowledgement
 
@@ -792,4 +817,4 @@ We acknowledge the support from the NIH NHGRI H3ABioNet (U24HG006941)   and AWI-
 
 `git clone https://github.com/h3abionet/h3agwas`
 
-### References
+

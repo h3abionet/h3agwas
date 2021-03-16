@@ -27,13 +27,13 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel"]
 
 
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
 ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin"]
 allowed_params+=ParamBolt
-ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin"]
+ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin", "covariates_type"]
 allowed_params+=ParamFast
 /*Gxe : */
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
@@ -140,6 +140,9 @@ params.grm_nbpart=100
 params.gcta64_bin = "gcta64"
 params.fastgwa_type="--fastGWA-mlm-exact"
 params.grm_cutoff =  0.05
+params.covariates_type=""
+params.gcta_grmfile=""
+params.sample_snps_rel=0
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -147,7 +150,7 @@ params.input_pat  = 'raw-GWA-data'
 params.sexinfo_available = "false"
 
 
-params.plink_mem_req = '750MB' // how much plink needs for this
+params.plink_mem_req = '6GB' // how much plink needs for this
 params.other_process_memory = '10G' // how much other processed need
 
 
@@ -260,8 +263,10 @@ assoc_ch  = Channel.create()
 assoc_ch_gxe  = Channel.create()
 assoc_ch_gxe_freq=Channel.create()
 grlm_assoc_ch = Channel.create()
+ch_bolt_snpchoice=Channel.create()
 fastgwa_assoc_ch = Channel.create()
 raw_src_ch= Channel.create()
+ch_select_rs_format=Channel.create()
 
 Channel
     .from(file(bed),file(bim),file(fam))
@@ -301,7 +306,7 @@ if (thin+chrom) {
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
       /*JT Append initialisation boltlmm_assoc_ch */
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch)
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch, ch_bolt_snpchoice, ch_select_rs_format)
     script:
        base = bed.baseName
        out  = base+"_t"
@@ -314,7 +319,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch) { a -> [a,a,a,a,a,a,a,a,a,a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a] }
 }
 
 
@@ -376,7 +381,60 @@ covariate = ""
 gotcovar  = 0
 pheno     = ""
 
+/*Case where we sample builrelatdness*/
+balise_filers_rel=1
+if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
+ if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
+  process select_rs_format{
+     cpus max_plink_cores
+     memory plink_mem_req
+     time   params.big_time
+     input :
+       set file(bed),file(bim), file(fam) from ch_select_rs_format
+    output:
+       file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line
+     script:
+        base = bed.baseName
+        prune= "${base}-prune"
+        """
+        plink --bfile ${base} --indep-pairwise 100 20 0.1 --out $prune
+        """
+   }
+   //BoltNbMaxSnps=filers_count_line.countLines()
+ }else{
+/* n*/
+ if(params.file_rs_buildrelat==""){
+   balise_filers_rel=0
+   filers_matrel_mat_fast=file('NO_FILE')
+   filers_matrel_mat_GWA=file('NO_FILE')
+   filers_matrel_mat_gem=file('NO_FILE')
+   if(params.boltlmm==1){
+      //BoltNbMaxSnps=1000000
+      process buildBoltFileSnpRel{
+         memory params.bolt_mem_req
+         time   params.big_time
+         input:
+           set file(bed),file(plinksbim), file(fam) from ch_bolt_snpchoice
+         output :
+           file(output) into filers_matrel_bolt
+         script :
+           output=plinksbim.baseName+".rs.choice"
+           """
+           shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
+           """
+      }
 
+  }
+
+  }else{
+        filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_matrel_bolt=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        //if(params.boltlmm==1)BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
+        filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+  }
+ }
+}
 
  
 if (params.data != "") {
@@ -422,7 +480,7 @@ if (params.data != "") {
 
 /*JT : Case fastlmm => if yes*/
 if (params.fastlmm == 1) {
-  data_ch_fastlmm = Channel.fromPath(params.data)
+  data_ch_fastlmm = Channel.fromPath(params.data, checkIfExists:true)
   if(params.fastlmmc_bin=="")fastlmmc="fastlmmc"
   else fastlmmc=params.fastlmmc_bin
 
@@ -460,11 +518,6 @@ if (params.fastlmm == 1) {
   pheno_cols_ch_fastlmm.flatMap { list_str -> list_str.split() }.tap ( check) .set { ind_pheno_cols_ch }
 
   if(params.fastlmm_multi==1){
-     if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_fast=file('NO_FILE')
-     }else{
-        filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat)
-     }
 
      process getRelForFastLMM {
 	cpus params.fastlmm_num_cores
@@ -480,7 +533,7 @@ if (params.fastlmm == 1) {
 	   base = plinks[0].baseName
 	   fam = plinks[2]
 	   rel_fastlmm="rel_fastlmm.txt"
-           rs_list = params.file_rs_buildrelat!="" ? " -snps $file_rs " : ""
+           rs_list = balise_filers_rel== 1 ? " -snps $file_rs " : ""
 	   """
            cat $fam |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
 	   export OPENBLAS_NUM_THREADS=${params.fastlmm_num_cores}
@@ -618,7 +671,6 @@ if (params.fastlmm == 1) {
 /*JT : Case boltlmm => if yes*/
 
 
-
    /*JT Fonction to transforme argument for cofactor in gemma
    @Input 
    args: cofactor args separate by a comma
@@ -657,11 +709,10 @@ if (params.fastlmm == 1) {
 if (params.boltlmm == 1) {
 
   plink_ch_bolt = Channel.create()
-  bim_ch_bolt_snpchoice = Channel.create()
   fam_ch_bolt = Channel.create()
   bim_ch_bolt = Channel.create()
-  boltlmm_assoc_ch.separate (plink_ch_bolt, fam_ch_bolt, bim_ch_bolt, bim_ch_bolt_snpchoice) { a -> [ a, a[2], a[1],a[1]] }
-  data_ch_bolt = Channel.fromPath(params.data)
+  boltlmm_assoc_ch.separate (plink_ch_bolt, fam_ch_bolt, bim_ch_bolt) { a -> [ a, a[2], a[1]] }
+  data_ch_bolt = Channel.fromPath(params.data, checkIfExists:true)
   if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
   else
@@ -687,8 +738,13 @@ if (params.boltlmm == 1) {
   pheno_cols_ch_bolt.flatMap { list_str -> list_str.split() }.tap ( check_bolt) .set { ind_pheno_cols_ch_bolt }
 
 
+  if(params.bolt_covariates_type=="" & params.covariates_type!=""){
+    bolt_covariates_type=params.covariates_type
+  }else{
+  bolt_covariates_type=params.bolt_covariates_type
+  }
    if (params.covariates) 
-      cov_bolt = boltlmmCofact(params.covariates,params.bolt_covariates_type)
+      cov_bolt = boltlmmCofact(params.covariates,bolt_covariates_type)
    else
       cov_bolt= ""
 
@@ -711,43 +767,24 @@ if (params.boltlmm == 1) {
       """
   }
   /*    nb_snp= CountLinesFile(base+".bim") */
-  if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps)
+  if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
   else rs_ch_exclude_bolt=file('NO_FILE')
-  if(params.file_rs_buildrelat!=""){
-      filers_matrel=Channel.fromPath(params.file_rs_buildrelat)
-      BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
-  }else{
-      BoltNbMaxSnps=1000000
-      process buildBoltFileSnpRel{
-         memory params.bolt_mem_req
-         time   params.big_time
-         input:
-           file(plinksbim) from bim_ch_bolt_snpchoice
-         output :
-           file(output) into filers_matrel
-         script :
-           output=plinksbim.baseName+".rs.choice"
-           """
-           shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
-           """
-      }
 
-  } 
   if(params.bolt_impute2filelist!=""){
-  Impute2FileList=Channel.fromPath(params.bolt_impute2filelist)
-  Impute2FID = Channel.fromPath(params.bolt_impute2fidiid)
+  Impute2FileList=Channel.fromPath(params.bolt_impute2filelist, checkIfExists:true)
+  Impute2FID = Channel.fromPath(params.bolt_impute2fidiid, checkIfExists:true)
   }else{
   Impute2FileList=file('NO_FILE1')
   Impute2FID = file('NO_FILE2')
   }
   if(params.bolt_ld_score_file!=""){
-     Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file)
+     Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
   }else{
      Bolt_ld_score = file('NO_FILE3')
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
-     Bolt_genetic_map= Channel.fromPath(params.genetic_map_file)
+     Bolt_genetic_map= Channel.fromPath(params.genetic_map_file, checkIfExists:true)
   }else{
      Bolt_genetic_map = file('NO_FILE4')
   }
@@ -762,7 +799,7 @@ if (params.boltlmm == 1) {
       val nb_snp from nbsnp_ch_bolt
       file(phef) from newdata_ch_bolt
       file(rs_exclude) from rs_ch_exclude_bolt
-      file(SnpChoiceMod) from filers_matrel
+      file(SnpChoiceMod) from filers_matrel_bolt
       file(imp2_filelist) from Impute2FileList 
       file(imp2_fid) from Impute2FID
       file(bolt_ld_score) from Bolt_ld_score
@@ -782,15 +819,18 @@ if (params.boltlmm == 1) {
       outf    = (params.bolt_impute2filelist!="") ? outimp : outbolt
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
-      model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
+      model_snp  = "--modelSnps=$SnpChoiceMod "
       ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
       ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp  " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
-      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt\
-           $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt}
+      BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`
+      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} \
+     --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt \
+    $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt} \
+      --maxModelSnps=\$BoltNbMaxSnps
       #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp |\
       #       grep -B 1 -E "^[ ]+h2" 1> $outReml 
       """
@@ -828,11 +868,6 @@ if (params.boltlmm == 1) {
 
 
 if (params.gemma+params.gemma_gxe>0) {
-   if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_gem=file('NO_FILE')
-     }else{
-        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
-   }
 
   rel_ch_gemma = Channel.create()
   gem_ch_gemma = Channel.create()
@@ -852,7 +887,7 @@ if (params.gemma+params.gemma_gxe>0) {
     script:
        base = plinks[0].baseName
        famfile=base+".fam"
-       rs_list = params.file_rs_buildrelat!="" ? " -snps $file_rs " : ""
+       rs_list = balise_filers_rel==1 ? " -snps $file_rs " : ""
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
@@ -860,18 +895,37 @@ if (params.gemma+params.gemma_gxe>0) {
        """
   }
   }else{
-   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel) 
-   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel) 
+   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true) 
+   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true) 
   }
 }
 
+if(params.gemma_multi==1){
+     process getListeChroGem{
+        input :
+          file(BimFile) from bim_ch_fast_gem
+        output :
+          stdout into (chrolist,chrolist2, chrolisti_gxe)
+        script:
+         """
+         cat $BimFile|awk '{print \$1}'|uniq|sort|uniq
+        """
+     }
+  check2 = Channel.create()
+  list_chro_gemma=chrolist.flatMap { list_str -> list_str.split() }.tap ( check2)
+  check2 = Channel.create()
+  list_chro_gemma_gxe=chrolisti_gxe.flatMap { list_str -> list_str.split() }.tap ( check2)
+
+
+
+}
 if (params.gemma == 1){
+  ind_pheno_cols_ch = newNamePheno(params.pheno)
 
   if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
   else
      covariate_option = ""
-  ind_pheno_cols_ch = newNamePheno(params.pheno)
    if(params.rs_list==""){
         rsfile=file('NO_FILE5')
      }else{
@@ -880,19 +934,8 @@ if (params.gemma == 1){
 
 
  if(params.gemma_multi==1){
-     process getListeChroGem{
-        input :
-          file(BimFile) from bim_ch_fast_gem
-        output :
-          stdout into (chrolist,chrolist2)
-        script:
-         """
-         cat $BimFile|awk '{print \$1}'|uniq|sort|uniq
-        """
-     }
 
-     check2 = Channel.create()
-  list_chro_gemma=chrolist.flatMap { list_str -> list_str.split() }.tap ( check2)
+  check2 = Channel.create()
 
   process doGemmaChro{
     cpus params.gemma_num_cores
@@ -1031,7 +1074,7 @@ if (params.gemma == 1){
 
 
 if (params.gemma_gxe == 1){
-  data_ch_gxe = Channel.fromPath(params.data)
+  data_ch_gxe = Channel.fromPath(params.data, checkIfExists:true)
    
   if (params.gemma_gxe) 
     gxe_option = "--gxe ${params.gxe}"
@@ -1047,10 +1090,82 @@ if (params.gemma_gxe == 1){
         rsfile=file(params.rs_list)
    }
 
-  
-  ind_pheno_cols_ch = newNamePheno(params.pheno)
+ if(params.gemma_multi==1){
+  ind_pheno_cols_ch_gxe_multi = newNamePheno(params.pheno)
+process doGemmaGxEChro{
+    cpus params.gemma_num_cores
+    memory params.gemma_mem_req
+    time   params.big_time
+    input:
+      file(covariates) from data_ch_gxe
+      file(rel) from rel_mat_ch_gxe
+      file(plinks) from  gem_ch_gemma_gxe
+      file(rsfilelist) from rsfile
+    each this_pheno from ind_pheno_cols_ch_gxe_multi
+    each chro from list_chro_gemma_gxe
+    publishDir params.output_dir, overwrite:true, mode:'copy'
+    output:
+      file("${dir_gemma}/${out}.log.txt")
+      set val(our_pheno3), file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro_gxe
+    script:
+       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+       data_nomissing     = "pheno-"+our_pheno+".pheno"
+       list_ind_nomissing = "lind-"+our_pheno+".lind"
+       rel_matrix         = "newrel-"+our_pheno+".rel"
+       base               =  plinks[0].baseName
+       inp_fam            =  base+".fam"
+       newbase            =  base+"-"+our_pheno
+       newfam             =  newbase+".fam"
+       gemma_covariate    = "${newbase}.gemma_cov"
+       gemma_gxe          = "${newbase}.gemma_gxe"
+       phef               = "${newbase}_n.phe"
+       covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
+       gxe_opt_gemma      =  (params.gemma_gxe) ? " -gxe $gemma_gxe " : ""
+       out                = "$base-$our_pheno-$chro"
+       dir_gemma          =  (params.gemma_gxe) ? "gemma_gxe" : "gemma"
+       rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
+       """
+       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam --cov_list ${params.covariates},${params.gxe} --pheno $our_pheno3 --dataout $data_nomissing \
+                             --lindout $list_ind_nomissing
+       gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
+       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase ${rs_plk_gem}  --chr $chro
+       all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
+                          --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
+       export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
+       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
+       mv output ${dir_gemma}
+       rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
+       """
+  }
 
-  process doGemmaGxE{
+
+     gemma_manhatten_ch_chro_gxe_merge=gemma_manhatten_ch_chro_gxe.groupTuple()
+     process doMergeGemmaGxE{
+          input :
+            set (val(this_pheno),list_file, base_list) from  gemma_manhatten_ch_chro_gxe_merge
+         publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
+         output :
+             set val(base), val(this_pheno), file("$out") into (gemma_manhatten_ch_gxe_i, gemma_manhatten_ch_gxe)
+         script :
+             base=base_list[0]
+             our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+             our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+             newbase=base+our_pheno
+             out = "$base-${our_pheno}.gemma"
+             fnames = list_file.join(" ")
+             file1  = list_file[0]
+             """
+             head -1 $file1 > $out
+             cat $fnames | grep -v "p_wald" >> $out
+             """
+     }
+  }else{
+
+   ind_pheno_cols_ch = newNamePheno(params.pheno)
+
+   process doGemmaGxE{
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time   params.big_time
@@ -1096,7 +1211,8 @@ if (params.gemma_gxe == 1){
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
   } 
-  gemma_manhatten_ch_gxe_freq= gemma_manhatten_ch_gxe_i.combine(Channel.fromPath(params.data)).combine(assoc_ch_gxe_freq)
+}
+  gemma_manhatten_ch_gxe_freq= gemma_manhatten_ch_gxe_i.combine(Channel.fromPath(params.data, checkIfExists:true)).combine(assoc_ch_gxe_freq)
   process AddedFreqGxEGemma{
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
@@ -1195,17 +1311,18 @@ report_plink_ch=report_plink.groupTuple()
 }
 
 if (params.plink_gxe==1) {
-  data_ch_plk_gxe = Channel.fromPath(params.data)
+  data_ch_plk_gxe = Channel.fromPath(params.data, checkIfExists:true)
   pheno_label_ch_gxe = Channel.from(params.pheno.split(","))
    if(params.rs_list==""){
-        rsfile_pkgxe=file('NO_FILERS')
+        rsfile_plkgxe=file('NO_FILERS')
      }else{
-        rsfile_plkgxe=file(params.rs_list)
+        rsfile_plkgxe=file(params.rs_list, checkIfExists=true)
    }
 
 
   process computePlinkGxE {
     cpus num_assoc_cores
+    memory plink_mem_req
     time params.big_time
     input:
        set file(filebed),file(filebim),file(filefam) from assoc_ch_gxe
@@ -1225,7 +1342,7 @@ if (params.plink_gxe==1) {
        rs_plk        =  (params.rs_list) ?  " --extract  $rsfile" : ""
        """
        PosCol=`head -1 $phenof|sed 's/[\\t ]/\\n/g'|grep -n $params.gxe|awk -F':' '{print \$1-2}'`
-       plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof $rs_plk
+       plink --bfile $base --pheno $phenof --pheno-name $pheno_name --threads $num_assoc_cores --out $out --gxe \$PosCol --covar $phenof $rs_plk  --keep-allele-order 
        merge_bim_gxeplink.py --plgxe ${out}.qassoc.gxe --bim $filebim --out $outftmp
        added_freq_gxe.py --bfile $base --file_gxe $outftmp --pheno_file $phenof --pheno ${pheno_name} --pheno_gxe ${params.gxe} --out $outf --plk_cores ${num_assoc_cores} --gwas_chr CHR --gwas_rs SNP
 
@@ -1264,13 +1381,9 @@ if (params.plink_gxe==1) {
 // ${params.gcta64_bin} --grm test_grm --make-bK-sparse 0.05 --out test_sp_grm
 //
 if(params.fastgwa==1){
-     if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_fast_GWA=file('NO_FILE')
-     }else{
-        filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat)
-     }
 
-process FastGWADoGRM{
+if(params.gcta_grmfile==""){
+ process FastGWADoGRM{
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
     input :
@@ -1282,20 +1395,19 @@ process FastGWADoGRM{
     file("mgrm.part_*.grm.bin") into bingrm
     file("mgrm.part_*.grm.N.bin") into nbingrm
    script :
-     rs_list = params.file_rs_buildrelat!="" ? " --extract  $file_rs " : ""
+     rs_list = balise_filers_rel==1 ? " --extract  $file_rs " : ""
 
      base   = bed.baseName
      """
      ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_cpus} --out mgrm $rs_list
      """
+ }
 
 
-}
-
-idgrm_c=idgrm.collect()
-bingrm_c=bingrm.collect()
-nbingrm_c=nbingrm.collect()
-process MergFastGWADoGRM{
+  idgrm_c=idgrm.collect()
+  bingrm_c=bingrm.collect()
+  nbingrm_c=nbingrm.collect()
+  process MergFastGWADoGRM{
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
     input :
@@ -1313,8 +1425,11 @@ process MergFastGWADoGRM{
       cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
       ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_cpus}
       """
+  }
+}else{
+  grm_all=Channel.from("${params.gcta_grmfile}").combine(Channel.fromPath("${params.gcta_grmfile}.grm.id", checkIfExists:true).combine(Channel.fromPath("${params.gcta_grmfile}.grm.sp", checkIfExists:true)))
 }
-data_ch_fastgwa= Channel.fromPath(params.data)
+data_ch_fastgwa= Channel.fromPath(params.data, checkIfExists:true)
 
 
 pheno_spl_gcta=params.pheno.split(',')
@@ -1324,6 +1439,8 @@ pheno_spl_gcta=params.pheno.split(',')
   else
      covariate_option = ""
 
+balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
+balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
 process FastGWARun{
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
@@ -1338,15 +1455,18 @@ process FastGWARun{
     script :
      base=bed.baseName
      phef = "${base}_fastgwa_n.phe"
-     covfile = "${base}_fastgwa_n.cov"
-     cov = (params.covariates!="") ?  " --qcovar $covfile " : ""
+     covfilequant= "${base}_fastgwa_n.cov"
+     covfilequal = "${base}_fastgwa_n.covqual"
+     covquant_fastgwa = (balquantcov) ?  " --qcovar $covfilequant " : ""
      our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
      our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
      our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
      out                = "$base-$our_pheno"
+     covqual_fastgwa = (balqualcov) ? " --covar $covfilequal " : ""
+     covqual_cov = (balqualcov) ? " --cov_type ${params.covariates_type} --covqual_file $covfilequal " : ""
      """
-     all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfile --form_out 4
-     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $cov --threads ${params.fastgwa_cpus} --out $out --grm-sparse $head
+     all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
+     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_cpus} --out $out --grm-sparse $head $covqual_fastgwa
      """
 }
   process showFastGWAManhatten {

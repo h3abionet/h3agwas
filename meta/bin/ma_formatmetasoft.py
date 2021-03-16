@@ -34,6 +34,8 @@ files=sys.argv[2:]
 fout=open(out+'.meta','w')
 #fmap=open(out+'.mmap','w')
 flog=open(out+'.log','w')
+fpivot=open(out+'.pivot','w')
+fpivot.write("rs\tA1\tA2\n")
 
 
 def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBetHead, PosPHead,PosSError) :
@@ -133,6 +135,7 @@ for f in files:
         if rsid not in listrsfile :
            if not spll[PosA1Head] or  not spll[PosA2Head]:
               if PosA2Head and PosA1Head:
+                fpivot.write("\t".join([rsid,spll[PosA1Head],spll[PosA2Head]])+"\n")
                 rsidsinfo[rsid][0]=[rsidsinfo[rsid][0] , spll[PosA1Head],spll[PosA2Head]]
            charInfo=GetInfoRsGWAS(rsid, spll,rsidsinfo[rsid][1], rsidsinfo[rsid][2],CompSE, PosA1Head, PosA2Head, PosBetHead, PosPHead,PosSError)
            rsidschar[rsid]+=charInfo

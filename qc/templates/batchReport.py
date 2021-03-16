@@ -74,7 +74,7 @@ res_template = """
 
  *-begin{table}[hb]*-centering
  *-begin{tabular}{l r r r r}*-hline
- %s & Num samples & Missing rate & %s poor & Sex Checkfail *-*-*-hline
+ *-url{%s} & Num samples & Missing rate & *-url{%s} poor & Sex Checkfail *-*-*-hline
 """
 
 
@@ -157,7 +157,7 @@ duplicate_table  = """
 *-label{table:vclose}
 *-endhead
 Individual 1 & Individual 2 & ##{*-widehat{*-pi}}## *-*-*-hline
-%s
+*-url{%s}
 *-end{longtable}
 
 """
@@ -214,9 +214,9 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
 def showResult(colname,num_samples,ave_miss,num_poor_i,problems,sex_report):
    t = res_template%(colname,"*-"+PCT)
    if type(problems) == type(None): 
-       template="%s & %d & %5.2f & %5.2f & n/a *-*-"
+       template="*-url{%s} & %d & %5.2f & %5.2f & n/a *-*-"
    else:
-       template="%s & %d & %5.2f & %5.2f & %5.2f *-*-"
+       template="*-url{%s} & %d & %5.2f & %5.2f & %5.2f *-*-"
    for r in ave_miss.index:
       if type(problems) == type(None):
          res = ( r, num_samples.loc[r],ave_miss.loc[r],num_poor_i.loc[r]['F_MISS'])
@@ -295,15 +295,15 @@ def showFigs(figs):
        caps = list('abcdefghijklmnopqrtuvwxyzABCD')
        curr_cap=0
        for (i,(fig,label)) in enumerate(figs):
-          inner=inner+sub_fig_template%(label,fig)
+          inner=inner+sub_fig_template%(label.replace('_',' '),fig)
           if i%num_cols==1:
               inner=inner+"*-*-"
           if (i+1)%num_sub_figs_per_fig==0:
-              template= template + fig_template%(inner,caps[curr_cap])
+              template= template + fig_template%(inner.replace('_',' '),caps[curr_cap])
               inner=""
               curr_cap=curr_cap+1
        if (i+1)%num_sub_figs_per_fig !=0:
-           template= template + fig_template%(inner,caps[curr_cap])
+           template= template + fig_template%(inner.replace('_',' '),caps[curr_cap])
        else:
            curr_cap=curr_cap-1
        if curr_cap==0:
@@ -339,8 +339,8 @@ def getVClose(gfrm,pfrm,pheno_col):
         if type(pairA)!=str: # hack to handle fake phenos -- this should be fixed upstream
             pairA = pairA.values[0]
             pairB = pairB.values[0]
-        curr = curr+TAB.join([row[0],row[1],pairA,\
-                              row[2],row[3],pairB,\
+        curr = curr+TAB.join([row[0],row[1],str(pairA),\
+                              row[2],row[3],str(pairB),\
                               str(row[4])])+EOL
     return curr
 
@@ -397,7 +397,7 @@ def getRelatedPairs(pfrm,pheno_col,genome):
         keys=[" ALL"]
     for k in keys:
         rest = group[k]-ident.get(k,0)-sib.get(k,0)
-        rows = rows + "%s & %d & %d & %d & %d*-*-"%(k,group[k],ident.get(k,0),sib.get(k,0),rest)+EOL
+        rows = rows + "*-url{%s} & %d & %d & %d & %d*-*-"%(k,group[k],ident.get(k,0),sib.get(k,0),rest)+EOL
     rel_text=""
     if num_mixed > 0:
         rest = num_mixed-ident_mixed-sib_mixed
@@ -465,7 +465,7 @@ be taken with this.
 A summary of the detailed analysis is shown below. In the output, the
 file *-url{%s} is a CSV file that has sample ID, per-individual
 missingness rate in the raw data (*-verb!F_MISS! is the individual
-missingness rate *-emph{not} the F-statistic), the %s status, and
+missingness rate *-emph{not} the F-statistic), the *-url{%s} status, and
 whether that sample is hard (H) or soft error (S) for given tolerated
 per-individual genotyping error rates on the X-chromosome. A `-'
 indicates that the indivdual is filtered out at that rate of
@@ -485,7 +485,7 @@ det_table="""*-begin{table}[htb]*-centering
 *-end{tabular}
 
 
-*-caption{Summary of anomalous sex calls. The results are shown for
+*-caption{ of anomalous sex calls. The results are shown for
 different values *-emph{mind} the maximum per-sample error rate
 tolerated in the X-chromosome (PLINK parameter). *-emph{mind}==1 means
 all SNPs included. *-emph{Tot} shows the number of individuals
@@ -499,7 +499,7 @@ included with the given *-emph{mind} value. *-emph{HErr} is the number of hard e
 def detSexHeader(pfrm,missing_sex_columns):
     num_bands = len(missing_sex_columns) # missing rates supported
     tab_spec= "l"+(" r@{*-phantom{.}}r@{*-phantom{.}}r"*num_bands)
-    header1 = args.pheno_col 
+    header1 = args.pheno_col.replace('_',' ')
     for n in missing_sex_columns:
        header1=header1+" & *-multicolumn{3}{c}{mind=%s}"%str(n)
     header1 = header1+"*-*-"
@@ -554,7 +554,7 @@ def detailedSexAnalysis(pfrm,missing_sex_columns):
        for grpname, gg in g:
            tbl = tbl+detSexGroup(gg,grpname,missing_sex_columns)
     return \
-        det_sex_analysis%(sex_fname,args.pheno_col) +\
+        det_sex_analysis%(sex_fname,args.pheno_col.replace('_',' ')) +\
         det_table%(header+(tbl,args.pheno_col))
 
        

@@ -139,6 +139,8 @@ return(list(data=datainwork,  listhead=listhead))
 
  
 option_list = list(
+  make_option(c("--paintor_fileannot"), type="character", default=NULL, 
+              help="dataset file name", metavar="character"),
   make_option(c("-p", "--paintor"), type="character", default=NULL, 
               help="dataset file name", metavar="character"),
   make_option(c("-x", "--listpaintor"), type="character", default=NULL, 
@@ -231,7 +233,8 @@ datainwork$IsSig[!is.na(datainwork$pJ)]<-T
 
 if(!is.null(opt[['paintor_fileannot']])){
 DataAnnot<-read.table(opt[['paintor_fileannot']], header=T)
-HeadAnnot<-readLines(opt[['paintor_annot']])
+if(!is.null(opt[['paintor_annot']]))HeadAnnot<-readLines(opt[['paintor_annot']])
+else HeadAnnot = names(DataAnnot)
 HeadAnnot2<-gsub("-",".",HeadAnnot)
 DataAnnot$num<-1:nrow(DataAnnot)
 DataAnnot<-merge(datainwork[,c('num','rsid','chromosome','position')], DataAnnot[,c('num',HeadAnnot2)], by='num')

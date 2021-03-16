@@ -22,8 +22,8 @@ def parseArguments():
     parser.add_argument('--chro_ps',type=int,required=True,help="position of file to extract chro")
     parser.add_argument('--bp_ps',type=int,required=True,help="position of file to extract bp")
     parser.add_argument('--rs_ps',type=int,required=True,help="rs of file to extract bp")
-    parser.add_argument('--a1_ps',type=int,required=True,help="rs of file to extract bp")
-    parser.add_argument('--a2_ps',type=int,required=True,help="rs of file to extract bp")
+    parser.add_argument('--a1_ps',type=int,required=True,help="a1 of file to extract bp")
+    parser.add_argument('--a2_ps',type=int,required=True,help="a2 of file to extract bp")
     parser.add_argument('--chr',type=str,required=False,help="specific chromosome to extract")
     parser.add_argument('--file_chrbp',type=str, required=True)
     args = parser.parse_args()
@@ -68,9 +68,9 @@ if args.chr :
      if infopos in chrolist :
        spla1=spl[posa1].split(',')
        spla2=spl[posa2].split(',')
-       if (chrodic[infopos][0] in spla1 and chrodic[infopos][1] in spla2) or  (chrodic[infopos][0] in spla2 and chrodic[infopos][1] in spla1) :
-          write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs] +'\n')
-       #chrolist.remove(infopos)
+       if ((chrodic[infopos][0] in spla1) and (chrodic[infopos][1] in spla2)) or  ((chrodic[infopos][0] in spla2) and (chrodic[infopos][1] in spla1)) :
+          write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs] +" "+spl[posa1]+'\n')
+          chrolist.remove(infopos)
      #if len(chrolist)==0 :
      #  break
 else :
@@ -83,8 +83,8 @@ else :
        spla1=spl[posa1].split(',')
        spla2=spl[posa2].split(',')
        if (chrodic[infopos][0] in spla1 and chrodic[infopos][1] in spla2) or  (chrodic[infopos][0] in spla2 and chrodic[infopos][1] in spla1) :
-         write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs] +'\n')
-       #chrolist.remove(infopos)
+         write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs]+" "+spl[posa1]+'\n')
+         chrolist.remove(infopos)
      #if len(chrolist)==0 :
      #  break
 

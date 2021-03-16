@@ -24,7 +24,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req", "metasoft_mem_req"]
+allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req", "metasoft_mem_req", "plink_mem_req"]
 
 /*
 params.each { parm ->
@@ -41,6 +41,7 @@ params.input_config=''
 params.metal=0
 params.gwama=0
 params.metasoft=0
+params.plink=0
 params.mrmega=0
 params.pheno="notdefined"
 
@@ -49,6 +50,7 @@ params.metal_bin='metal'
 params.gwama_bin='GWAMA'
 params.mrmega_bin='MR-MEGA'
 params.metasoft_bin="/opt/bin/Metasoft.jar"
+params.plink_bin="plink"
 
 params.ma_mrmega_pc=2
 params.ma_random_effect=1
@@ -57,7 +59,9 @@ params.ma_inv_var_weigth=0
 params.ma_mem_req="10G"
 params.gwama_mem_req="20G"
 params.metasoft_mem_req="20G"
+params.plink_mem_req="10G"
 params.big_time = '1000h'
+params.file_config=''
 
 params.metasoft_pvalue_table="/opt/bin/HanEskinPvalueTable.txt"
 params.ma_metasoft_opt=""
@@ -107,7 +111,7 @@ def configfile_analysis(file){
    }
  return([resFile,resInfo, NumRef])
 }
-
+checkexi=Channel.fromPath(params.file_config,checkIfExists:true)
 info_file=configfile_analysis(params.file_config)
 pos_file_ref=info_file[2]
 if(pos_file_ref==-1){
@@ -115,7 +119,7 @@ println "not file reference foud see in config file column IsRefFile"
 exit(0)
 }
 info_ref_rs=Channel.from(info_file[1][NumRef])
-file_info_ref_rs=Channel.fromPath(info_file[0][NumRef])
+file_info_ref_rs=Channel.fromPath(info_file[0][NumRef],checkIfExists:true)
 process GetRsFile{
     memory ma_mem_req
     input :
@@ -129,7 +133,7 @@ process GetRsFile{
         ma_extract_rsid.py --input_file $file_assoc_rs --out_file $file_rs --info_file $info_rs 
         """
 }
-liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).combine(file_rs_ref_chan)
+liste_filesi_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).combine(file_rs_ref_chan)
 
 
 process ChangeFormatFile {
@@ -138,8 +142,10 @@ process ChangeFormatFile {
       set file(file_assoc), val(info_file), file(file_ref) from liste_filesi_ch
     output :
       file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega)
+      file(newfile_assocplk) into liste_file_plk
     script :
        newfile_assoc=file_assoc+".modif"
+       newfile_assocplk=file_assoc+".modif.plk"
        """
        ma_change_format.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file --rs_ref $file_ref --sep_out TAB
        """
@@ -149,10 +155,11 @@ liste_file_gwama=liste_file_gwama.collect()
 liste_file_metal=liste_file_metal.collect()
 liste_file_metasoft=liste_file_metasoft.collect()
 liste_file_mrmega=liste_file_mrmega.collect()
+liste_file_plk=liste_file_plk.collect()
 
 
 if(params.gwama==1){
- h//config channel
+ //config channel
   process doGWAMA {
      label 'metaanalyse'
      memory gwama_mem_req
@@ -281,14 +288,14 @@ if(params.metasoft==1){
   file_pvaltab=params.metasoft_pvalue_table
   process doMetaSoft {
     time params.big_time
-    memory ma_mem_req
+    memory metasoft_mem_req
     label 'metaanalyse'
     input :
       val(list_file) from liste_file_metasoft
       //file(file_pvaltab) from filepvaltable
     publishDir "${params.output_dir}/metasoft", overwrite:true, mode:'copy'
     output :
-      set file("${out}.meta"),file("${out}.res"),file("${out}.log"), file("${out}.files"), file("${out}.format.res")
+      set file("${out}.meta"),file("${out}.res"),file("${out}.log"), file("${out}.files"), file("${out}.format.res"), file("${out}.pivot")
       file("${out}.format.res")  into res_metasoft
     script :
       out = "metasoft_res"
@@ -315,6 +322,43 @@ if(params.metasoft==1){
   }
   report_ch = report_ch.flatten().mix(report_Metasoft.flatten())
 
+}
+
+if(params.plink==1){
+  process doPlinkMeta{
+     time params.big_time
+     memory params.plink_mem_req
+     input :
+      file(listeplk) from liste_file_plk
+    publishDir "${params.output_dir}/plink", overwrite:true, mode:'copy'
+     output :
+       file("$out*") 
+       file("${out}.meta") into  res_plink
+    script :
+     lpk=listeplk.join(" ")
+     out=params.output+'_plink'
+     """
+     ${params.plink_bin} --meta-analysis $lpk + qt -out $out
+     """
+
+  }
+
+  process showPlink {
+    time params.big_time
+    memory metasoft_mem_req
+    publishDir params.output_dir, overwrite:true, mode:'copy'
+    input:
+      file(assoc) from res_plink
+    output:
+      file("${out}*")  into report_plink
+    script:
+      out = "plink"
+      """
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header SNP --pval_header "P" --beta_header "BETA" --info_prog "BETA"
+      """
+  }
+
+   report_ch = report_ch.flatten().mix(report_plink.flatten())
 }
 
 

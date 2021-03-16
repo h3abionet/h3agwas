@@ -143,8 +143,6 @@ if (workflow.repository)
 else
   wflowversion="A local copy of the workflow was used"
 
-report = new LinkedHashMap()
-repnames = ["dups","initmaf","inithwe","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch_report","batch_aux","qc1","poorgc10"]
 
 
 
@@ -159,10 +157,6 @@ checker = { fn ->
 
 
 
-repnames.each { report[it] = Channel.create() }
-
-repmd5       = report["inpmd5"]
-orepmd5      = report["outmd5"]
 
 params.queue    = 'batch'
 params.remove_on_bp  = 1
@@ -208,8 +202,15 @@ if (params.help) {
 }
 
 
-
+// This method first checks that the data file has the stated column 
+// If so, it creates a channel for it
+// NB: if the file is in S3 we cannot do the test since Groovy does not
+// allow us to access the file directly
 def getSubChannel = { parm, parm_name, col_name ->
+  if (parm.toString().contains("s3://")) {
+    println "The file <$parm> is in S3 so we cannot do a pre-check";
+    return Channel.fromPath(parm);
+  }
   if ((parm==0) || (parm=="0") || (parm==false) || (parm=="false")) {
     filename = "emptyZ0${parm_name}.txt";
     new File(filename).createNewFile()  
@@ -229,13 +230,6 @@ def getSubChannel = { parm, parm_name, col_name ->
   return new_ch;
 }
 
-/* This takes one file and makes multiple channels */
-def fromPathReplicas = { fname, num ->
-      src = Channel.fromPath (fname);
-      trgs = (1..num).collect { Channel.create() }
-      src.separate(*trgs) { it -> (1..num).collect { it } }
-      return trgs
-}
 
 
 
@@ -266,12 +260,6 @@ if (params.case_control) {
 
 phenotype_ch = getSubChannel(params.phenotype,"pheno",params.pheno_col)
 batch_ch     = getSubChannel(params.batch,"batch",params.batch_col)
-raw_ch       = Channel.create()
-bim_ch       = Channel.create()
-inpmd5ch     = Channel.create()
-configfile   = Channel.create()
-
-
 
 
 
@@ -319,7 +307,11 @@ Channel
     { file -> file.baseName }  \
       .ifEmpty { error "No matching plink files" }        \
       .map { a -> [this_checker(a[1]), this_checker(a[2]), this_checker(a[3])] }\
-      .separate(raw_ch, bim_ch, inpmd5ch) { a -> [a,a[1],a] }
+      .multiMap {  it ->
+         raw_ch: it
+         bim_ch: it[1] 
+         inpmd5ch : it
+       }.set {checked_input}
 
   
 
@@ -346,9 +338,9 @@ def getConfig = {
 // Generate MD5 sums of output files
 process inMD5 {
   input:
-     file plink from inpmd5ch
+     file plink from checked_input.inpmd5ch
   output:
-     file(out) into report["inpmd5"]
+     file(out) into report_inpmd5_ch
   echo true
   script:
        bed = plink[0]
@@ -368,7 +360,7 @@ if (samplesheet != "0")  {
      file(sheet) from sample_sheet_ch
     output:
      file("poorgc10.lst") into poorgc10_ch
-     file("plates") into report["poorgc10"]
+     file("plates") into report_poorgc10_ch
     script:
      """
        mkdir -p plates
@@ -380,7 +372,7 @@ if (samplesheet != "0")  {
   process noSampleSheet {
     output:
      file("poorgc10.lst") into poorgc10_ch
-     file("plates") into report["poorgc10"]
+     file("plates") into report_poorgc10_ch
     script:
      """
        mkdir -p plates
@@ -409,7 +401,7 @@ process getDuplicateMarkers {
   publishDir params.output_dir, pattern: "*dups", \
              overwrite:true, mode:'copy'
   input:
-    file(inpfname) from bim_ch
+    file(inpfname) from checked_input.bim_ch
   output:
     file("${base}.dups") into duplicates_ch
   script:
@@ -432,13 +424,13 @@ process getDuplicateMarkers {
 process removeDuplicateSNPs {
   memory plink_mem_req
   input:
-  set file(bed), file(bim), file(fam) from raw_ch
-  file(dups) from  duplicates_ch
+   tuple file(bed), file(bim), file(fam) from checked_input.raw_ch
+   file(dups) from  duplicates_ch
 
   output:
-    set  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
+    tuple  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
     into (qc1_ch,qc1B_ch,qc1C_ch,qc1D_ch,qc1E_ch)
-    set file("${base}.orig"), file(dups) into report["dups"]
+    tuple file("${base}.orig"), file(dups) into report_dups_ch
     file ("${nodup}.lmiss") into snp_miss_ch
     file ("${nodup}.imiss") into (ind_miss_ch1, ind_miss_ch2)
   script:
@@ -451,7 +443,9 @@ process removeDuplicateSNPs {
    """
 }
 
-missingness = [0.01,0.03,0.05]
+
+missingness = [0.01,0.03,0.05]  // this is used by one of the templates
+
 if (extrasexinfo == "--must-have-sex") {
 
 
@@ -513,8 +507,8 @@ process identifyIndivDiscSexinfo {
   publishDir params.output_dir, overwrite:true, mode:'copy'
 
   output:
-     file(logfile) into  (rep_failed_sex_ch, failed_sex_ch1)
-     set file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
+     file(logfile) into  (report_failed_sex_ch, failed_sex_ch1)
+     tuple file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
      file("${base}.hwe") into hwe_stats_ch
   validExitStatus 0, 1
   script:
@@ -537,7 +531,7 @@ process identifyIndivDiscSexinfo {
      """
 }
 
-report["failedsex"] = rep_failed_sex_ch
+
 
 process generateSnpMissingnessPlot {
   memory other_mem_req
@@ -545,7 +539,7 @@ process generateSnpMissingnessPlot {
       file(lmissf) from snp_miss_ch
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-     file(output) into report['snpmiss']
+     file(output) into report_snpmiss_ch
 
   echo true
   script:
@@ -563,7 +557,7 @@ process generateIndivMissingnessPlot {
       file(imissf) from ind_miss_ch1
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-    file(output) into report["indmisspdf"]
+    file(output) into report_indmisspdf_ch
   script:
     input  = imissf
     base   = imissf.baseName
@@ -592,7 +586,7 @@ process showInitMAF {
   input:
      file(freq) from init_freq_ch
   output:
-     set file("${base}.pdf"), file("${base}.tex") into report["initmaf"]
+     tuple file("${base}.pdf"), file("${base}.tex") into report_initmaf_ch
   script:
     base = freq.baseName+"-initmaf"
     base = base.replace(".","_")
@@ -604,7 +598,7 @@ process showHWEStats {
   input:
      file(hwe) from hwe_stats_ch
   output:
-     set file("${base}.pdf"), file("${base}-qq.pdf"), file("${base}.tex") into report["inithwe"]
+     tuple file("${base}.pdf"), file("${base}-qq.pdf"), file("${base}.tex") into report_inithwe_ch
   script:
     base = hwe.baseName+"-inithwe"
     base = base.replace(".","_")
@@ -615,11 +609,11 @@ process showHWEStats {
 process removeQCPhase1 {
   memory plink_mem_req
   input:
-    set file(bed), file(bim), file(fam) from qc1_ch
+    tuple file(bed), file(bim), file(fam) from qc1_ch
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${output}*.{bed,bim,fam}") into (qc2A_ch,qc2B_ch,qc2C_ch,qc2D_ch)
-     set file("qc1.out"), file("${output}.irem") into report["qc1"]
+     tuple file("qc1.out"), file("${output}.irem") into report_qc1_ch
   script:
      base=bed.baseName
      output = "${base}-c".replace(".","_")
@@ -646,8 +640,8 @@ process compPCA {
    input:
       file plinks from qc2A_ch
    output:
-      set file ("${prune}.eigenval"), file("${prune}.eigenvec") into (pcares, pcares1)
-      set file ("${prune}.bed"), file("${prune}.bim"), file("${prune}.fam") into out_only_pcs_ch
+      tuple file ("${prune}.eigenval"), file("${prune}.eigenvec") into (pcares, pcares1)
+      tuple file ("${prune}.bed"), file("${prune}.bim"), file("${prune}.fam") into out_only_pcs_ch
    publishDir "${params.output_dir}/pca", overwrite:true, mode:'copy',pattern: "${prune}*"
    script:
       base = plinks[0].baseName
@@ -662,10 +656,10 @@ process compPCA {
 process drawPCA {
     memory other_mem_req
     input:
-      set file(eigvals), file(eigvecs) from pcares
+      tuple file(eigvals), file(eigvecs) from pcares
       file cc from cc2_ch
     output:
-      set  file ("eigenvalue.pdf"), file(output) into report["pca"]
+      tuple  file ("eigenvalue.pdf"), file(output) into report_pca_ch
     publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
     script:
       base=eigvals.baseName
@@ -717,7 +711,7 @@ process pruneForIBD {
 
 
 
-// run script to find a set of individuals we can remove to ensure no relatedness
+// run script to find a tuple of individuals we can remove to ensure no relatedness
 //  Future - perhaps replaced with Primus
 process findRelatedIndiv {
   memory other_mem_req
@@ -725,7 +719,7 @@ process findRelatedIndiv {
      file (missing) from ind_miss_ch2
      file (ibd_genome) from find_rel_ch
   output:
-     file(outfname) into (related_indivs_ch1,related_indivs_ch2, rep_rel_ch) 
+     file(outfname) into (related_indivs_ch1,related_indivs_ch2, report_related_ch) 
   publishDir params.output_dir, overwrite:true, mode:'copy'
   script:
      base = missing.baseName
@@ -733,7 +727,7 @@ process findRelatedIndiv {
      template "removeRelInds.py"
 }
 
-report["related"] = rep_rel_ch
+
 
 process calculateSampleHeterozygosity {
    memory plink_mem_req
@@ -742,7 +736,7 @@ process calculateSampleHeterozygosity {
 
    publishDir params.output_dir, overwrite:true, mode:'copy'
    output:
-      set file("${hetf}.het"), file("${hetf}.imiss") into (hetero_check_ch, plot1_het_ch)
+      tuple file("${hetf}.het"), file("${hetf}.imiss") into (hetero_check_ch, plot1_het_ch)
       file("${hetf}.imiss") into missing_stats_ch
    script:
       base = nodups[0].baseName
@@ -757,10 +751,10 @@ process calculateSampleHeterozygosity {
 process generateMissHetPlot {
   memory other_mem_req
   input:
-    set file(het), file(imiss) from plot1_het_ch
+    tuple file(het), file(imiss) from plot1_het_ch
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-    file(output) into report["misshet"]
+    file(output) into report_misshet_ch
   script:
     base = imiss.baseName
     output  = "${base}-imiss-vs-het".replace(".","_")+".pdf"
@@ -773,9 +767,9 @@ process generateMissHetPlot {
 process getBadIndivsMissingHet {
   memory other_mem_req
   input:
-    set file(het), file(imiss) from hetero_check_ch
+    tuple file(het), file(imiss) from hetero_check_ch
   output:
-    file(outfname) into (failed_miss_het, fmreport)
+    file(outfname) into (failed_miss_het, report_misshetremf_ch)
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.txt"
   script:
     base = het.baseName
@@ -783,7 +777,6 @@ process getBadIndivsMissingHet {
     template "select_miss_het_qcplink.py"
 }
 
-report["misshetremf"] = fmreport
 
 
 
@@ -794,7 +787,7 @@ process removeQCIndivs {
     file(rel_indivs)     from related_indivs_ch1
     file (f_sex_check_f) from failed_sex_ch1
     file (poorgc)        from poorgc10_ch
-    set file(bed), file(bim), file(fam) from qc2D_ch
+    tuple file(bed), file(bim), file(fam) from qc2D_ch
   output:
      file("${out}.{bed,bim,fam}") into\
         (qc3A_ch, qc3B_ch)
@@ -843,7 +836,7 @@ process generateDifferentialMissingnessPlot {
      file clean_missing from clean_diff_miss_plot_ch1
    publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
    output:
-      file output into report["diffmissP"]
+      file output into report_diffmissP_ch
    script:
        input = clean_missing
        base  = clean_missing.baseName.replace(".","_").replace("-nd","")
@@ -860,8 +853,8 @@ process findSnpExtremeDifferentialMissingness {
     file clean_missing from clean_diff_miss_ch2
   echo true
   output:
-     set val(base), file(failed) into bad_snps_ch
-     file(failed) into report["diffmiss"]
+     tuple val(base), file(failed) into bad_snps_ch
+     file(failed) into report_diffmiss_ch
      file(failed) into skewsnps_ch
   script:
     cut_diff_miss=params.cut_diff_miss
@@ -880,8 +873,8 @@ process removeSkewSnps {
     file(failed) from skewsnps_ch
   publishDir params.output_dir, overwrite:true, mode:'copy'  
   output:
-    set file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") \
-      into (qc4A_ch, qc4B_ch, qc4C_ch, qc_rep_ch)
+    tuple file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") \
+      into (qc4A_ch, qc4B_ch, qc4C_ch,  report_cleaned_ch)
   script:
   base = plinks[0].baseName
   output = params.output.replace(".","_")
@@ -891,13 +884,14 @@ process removeSkewSnps {
 }
 
 
-report["cleaned"] = qc_rep_ch
 
+
+/*
 process convertInVcf {
    memory plink_mem_req
    cpus max_plink_cores
    input :
-     set file(bed), file(bim), file(fam), file (log) from qc4A_ch
+     tuple file(bed), file(bim), file(fam), file (log) from qc4A_ch
    publishDir params.output_dir, overwrite:true, mode:'copy'
    output :
     file("${base}.vcf")  
@@ -907,13 +901,13 @@ process convertInVcf {
      plink --bfile ${base} --threads ${max_plink_cores} --recode vcf --out $base
      """
 
-}
+}*/
 
 
 process calculateMaf {
   memory plink_mem_req
   input:
-    set  file(bed), file(bim), file(fam), file(log) from qc4C_ch
+    tuple  file(bed), file(bim), file(fam), file(log) from qc4C_ch
 
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.frq"
 
@@ -936,7 +930,7 @@ process generateMafPlot {
     file input from maf_plot_ch
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-    file(output) into report["mafpdf"]
+    file(output) into report_mafpdf_ch
 
   script:
     base    = input.baseName
@@ -970,7 +964,7 @@ process generateHwePlot {
     file unaff from unaff_hwe
   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
-    file output into report["hwepdf"]
+    file output into report_hwepdf_ch
 
   script:
     input  = unaff
@@ -984,11 +978,11 @@ process generateHwePlot {
 
 // Generate MD5 sums of output files
 process outMD5 {
-  memory other_mem_req
+
   input:
-     set file(bed), file(bim), file(fam), file(log) from qc4B_ch
+     tuple file(bed), file(bim), file(fam), file(log) from qc4B_ch
   output:
-     file(out) into report["outmd5"]
+     file(out) into report_outmd5_ch
   echo true
   script:
        out  = "${bed.baseName}.md5"
@@ -1002,8 +996,8 @@ process outMD5 {
 process batchProc {
   memory plink_mem_req
   input:
-    set file(eigenval), file(eigenvec) from pcares1
-    set file(imiss), file(lmiss), file(sexcheck_report) from batchrep_missing_ch
+    tuple file(eigenval), file(eigenvec) from pcares1
+    tuple file(imiss), file(lmiss), file(sexcheck_report) from batchrep_missing_ch
     file "pheno.phe" from phenotype_ch    // staged input file
     file "batch.phe" from batch_ch        // staged input file
     file genome    from batch_rel_ch    // pruneForIBD
@@ -1012,8 +1006,8 @@ process batchProc {
   publishDir params.output_dir, pattern: "*{csv,pdf}", \
              overwrite:true, mode:'copy'
   output:
-      file("${base}-batch.tex")      into report["batch_report"]
-      set file("*.csv"), file("*pdf") into report["batch_aux"] // need to stage
+      file("${base}-batch.tex")      into report_batch_report_ch
+      tuple file("*.csv"), file("*pdf") into report_batch_aux_ch // need to stage
   script:
     phenotype = "pheno.phe"
     batch = "batch.phe"
@@ -1034,27 +1028,27 @@ process produceReports {
   memory other_mem_req
   label 'latex'
   input:
-    set file(orig), file (dupf) from report["dups"]
-    set file(cbed), file(cbim), file(cfam), file(ilog) from report["cleaned"]
-    file(missingvhetpdf) from report["misshet"]
-    file(mafpdf)         from report["mafpdf"]
-    file(snpmisspdf)     from report["snpmiss"]
-    file(indmisspdf)     from report["indmisspdf"]
-    file(fsex)           from report["failedsex"]
-    file(misshetremf)    from report["misshetremf"]
-    file(diffmisspdf)    from report["diffmissP"]
-    file(diffmiss)       from report["diffmiss"]
-    set file(eigenvalpdf),file(pcapdf)         from report["pca"]
-    file(hwepdf)         from report["hwepdf"]
-    file(rel_indivs)     from report["related"]
-    file(inpmd5)         from report["inpmd5"]
-    file(outmd5)         from report["outmd5"]
-    set file(initmafpdf), file(initmaftex) from report["initmaf"]
-    set file(inithwepdf), file(inithweqqpdf), file(inithwetex) from report["inithwe"]
-    set file(qc1), file(irem)  from report["qc1"]
-    file(batch_tex)  from report["batch_report"]
-    file(poorgc)     from report["poorgc10"]
-    set file(bpdfs), file(bcsvs) from report["batch_aux"]
+    tuple file(orig), file (dupf) from report_dups_ch
+    tuple file(cbed), file(cbim), file(cfam), file(ilog) from report_cleaned_ch
+    file(missingvhetpdf) from report_misshet_ch
+    file(mafpdf)         from report_mafpdf_ch
+    file(snpmisspdf)     from report_snpmiss_ch
+    file(indmisspdf)     from report_indmisspdf_ch
+    file(fsex)           from report_failed_sex_ch
+    file(misshetremf)    from report_misshetremf_ch
+    file(diffmisspdf)    from report_diffmissP_ch
+    file(diffmiss)       from report_diffmiss_ch
+    tuple file(eigenvalpdf),file(pcapdf)         from report_pca_ch
+    file(hwepdf)         from report_hwepdf_ch
+    file(rel_indivs)     from report_related_ch
+    file(inpmd5)         from report_inpmd5_ch
+    file(outmd5)         from report_outmd5_ch
+    tuple file(initmafpdf), file(initmaftex) from report_initmaf_ch
+    tuple file(inithwepdf), file(inithweqqpdf), file(inithwetex) from report_inithwe_ch
+    tuple file(qc1), file(irem)  from report_qc1_ch
+    file(batch_tex)  from report_batch_report_ch
+    file(poorgc)     from report_poorgc10_ch
+    tuple file(bpdfs), file(bcsvs) from report_batch_aux_ch
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${base}.pdf") into final_ch

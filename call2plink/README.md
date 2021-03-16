@@ -82,6 +82,10 @@ A reference file suitable for the H3A chip can be found here http://www.bioinf.w
 
 * `samplesize`: This was  included mainly for development purposes but _perhaps_ might be helpful to some users. This allows you sample only the first _n_ people in each genotype report. This allows you to extract out a small subset of the data for testing purposes. The default is 0, which means that *all* individuals will be generated.
 
+* `indiv_memory_req`: default is 2GB -- good enough for 100 samples, 2.3 million SNPs per files (you may need to change this if you have one massive file rather than many big files)
+* `combined_memory_req` : default is 8GB -- probably good enough for 15000 samples, 2.3millions SNPs in total
+
+* `time_req`: default is 12h -- as above
 
 ### Advanced features for sample handling
 

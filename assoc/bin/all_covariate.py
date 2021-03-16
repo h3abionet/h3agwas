@@ -16,9 +16,12 @@ def parseArguments():
     parser.add_argument('--lind',type=str,required=False)
     parser.add_argument('--data',type=str,required=True,help="File with phenotype and covariate data")
     parser.add_argument('--cov_list', type=str,help="comma separated list of covariates",default="")
+    parser.add_argument('--cov_type', type=str,help="comma separated list of covariates",default="")
     parser.add_argument('--pheno',type=str,required=True,help="comma separated list of  pheno column")
     parser.add_argument('--phe_out', type=str,help="output fam file")
     parser.add_argument('--cov_out', type=str,help="output covariate file")
+    parser.add_argument('--covqual_file', type=str,help="output covariate file")
+    parser.add_argument('--cov_file', type=str,help="output covariate file")
     parser.add_argument('--gxe_out', type=str,help="output gxe file (gemma use)")
     parser.add_argument('--gxe', type=str,help="gxe covariate (gemma use)")
     parser.add_argument('--form_out', type=int,help="format output : 1:Gemma, 2:boltlmm, 3:FastLmm, 4:gcta", required=True)
@@ -144,8 +147,28 @@ elif  args.form_out == 3 :
 elif args.form_out == 4 :
    merge.reindex(["FID","IID"])
    merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels,header=True,index=False,na_rep=MissingOut)
-   merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covariates,header=True,index=False,na_rep=MissingOut)
-
+   if not args.cov_type :
+      merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covariates,header=True,index=False,na_rep=MissingOut)
+   else :
+      splcov=args.cov_type.split(',')      
+      covtmp=covariates
+      if len(splcov)!=len(splcov):
+         print('error cov '+ covariates+' have different len than type cov'+ args.cov_type)
+         sys.exit(10)
+      covquant=[]
+      covqual=[]
+      cmt=0
+      for typecov in splcov:
+         if typecov =="1":
+             covquant.append(covtmp[cmt])
+         elif typecov== "0":
+             covqual.append(covtmp[cmt])
+         else :
+             print('error : type covariable different of 0 (qualitatif) and 1 (quantitatif) '+typecov)
+         cmt+=1
+      if len(covquant)>0:
+         merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covquant,header=True,index=False,na_rep=MissingOut)
+      merge.to_csv(args.covqual_file,sep=TAB,columns=["FID","IID"]+covqual,header=True,index=False,na_rep=MissingOut)
 
 
 print(" ".join(list(map (lambda a: str(a[0]+1)+"@@@"+a[1], enumerate(phenos) ))),end="")

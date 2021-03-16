@@ -12,11 +12,20 @@
   * rename duplicate rs or . by chro
   * added cm in bim files if file `genetic_map` give in argumen, 
   * merge all chromosome in plink format
+  * give a report with analyse of frequencie and score
 ### arguments :
 * `file_listvcf` : file contains each bgzip vcf files to merge, one by line [default : none]
 * `min_scoreinfo` : what score info minimum do you want : [default :0.6]
 * `output_pat` : pattern of output for bed final file [default : out]
 * `output_dir` : directory of output : [default : plink] 
+* `score_imp` : header of score imputation [default : INFO], for score info depend of software used on software of imptuation
+ * PBWT : INFO
+ * 
+* `do_stat` : by default true make stat using frequencies and score 
+ * statfreq_vcf : 
+  * pattern used in Info to computed frequencies  ([default : "%AN %AC" with AN total and AC alternative number]) 
+  * can be two value NAll NAlt, where frequencies computed as Nalt/NAll
+  * can be one value frequencies
 * `genetic_maps` : genetics maps to added map in bim file, if not provided, map doesn't added in bim, must be not compressed :
  * file for [hg19](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg19.txt.gz) 
  * file for [hg17](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg17.txt.gz)
@@ -36,7 +45,27 @@ chr position COMBINED_rate(cM/Mb) Genetic_Map(cM)
 ```
 ls  dirvcf/chr*.vcf.gz > listfileawigen
 nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfileawigen -resume -profile slurm --output_pat awigen  --genetic_maps $FileCM --plink_mem_req 6GB -r hackathon
+
 ```
+
+## Script : `vcf_in_bgen.nf`
+### Requirement :
+* plink, bcftools, bash, qctools, nextflow
+* singularity / dockers image : no test yet
+### what script done :
+* Intial data : format of Sanger imputation format vcf file
+* select for each chromosome on quality of imputation : min info
+* convert each vcf in impute2 format used by boltlmmm
+* output for each chromosome is basename of initial files with .impute2.gz
+
+### arguments :
+* `file_listvcf` : file contains each bgzip vcf files to merge, one by line [default : none]
+* `min_scoreinfo` : what score info minimum do you want : [default :0.6]
+* `output_dir` : directory of output : [default : impute2] 
+* `qctoolsv2_bin` : bin file for qctools 
+* `genotype_field` : genotype field to transform [degault : GP]
+
+
 
 ## Script : `vcf_in_impute2.nf`
 ### Requirement :
@@ -142,3 +171,41 @@ R : library
 pip3.6 install CrossMap --user
 pip3.6 install numpy==1.16.1 --user
 chmod +x ~/.local/bin/CrossMap.py
+
+## Pipeline : vcf_in_bimbam.nf
+transform vcf in bimbam format after filters for quality.
+###arguments
+* `file_listvcf` : file contains each bgzip vcf files to merge, one by line [default : none]
+* `min_scoreinfo` : what score info minimum do you want : [default :0.6]
+* `output_dir` : directory of output : [default : impute2]
+* `genotype_field` : genotype field in vcf file [default : GP]
+* `qctoolsv2_bin`  : qctools v2 binary [default :qctool_v2]
+* `bcftools_bin` : bcftools bin [default : bcftools]
+
+
+## Pipeline : prepareforimp.nf
+
+### argument :
+* `input_dir`
+* `input_pat`
+* `output_dir` : direction of output [default : output]
+* file to extract rsinfomation with position :
+ * `file_ref_gzip` : must be in gzip example of file used : [here](ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/All_20180423.vcf.gz)
+    * `poshead_chro_inforef` psotion of column chromosome in file  [default : 0]
+    * `poshead_bp_inforef` : position of column where bp in file [default : 1]
+    * `poshead_rs_inforef` : position of column where rs in file  [default : 2]
+* `deleted_notref` : deleted position s not found in `file_ref_gzip`
+* `reffasta` : fasta reference, if present do control of vcf file :
+ *checkVCF.py
+ *bcftools : used plugin of +fixref see `BCFTOOLS_PLUGINS=bcftools/plugins/`
+ 
+
+### requirement 
+*bcftools
+*plink 
+*R
+*python
+* for control of vcf 
+ *checkVCF.py is present in binary of nextflow pipeline (https://github.com/zhanxw/checkVCF)
+ *samtools
+
