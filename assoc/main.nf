@@ -39,7 +39,7 @@ allowed_params+=ParamFast
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
 
-FastGWA_params=["fastgwa_memory", "fastgwa_cpus", 'fastgwa']
+FastGWA_params=["fastgwa_memory", "fastgwa_num_cores", 'fastgwa']
 allowed_params+=FastGWA_params
 
 params.each { parm ->
