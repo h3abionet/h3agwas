@@ -790,7 +790,7 @@ if (params.boltlmm == 1) {
   }
 
   process doBoltmm{
-    label 'py2fast'
+    label 'bolt'
     cpus params.bolt_num_cores
     memory params.bolt_mem_req
     time   params.big_time
@@ -876,6 +876,7 @@ if (params.gemma+params.gemma_gxe>0) {
   gemma_assoc_ch.separate (rel_ch_gemma, gem_ch_gemma, gem_ch_gemma_gxe, bim_ch_fast_gem) { a -> [a, a, a,a[1]] }
   if(params.gemma_mat_rel==""){
   process getGemmaRel {
+    label 'gemma'
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time params.big_time
@@ -938,6 +939,7 @@ if (params.gemma == 1){
   check2 = Channel.create()
 
   process doGemmaChro{
+    label 'gemma'
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time   params.big_time
@@ -1004,6 +1006,7 @@ if (params.gemma == 1){
 
   }else{
   process doGemma{
+    label 'gemma'
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time   params.big_time
@@ -1351,6 +1354,7 @@ if (params.plink_gxe==1) {
  }
 
   process showPlinkManhattenGxE {
+    label 'gcta'
     memory params.other_process_memory
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
@@ -1384,6 +1388,7 @@ if(params.fastgwa==1){
 
 if(params.gcta_grmfile==""){
  process FastGWADoGRM{
+    label 'gcta'
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
     input :
@@ -1408,6 +1413,7 @@ if(params.gcta_grmfile==""){
   bingrm_c=bingrm.collect()
   nbingrm_c=nbingrm.collect()
   process MergFastGWADoGRM{
+    label 'gcta'
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
     input :
@@ -1442,6 +1448,7 @@ pheno_spl_gcta=params.pheno.split(',')
 balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
 balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
 process FastGWARun{
+    label 'gcta'
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
     input :
@@ -1470,6 +1477,7 @@ process FastGWARun{
      """
 }
   process showFastGWAManhatten {
+   label 'py2fast'
    memory params.other_process_memory
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
