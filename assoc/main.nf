@@ -906,16 +906,16 @@ if(params.gemma_multi==1){
         input :
           file(BimFile) from bim_ch_fast_gem
         output :
-          stdout into (chrolist,chrolist2, chrolisti_gxe)
+          stdout into (chrolist_gem,chrolist2_gem, chrolisti_gem_gxe)
         script:
          """
          cat $BimFile|awk '{print \$1}'|uniq|sort|uniq
         """
      }
   check2 = Channel.create()
-  list_chro_gemma=chrolist.flatMap { list_str -> list_str.split() }.tap ( check2)
+  list_chro_gemma=chrolist_gem.flatMap { list_str -> list_str.split() }.tap ( check2)
   check2 = Channel.create()
-  list_chro_gemma_gxe=chrolisti_gxe.flatMap { list_str -> list_str.split() }.tap ( check2)
+  list_chro_gemma_gxe=chrolisti_gem_gxe.flatMap { list_str -> list_str.split() }.tap ( check2)
 
 
 
