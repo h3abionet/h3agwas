@@ -209,11 +209,12 @@ if(params.ldsc_h2==1){
    publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
    output :
      file("$out"+".log") 
-     set val(gwas), val(out), file("${out}.log") into logldsc 
+     set val(gwasf), val(out), file("${out}.log") into logldsc 
 
    script :
      NInfo=params.head_n=="" ? " --N ${params.Nind} " : "--N-col ${params.head_n} " 
      out=gwas.baseName.replace('_','-')+"_ldsc"
+     gwasf=gwas.baseName
      """
      ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out"_mg" --snp ${params.head_rs} --p ${params.head_pval} \
      --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --no-alleles
@@ -227,10 +228,10 @@ if(params.ldsc_h2==1){
          set val(gwas), val(out), file(log) from logldsc
        publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
        output :
-         file("${outReml}_bolt.stat") into report_ldsc
+         file("${out}_ldsc.stat") into report_ldsc
        script :
         """
-       format_correlation.r $log $out".stat" ldsc $gwas None
+       format_correlation.r $log $out"_ldsc.stat" ldsc $gwas None
        """
     }
 
@@ -496,7 +497,7 @@ if(params.bolt_h2){
          set val(pheno), val(out), file(REML) from boltstat
        publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
        output :
-         file("${outReml}_bolt.stat") into report_bolt
+         file("${out}_bolt.stat") into report_bolt
        script :
         """
         format_correlation.r $REML $out"_bolt.stat" bolt ${pheno} None
@@ -969,12 +970,13 @@ process DoGemmah2Pval{
    each gemtype from gwas_type_gem2
    output :
        file("output/*")
-       set val(our_pheno), val("$out"), val("$gemtype"), file("output/${out}.log.txt") into gemmah2pval_stat
+       set val(gwasf), val("$out"), val("$gemtype"), file("output/${out}.log.txt") into gemmah2pval_stat
    script :
      NInfo=params.head_n=="" ? " --n_header ${params.head_n}   " : ""
      out=gwas.baseName+"_gemm_"+gemtype.replace('_','-')
      plkbas=bed.baseName
      newplkbas=plkbas+"_new"
+     gwasf=gwas.baseName
      //error! Number of columns in the wcat file does not match that of cat file.error! fail to read files. 
      //WCAT=gemtype=="2" ? " --wcat "
      //This analysis option requires marginal z-scores from the study and individual-level genotypes froma random subset of the study (or a separate reference panel).
@@ -992,7 +994,7 @@ process DoGemmah2Pval{
   process doGemmah2Pval_Stat {
       label 'R'
       input :
-         set val(our_pheno), val(out), val(gemtype), file(filelog) from gemmah2pval_stat
+         set val(gwas), val(out), val(gemtype), file(filelog) from gemmah2pval_stat
       publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
       output :
        file("${out}_gemmah2.stat") into report_gemmah2
