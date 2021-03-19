@@ -559,7 +559,7 @@ if (params.fastlmm == 1) {
 
 
      process doFastlmmMulti{
-       label 'py2fast'
+       label 'py3fast'
        cpus params.fastlmm_num_cores
        time   params.big_time
        input:
@@ -614,7 +614,7 @@ if (params.fastlmm == 1) {
   }  else { // if not   doing fastlmm_multi
 
      process doFastlmm{
-       label 'py2fast'
+       label 'py3fast'
        cpus params.fastlmm_num_cores
        time   params.big_time
        input:
@@ -1477,7 +1477,7 @@ process FastGWARun{
      """
 }
   process showFastGWAManhatten {
-   label 'py2fast'
+   label 'py3fast'
    memory params.other_process_memory
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
