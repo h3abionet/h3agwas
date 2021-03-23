@@ -559,7 +559,7 @@ if (params.fastlmm == 1) {
 
 
      process doFastlmmMulti{
-       label 'py3fast'
+       label 'fastlmm'
        cpus params.fastlmm_num_cores
        time   params.big_time
        input:
@@ -614,7 +614,8 @@ if (params.fastlmm == 1) {
   }  else { // if not   doing fastlmm_multi
 
      process doFastlmm{
-       label 'py3fast'
+       maxForks params.max_forks
+       label 'fastlmm'
        cpus params.fastlmm_num_cores
        time   params.big_time
        input:
@@ -790,6 +791,7 @@ if (params.boltlmm == 1) {
   }
 
   process doBoltmm{
+    maxForks params.max_forks
     label 'bolt'
     cpus params.bolt_num_cores
     memory params.bolt_mem_req
@@ -939,6 +941,7 @@ if (params.gemma == 1){
   check2 = Channel.create()
 
   process doGemmaChro{
+    maxForks params.max_forks
     label 'gemma'
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
@@ -1006,6 +1009,7 @@ if (params.gemma == 1){
 
   }else{
   process doGemma{
+    maxForks params.max_forks
     label 'gemma'
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
@@ -1096,6 +1100,7 @@ if (params.gemma_gxe == 1){
  if(params.gemma_multi==1){
   ind_pheno_cols_ch_gxe_multi = newNamePheno(params.pheno)
 process doGemmaGxEChro{
+    maxForks params.max_forks
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time   params.big_time
@@ -1169,6 +1174,7 @@ process doGemmaGxEChro{
    ind_pheno_cols_ch = newNamePheno(params.pheno)
 
    process doGemmaGxE{
+    maxForks params.max_forks
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
     time   params.big_time
@@ -1388,6 +1394,7 @@ if(params.fastgwa==1){
 
 if(params.gcta_grmfile==""){
  process FastGWADoGRM{
+    maxForks params.max_forks
     label 'gcta'
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
@@ -1404,6 +1411,7 @@ if(params.gcta_grmfile==""){
 
      base   = bed.baseName
      """
+     hostname
      ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_cpus} --out mgrm $rs_list
      """
  }
@@ -1448,6 +1456,7 @@ pheno_spl_gcta=params.pheno.split(',')
 balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
 balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
 process FastGWARun{
+    maxForks params.max_forks
     label 'gcta'
     memory params.fastgwa_memory
     cpus params.fastgwa_cpus
