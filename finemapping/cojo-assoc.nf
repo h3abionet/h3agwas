@@ -203,6 +203,7 @@ process doFormatData{
 }
 if(params.cojo_slct){
 process SLCTAnalyse{
+    label 'gcta'
     time params.big_time
     //memory { gcta_mem_req * task.attempt }
     memory gcta_mem_req
@@ -249,6 +250,7 @@ process SLCTMerge{
 
 if(params.cojo_top_snps_chro>0){
 process TopAnalyse{
+    label 'gcta'
     time  params.big_time
     //memory { gcta_mem_req * task.attempt }
     memory gcta_mem_req

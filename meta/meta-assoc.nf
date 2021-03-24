@@ -307,6 +307,7 @@ if(params.metasoft==1){
       """
   }
   process showMetasoft {
+    label 'metaanalyse'
     time params.big_time
     memory metasoft_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'

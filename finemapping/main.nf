@@ -223,6 +223,7 @@ process ComputedLd{
 }
 
 process ComputedFineMapCond{
+  label ''
   cpus params.fm_cpus_req
   memory params.fm_mem_req
   input :
@@ -344,6 +345,7 @@ infores_paintor_ch=infores_paintor.collect()
 
 
 process ComputedCojo{
+   label 'gcta'
    memory params.gcta_mem_req
    cpus params.gcta_cpus_req
    input :
@@ -363,6 +365,7 @@ process ComputedCojo{
 }
 if(params.genes_file==""){
 process GetGenesInfo{
+   label 'R'
    output :
       file(out) into genes_file_ch
    publishDir "${params.output_dir}/data/", overwrite:true, mode:'copy'
@@ -385,6 +388,7 @@ if(params.gwas_cat==""){
 gwascat_ch=Channel.fromPath(params.gwas_cat)
 
 process MergeResult{
+    label 'R'
     memory params.other_mem_req
     input :
       file(paintor) from res_paintor_ch
