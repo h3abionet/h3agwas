@@ -39,7 +39,7 @@ allowed_params+=ParamFast
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
 
-FastGWA_params=["fastgwa_memory", "fastgwa_num_cores", 'fastgwa']
+FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa']
 allowed_params+=FastGWA_params
 
 params.each { parm ->
@@ -134,7 +134,7 @@ params.gxe=""
 
 /**/
 params.fastgwa=0
-params.fastgwa_memory="10G"
+params.fastgwa_mem_req="10G"
 params.fastgwa_cpus=5
 params.grm_nbpart=100
 params.gcta64_bin = "gcta64"
@@ -151,11 +151,11 @@ params.sexinfo_available = "false"
 
 
 params.plink_mem_req = '6GB' // how much plink needs for this
-params.other_process_memory = '10G' // how much other processed need
+params.other_process_mem_req = '10G' // how much other processed need
 
 
 plink_mem_req = params.plink_mem_req
-other_mem_req = params.other_process_memory
+other_mem_req = params.other_process_mem_req
 max_plink_cores = params.max_plink_cores 
 
 params.help = false
@@ -561,7 +561,9 @@ if (params.fastlmm == 1) {
      process doFastlmmMulti{
        label 'fastlmm'
        cpus params.fastlmm_num_cores
+       memory params.fastlmm_mem_req
        time   params.big_time
+       maxForks params.max_forks
        input:
 	 set file (phef), file(covariate) from fastlmm_data_ch
 	 file(rel) from rel_mat_ch_fastlmm
@@ -572,15 +574,17 @@ if (params.fastlmm == 1) {
 	 set (our_pheno, file("$out"), val(base)) into (fastlmm_manhatten_chro,fastlmm_manhatten_chro2)
        script:
 	 base = plinks[0].baseName
-	 our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+         our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+         our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+
 	 covar_opt_fast =  (params.covariates) ?  " -covar $covariate" : ""
 	 newbase=base+"-"+chro
 	 out = "$base-$our_pheno"+"-"+chro+".stat"
 	 """
-	 this_pheno_col=`echo ${this_pheno} | sed 's/-.*//' `
-	 plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase
-	 $fastlmmc -REML -simType RRM -verboseOut -sim $rel -bfile $newbase -pheno ${phef} -simLearnType Full -out $out -maxThreads $params.fastlmm_num_cores \
-	          $covar_opt_fast  -mpheno \${this_pheno_col} -bfileSim $base
+	 this_pheno_col=`echo ${this_pheno} | awk -F"@" '{print \$1}'`
+	 plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase --threads ${params.fastlmm_num_cores}
+	 $fastlmmc -REML -simType RRM -verboseOut -sim $rel -bfile $newbase -pheno ${phef} -simLearnType Full -out $out -maxThreads ${params.fastlmm_num_cores} \
+	          $covar_opt_fast  -mpheno \$this_pheno_col -bfileSim $base
 	 """
        }
 
@@ -618,6 +622,7 @@ if (params.fastlmm == 1) {
        label 'fastlmm'
        cpus params.fastlmm_num_cores
        time   params.big_time
+       memory params.fastlmm_mem_req
        input:
 	 set file(phef), file (covariate) from fastlmm_data_ch
 	 file(plinks) from  gem_ch_fast
@@ -636,7 +641,7 @@ if (params.fastlmm == 1) {
 	 covar_opt_fast =  (params.covariates) ?  " -covar $covariate" : ""
 	 out = "$base-$our_pheno"+".stat"
 	 """
-	 this_pheno_col=`echo ${this_pheno} | sed 's/-.*//' `
+	 this_pheno_col=`echo ${this_pheno} | awk -F"@" '{print \$1}'`
 	 $fastlmmc -REML -simType RRM -verboseOut -bfile $base -pheno ${phef} -simLearnType Full -out $out -maxThreads $params.fastlmm_num_cores \
 	           $covar_opt_fast  -mpheno \${this_pheno_col} -bfileSim $base
 	 """
@@ -1396,7 +1401,7 @@ if(params.gcta_grmfile==""){
  process FastGWADoGRM{
     maxForks params.max_forks
     label 'gcta'
-    memory params.fastgwa_memory
+    memory params.fastgwa_mem_req
     cpus params.fastgwa_cpus
     input :
      set file(bed),file(bim),file(fam) from grlm_assoc_ch
@@ -1422,7 +1427,7 @@ if(params.gcta_grmfile==""){
   nbingrm_c=nbingrm.collect()
   process MergFastGWADoGRM{
     label 'gcta'
-    memory params.fastgwa_memory
+    memory params.fastgwa_mem_req
     cpus params.fastgwa_cpus
     input :
       file(idgrmallf) from idgrm_c
@@ -1458,7 +1463,7 @@ balquantcov=params.covariates_type!="" & params.covariates_type.split(',').conta
 process FastGWARun{
     maxForks params.max_forks
     label 'gcta'
-    memory params.fastgwa_memory
+    memory params.fastgwa_mem_req
     cpus params.fastgwa_cpus
     input :
        set val(head),file(alldigrm), file(allbingrm) from grm_all
