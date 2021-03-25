@@ -652,6 +652,28 @@ Run the job (in this example the _qc_ worfklow).  You need to specify the s3 buc
 nextflow run -c aws.config -c job.config qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
 ```
 
+## 5.8 Running on Azure Batch
+
+### Uploading your data
+
+The easiest way to get your data onto and off of Azure Blob Storage is generally to use the [AzCopy](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) program.  It can be downloaded as an executable file that does not require installation (although you may want to add its location to your `PATH` variable).
+
+You will need a [SAS (shared access signature) token](https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview) to transfer data.  This is a temporary code that grants you customizable permissions.  Go to https://portal.azure.com/#home, select "Storage Accounts", and click on the storage account you want to use (e.g. `batchstore`).  Then click "Containers".  Click the name of the container you want to use (e.g. `container`).  If there are any files there already, you will see them.  (You can also upload and download from here, although I couldn't figure out how to make folders, which is why I recommend `azcopy`.)  Then in the left pane click "Shared access signature".  You'll see a dialogue that gives you options for customizing your SAS.  Be sure to add "create" and "list" permissions.  I did not need to add an IP address when I tried it.  Click "Generate SAS token and URL".  Copy the Blob SAS URL.
+
+You can test out `azcopy` with the `list` command.  Here is an example on my Windows machine, where I had not updated my `PATH` variable.
+
+```
+azcopy_windows_amd64_10.9.0\azcopy.exe list "https://batchstore.blob.core.windows.net/container?sp=rcl&st=2021-03-25T14:42:42Z&se=2021-03-25T22:42:42Z&spr=https&sv=2020-02-10&sr=c&sig=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%3D"
+```
+
+If there are any files there already, you should see them listed.  Now you can try the `copy` command.  Use the `--recursive` flag to upload an entire folder (the `sample` folder in the example below).
+
+```
+azcopy_windows_amd64_10.9.0\azcopy.exe copy --recursive sample "https://batchstore.blob.core.windows.net/container?sp=rawdl&st=2021-03-24T20:46:30Z&se=2021-03-25T04:46:30Z&spr=https&sv=2020-02-10&sr=c&sig=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%3D"
+```
+
+Now you can run `list` again or look in the web browser to see that the files have been uploaded.
+
 # 6. Dealing with errors
 
 One problem with our current workflow is that error messages can be obscure. Errors can be caused by
