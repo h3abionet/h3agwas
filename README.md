@@ -674,6 +674,30 @@ azcopy_windows_amd64_10.9.0\azcopy.exe copy --recursive sample "https://batchsto
 
 Now you can run `list` again or look in the web browser to see that the files have been uploaded.
 
+### Access keys
+
+To run the Nextflow pipeline with Azure Batch, you will need access keys both for your batch account and your storage account.  At https://portal.azure.com/#home, go to Storage Accounts and then the name of your account (e.g. `batchstore`), then click "Access keys" on the left pane.  Click "Show keys" and copy the key for key1.  Paste it into a plain text file to hang onto it for now.  Similarly, go into "Batch accounts", select the account you want to use, get your access key, and save it.
+
+### Auxilliary config file
+
+You should create an auxilliary config file with your credentials.  I named mine `lindsay.azure.config`.  (You could instead edit the `nextflow.config` file, but that's a little more dangerous in terms of accidentally sharing your keys via GitHub.)  You should specify either `endpoint` or `location`, but not both.  An example file is below.
+
+```
+azure {
+  storage {
+    accountName = "batchstore"
+    accountKey = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=="
+  }
+  batch {
+    endpoint='https://h3abionet.eastus.batch.azure.com'
+    accountName = 'h3abionet'
+    accountKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=='
+    autoPoolMode = true
+    deletePoolsOnCompletion = true
+  }
+}
+```
+
 # 6. Dealing with errors
 
 One problem with our current workflow is that error messages can be obscure. Errors can be caused by
