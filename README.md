@@ -698,6 +698,14 @@ azure {
 }
 ```
 
+### Running the pipeline
+
+Once all of the above has been set up, you can run the pipeline.  Below is an example command.
+
+```
+nextflow run h3abionet/h3agwas/qc/main.nf -c lindsay.azure.config -w az://container/workdir -profile azurebatch --work_dir az://container --input_dir az://container/sample
+```
+
 # 6. Dealing with errors
 
 One problem with our current workflow is that error messages can be obscure. Errors can be caused by
