@@ -143,6 +143,7 @@ params.grm_cutoff =  0.05
 params.covariates_type=""
 params.gcta_grmfile=""
 params.sample_snps_rel=0
+params.sample_snps_rel_paramplkl="100 20 0.1"
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -397,7 +398,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
         base = bed.baseName
         prune= "${base}-prune"
         """
-        plink --bfile ${base} --indep-pairwise 100 20 0.1 --out $prune
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores}
         """
    }
    //BoltNbMaxSnps=filers_count_line.countLines()
