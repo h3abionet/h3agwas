@@ -182,11 +182,19 @@ def showResults():
              'qqfile':clean("%s-pl-qq-%s.%s"%(base,cpheno,gtype))}
     drawManhatten(pheno.replace("_","-"),asf,hashd['manfile'])
     drawQQ(pheno.replace("_","-"),asf,hashd['qqfile'])
-    outpics = qq_template%hashd + lambdaGC(clean(pheno)+".log")+EOL+EOL+"*-begin{itemize}"+EOL
+    outpics = qq_template%hashd + lambdaGC(clean(pheno)+".log")+EOL+EOL
+    outpics+="*-begin{itemize}"+EOL
+    cmtcorrect=0
+    ## what is that, some time nothing and error in pdf.
     for (correct,col,label) in [(".mperm",'EMP2',"permutation testing"),(".adjusted",'BONF',"Bonferroni correction")]:
         nd = data + correct
         if os.path.exists(nd):
             outpics = outpics+processProbs(nd,col,label)
+            cmtcorrect+=1
+    if cmtcorrect==0:
+        outpics = outpics +  """
+   *-item No correction
+    """         
     outpics =outpics+"*-end{itemize}"+EOL+EOL+qq_figs%hashd+EOL+"*-clearpage"+EOL
     return outpics
         

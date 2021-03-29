@@ -651,7 +651,7 @@ if (params.fastlmm == 1) {
   // this part is plotting done for any fastlmm mode
   //, overwrite:true, mode:'copy'
   process showFastLmmManhatten {
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from fastlmm_manhatten_ch
@@ -844,7 +844,7 @@ if (params.boltlmm == 1) {
   }
 
   process showBoltmmManhatten {
-   memory params.other_process_memory
+   memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from bolt_manhatten_ch
@@ -979,6 +979,7 @@ if (params.gemma == 1){
        out                = "$base-$our_pheno-$chro"
        dir_gemma          =  "gemma"
        """
+       hostname
        list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
@@ -1064,7 +1065,7 @@ if (params.gemma == 1){
 
 
   process showGemmaManhatten {
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     label 'bigMem'
     input:
@@ -1247,7 +1248,7 @@ process doGemmaGxEChro{
   } 
 
   process showGemmaManhattenGxE { 
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch_gxe
@@ -1305,7 +1306,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
   //log_out_ch.subscribe { println "Completed plink test ${it[0]}" }
  
   process drawPlinkResults { 
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     input:
     set val(test), val(pheno_name), file(results) from out_ch//.tap(log_out_ch)
     output:
@@ -1366,7 +1367,7 @@ if (params.plink_gxe==1) {
 
   process showPlinkManhattenGxE {
     label 'gcta'
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from res_plink_gxe
@@ -1492,7 +1493,7 @@ process FastGWARun{
 }
   process showFastGWAManhatten {
    label 'py3fast'
-   memory params.other_process_memory
+   memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from fastgwa_manhatten_ch
