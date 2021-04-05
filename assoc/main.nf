@@ -578,14 +578,15 @@ if (params.fastlmm == 1) {
          our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
          our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
 
-	 covar_opt_fast =  (params.covariates) ?  " -covar $covariate" : ""
+	 covar_opt_fast =  (params.covariates) ?  " -covar newcov.out" : ""
 	 newbase=base+"-"+chro
 	 out = "$base-$our_pheno"+"-"+chro+".stat"
 	 """
 	 this_pheno_col=`echo ${this_pheno} | awk -F"@" '{print \$1}'`
-	 plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase --threads ${params.fastlmm_num_cores}
+         fastlmm_relselind.py --rel $rel --phenofile $phef --relout rel_fastlmm_filter.txt --phenofileout newpheno.out --pospheno $this_pheno_col --covfile $covariate --covfileout newcov.out
+         plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase --threads ${params.fastlmm_num_cores} --keep newpheno.out
 	 $fastlmmc -REML -simType RRM -verboseOut -sim $rel -bfile $newbase -pheno ${phef} -simLearnType Full -out $out -maxThreads ${params.fastlmm_num_cores} \
-	          $covar_opt_fast  -mpheno \$this_pheno_col -bfileSim $base
+	          $covar_opt_fast  
 	 """
        }
 
@@ -762,17 +763,17 @@ if (params.boltlmm == 1) {
    pval_head = "P_BOLT_LMM"
 
   type_lmm="--lmm"
-  process doCountNbSnp{
-    time   params.big_time
-    input :
-       file(bim) from bim_ch_bolt
-    output :
-       stdout into nbsnp_ch_bolt
-    script :
-      """
-      wc -l $bim|awk '{print \$1}'
-      """
-  }
+//  process doCountNbSnp{
+ //   time   params.big_time
+//    input :
+//       file(bim) from bim_ch_bolt
+//    output :
+//       stdout into nbsnp_ch_bolt
+//    script :
+//      """
+//      wc -l $bim|awk '{print \$1}'
+//      """
+//  }
   /*    nb_snp= CountLinesFile(base+".bim") */
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
   else rs_ch_exclude_bolt=file('NO_FILE')
@@ -804,7 +805,7 @@ if (params.boltlmm == 1) {
     time   params.big_time
     input:
       set file(plinksbed), file(plinksbim), file(plinksfam) from plink_ch_bolt
-      val nb_snp from nbsnp_ch_bolt
+      //val nb_snp from nbsnp_ch_bolt
       file(phef) from newdata_ch_bolt
       file(rs_exclude) from rs_ch_exclude_bolt
       file(SnpChoiceMod) from filers_matrel_bolt
@@ -891,6 +892,7 @@ if (params.gemma+params.gemma_gxe>0) {
     input:
        file plinks from rel_ch_gemma
        file file_rs from filers_matrel_mat_gem
+    publishDir "${params.output_dir}/gemma/rel", overwrite:true, mode:'copy'
     output:
        file("output/${base}.*XX.txt") into (rel_mat_ch, rel_mat_ch_gxe)
     script:

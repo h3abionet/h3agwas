@@ -111,6 +111,10 @@ def configfile_analysis(file){
    }
  return([resFile,resInfo, NumRef])
 }
+if(params.file_config==''){
+println "not file config defined\n exit"
+exit(1)
+}
 checkexi=Channel.fromPath(params.file_config,checkIfExists:true)
 info_file=configfile_analysis(params.file_config)
 pos_file_ref=info_file[2]
