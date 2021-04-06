@@ -80,6 +80,17 @@ if 'Sep' in l_newhead :
    del l_newhead[PosSep]
 else :
    sep =None
+
+if 'NCount' in l_newhead and ('N' not in l_newhead):
+    PosCount=l_newhead.index('NCount')
+    Ncount=l_oldhead[PosCount]
+    print('new N column add with '+str(Ncount))
+    del l_oldhead[PosCount]
+    del l_newhead[PosCount]
+else :
+    Ncount=None
+
+
 rsId_inp=l_oldhead[l_newhead.index('rsID')]
 baliserepchrpos=False
 if(args.rs_ref) :
@@ -116,6 +127,7 @@ if baliserepchrpos :
 head_inp=read.readline().replace('\n','').split(sep)
 ps_rsId_inp=head_inp.index(rsId_inp)
 ps_head=GetPosHead(head_inp,l_oldhead)
+print(ps_head)
 
 balchangA1=False
 balchangA2=False
@@ -167,8 +179,13 @@ writeplk=open(args.out_file+'.plk','w')
 if baliserepchrpos :
    l_newhead+=["CHRO", "POS"]
    l_newheadplk+=["CHR", "BP"]
-   write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
-   writeplk.write(sep_out.join([x.upper() for x in l_newheadplk])+"\n")
+   headtmp=[x.upper() for x in l_newhead]
+   headtmpplk=[x.upper() for x in l_newheadplk]
+   if Ncount :
+      headtmp.append('N')
+      headtmpplk.append('N')
+   write.write(sep_out.join(headtmp)+"\n")
+   writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
      if  spl[ps_rsId_inp] in ls_rs :
@@ -179,11 +196,18 @@ if baliserepchrpos :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        tmp=[checknull(spl[x]) for x in ps_head]
        tmp+=ls_rs_dic[spl[ps_rsId_inp]]
+       if Ncount  :
+         tmp.append(Ncount)
        write.write(sep_out.join(tmp)+"\n")
        writeplk.write(sep_out.join(tmp)+"\n")
 elif args.rs_ref :
-   write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
-   writeplk.write(sep_out.join([x.upper() for x in l_newheadplk])+"\n")
+   headtmp=[x.upper() for x in l_newhead]
+   headtmpplk=[x.upper() for x in l_newheadplk]
+   if Ncount :
+      headtmp.append('N')
+      headtmpplk.append('N')
+   write.write(sep_out.join(headtmp)+"\n")
+   writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
      spl=checkfloat(spl, listposfloat)
@@ -192,11 +216,19 @@ elif args.rs_ref :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
        if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
-       write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
-       writeplk.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
+       tmp=[checknull(spl[x]) for x in ps_head]
+       if Ncount :
+          tmp.append(Ncount)
+       write.write(sep_out.join(tmp)+"\n")
+       writeplk.write(sep_out.join(tmp)+"\n")
 else :
-   write.write(sep_out.join([x.upper() for x in l_newhead])+"\n")
-   writeplk.write(sep_out.join([x.upper() for x in l_newheadplk])+"\n")
+   tmphead=[x.upper() for x in l_newhead]
+   tmpheadplk=[x.upper() for x in l_newheadplk]
+   if Ncount :
+      headtmp.append('N')
+      headtmpplk.append('N')
+   write.write(sep_out.join(tmphead)+"\n")
+   writeplk.write(sep_out.join(tmpheadplk)+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
      spl=checkfloat(spl, listposfloat)
@@ -204,5 +236,8 @@ else :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
      if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
-     write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
-     writeplk.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
+     tmp=[checknull(spl[x]) for x in ps_head]
+     if Ncount :
+          tmp.append(Ncount)
+     write.write(sep_out.join(tmp)+"\n")
+     writeplk.write(sep_out.join(tmp)+"\n")
