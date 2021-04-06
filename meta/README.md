@@ -37,6 +37,7 @@ The key options are:
        * `freqA1` : column name for freqA1 or maf in gwas file
        * `direction` : column name of strand for association -/+  in gwas file
        * `Imputed` :  column name of imputed or not for position in gwas file
+       * `NCount` : column name to add a column N at your file with value in the column
        * `Sep` : what separator is in gwas file :
          * you could use characters as ; . : but to avoid some trouble you can use :
            * COM : for comma
