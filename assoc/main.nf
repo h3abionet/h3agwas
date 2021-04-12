@@ -135,7 +135,7 @@ params.gxe=""
 /**/
 params.fastgwa=0
 params.fastgwa_mem_req="10G"
-params.fastgwa_cpus=5
+params.fastgwa_num_cores=5
 params.grm_nbpart=100
 params.gcta64_bin = "gcta64"
 params.fastgwa_type="--fastGWA-mlm-exact"
@@ -160,7 +160,6 @@ other_mem_req = params.other_process_mem_req
 max_plink_cores = params.max_plink_cores 
 
 params.help = false
-
 
 data_ch = file(params.data)
 
@@ -1403,10 +1402,10 @@ if(params.fastgwa==1){
 
 if(params.gcta_grmfile==""){
  process FastGWADoGRM{
+    cpus params.fastgwa_num_cores
     maxForks params.max_forks
     label 'gcta'
     memory params.fastgwa_mem_req
-    cpus params.fastgwa_cpus
     input :
      set file(bed),file(bim),file(fam) from grlm_assoc_ch
      file file_rs from filers_matrel_mat_GWA
@@ -1421,7 +1420,7 @@ if(params.gcta_grmfile==""){
      base   = bed.baseName
      """
      hostname
-     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_cpus} --out mgrm $rs_list
+     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_num_cores} --out mgrm $rs_list
      """
  }
 

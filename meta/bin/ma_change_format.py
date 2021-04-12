@@ -81,13 +81,17 @@ if 'Sep' in l_newhead :
 else :
    sep =None
 
-if 'NCount' in l_newhead and ('N' not in l_newhead):
-    PosCount=l_newhead.index('NCount')
+print(l_newhead)
+print('N' not in l_newhead)
+if ('Ncount' in l_newhead) and ('N' not in l_newhead):
+    print('Ncount')
+    PosCount=l_newhead.index('Ncount')
     Ncount=l_oldhead[PosCount]
     print('new N column add with '+str(Ncount))
     del l_oldhead[PosCount]
     del l_newhead[PosCount]
 else :
+    print('no Ncount header')
     Ncount=None
 
 

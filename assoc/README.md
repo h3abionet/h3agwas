@@ -73,7 +73,7 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
    * fastgwa  (if 1 perfom fastGWA, otherwise no [default 0])
    * `fastgwa_type` : [default : --fastGWA-mlm-exact]
    * `fastgwa_mem_req` : memory for fastgwa and grm [default: 10G] 
-   * `fastgwa_cpus` : cpus for fastgw and grm [default: 5]
+   * `fastgwa_num_cores` : cpus for fastgw and grm [default: 5]
    * `covariates_type` : similar to `bolt_covariates_type`, give for each covariable type of covariable qualitatif (0) or quantitatif (1), must be len of covariates, if nothing, consider all covariable just as quantitatif covariable  [default ""] 
    *  grm :
     * `gcta_grmfile` : index of file with grm with `gcta_grmfile`.grm.id and `gcta_grmfile`.grm.sp, if extension will not here, grm will build see below

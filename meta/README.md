@@ -47,7 +47,15 @@ The key options are:
        * `IsRefFile` : you need to define a reference file to define what rs should be considered in other files
        * if one of the column is missing in your GWAS file, replace by _NA_
   * optional option :
-     * binaries :
+     * memorie usage :
+       * plink_mem_req : [20GB]
+       * gwama_mem_req : gwama memories [20GB]
+       * metasoft_mem_req : metasoft memories ["20G"]
+       * ma_mem_req : request for extraction of data, change format and plot of manhathan ["10G"]
+       * mrmega_mem_req : mr mega memorie ["20GB"]
+     *cpu memorie :
+        * max_plink_cores : [default 4]
+        * other used 1 cpus
      * binaries :
        * `metal_bin` : binarie for metal (default : _metal_ )
        * `gwama_bin` :  binarie for gwam ( default : _GWAMA__ )
