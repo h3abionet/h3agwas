@@ -88,12 +88,9 @@ params.head_se=""
 params.head_A1="ALLELE1"
 params.head_A0="ALLELE0"
 
-#params.clump_p1=0.01
-#params.clump_p2=1
 params.clump_r2=0.1
 
 
-params.max_pval_rep=10**-6
 params.size_win_kb=25
 params.nb_cpu = 3
 
