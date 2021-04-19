@@ -22,6 +22,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("-p", "--pheno"), type="character", default=NULL, 
               help="dataset file name", metavar="character"),
+  make_option(c("-w", "--wind"), type="numeric", default=NULL, 
+              help="dataset file name", metavar="character"),
   make_option(c("-c", "--chro"), type="character", default=NULL, 
               help="dataset file name", metavar="character"),
     make_option(c("-o", "--out"), type="character", default="out.txt", 
@@ -65,7 +67,9 @@ chrohead="chrom";phenhead="trait";poshead="chromEnd";OrBetaHead="orOrBeta";headC
 names(Data)<-c("bin", "chrom", "chromStart", "chromEnd", "name", "pubMedID", "author", "pubDate", "journal", "title", "trait", "initSample","replSample","region", "genes", "riskAllele", "riskAlFreq", "pValue", "pValueDesc", "orOrBeta", "ci95","platform", "cnv")
 }
 Data[,chrohead]<-gsub('chr', '',as.character(Data[,chrohead]))
-Data2<-Data[tolower(as.character(Data[,phenhead])) %in% tolower(lisp) & Data[,chrohead] %in% lisc,]
+if(!is.null(opt[['chro']]))baliselistc<-Data[,chrohead] %in% lisc else baliselistc=T
+if(!is.null(opt[['pheno']]))balisepheno<-tolower(as.character(Data[,phenhead])) %in% tolower(lisp) else balisepheno=T
+Data2<-Data[baliselistc & balisepheno,]
 #c(2,3, 20,21,18,11)]
 if(nrow(Data2)==0){
 cat("no phenotype ",opt[['pheno']]," found in file \n")
@@ -106,10 +110,17 @@ write.csv(Data2Sub, file=paste(opt[['out']], '_all.csv',sep=''), row.names=F)
 Data2Sub<-Data2Sub[, c(chrohead,poshead,rsHead,riskall,'nsample.cat', 'beta.cat', 'sd.cat', 'z.cat', 'h2.cat', 'pvalue', 'risk.allele.af')]
 names(Data2Sub)[c(1,2, 3,4)]<-c("chro", "bp", 'rs', "risk_allele")
 Data2Sub<-Data2Sub[order(Data2Sub$chro, Data2Sub$bp),]
-write.csv(Data2Sub, file=paste(opt[['out']], '_resume.csv',sep=''), row.names=F)
 
 Data2SubBed<-Data2Sub[,c("chro", "bp", "rs")]
 Data2SubBed$bpbefore<-Data2SubBed$bp-1
 
+write.csv(Data2Sub, file=paste(opt[['out']], '_resume.csv',sep=''), row.names=F)
 write.table(Data2SubBed[, c("chro", "bpbefore", "bp", "rs")], file=paste(opt[['out']], '.bed',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
 write.table(Data2Sub[, c("chro", "bp")], file=paste(opt[['out']], '.pos',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
+if(!is.null(opt[['wind']])){
+Tmp<-Data2Sub[, c("chro", "bp", "bp","rs")]
+Tmp[,2]<-Tmp[,2]-opt[['wind']]*1000
+Tmp[,3]<-Tmp[,3]+opt[['wind']]*1000
+write.table(Tmp,file=paste(opt[['out']], '_range.bed',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
+
+}
