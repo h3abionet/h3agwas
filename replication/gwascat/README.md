@@ -2,6 +2,8 @@
 
 # H3Agwas Pipeline Version : replication using gwas catalog
 
+
+
 ## Input :
  * `gwas_file` : summary statistics, need to be described
   * `head_pval`  ["P_BOLT_LMM"]
@@ -14,16 +16,29 @@
   * `head_A1` ["ALLELE1"]
   * `head_A0` ["ALLELE0"]
  *  gwas catalog : algorithm download version of gwas catalog from ucsc, separate by comma
-  * `list_pheno` : list of phenotype extracted from gwas catalog, if null (all value extracted)
+  * `pheno` : un phenotype
+  * `file_pheno` : file containing list of phenotype extracted from gwas catalog
   * `list_chro` : list chro to analyse, separate by x-y (x to y) and comma [1-22]
+ * `wind`
 
 ## Algorithm :
+### list of phenotypes available
+one option possible to obtained list of phenotype
+
+"""
+nextflow run h3abionet/h3agwas/replication/gwascat/main.nf --justpheno 1 --output_dir gwascatpheno/ --output gwascatpheno -resume -profile slurm
+"""
+
 ### GWAS catalog :
-extract from gwas catalog postiion and chromosome relative to `list_pheno` and `list_chro`. computed heritabilite, beta and se for input
+extract from gwas catalog postiion and chromosome relative to `file_pheno` or `pheno` and `list_chro`. computed heritabilite, beta and se for input
 OR transformed using log2 and defined if column contains information higher than 1
 
-### position analyse 
-extract from gwas catalog information relative to pheno
+
+### positions replication
+algorithm :
+
+* extract from gwas catalog information relative to phenotype defined previously
+* extract from gwas file (`gwas_file`) list corresponding to file found in gwas catalog and around each positoins  
 
 ### heritabilities computed
 

@@ -163,49 +163,7 @@ datacatinfors<-aggregate(rs_wind_gwascat~rsclump,data=resall,FUN=function(x)past
 datainfo<-aggregate(info_gwas~rsclump,data=resall,FUN=function(x)paste(unique(x),collapse=';'))
 datainfors<-aggregate(rs_wind_gwas~rsclump,data=resall,FUN=function(x)paste(unique(x),collapse=';'))
 
-allcati<-merge(merge(merge(datacatinfo,datacatinfors, by='rsclump'), datainfo,by='rsclump'),datainfors,by='rsclump')
+allcati<-merge(merge(merge(datacatinfo,datacatinfors, by='rsclump', all=T), datainfo,by='rsclump',all=T),datainfors,by='rsclump',all=T)
+allcati-merge(allcati,dataclump[,c('SNP','CHR','BP','TOTAL','NSIG')],by.x='rsclump', by.y='SNP',all=F)
 write.csv(allcati ,file=paste(opt[['out']],'_allresum.csv',sep=''), row.names=F)
 
-##datalda1<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_A", "BP_A"));names(datalda1)[names(datalda1)=="CHR_B"]<-headchr;names(datalda1)[names(datalda1)=="BP_B"]<-headbp;names(datalda1)[names(datalda1)=="SNP_B"]<-'rs_gwas';names(datalda1)[names(datalda1)=="SNP_A"]<-'rs_cat'
-#datalda2<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_B", "BP_B"));names(datalda2)[names(datalda2)=="CHR_A"]<-headchr;names(datalda2)[names(datalda2)=="BP_A"]<-headbp;names(datalda2)[names(datalda2)=="SNP_A"]<-'rs_gwas';names(datalda2)[names(datalda2)=="SNP_B"]<-'rs_cat'
-#
-#dataldallcat<-rbind(datalda1,datalda2)
-#
-#datalda1<-merge(dataldallcat, datagwas, by.x=c(headchrcat,headbpcat), by.y=c(headchr,headbp))
-#
-#write.table(datalda1, file=paste(opt[['out']],'_all.txt',sep=''), row.names=F, col.names=T,quote=F)
-#
-#
-#
-#
-#infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]
-#
-#datalda1$info_gwas<-paste(datalda1[,headchr],':',datalda1[,headbp],'-beta:',datalda1[,headbeta], ',se:',datalda1[,headse],',pval:',datalda1[,headpval],sep='')
-#datalda1$info_gwascat<-""
-#for(cat in infocat)datalda1$info_gwascat<-paste(datalda1$info_gwascat,cat,':',datalda1[,cat],',',sep='')
-#datagwassumm<-aggregate(as.formula(paste('info_gwas~',headbpcat, '+',headchrcat)), data=datalda1,function(x)paste(unique(x), collapse=';'))
-#datagwascatsumm<-aggregate(as.formula(paste('info_gwascat~',headbpcat, '+',headchrcat)), data=datalda1, function(x)paste(unique(x), collapse=';'))
-#
-#allresume<-merge(datagwassumm,datagwascatsumm,all=T, by=c(headchrcat,headbpcat))
-#names(allresume)[c(1,2)]<-c('chr_gwas', 'bp_gwas_cat')
-#write.csv(allresume, file=paste(opt[['out']],'_resume.csv',sep=''),row.names=F)
-#
-#datalda1sig<-datalda1[datalda1[,headpval]<opt[['min_pvalue']],]
-#write.table(datalda1sig, file=paste(opt[['out']],'_sig.txt',sep=''), row.names=F, col.names=T,quote=F)
-#
-#datalda1sig$info_gwas<-paste(datalda1sig[,headchr],':',datalda1sig[,headbp],'-beta:',datalda1sig[,headbeta], ',se:',datalda1sig[,headse],',pval:',datalda1sig[,headpval],sep='')
-#datalda1sig$info_gwascat<-""
-#for(cat in infocat)datalda1sig$info_gwascat<-paste(datalda1sig$info_gwascat,cat,':',datalda1sig[,cat],',',sep='')
-#datagwassumm<-aggregate(as.formula(paste('info_gwas~',headbpcat, '+',headchrcat)), data=datalda1sig,function(x)paste(unique(x), collapse=';'))
-#datagwascatsumm<-aggregate(as.formula(paste('info_gwascat~',headbpcat, '+',headchrcat)), data=datalda1sig, function(x)paste(unique(x), collapse=';'))
-#
-#allresume<-merge(datagwassumm,datagwascatsumm,all=T, by=c(headchrcat,headbpcat))
-#names(allresume)[c(1,2)]<-c('chr_gwas', 'bp_gwas_cat')
-#minpval<-aggregate(as.formula(paste(headpval,'~',headbpcat, '+',headchrcat)), data=datalda1sig,min)
-#names(minpval)[3]<-"min_pvalgwas"
-#
-### write sig
-#write.csv(allresume, file=paste(opt[['out']],'_resumesig.csv',sep=''),row.names=F)
-#
-#
-### 

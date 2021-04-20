@@ -213,6 +213,7 @@ process get_gwascat_hg19{
    output :
        file("${out}.bed") into gwascat_bed
        file("${out}_range.bed") into gwascat_rangebed
+       file("${out}.pos") into gwascat_pos_subplk
        file("${out}.pos") into gwascat_pos
        file("${out}_resume.csv") into gwascat_detail_statpos
        file("${out}_all.csv") into (gwascat_all_statpos,gwascat_all_statld, gwascat_all_statclump,gwascat_all_statwind)
@@ -238,6 +239,7 @@ process extractgwas_fromgwascat{
    publishDir "${params.output_dir}/gwas_sub",  overwrite:true, mode:'copy'
    output :
      file("${params.output}_range.assoc") into (clump_file_ch,ld_file_ch)
+     file("${params.output}_range.bed") into gwas_rangebed_subplk
      file("${params.output}_pos.init") into (pos_file_ch, range_file_ch)
     file("${params.output}_range.init") into (range_file_ch_clump,wind_file_ch)
      file("${params.output}*")
@@ -263,8 +265,28 @@ plk_ch_ld  = Channel.create()
 plk_ch_clumpstat  = Channel.create()
 
     /*JT : append boltlmm_assoc_ch and a]*/
-raw_src_ch.separate(plk_ch_clump,plk_ch_ld, plk_ch_clumpstat) { a -> [a,a,a] }
 
+
+process sub_plk{
+    cpus max_plink_cores
+    memory plink_mem_req
+  input :
+      file(filegwascat) from gwascat_pos_subplk
+      file(filegwas) from gwas_rangebed_subplk
+      set file(bed), file(bim), file(fam) from raw_src_ch
+    publishDir "${params.output_dir}/sub_plk/",  overwrite:true, mode:'copy'
+    output :
+       set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into (plk_ch_clump, plk_ch_ld, plk_ch_clumpstat)
+    script :
+    out=params.output+"_subplk"
+    plkf=bed.baseName
+    """
+    awk '{print \$1"\t"\$2"\t"\$2"\t"\$1":"\$2}' $filegwascat > range.bed
+    awk '{print \$1"\t"\$2"\t"\$2"\t"\$1":"\$2}' $filegwas >> range.bed
+    plink -bfile $plkf --extract range  range.bed -out $out --make-bed --keep-allele-order --threads $max_plink_cores  --memory  $plink_mem_req_max
+    """
+
+}
 
 
 process clump_aroundgwascat{
@@ -284,6 +306,7 @@ process clump_aroundgwascat{
       plink -bfile $bfile  --clump $assocclump -clump-p1 $params.min_pval_clump --clump-p2 1 --clump-kb ${params.size_win_kb} --clump-r2 $params.clump_r2 -out $out --threads $max_plink_cores --memory $plink_mem_req_max
       """
 }
+
 
 process computedstat_pos{
    memory other_mem_req
@@ -329,7 +352,6 @@ process computed_ld{
     cpus max_plink_cores
     memory plink_mem_req
   input :
-      file(filegwascat) from gwascat_rangebed
       set file(bed), file(bim), file(fam) from plk_ch_ld
     publishDir "${params.output_dir}/res/ld/tmp",  overwrite:true, mode:'copy'
     output :
@@ -339,7 +361,7 @@ process computed_ld{
     out=params.output+"_ld"
     plkf=bed.baseName
     """
-    plink -bfile $plkf  --r2 --extract range  ${filegwascat}  --ld-window-kb $params.size_win_kb        --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max
+    plink -bfile $plkf --r2  --ld-window-kb $params.size_win_kb        --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max
     """
 
 }

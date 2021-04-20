@@ -83,6 +83,9 @@ writerange=open(args.out+'_range.init','w')
 
 writepos_plk=open(args.out+'_pos.assoc','w')
 writerange_plk=open(args.out+'_range.assoc','w')
+
+writerange_bed=open(args.out+'_range.bed','w')
+
 #writeall_plk=open(args.out+'_all.assoc','w')
 
 writepos.write(gwashead+'\n')
@@ -104,6 +107,7 @@ for line in read_gwas :
   if checkrange(chro, pos, inforange) :
      writerange.write(line+'\n')
      writerange_plk.write(plkchar+'\n')
+     writerange_bed.write(chro+"\t"+str(pos)+"\t"+str(pos)+'\n')
      if checkpos(chro, pos, infopos):
          writepos.write(line+'\n')
          writepos_plk.write(plkchar+'\n')
