@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 library("optparse")
 
-
 computedher<-function(beta, se, af,N){
 #https://journals.plos.org/plosone/article/file?type=supplementary&id=info:doi/10.1371/journal.pone.0120758.s001
 maf<-af
@@ -16,17 +15,11 @@ res[ba]<-a[ba]/(a[ba]+b[ba])
 res
 }
 
- 
+
+
+
 option_list = list(
   make_option(c("-f", "--file"), type="character", default=NULL, 
-              help="dataset file name", metavar="character"),
-  make_option(c("-p", "--pheno"), type="character", default=NULL, 
-              help="dataset file name", metavar="character"),
-  make_option(c("-z", "--file_pheno"), type="character", default=NULL, 
-              help="dataset file name", metavar="character"),
-  make_option(c("-w", "--wind"), type="numeric", default=NULL, 
-              help="dataset file name", metavar="character"),
-  make_option(c("-c", "--chro"), type="character", default=NULL, 
               help="dataset file name", metavar="character"),
     make_option(c("-o", "--out"), type="character", default="out.txt", 
               help="output file name [default= %default]", metavar="character")
@@ -57,18 +50,7 @@ opt = parse_args(opt_parser);
 #ci95 	[1.04-1.1]	varchar(255) 	values 	95% Confidence Interval
 #platform 	Affymetrix [7791636] (imputed)	varchar(255) 	values 	Platform and [SNPs passing QC]
 #cnv 	N	enum('Y', 'N') 	values 	Y if Copy Number Variant
-balisepheno=F
-if(!is.null(opt[['pheno']])){
-lisp<-opt[['pheno']]
-balisepheno=T
-}else{
-if(!is.null(opt[['file_pheno']])){
-lisp<-readLines(opt[['file_pheno']])
-balisepheno=T
-}
-}
 
-lisc<-unlist(strsplit(opt[['chro']],','))
 Data<-read.csv(opt[['file']], header=F, sep='\t')
 
 #lisp="Type 2 diabetes";lisc=c("22","21")
@@ -78,15 +60,8 @@ chrohead="chrom";phenhead="trait";poshead="chromEnd";OrBetaHead="orOrBeta";headC
 names(Data)<-c("bin", "chrom", "chromStart", "chromEnd", "name", "pubMedID", "author", "pubDate", "journal", "title", "trait", "initSample","replSample","region", "genes", "riskAllele", "riskAlFreq", "pValue", "pValueDesc", "orOrBeta", "ci95","platform", "cnv")
 }
 Data[,chrohead]<-gsub('chr', '',as.character(Data[,chrohead]))
-if(!is.null(opt[['chro']]))baliselistc<-Data[,chrohead] %in% lisc else baliselistc=T
-if(balisepheno)balisepheno<-tolower(as.character(Data[,phenhead])) %in% tolower(lisp) else balisepheno=T
-Data2<-Data[baliselistc & balisepheno,]
-#c(2,3, 20,21,18,11)]
-if(nrow(Data2)==0){
-cat("no phenotype ",opt[['pheno']], opt[['file_pheno']]," found in file \n")
-q(status=2)
-}
-Data2Sub<-Data2 #[, c(chrohead,poshead, OrBetaHead,headCi95,pValueHead,phenhead,nvalueHead,freqHead)]
+
+Data2Sub<-Data #[, c(chrohead,poshead, OrBetaHead,headCi95,pValueHead,phenhead,nvalueHead,freqHead)]
 
 IC<-t(sapply(strsplit(gsub("[", "", sapply(strsplit(as.character(Data2Sub[,headCi95]), split=']',fixed=T),function(x)x[1]),fixed=T), split="-"),function(x){
 if(length(x)==2){return(c(as.numeric(x[1]),as.numeric(x[2])))
@@ -117,21 +92,7 @@ Good<-aggregate(as.formula(paste("order~",chrohead,"+",poshead,sep="")), data=Da
 Data2Sub<-Data2Sub[Data2Sub$order %in% Good,]
 
 write.csv(Data2Sub, file=paste(opt[['out']], '_all.csv',sep=''), row.names=F)
+writeLines(unique(as.character(Data2Sub[,phenhead])), con=paste(opt[['out']], '_pheno.csv',sep=''))
+write.csv(as.data.frame(table(Data2Sub[,phenhead])), file=paste(opt[['out']], '_phenocount.csv',sep=''))
 
-Data2Sub<-Data2Sub[, c(chrohead,poshead,rsHead,riskall,'nsample.cat', 'beta.cat', 'sd.cat', 'z.cat', 'h2.cat', 'pvalue', 'risk.allele.af')]
-names(Data2Sub)[c(1,2, 3,4)]<-c("chro", "bp", 'rs', "risk_allele")
-Data2Sub<-Data2Sub[order(Data2Sub$chro, Data2Sub$bp),]
 
-Data2SubBed<-Data2Sub[,c("chro", "bp", "rs")]
-Data2SubBed$bpbefore<-Data2SubBed$bp-1
-
-write.csv(Data2Sub, file=paste(opt[['out']], '_resume.csv',sep=''), row.names=F)
-write.table(Data2SubBed[, c("chro", "bpbefore", "bp", "rs")], file=paste(opt[['out']], '.bed',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
-write.table(Data2Sub[, c("chro", "bp")], file=paste(opt[['out']], '.pos',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
-if(!is.null(opt[['wind']])){
-Tmp<-Data2Sub[, c("chro", "bp", "bp","rs")]
-Tmp[,2]<-Tmp[,2]-opt[['wind']]*1000
-Tmp[,3]<-Tmp[,3]+opt[['wind']]*1000
-write.table(Tmp,file=paste(opt[['out']], '_range.bed',sep=''), row.names=F, col.names=F, sep="\t", quote=F)
-
-}

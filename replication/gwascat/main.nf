@@ -45,7 +45,7 @@ allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir"
 allowed_params_blocks = ["haploblocks", "plkref_haploblocks", "plk_othopt_haploblocks"]
 allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances","instance-type", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts"]
 allowed_params_headinfo=["head_chro_gwascat", "head_bp_gwascat", "head_pval_gwascat"]
-allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A0"]
+allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2"]
 allowed_params+=allowed_params_head
 allowed_params+=allowed_params_other
 allowed_params+=allowed_params_blocks
@@ -86,7 +86,7 @@ params.data = ""
 params.head_beta=""
 params.head_se=""
 params.head_A1="ALLELE1"
-params.head_A0="ALLELE0"
+params.head_A2="ALLELE0"
 
 params.clump_r2=0.1
 
@@ -105,6 +105,8 @@ params.plink_bin='plink'
 params.genes_file=""
 params.max_plink_cores = 4
 
+params.justpheno=0
+
 max_plink_cores=params.max_plink_cores 
 plink_mem_req = params.plink_mem_req
 
@@ -118,32 +120,10 @@ params.head_pval_gwascat="pvalue"
 params.head_af_gwascat="risk.allele.af"
 params.head_rs_gwascat="rs"
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
-params.list_pheno="Type 2 diabetes"
+params.pheno=""
+params.file_pheno=""
 params.list_chro="1-22"
-if(params.input_dir=="" || params.input_pat==""){
-println "params input_dir directory of your bedfile or/and input_pat pattern of your bedfile not define"
-System.exit(-1)
 
-}
-
-if(params.head_beta==""){
-println "beta header of your gwas file must be provide : --head_beta"
-System.exit(-1)
-}
-if(params.head_se==""){
-println "se header of your gwas file must be provide : --head_se"
-System.exit(-1)
-}
-
-if(params.head_rs==""){
-println "rs header of your gwas file must be provide : --head_rs"
-System.exit(-1)
-}
-
-if(params.head_bp==""){
-println "pos header of your gwas file must be provide : --head_bp"
-System.exit(-1)
-}
 
 
 
@@ -151,18 +131,79 @@ System.exit(-1)
 params.threshold_pval_gwascat=1
 params.threshpval=0.05
 
- 
-//BedFileI=/dataE/AWIGenGWAS/shared/ResultGWAS/Ressource/locuszoom/data/1000G/genotypes/2014-10-14/EUR/chr$Chro
-//plink -bfile $BedFileI --blocks no-pheno-req --out $DirOut/chr$Chro"_block"  &
 
 params.r2_clump=0.1
 params.min_pval_clump=0.1
-
 if(params.gwas_cat==""){
+process dl_gwascat_hg19{
+   publishDir "${params.output_dir}/gwascat/init",  overwrite:true, mode:'copy'
+   output :
+      file("$out") into gwascat_init_ch
+   script :
+     out=params.gwas_cat_ftp.split('/')[-1]
+   """
+   wget -c ${params.gwas_cat_ftp}
+   """
+
+}
+gwascathead_chr="chrom"
+gwascathead_bp="chromEnd"
+infogwascat="pubMedID;author;trait;initSample"
+}
+
+
+
+if(params.justpheno==1){
+process get_gwascat_hg19_pheno{
+   label 'R'
+   publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+   input :
+      file(gwascat) from gwascat_init_ch
+   output :
+       file("${out}*")
+   script :
+     out=params.output
+   """
+   format_gwascat_pheno.r --file $gwascat --out $out
+   """
+}
+
+
+}else{
+
+if(params.head_beta==""){
+if(params.input_dir=="" || params.input_pat==""){
+println "params input_dir directory of your bedfile or/and input_pat pattern of your bedfile not define"
+System.exit(-1)
+}
+println "beta header of your gwas file must be provide : --head_beta"
+System.exit(-1)
+}
+if(params.head_se==""){
+println "se header of your gwas file must be provide : --head_se"
+System.exit(-1)
+}
+if(params.head_rs==""){
+println "rs header of your gwas file must be provide : --head_rs"
+System.exit(-1)
+}
+if(params.head_bp==""){
+println "pos header of your gwas file must be provide : --head_bp"
+System.exit(-1)
+}
+
 listchro=getlistchro(params.list_chro)
+if(params.file_pheno!=''){
+file_pheno_ch=file(params.file_pheno)
+}else{
+file_pheno_ch=file('nofile')
+}
 process get_gwascat_hg19{
    label 'R'
    publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+   input :
+      file(gwascat) from gwascat_init_ch
+      file(filepheno) from file_pheno_ch
    output :
        file("${out}.bed") into gwascat_bed
        file("${out}_range.bed") into gwascat_rangebed
@@ -172,18 +213,14 @@ process get_gwascat_hg19{
        file("${out}*")
    script :
      chroparam= (params.list_chro=='') ? "" : " --chro ${listchro.join(',')}"
-     phenoparam= (params.list_pheno=='') ? "" : " --pheno \"${params.list_pheno}\" "
+     phenoparam= (params.pheno=='') ? "" : " --pheno \"${params.pheno}\" "
+     phenoparam= (params.file_pheno=='') ? " $phenoparam " : " --file_pheno $filepheno "
      out=params.output
    """
-   wget -c ${params.gwas_cat_ftp}
-   format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $chroparam $phenoparam --out $out --wind ${params.size_win_kb} 
+   format_gwascat.r --file $gwascat $chroparam $phenoparam --out $out --wind ${params.size_win_kb} 
    """
 }
-gwascathead_chr="chrom"
-gwascathead_bp="chromEnd"
-infogwascat="pubMedID;author;trait;initSample"
 
-}
 
 filegwas_chrextr=Channel.fromPath(params.file_gwas,checkIfExists:true)
 
@@ -333,4 +370,5 @@ process computed_clump_stat{
       computestat_clump.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --clump_file $fileclum --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\" --bim $bim
       """
 
+}
 }
