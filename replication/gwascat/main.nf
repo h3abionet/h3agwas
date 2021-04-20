@@ -87,6 +87,8 @@ params.head_beta=""
 params.head_se=""
 params.head_A1="ALLELE1"
 params.head_A2="ALLELE0"
+params.other_mem_req="10GB"
+params.other_cpus_req=5
 
 params.clump_r2=0.1
 
@@ -109,6 +111,10 @@ params.justpheno=0
 
 max_plink_cores=params.max_plink_cores 
 plink_mem_req = params.plink_mem_req
+
+plink_mem_req_max=plink_mem_req.replace('GB','000').replace('KB','').replace(' ','')
+other_mem_req=params.other_mem_req
+other_cpus_req=params.other_cpus_req
 
 
 //params.gene_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
@@ -275,11 +281,13 @@ process clump_aroundgwascat{
       bfile=bed.baseName
       out=params.output
       """ 
-      plink -bfile $bfile  --clump $assocclump -clump-p1 $params.min_pval_clump --clump-p2 1 --clump-kb ${params.size_win_kb} --clump-r2 $params.clump_r2 -out $out --threads $max_plink_cores
+      plink -bfile $bfile  --clump $assocclump -clump-p1 $params.min_pval_clump --clump-p2 1 --clump-kb ${params.size_win_kb} --clump-r2 $params.clump_r2 -out $out --threads $max_plink_cores --memory $plink_mem_req_max
       """
 }
 
 process computedstat_pos{
+   memory other_mem_req
+   cpus other_cpus_req
    label 'R'
    input :
         file(assocpos) from pos_file_ch
@@ -298,6 +306,8 @@ process computedstat_pos{
 
 
 process computedstat_win{
+   memory other_mem_req
+   cpus other_cpus_req
    label 'R'
    input :
         file(assocpos) from wind_file_ch
@@ -329,13 +339,15 @@ process computed_ld{
     out=params.output+"_ld"
     plkf=bed.baseName
     """
-    plink -bfile $plkf  --r2 --extract range  ${filegwascat}  --ld-window-kb $params.size_win_kb        --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores
+    plink -bfile $plkf  --r2 --extract range  ${filegwascat}  --ld-window-kb $params.size_win_kb        --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max
     """
 
 }
 
 
 process computed_ld_stat{
+    memory other_mem_req
+    cpus other_cpus_req
     label 'R'
     input :
       file(fileld) from  ld_res_ch
@@ -353,6 +365,8 @@ process computed_ld_stat{
 }
 
 process computed_clump_stat{
+    memory other_mem_req
+    cpus other_cpus_req
     label 'R'
     input :
       file(fileclum) from  clump_res_ch
