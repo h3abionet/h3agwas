@@ -20,6 +20,7 @@
   * `file_pheno` : file containing list of phenotype extracted from gwas catalog
   * `list_chro` : list chro to analyse, separate by x-y (x to y) and comma [1-22]
  * `wind`
+ * `min_win`
 
 ## Algorithm :
 ### list of phenotypes available
@@ -40,7 +41,13 @@ algorithm :
 * extract from gwas catalog information relative to phenotype defined previously
 * extract from gwas file (`gwas_file`) list corresponding to file found in gwas catalog and around each positoins  
 
+### ld replications 
+algoritm :
+* computed ld between each positions of gwas catalog and summary statistics
+* merged 
+* keep each positions where pvalue
 ### heritabilities computed
+
 
 
 

@@ -76,20 +76,20 @@ Data2Sub$beta.cat<-as.numeric(as.character(Data2Sub[,OrBetaHead]))
 balisebeta<-!is.na(Data2Sub$beta.cat) & Data2Sub$beta.cat>=1
 Data2Sub$lower.cat[balisebeta]<-log2(Data2Sub$lower.cat[balisebeta])
 Data2Sub$upper.cat[balisebeta]<-log2(Data2Sub$upper.cat[balisebeta])
-Data2Sub<-Data2Sub[!is.na(Data2Sub$beta.cat) & !is.na(Data2Sub$lower.cat) & !is.na(Data2Sub$upper.cat) & !is.na(Data2Sub$nsample.cat) ,]
+#Data2Sub<-Data2Sub[!is.na(Data2Sub$beta.cat) & !is.na(Data2Sub$lower.cat) & !is.na(Data2Sub$upper.cat) & !is.na(Data2Sub$nsample.cat) ,]
 
-Data2Sub$beta.cat[Data2Sub$beta.cat>=1]<-log2(Data2Sub$beta.cat[Data2Sub$beta.cat>=1])
-Data2Sub$risk.allele.af<-as.numeric(as.character(Data2Sub[,freqHead]))
+Data2Sub$beta.cat[balisebeta & Data2Sub$beta.cat>=1]<-log2(Data2Sub$beta.cat[balisebeta & Data2Sub$beta.cat>=1])
+Data2Sub$risk.allele.af[balisebeta]<-as.numeric(as.character(Data2Sub[balisebeta,freqHead]))
 Data2Sub$sd.cat<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96
 Data2Sub$sd.cat2<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96*sqrt(Data2Sub$nsample.cat)
 Data2Sub$z.cat<-Data2Sub$beta.cat/(Data2Sub$sd.cat)
 Data2Sub$h2.cat=computedher(Data2Sub$beta.cat, Data2Sub$sd.cat, Data2Sub$risk.allele.af,Data2Sub$nsample.cat)
 Data2Sub$pvalue<-as.numeric(as.character(Data2Sub[,pValueHead]))
-Data2Sub<-Data2Sub[!is.na(Data2Sub$h2.cat) & !is.na(Data2Sub[,pValueHead]),]
-Data2Sub<-Data2Sub[order(Data2Sub$h2.cat),]
+#Data2Sub<-Data2Sub[!is.na(Data2Sub$h2.cat) & !is.na(Data2Sub[,pValueHead]),]
+#Data2Sub<-Data2Sub[order(Data2Sub$h2.cat),]
 Data2Sub$order<-1:nrow(Data2Sub)
-Good<-aggregate(as.formula(paste("order~",chrohead,"+",poshead,sep="")), data=Data2Sub, min)$order
-Data2Sub<-Data2Sub[Data2Sub$order %in% Good,]
+#Good<-aggregate(as.formula(paste("order~",chrohead,"+",poshead,sep="")), data=Data2Sub, min)$order
+#Data2Sub<-Data2Sub[Data2Sub$order %in% Good,]
 
 write.csv(Data2Sub, file=paste(opt[['out']], '_all.csv',sep=''), row.names=F)
 writeLines(unique(as.character(Data2Sub[,phenhead])), con=paste(opt[['out']], '_pheno.csv',sep=''))

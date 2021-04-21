@@ -240,8 +240,8 @@ process extractgwas_fromgwascat{
    output :
      file("${params.output}_range.assoc") into (clump_file_ch,ld_file_ch)
      file("${params.output}_range.bed") into gwas_rangebed_subplk
-     file("${params.output}_pos.init") into (pos_file_ch, range_file_ch)
-    file("${params.output}_range.init") into (range_file_ch_clump,wind_file_ch)
+     file("${params.output}_pos.init") into (pos_file_ch)
+    file("${params.output}_range.init") into (range_file_ch_clump,wind_file_ch, range_file_ch)
      file("${params.output}*")
    script :
     """

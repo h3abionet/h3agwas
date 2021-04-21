@@ -154,7 +154,7 @@ resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp]
 resall$info_gwascat<-""
 infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]
 balise<-!is.na(resall$rs_wind_gwascat)
-resall$info_gwascat=NA
+resall$info_gwascat[balise]=paste(resall$rs_wind_gwascat[balise],':',resall[balise,headchr], ':',resall[balise,headbp],sep='')
 for(cat in infocat)resall$info_gwascat[balise]<-paste(resall$info_gwascat[balise],cat,':',resall[balise,cat],',',sep='')
 
 datacatinfo<-aggregate(info_gwascat~rsclump,data=resall,FUN=function(x)paste(unique(x),collapse=';'))
@@ -163,7 +163,7 @@ datacatinfors<-aggregate(rs_wind_gwascat~rsclump,data=resall,FUN=function(x)past
 datainfo<-aggregate(info_gwas~rsclump,data=resall,FUN=function(x)paste(unique(x),collapse=';'))
 datainfors<-aggregate(rs_wind_gwas~rsclump,data=resall,FUN=function(x)paste(unique(x),collapse=';'))
 
-allcati<-merge(merge(merge(datacatinfo,datacatinfors, by='rsclump', all=T), datainfo,by='rsclump',all=T),datainfors,by='rsclump',all=T)
-allcati-merge(allcati,dataclump[,c('SNP','CHR','BP','TOTAL','NSIG')],by.x='rsclump', by.y='SNP',all=F)
+allcati<-merge(merge(merge(datacatinfo,datacatinfors, by='rsclump'), datainfo,by='rsclump'),datainfors,by='rsclump')
+allcati<-merge(allcati,dataclump[,c('SNP','CHR','BP','TOTAL','NSIG', 'P')],by.x='rsclump', by.y='SNP',all=F)
 write.csv(allcati ,file=paste(opt[['out']],'_allresum.csv',sep=''), row.names=F)
 
