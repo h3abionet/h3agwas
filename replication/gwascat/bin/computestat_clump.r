@@ -154,7 +154,7 @@ resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp]
 resall$info_gwascat<-""
 infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]
 balise<-!is.na(resall$rs_wind_gwascat)
-resall$info_gwascat[balise]=paste(resall$rs_wind_gwascat[balise],':',resall[balise,headchr], ':',resall[balise,headbp],sep='')
+resall$info_gwascat[balise]=paste(resall$rs_wind_gwascat[balise],':',resall[balise,headchrcat], ':',resall[balise,headbpcat],',',sep='')
 for(cat in infocat)resall$info_gwascat[balise]<-paste(resall$info_gwascat[balise],cat,':',resall[balise,cat],',',sep='')
 
 datacatinfo<-aggregate(info_gwascat~rsclump,data=resall,FUN=function(x)paste(unique(x),collapse=';'))

@@ -361,7 +361,7 @@ process computed_ld{
     out=params.output+"_ld"
     plkf=bed.baseName
     """
-    plink -bfile $plkf --r2  --ld-window-kb $params.size_win_kb        --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max
+    plink -bfile $plkf --r2  --ld-window-kb $params.size_win_kb        --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max  --ld-window 20000
     """
 
 }

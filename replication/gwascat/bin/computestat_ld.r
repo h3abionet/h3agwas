@@ -88,11 +88,11 @@ print(paste('not found ', head,'for',type ,'data'))
 q(2)
 }
 }
-
+Test=F
 #--chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
-#opt=list(gwascat='Diastolic_AwigenLD_all.csv',gwas='Diastolic_AwigenLD_pos.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0',beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='Diastolic_AwigenLD_ld',ld_file='Diastolic_AwigenLD_ld.ld',min_pvalue='0.001',min_r2=0.2,info_gwascat="pubMedID;author;trait;initSample")
+if(Test)opt=list(gwascat='Diastolic_AwigenLD_all.csv',gwas='Diastolic_AwigenLD_range.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0',beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='Diastolic_AwigenLD_ld',ld_file='Diastolic_AwigenLD_ld.ld',min_pvalue='0.001',min_r2=0.2,info_gwascat="pubMedID;author;trait;initSample")
 
 
 headse=opt[['se_gwas']];headbp=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
@@ -139,13 +139,31 @@ datalda1<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_A
 datalda2<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_B", "BP_B"));names(datalda2)[names(datalda2)=="CHR_A"]<-headchr;names(datalda2)[names(datalda2)=="BP_A"]<-headbp;names(datalda2)[names(datalda2)=="SNP_A"]<-'rs_gwas';names(datalda2)[names(datalda2)=="SNP_B"]<-'rs_cat'
 
 dataldallcat<-rbind(datalda1,datalda2)
-#rs61148001	NApubMedID:28135244,author:Warren HR,trait:Diastolic blood pressure,initSample:140,886 European ancestry individuals,	rs745821	18:48111983-beta:0.686852,se:0.245673,pval:0.0052;18:48122758-beta:0.783012,se:0.274825,pval:0.0044;18:48142854-beta:0.544822,se:0.255059,pval:0.033;18:48130202-beta:0.784569,se:0.275135,pval:0.0044;18:48109325-beta:-0.258781,se:0.220929,pval:0.24;18:48116645-beta:0.681003,se:0.2466,pval:0.0058;18:48146048-beta:0.4173,se:0.239155,pval:0.081;18:48108763-beta:-0.262851,se:0.222183,pval:0.24;18:48124420-beta:0.783787,se:0.274543,pval:0.0043;18:48123761-beta:-0.453955,se:0.21873,pval:0.038;18:48144571-beta:1.04508,se:0.282915,pval:0.00022;18:48142784-beta:0.525746,se:0.254897,pval:0.039;18:48124763-beta:0.799733,se:0.27479,pval:0.0036;18:48111045-beta:0.687581,se:0.245567,pval:0.0051;18:48133241-beta:1.05306,se:0.278833,pval:0.00016;18:48141710-beta:1.04796,se:0.282118,pval:2e-04;18:48111441-beta:0.783753,se:0.274781,pval:0.0043;18:48130532-beta:0.516826,se:0.2316,pval:0.026;18:48138375-beta:0.715874,se:0.265017,pval:0.0069;18:48140734-beta:0.767078,se:0.265891,pval:0.0039;18:48147127-beta:0.524988,se:0.255126,pval:0.04;18:48140238-beta:0.533419,se:0.255851,pval:0.037;18:48132646-beta:0.887984,se:0.270482,pval:0.001;18:48115431-beta:0.672788,se:0.245552,pval:0.0062;18:48111941-beta:0.779641,se:0.274712,pval:0.0045;18:48125899-beta:0.794057,se:0.274877,pval:0.0039	rs1370479;rs73959979;rs745821;rs73959982;rs4939637;rs73959977;rs3867257;rs2969972;rs73959980;rs930362;rs17742138;rs745823;rs17742008;rs10432161;rs61148001;rs58693787;rs10432162;rs10502909;rs58000211;rs11082833;rs1025686;rs4599004;rs1437649;rs11082832;rs1370480;rs8098724	18	48133241	25	3
 
-datald[datald$SNP_B=='rs61148001' | datald$SNP_A=='rs61148001',]
+if(Test){
+#12:2523697","rs55935819:12:2521652
+#    bin chrom chromStart chromEnd       name pubMedID      author    pubDate
+#383 604    12    2521578  2521579 rs55935819 30224653 Evangelou E 2018-09-17
+#      journal
+#383 Nat Genet
+#2:2513893
+rsclump<-"12:2523697";rscat="rs55935819";chrocat<-12;bpcat<-2521579
+datagwas[datagwas[,headchr]==12 & datagwas[,headbp]==2523697,]
+datagwascat[datagwascat[,headchrcat]==chrocat & datagwascat[,headbpcat]==bpcat,]
+datagwascat[datagwascat[,'name']==rscat ,]
+#rs55935819:12:2521652
+#12:2521652
+#  12    1     12:2523697    2523697    0.00061       32     18      6      5      3      0 rs753076(1),rs7296821(1),rs4441076(1),rs2239061(1),rs2239062(1),rs2238084(1),rs1122784(1),rs11836545(1),rs11837126(1),rs10774041(1),rs719024(1),rs78430964(1),rs73037278(1),rs35407591(1),rs4765929(1),rs12422833(1),rs10774042(1),rs11062217(1),12:2519358(1),rs12578775(1),rs11062219(1),rs58017093(1),rs35167730(1),rs2887781(1),rs55935819(1),12:2521652(1),rs17223841(1),rs35124400(1),rs7311607(1),rs7312105(1),rs7312107(1),rs16929368(1)
+
+dataldallcat[dataldallcat$rs_gwas==rsclump,]
+dataldallcat[dataldallcat$rs_cat==rsclump,]
+dataldallcat[dataldallcat$rs_cat==rscat,]
+datald[datald$SNP_B==rsclump | datald$SNP_A==rsclump,]
 datagwas[datagwas$CHR=='18' & datagwas$BP==48133241,]
-datald[datald$SNP_B=='rs61148001' | datald$SNP_A=='rs61148001',]
+datald[datald$SNP_B==rscat | datald$SNP_A==rscat,]
 #datagwascat[datagwascat$name=='rs745821',]
-#dataldallcat[dataldallcat$rs_cat=='rs745821',]
+dataldallcat[dataldallcat$rs_cat==rscat,]
+dataldallcat[dataldallcat$rs_gwas==rsclump,]
 
 #> datald[datald$CHR_A==18 & datald$BP_A==48144571 ,]
 #   CHR_A     BP_A      SNP_A CHR_B     BP_B      SNP_B       R2
@@ -154,9 +172,11 @@ datald[datald$SNP_B=='rs61148001' | datald$SNP_A=='rs61148001',]
 #> datald[datald$CHR_B==18 & datald$BP_B==48144571 ,]
 #   CHR_A     BP_A      SNP_A CHR_B     BP_B      SNP_B R2
 #1:    18 48144571 rs17742138    18 48144571 rs17742138  1
+}
 
 
-datalda1<-merge(dataldallcat, datagwas, by.x=c(headchrcat,headbpcat), by.y=c(headchr,headbp))
+datalda1<-merge(dataldallcat, datagwas, by.x=c(headchr,headbp), by.y=c(headchr,headbp))
+if(Test)datalda1[datalda1$name==rscat,]
 #datald[datald$CHR_A==18 & datald$BP_A==48144571 ,]
 #datalda1[datalda1$rs_cat=='rs745821',]
 #datalda1[datalda1$rs_gwas=='18:48144571',]

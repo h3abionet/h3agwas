@@ -45,7 +45,10 @@ algorithm :
 algoritm :
 * computed ld between each positions of gwas catalog and summary statistics
 * merged 
-* keep each positions where pvalue
+* keep each positions where p-value < `min pvalue`
+* reported each output
+
+#### windows replication in fn
 ### heritabilities computed
 
 
