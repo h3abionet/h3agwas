@@ -205,18 +205,27 @@ print(range(datalda1$R2))
 cat(opt[['min_pvalue']])
 datalda1sig<-datalda1[datalda1[,headpval]<opt[['min_pvalue']],]
 #datalda1sig<-datalda1
-datalda1sig$info_gwas<-paste(datalda1sig[,headchr],':',datalda1sig[,headbp],'-beta:',datalda1sig[,headbeta], ',se:',datalda1sig[,headse],',pval:',datalda1sig[,headpval],',R2:', datalda1sig[,'R2'],sep='')
-datalda1sig$info_gwascat<-""
-for(cat in infocat)datalda1sig$info_gwascat<-paste(datalda1sig$info_gwascat,cat,':',datalda1sig[,cat],',',sep='')
+#if(nrow(datalda1sig)>0){
+#datalda1sig$info_gwas<-paste(datalda1sig[,headchr],':',datalda1sig[,headbp],'-beta:',datalda1sig[,headbeta], ',se:',datalda1sig[,headse],',pval:',datalda1sig[,headpval],',R2:', datalda1sig[,'R2'],sep='')
+#}else{
+#}
+#datalda1sig$info_gwascat<-""
+#for(cat in infocat)datalda1sig$info_gwascat<-paste(datalda1sig$info_gwascat,cat,':',datalda1sig[,cat],',',sep='')
+if(nrow(datalda1sig)>0){
 datagwasminpval<-aggregate(as.formula(paste(headpval,'~',headbpcat, '+',headchrcat)), data=datalda1sig,min)
-
 datagwassumm<-aggregate(as.formula(paste('info_gwas~',headbpcat, '+',headchrcat)), data=datalda1sig,function(x)paste(unique(x), collapse=';'))
 datagwascatsumm<-aggregate(as.formula(paste('info_gwascat~',headbpcat, '+',headchrcat)), data=datalda1sig, function(x)paste(unique(x), collapse=';'))
+}else{
+datagwasminpval<-datalda1sig[F,c(headbpcat,headchrcat,headpval)]
+datagwassumm<-datalda1sig[F,c('info_gwas',headchrcat,headbpcat)]
+datagwascatsumm<-datalda1sig[F,c('info_gwascat',headchrcat,headbpcat)]
+}
+
 
 allresume<-merge(merge(datagwassumm,datagwascatsumm,all=T, by=c(headchrcat,headbpcat)), datagwasminpval,all=T, by=c(headchrcat,headbpcat))
 allresume<-allresume[allresume[,headpval]<opt[['min_pvalue']],]
 names(allresume)[c(1,2)]<-c('chr_gwas', 'bp_gwas_cat')
-minpval<-aggregate(as.formula(paste(headpval,'~',headbpcat, '+',headchrcat)), data=datalda1sig,min)
+#minpval<-aggregate(as.formula(paste(headpval,'~',headbpcat, '+',headchrcat)), data=datalda1sig,min)
 #names(minpval)[3]<-"min_pvalgwas"
 #allresume<-merge(allresume,minpval,by=c(1,2))
 
