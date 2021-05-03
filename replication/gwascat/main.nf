@@ -41,7 +41,7 @@ def getlistchro(listchro){
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "r2_clump","min_pval_clump", "size_win_kb"]
+allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "min_pval_clump", "size_win_kb"]
 allowed_params_blocks = ["haploblocks", "plkref_haploblocks", "plk_othopt_haploblocks"]
 allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances","instance-type", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts"]
 allowed_params_headinfo=["head_chro_gwascat", "head_bp_gwascat", "head_pval_gwascat"]
@@ -89,6 +89,7 @@ params.head_A1="ALLELE1"
 params.head_A2="ALLELE0"
 params.other_mem_req="10GB"
 params.other_cpus_req=5
+params.min_pval_clump =0.001
 
 params.clump_r2=0.1
 
@@ -135,11 +136,8 @@ params.list_chro="1-22"
 
 //params.info_gwascat="DISEASE.TRAIT,REPORTED.GENE.S.,MAPPED_GENE,INITIAL.SAMPLE.SIZE"
 params.threshold_pval_gwascat=1
-params.threshpval=0.05
 
 
-params.r2_clump=0.1
-params.min_pval_clump=0.1
 if(params.gwas_cat==""){
 process dl_gwascat_hg19{
    publishDir "${params.output_dir}/gwascat/init",  overwrite:true, mode:'copy'
@@ -200,7 +198,7 @@ System.exit(-1)
 
 listchro=getlistchro(params.list_chro)
 if(params.file_pheno!=''){
-file_pheno_ch=file(params.file_pheno)
+file_pheno_ch=file(params.file_pheno, checkIfExists:true)
 }else{
 file_pheno_ch=file('nofile')
 }

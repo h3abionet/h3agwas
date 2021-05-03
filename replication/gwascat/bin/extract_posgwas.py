@@ -33,7 +33,6 @@ def parseArguments():
     parser.add_argument('--rs_gwas', required=True,type=str,help="output covariate file")
     parser.add_argument('--af_gwas', type=str,help="output covariate file")
     parser.add_argument('--pval_gwas', type=str,help="output covariate file")
-    parser.add_argument('--n_gwas', type=str,help="output covariate file")
     parser.add_argument('--out', type=str,help="output covariate file")
     args = parser.parse_args()
     return args

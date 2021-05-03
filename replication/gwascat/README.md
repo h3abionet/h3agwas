@@ -1,16 +1,16 @@
 <img src="../../auxfiles/H3ABioNetlogo2.jpg"/>
 
 # H3Agwas Pipeline Version : replication using gwas catalog
-
+script using gwas catalog to compared gwas summary statistics to compared gwas summary statistics, using positon, ld, clump or windows based
 
 
 ## Input :
  * `gwas_file` : summary statistics, need to be described
-  * `head_pval`  ["P_BOLT_LMM"]
-  * `head_freq`   [""]
-  * `head_bp`  "BP"
-  * `head_chr` = "CHR"
-  * `head_rs` = "SNP"
+  * `head_pval` : header for pvalue of gwas file ["P_BOLT_LMM"]
+  * `head_freq`  :  header for frequencies of gwas file [""]
+  * `head_bp` " header of pos of gwas file ["BP"
+  * `head_chr` : header of of gwas file "CHR"
+  * `head_rs` : header of rsid of gwas file "SNP"
   * `head_beta`  [""]
   * `head_se` [""]
   * `head_A1` ["ALLELE1"]
@@ -19,13 +19,14 @@
   * `pheno` : un phenotype
   * `file_pheno` : file containing list of phenotype extracted from gwas catalog
   * `list_chro` : list chro to analyse, separate by x-y (x to y) and comma [1-22]
- * `wind`
- * `min_win`
+ * `clump_r2` : min pvalue used for clump and ld 
+ * `size_win_kb` : size in kb to analyse used in clump, ld and windows analyse
+ * `min_pval_clump` :  p value for clump and defined significant ld algoritm[0.001]
+ * `threshold_pval_gwascat` : threshold of pval for 
 
 ## Algorithm :
 ### list of phenotypes available
-one option possible to obtained list of phenotype
-
+to obtain list of phenotype without run algorinm
 """
 nextflow run h3abionet/h3agwas/replication/gwascat/main.nf --justpheno 1 --output_dir gwascatpheno/ --output gwascatpheno -resume -profile slurm
 """
@@ -45,8 +46,17 @@ algorithm :
 algoritm :
 * computed ld between each positions of gwas catalog and summary statistics
 * merged 
-* keep each positions where p-value < `min pvalue`
-* reported each output
+* keep each positions where p-value < `min pvalue` and r2 < `min r2`
+* reported each output merged by gwas catalog input
+* position of gwas catalog cannot be in dataset and will be computed distance with other dataset
+### clump replcation 
+algoritm :
+* used clump function of  plink using min pvalue and min r2 with windows to defined clump
+* each input of gwas catalog and summary statistics will be merge by windows clump
+
+### windows
+algoritm :
+* for each position of gwas catalog withh extract around  `size_win_kb` information and position of gwas
 
 #### windows replication in fn
 ### heritabilities computed
