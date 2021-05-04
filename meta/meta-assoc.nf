@@ -52,7 +52,6 @@ params.mrmega_bin='MR-MEGA'
 params.metasoft_bin="/opt/bin/Metasoft.jar"
 params.plink_bin="plink"
 params.max_plink_cores=4
-params.max_plink_cores="20GB"
 
 
 params.ma_mrmega_pc=2
