@@ -1431,7 +1431,7 @@ if(params.gcta_grmfile==""){
   process MergFastGWADoGRM{
     label 'gcta'
     memory params.fastgwa_mem_req
-    cpus params.fastgwa_cpus
+    cpus params.fastgwa_num_cores
     input :
       file(idgrmallf) from idgrm_c
       file(bingrmallf) from bingrm_c
@@ -1445,7 +1445,7 @@ if(params.gcta_grmfile==""){
       cat mgrm.part_*_*.grm.id > test_grm.grm.id
       cat mgrm.part_*_*.grm.bin > test_grm.grm.bin
       cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
-      ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_cpus}
+      ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_num_cores}
       """
   }
 }else{
@@ -1467,7 +1467,7 @@ process FastGWARun{
     maxForks params.max_forks
     label 'gcta'
     memory params.fastgwa_mem_req
-    cpus params.fastgwa_cpus
+    cpus params.fastgwa_num_cores
     input :
        set val(head),file(alldigrm), file(allbingrm) from grm_all
        set file(bed),file(bim),file(fam) from fastgwa_assoc_ch 

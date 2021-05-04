@@ -232,7 +232,7 @@ if(params.mrmega==1){
   }
   process showMRMEGA {
     memory ma_mem_req
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       file(assoc) from res_mrmega
     output:
