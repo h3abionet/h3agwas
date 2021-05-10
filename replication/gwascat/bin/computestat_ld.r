@@ -189,7 +189,7 @@ write.table(datalda1, file=paste(opt[['out']],'_all.txt',sep=''), row.names=F, c
 
 infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]
 
-datalda1$info_gwas<-paste(datalda1[,headchr],':',datalda1[,headbp],'-beta:',datalda1[,headbeta], ',se:',datalda1[,headse],',pval:',datalda1[,headpval],sep='')
+datalda1$info_gwas<-paste(datalda1[,headchr],':',datalda1[,headbp],'-beta:',datalda1[,headbeta], ',se:',datalda1[,headse],',pval:',datalda1[,headpval],',R2:', datalda1[,'R2'],sep='')
 datalda1$info_gwascat<-""
 for(cat in infocat)datalda1$info_gwascat<-paste(datalda1$info_gwascat,cat,':',datalda1[,cat],',',sep='')
 datagwassumm<-aggregate(as.formula(paste('info_gwas~',headbpcat, '+',headchrcat)), data=datalda1,function(x)paste(unique(x), collapse=';'))

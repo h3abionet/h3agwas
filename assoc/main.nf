@@ -39,7 +39,7 @@ allowed_params+=ParamFast
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
 
-FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa']
+FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa', "gcta64_bin"]
 allowed_params+=FastGWA_params
 
 params.each { parm ->
@@ -520,6 +520,7 @@ if (params.fastlmm == 1) {
   if(params.fastlmm_multi==1){
 
      process getRelForFastLMM {
+        label 'gemma'
 	cpus params.fastlmm_num_cores
 	memory params.fastlmm_mem_req
 	time params.big_time
