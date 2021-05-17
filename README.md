@@ -656,6 +656,8 @@ nextflow run -c aws.config -c job.config qc  -bucket-dir s3://my-bucket/some/pat
 
 ### Uploading your data
 
+Uploading your data to Blob Storage is optional.  You can read and write to local storage while using Azure batch computing, although Nextflow will still need a work directory in Blob Storage.
+
 The easiest way to get your data onto and off of Azure Blob Storage is generally to use the [AzCopy](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) program.  It can be downloaded as an executable file that does not require installation (although you may want to add its location to your `PATH` variable).
 
 You will need a [SAS (shared access signature) token](https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview) to transfer data.  This is a temporary code that grants you customizable permissions.  Go to https://portal.azure.com/#home, select "Storage Accounts", and click on the storage account you want to use (e.g. `batchstore`).  Then click "Containers".  Click the name of the container you want to use (e.g. `container`).  If there are any files there already, you will see them.  (You can also upload and download from here, although I couldn't figure out how to make folders, which is why I recommend `azcopy`.)  Then in the left pane click "Shared access signature".  You'll see a dialogue that gives you options for customizing your SAS.  Be sure to add "create" and "list" permissions.  I did not need to add an IP address when I tried it.  Click "Generate SAS token and URL".  Copy the Blob SAS URL.
@@ -676,7 +678,7 @@ Now you can run `list` again or look in the web browser to see that the files ha
 
 ### Access keys
 
-To run the Nextflow pipeline with Azure Batch, you will need access keys both for your batch account and your storage account.  At https://portal.azure.com/#home, go to Storage Accounts and then the name of your account (e.g. `batchstore`), then click "Access keys" on the left pane.  Click "Show keys" and copy the key for key1.  Paste it into a plain text file to hang onto it for now.  Similarly, go into "Batch accounts", select the account you want to use, get your access key, and save it.
+To run the Nextflow pipeline with Azure Batch, you will need access keys both for your batch account and your storage account.  At https://portal.azure.com/#home, go to Batch Accounts and then the name of your account (e.g. `h3abionet`), then click "Keys" on the left pane.  Here you should be able to copy a key for your batch account as well as your storage account.  Paste them into a plain text file to hang onto it for now.
 
 ### Auxilliary config file
 
@@ -693,6 +695,7 @@ azure {
     accountName = 'h3abionet'
     accountKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=='
     autoPoolMode = true
+    allowPoolCreation = true
     deletePoolsOnCompletion = true
   }
 }
@@ -700,10 +703,24 @@ azure {
 
 ### Running the pipeline
 
-Once all of the above has been set up, you can run the pipeline.  Below is an example command.
+Once all of the above has been set up, you can run the pipeline.  Below is an example command using Blob Storage.
 
 ```
 nextflow run h3abionet/h3agwas/qc/main.nf -c lindsay.azure.config -w az://container/workdir -profile azurebatch --work_dir az://container --input_dir az://container/sample
+```
+
+Here is an alternative using local storage.
+
+```
+nextflow run h3abionet/h3agwas/qc/main.nf -c lindsay.azure.config -w az://container//workdir2 -profile azurebatch --work_dir . --input_dir ./sample
+```
+
+### Downloading the results from blob storage
+
+Follow the instructions above for generating a SAS token, with the only difference being that now you need "Read" and "List" permissions.  Then use the SAS token with `azcopy` to download the pipeline output.  For example:
+
+```
+azcopy_windows_amd64_10.9.0\azcopy.exe copy --recursive "https://batchstore.blob.core.windows.net/container/output?sp=rl&st=2021-05-17T19:55:25Z&se=2021-05-18T03:55:25Z&spr=https&sv=2020-02-10&sr=c&sig=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" output_azure_2021-05-17
 ```
 
 # 6. Dealing with errors
