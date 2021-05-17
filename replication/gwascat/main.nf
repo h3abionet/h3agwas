@@ -94,7 +94,7 @@ params.min_pval_clump =0.001
 params.clump_r2=0.1
 
 
-params.size_win_kb=25
+params.size_win_kb=250
 params.nb_cpu = 3
 
 params.gwas_cat=""
@@ -209,12 +209,10 @@ process get_gwascat_hg19{
       file(gwascat) from gwascat_init_ch
       file(filepheno) from file_pheno_ch
    output :
-       file("${out}.bed") into gwascat_bed
        file("${out}_range.bed") into gwascat_rangebed
-       file("${out}.pos") into gwascat_pos_subplk
-       file("${out}.pos") into gwascat_pos
+       file("${out}.pos") into (gwascat_pos_subplk, gwascat_pos_ld2, gwascat_pos)
        file("${out}_resume.csv") into gwascat_detail_statpos
-       file("${out}_all.csv") into (gwascat_all_statpos,gwascat_all_statld, gwascat_all_statclump,gwascat_all_statwind)
+       file("${out}_all.csv") into (gwascat_all_statpos,gwascat_all_statld, gwascat_all_statclump,gwascat_all_statwind, gwascat_all_statld2)
        file("${out}*")
    script :
      chroparam= (params.list_chro=='') ? "" : " --chro ${listchro.join(',')}"
@@ -239,7 +237,7 @@ process extractgwas_fromgwascat{
      file("${params.output}_range.assoc") into (clump_file_ch,ld_file_ch)
      file("${params.output}_range.bed") into gwas_rangebed_subplk
      file("${params.output}_pos.init") into (pos_file_ch)
-    file("${params.output}_range.init") into (range_file_ch_clump,wind_file_ch, range_file_ch)
+    file("${params.output}_range.init") into (range_file_ch_clump,wind_file_ch, range_file_ch_ld, range_file_ch_ld2)
      file("${params.output}*")
    script :
     """
@@ -353,13 +351,13 @@ process computed_ld{
       set file(bed), file(bim), file(fam) from plk_ch_ld
     publishDir "${params.output_dir}/res/ld/tmp",  overwrite:true, mode:'copy'
     output :
-       file("${out}.ld") into ld_res_ch
+       file("${out}.ld") into (ld_res_ch,ld2_res_ch)
        file("$out*") 
     script :
     out=params.output+"_ld"
     plkf=bed.baseName
     """
-    plink -bfile $plkf --r2  --ld-window-kb $params.size_win_kb        --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max  --ld-window 20000
+    plink -bfile $plkf --r2  --ld-window-kb $params.size_win_kb  --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max  --ld-window 20000
     """
 
 }
@@ -372,7 +370,7 @@ process computed_ld_stat{
     input :
       file(fileld) from  ld_res_ch
       file(gwascat) from gwascat_all_statld
-      file(assocpos) from range_file_ch
+      file(assocpos) from range_file_ch_ld
     publishDir "${params.output_dir}/res/ld/",  overwrite:true, mode:'copy'
     output :
        file("$out*")
@@ -405,4 +403,27 @@ process computed_clump_stat{
       """
 
 }
+process computed_ld2_stat{
+    memory other_mem_req
+    cpus other_cpus_req
+    label 'R'
+    input :
+      file(fileld) from  ld2_res_ch
+      file(gwascatbed) from gwascat_pos_ld2
+      file(gwascat) from gwascat_all_statld2
+      file(assocpos) from range_file_ch_ld2
+    publishDir "${params.output_dir}/res/ld2/",  overwrite:true, mode:'copy'
+    output :
+       file("$out")
+    script :
+      out_ldblock=params.output+"_ld2.tmp_pos"
+      out=params.output+"_ld2"
+      """
+      computestat_ldv2.py  --plink_ld $fileld --pos_cat $gwascatbed --out $out
+      computestat_ldv2.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ldblock_file $out_ldblock --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\"
+
+      """
+}
+
+
 }
