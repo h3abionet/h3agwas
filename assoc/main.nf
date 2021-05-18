@@ -255,9 +255,9 @@ checker = { fn ->
 
 
 
-bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/az:/, "az:/").replaceFirst(/s3:/, "s3:/")
-bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/az:/, "az:/").replaceFirst(/s3:/, "s3:/")
-fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/az:/, "az:/").replaceFirst(/s3:/, "s3:/")
+bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
 
 
 gemma_assoc_ch = Channel.create()
