@@ -258,6 +258,7 @@ checker = { fn ->
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
 fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+bed = bed.replaceFirst(/az:/, "az:/")
 println("\n${bed}\n")
 
 
