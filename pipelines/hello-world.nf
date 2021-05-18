@@ -18,6 +18,6 @@ workflow {
 
 	string = channel.from("Hello", "World!")
 
-	printMessage(string)
+	printMessage(string) | view()
 
 }

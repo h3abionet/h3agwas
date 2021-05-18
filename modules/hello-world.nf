@@ -1,4 +1,6 @@
 process printMessage {
+    tag "${message}"
+
 	input:
 		val message
 	output:
