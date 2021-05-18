@@ -255,15 +255,10 @@ checker = { fn ->
 
 
 
-bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
-bed = bed.replaceFirst(/az:/, "az:/")
-bim = bim.replaceFirst(/az:/, "az:/")
-fam = fam.replaceFirst(/az:/, "az:/")
-bed = bed.replaceFirst(/s3:/, "s3:/")
-bim = bim.replaceFirst(/s3:/, "s3:/")
-fam = fam.replaceFirst(/s3:/, "s3:/")
+bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/az:/, "az:/").replaceFirst(/s3:/, "s3:/")
+bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/az:/, "az:/").replaceFirst(/s3:/, "s3:/")
+fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/az:/, "az:/").replaceFirst(/s3:/, "s3:/")
+
 
 gemma_assoc_ch = Channel.create()
 /*JT initatilisation of boltlmm_assoc_ch*/
