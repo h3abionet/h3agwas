@@ -22,7 +22,7 @@ script using gwas catalog to compared gwas summary statistics to compared gwas s
  * `clump_r2` : min pvalue used for clump and ld 
  * `size_win_kb` : size in kb to analyse used in clump, ld and windows analyse
  * `min_pval_clump` :  p value for clump and defined significant ld algoritm[0.001]
- * `threshold_pval_gwascat` : threshold of pval for 
+ * `threshold_pval_gwascat` : threshold of pval for gwas catalog (not implemented)
 
 ## Algorithm :
 ### list of phenotypes available
@@ -57,6 +57,10 @@ algoritm :
 ### windows
 algoritm :
 * for each position of gwas catalog withh extract around  `size_win_kb` information and position of gwas
+
+### ld clump replication :
+algoritm :
+ * computed ld between positon in 
 
 #### windows replication in fn
 ### heritabilities computed

@@ -88,11 +88,11 @@ print(paste('not found ', head,'for',type ,'data'))
 q(2)
 }
 }
-Test=T
+Test=F
 #--chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2
 opt_parser = OptionParser(option_list=option_list);
-#opt = parse_args(opt_parser)
-if(Test)opt=list(gwascat='meanMaxcIMT_eurld_AwigenLD_all.csv',gwas='meanMaxcIMT_eurld_AwigenLD_range.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0',beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='out',ldblock_file='meanMaxcIMT_eurld_AwigenLD_ld2',min_pvalue='0.0001',min_r2=0.5,info_gwascat="pubMedID;author;trait;initSample")
+opt = parse_args(opt_parser)
+if(Test)opt=list(gwascat='meanMaxcIMT_eurld_all.csv',gwas='meanMaxcIMT_eurld_range.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0',beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='out',ldblock_file='meanMaxcIMT_eurld_ldinfo_ld.out',min_pvalue='0.0001',min_r2=0.5,info_gwascat="pubMedID;author;trait;initSample")
 #n/computestat_ldv2.r  --gwascat meanMaxcIMT_eurld_AwigenLD_all.csv --gwas meanMaxcIMT_eurld_AwigenLD_range.init --chr_gwas CHR --ps_gwas BP --a1_gwas ALLELE1 --a2_gwas ALLELE0  --beta_gwas BETA --se_gwas SE  --chr_gwascat chrom --bp_gwascat chromEnd --p_gwas P_BOLT_LMM --ps_gwascat chromEnd --chr_gwascat chrom --out meanMaxcIMT_eurld_AwigenLD_ld2 --ldblock_file meanMaxcIMT_eurld_AwigenLD_ld2.tmp_pos --min_pvalue 1.0E-4 --min_r2  0.5 --info_gwascat "pubMedID;author;trait;initSample"
 
 
@@ -101,17 +101,21 @@ headse=opt[['se_gwas']];headbp=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbe
 headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
 outhead=opt[['out']]
 
+version<-2
 
 datagwascat=read.csv(opt[['gwascat']])
 datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-fread(opt[['gwas']], header=T)
-checkhead(headaf, datagwas,'af');checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
+if(!is.null(headaf))checkhead(headaf, datagwas,'af')
+checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');
 
 # CHR_A         BP_A         SNP_A  CHR_B         BP_B         SNP_B           R2 
 data_resumld<-fread(opt[['ldblock_file']])
-names(data_resumld)<-c('block', 'CHR', 'BP', 'TYPE')
+if(version==1)names(data_resumld)<-c('block', 'CHR', 'BP', 'TYPE') else names(data_resumld)<-c('block', 'CHR', 'BP')
+data_resumld$block<-paste(data_resumld$CHR,data_resumld$block, sep='_')
+
 #tmpa<-unique(datald[,c('CHR_A','BP_A','SNP_A')]);names(tmpa)<-c('CHR','BP','SNP');
 #tmpb<-unique(datald[,c('CHR_B','BP_B','SNP_B')]);names(tmpb)<-c('CHR','BP','SNP');
 #tmp<-rbind(tmpa,tmpb)
@@ -134,8 +138,10 @@ if(is.null(opt[['N_value']]))Nval<-10000 else Nval=opt[['N_value']]
 datagwas[['N_gwas']]<-Nval
 headN<-'N_gwas'
 }
-datagwas$h2.gwas<-computedher(datagwas[[headbeta]], datagwas[[headse]], datagwas[[headaf]],datagwas[[headN]])
-datagwas$z.gwas<-datagwas[[headbeta]]/datagwas[[headse]]
+if(!is.null(headaf)){
+ datagwas$h2.gwas<-computedher(datagwas[[headbeta]], datagwas[[headse]], datagwas[[headaf]],datagwas[[headN]])
+ datagwas$z.gwas<-datagwas[[headbeta]]/datagwas[[headse]]
+}
 
 #datalda1<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_A", "BP_A"));names(datalda1)[names(datalda1)=="CHR_B"]<-headchr;names(datalda1)[names(datalda1)=="BP_B"]<-headbp;names(datalda1)[names(datalda1)=="SNP_B"]<-'rs_gwas';names(datalda1)[names(datalda1)=="SNP_A"]<-'rs_cat'
 #datalda2<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_B", "BP_B"));names(datalda2)[names(datalda2)=="CHR_A"]<-headchr;names(datalda2)[names(datalda2)=="BP_A"]<-headbp;names(datalda2)[names(datalda2)=="SNP_A"]<-'rs_gwas';names(datalda2)[names(datalda2)=="SNP_B"]<-'rs_cat'
@@ -146,8 +152,7 @@ dataresall<-merge(data_resumld,datagwascat, all.x=T, by.x=c('CHR', 'BP'), by.y=c
 dataresall<-as.data.frame(merge(dataresall, datagwas, all.x=T, by.x=c('CHR', 'BP'), by.y=c(headchr, headbp)))
 
 
-write.table(dataresall, file=paste(opt[['out']],'_all.txt',sep=''), row.names=F, col.names=T,quote=F)
-
+write.table(dataresall, file=paste(opt[['out']],'_all.txt',sep=''), row.names=F, col.names=T,quote=F, sep='\t')
 
 infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]
 
@@ -163,14 +168,16 @@ chro<-aggregate(as.formula(paste(headchr,"~block")), data=dataresall, unique)
 bpmin<-aggregate(as.formula(paste(headbp,"~block")), data=dataresall, min)
 bpmax<-aggregate(as.formula(paste(headbp,"~block")), data=dataresall, max)
 infobloc<-merge(merge(chro, bpmin, by='block'),bpmax, by='block')
- names(infobloc)<-c('block', 'chro','min_bp', 'max_bp')
+print(head(infobloc))
+names(infobloc)<-c('block', 'chro','min_bp', 'max_bp')
 
 
 ndata<-aggregate(as.formula(paste(headpval,"~block")), data=dataresall, length)
 names(ndata)<-c('block', 'n_total')
 
 allmerge<-merge(infobloc,merge(merge(merge(infocatdata,infodata,by='block',all=T),minpvaldata,by='block',all=T), ndata, by='block',all=T),by='block',all=T)
-write.csv(allmerge, paste(opt[['out']],'_allresume.csv',sep=''),row.names=F)
+print(is.data.frame(allmerge))
+write.csv(allmerge, file=paste(opt[['out']],'_allresume.csv',sep=''),row.names=F)
 
 minpval<-as.numeric(opt[['min_pvalue']])
 dataresallsig<-dataresall[!is.na(dataresall[,headpval]) & dataresall[,headpval]<minpval,]

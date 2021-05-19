@@ -403,7 +403,7 @@ process computed_clump_stat{
       """
 
 }
-process computed_ld2_stat{
+/*process computed_ld2_stat{
     memory other_mem_req
     cpus other_cpus_req
     label 'R'
@@ -423,7 +423,101 @@ process computed_ld2_stat{
       computestat_ldv2.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ldblock_file $out_ldblock --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\"
 
       """
+}*/
+
+/*
+writeld1=open(args.out+'_ld.out','w')
+writeld2=open(args.out+'_ld_resume.out','w')
+
+writeldmerg=open(args.out+'_ldmerge.out','w')
+writeldmerg2=open(args.out+'_ldmerge_resume.out','w')
+*/
+process build_ldwind{
+    memory other_mem_req
+    cpus other_cpus_req
+    input :
+      file(fileld) from  ld2_res_ch
+      file(gwascatbed) from gwascat_pos_ld2
+      file(gwascat) from gwascat_all_statld2
+      file(assocpos) from range_file_ch_ld2
+    publishDir "${params.output_dir}/res/ldwind/tmp",  overwrite:true, mode:'copy'
+    output :
+      set file(gwascat), file(assocpos),file(fileld), file("${out}_ldext.out") into ldext_ch 
+      set file(gwascat), file(assocpos),file(fileld), file("${out}_ldext_wind.out") into ldext_wind_ch 
+      set file(gwascat), file(assocpos),file(fileld), file("${out}_ld.out") into ld_v2_ch
+      set file(gwascat), file(assocpos),file(fileld), file("${out}_ld_wind.out") into ld_wind_ch 
+    script :
+      out=params.output+"_ldinfo"
+      """
+      computestat_ldbuildblock.py  --plink_ld $fileld --pos_cat $gwascatbed --out $out
+      """
 }
+
+process computed_ld2_stat{
+   memory other_mem_req
+   cpus other_cpus_req
+   input :
+     set file(gwascat), file(assocpos),file(fileld), file(out_ldblock) from ld_v2_ch  
+    publishDir "${params.output_dir}/res/ldwind/noext",  overwrite:true, mode:'copy'
+    output :
+       file("$out*")
+   script :
+    out=params.output+"_noext"
+    """
+     computestat_ldv2.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ldblock_file $out_ldblock --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\"
+    """
+}
+
+process computed_ldext_stat{
+   memory other_mem_req
+   cpus other_cpus_req
+   input :
+     set file(gwascat), file(assocpos),file(fileld), file(out_ldblock) from ldext_ch
+    publishDir "${params.output_dir}/res/ldwind/ext",  overwrite:true, mode:'copy'
+    output :
+       file("$out*")
+   script :
+    out=params.output+"_ext"
+    """
+     computestat_ldv2.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ldblock_file $out_ldblock --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\"
+    """
+}
+
+process computed_ldwind_stat{
+
+ input :
+      set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ld_wind_ch
+ publishDir "${params.output_dir}/res/ldwind/wind",  overwrite:true, mode:'copy'
+ output:
+   file("$out*")
+ script :
+  out_ldblock="tmpout"
+  out=params.output+"_wind"
+  """
+  resarch_posgwas.py --gwas $assocpos --bed ${out_ldwind} --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --out ${out_ldblock}
+oUN ln -s /usr/bin/python3 /usr/bin/python
+  computestat_ldv2.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ldblock_file $out_ldblock --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\"
+  """
+}
+
+ 
+process computed_ldwindext_stat{
+ 
+ input :
+      set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ldext_wind_ch
+ publishDir "${params.output_dir}/res/ldwind/windext",  overwrite:true, mode:'copy'
+ output:
+   file("$out*")
+ script :
+  out_ldblock="tmpout"
+  out=params.output+"_wind"
+  """
+  resarch_posgwas.py --gwas $assocpos --bed ${out_ldwind} --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --out ${out_ldblock}
+  computestat_ldv2.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ldblock_file $out_ldblock --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\"
+  """
+}  
+ 
+
 
 
 }
