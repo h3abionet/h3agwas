@@ -495,7 +495,6 @@ process computed_ldwind_stat{
   out=params.output+"_wind"
   """
   resarch_posgwas.py --gwas $assocpos --bed ${out_ldwind} --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --out ${out_ldblock}
-oUN ln -s /usr/bin/python3 /usr/bin/python
   computestat_ldv2.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ldblock_file $out_ldblock --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\"
   """
 }
