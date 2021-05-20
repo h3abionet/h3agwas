@@ -1,0 +1,112 @@
+{% comment %}
+  Lesson navigation bar.
+{% endcomment %}
+
+{% include gh_variables.html %}
+{% include manual_episode_order.html %}
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+
+      {% comment %} Select what logo to display. {% endcomment %}
+      {% if site.carpentry == "swc" %}
+      <a href="https://www.sickleinafrica.org/" class="pull-left">
+        <img class="navbar-logo" src="{{ relative_root_path }}{% link /assets/img/sia-1.png %}" alt="Sickle In Africa logo" />
+      </a>
+      {% elsif site.carpentry == "dc" %}
+      <a href="{{ site.dc_site }}" class="pull-left">
+        <img class="navbar-logo" src="{{ relative_root_path }}{% link /assets/img/dc-icon-black.svg %}" alt="Data Carpentry logo" />
+      </a>
+      {% elsif site.carpentry == "lc" %}
+      <a href="{{ site.lc_site }}" class="pull-left">
+        <img class="navbar-logo" src="{{ relative_root_path }}{% link /assets/img/lc-icon-black.svg %}" alt="Library Carpentry logo" />
+      </a>
+      {% elsif site.carpentry == "cp" %}
+      <a href="{{ site.carpentries_site }}" class="pull-left">
+        <img class="navbar-logo" src="{{ relative_root_path }}{% link /assets/img/cp-logo-blue.svg %}" alt="The Carpentries logo" />
+      </a>
+      {% endif %}
+
+      {% comment %} Always show link to home page. {% endcomment %}
+      <a class="navbar-brand" href="{{ relative_root_path }}{% link index.md %}">Home</a>
+
+    </div>
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+
+      {% if site.kind == "lesson" %}
+
+        {% comment %} Show lesson episodes for lessons. {% endcomment %}
+        <li class="dropdown">
+          <a href="{{ relative_root_path }}/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Episodes <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            {% for lesson_episode in lesson_episodes %}
+            {% if site.episode_order %}
+              {% assign episode = site.episodes | where: "slug", lesson_episode | first %}
+            {% else %}
+              {% assign episode = lesson_episode %}
+            {% endif %}
+            <li><a href="{{ relative_root_path }}{{ episode.url }}">{{ episode.title }}</a></li>
+            {% endfor %}
+	    <li role="separator" class="divider"></li>
+            <li><a href="{{ relative_root_path }}{% link aio.md %}">All in one page (Beta)</a></li>
+          </ul>
+        </li>
+
+        {% comment %} Show exercises. {% endcomment %}
+        <li class="dropdown">
+          <a href="{{ relative_root_path }}/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Exercises <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            {% for lesson_exercise in lesson_exercises %}
+            {% if site.exercise_order %}
+              {% assign exercise = site.exercise | where: "slug", lesson_exercise | first %}
+            {% else %}
+              {% assign exercise = lesson_exercise %}
+            {% endif %}
+            <li><a href="{{ relative_root_path }}{{ exercise.url }}">{{ exercise.title }}</a></li>
+            {% endfor %}
+	    <li role="separator" class="divider"></li>
+            <li><a href="{{ relative_root_path }}{% link aio.md %}">All in one page (Beta)</a></li>
+          </ul>
+        </li>
+
+	{% endif %}
+
+  {% comment %} <li><a href="{{ relative_root_path }}{% link exercises.md %}">Exercises</a></li> {% endcomment %}
+
+	{% comment %} Show extras for lessons or if this is the main workshop-template repo (where they contain documentation). {% endcomment %}
+	{% if site.kind == "lesson" %}
+        <li class="dropdown">
+          <a href="{{ relative_root_path }}/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Extras <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="{{ relative_root_path }}{% link reference.md %}">Reference</a></li>
+            {% for lesson_extra in lesson_extras %}
+            {% if site.extras_order %}
+              {% assign extra = site.extras | where: "slug", lesson_extra | first %}
+            {% else %}
+              {% assign extra = lesson_extra %}
+            {% endif %}
+            <li><a href="{{ relative_root_path }}{{ extra.url }}">{{ extra.title }}</a></li>
+            {% endfor %}
+          </ul>
+        </li>
+	{% endif %}
+
+	{% comment %} Always show license. {% endcomment %}
+        <li><a href="{{ relative_root_path }}{% link LICENSE.md %}">License</a></li>
+      </ul>
+      <form class="navbar-form navbar-right" role="search" id="search" onsubmit="google_search(); return false;">
+        <div class="form-group">
+          <input type="text" id="google-search" placeholder="Search..." aria-label="Google site search">
+        </div>
+      </form>
+    </div>
+  </div>
+</nav>
