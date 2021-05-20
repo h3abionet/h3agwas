@@ -11,6 +11,7 @@
 nextflow.enable.dsl=2
 
 params.numberOfInputFiles = 10
+params.inputFileDir = '/mnt/lustre3p/groups/CBBI1243/SADaCC/ambroise-data/gwas-cameroon/2018-10-28/'
 params.inputFilePrefix = 'WTS_H3Africa_Wonkam_2018.04'
 
 params.snvName = '200610-1'
@@ -22,6 +23,5 @@ workflow {
 			.fromPath(
 				params.inputFilePrefix + '_gtReport_File-*')
 			.view()
-
 
 } 
