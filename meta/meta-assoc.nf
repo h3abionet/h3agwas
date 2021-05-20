@@ -78,7 +78,13 @@ metasoft_mem_req=params.metasoft_mem_req
 def configfile_analysis(file){
    sep=','
    File theInfoFile = new File( file )
-   if( !theInfoFile.exists() ) {
+   if(file.contains("s3://")){
+     println "File " + file + "is in S3 so its existence can't be checked."
+   }
+   if(file.contains("az://")){
+     println "File " + file + "is in Azure so its existence can't be checked."
+   }
+   if( !theInfoFile.exists() && !file.contains("s3://") && !file.contains("az://") ) {
       println "File "+ file+" does not exist"
       exit(0)
    } 
