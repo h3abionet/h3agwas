@@ -18,9 +18,10 @@ params.snvName = '200610-1'
 workflow {
 
 	inputGenotypeDataFiles\
-		= channel.fromPath(
-			params.inputFilePrefix + '_gtReport_File-*')
-
+		= channel
+			.fromPath(
+				params.inputFilePrefix + '_gtReport_File-*')
+			.view()
 
 
 } 
