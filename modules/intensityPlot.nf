@@ -26,7 +26,7 @@ process mergeGenotypeReports {
         path "${params.snvName}.csv"
     script:
         mergedReportHeader \
-            = "SNP Name,Sample ID,Allele1 - Top,"
+            = "SNP Name,Sample ID,Allele1 - Top," \
             + "Allele2 - Top,GC Score,X,Y,B Allele Freq,Log R Ratio"
         """
         echo ${mergedReportHeader} > ${params.snvName}.csv
@@ -53,3 +53,47 @@ process plotXYintensityFields {
         """
 }
 
+def printWorkflowExitMessage() {
+    if (workflow.success) {
+        log.info "Workflow completed without errors".center(60)
+    } else {
+        log.error "Oops .. something went wrong!".center(60)
+    }
+    log.info "Check output files in folder:".center(60)
+    log.info "${params.outputDir}".center(60)
+}
+
+def sendWorkflowExitEmail() {
+
+    subject = "[nextflow|h3agwaws] run ${workflow.runName} has finished"
+    attachment = "${params.outputDir}/${params.snvName}_XYintensities.pdf"
+    message = \
+        """\
+        Hi there, 
+
+        Your nextflow job ${workflow.scriptName}: ${workflow.runName} has finished.
+        Please check the attachments to this email,
+        and the execution summary below. 
+
+        All the best,
+        H 3 A G W A S
+
+
+
+        Pipeline execution summary
+        ---------------------------
+        Completed at: ${workflow.complete}
+        Duration    : ${workflow.duration}
+        Success     : ${workflow.success}
+        workDir     : ${workflow.workDir}
+        exit status : ${workflow.exitStatus}
+        """
+    .stripIndent()
+
+    sendMail(
+        to: "${params.email}",
+        subject: "${subject}",
+        body: "${message}",
+        attach: "${attachment}")
+
+}

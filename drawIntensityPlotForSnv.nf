@@ -27,6 +27,8 @@ include {
     filterRecordsForChosenSnv;
     mergeGenotypeReports;
     plotXYintensityFields;
+    printWorkflowExitMessage;
+    sendWorkflowExitEmail;
 } from "${projectDir}/modules/intensityPlot.nf"
 
 workflow {
@@ -36,13 +38,18 @@ workflow {
 
     genotypeReportsOfChosenSnv \
         = filterRecordsForChosenSnv(
-            genotypeReports) 
+            genotypeReports)
 
     snvGenotypeReport \
         = mergeGenotypeReports(
             genotypeReportsOfChosenSnv.collect())
 
-    plotXYintensityFields(
-        snvGenotypeReport)
+    intensityPlot \
+        = plotXYintensityFields(
+            snvGenotypeReport)
+}
 
+workflow.onComplete {
+    printWorkflowExitMessage()
+    sendWorkflowExitEmail()
 }
