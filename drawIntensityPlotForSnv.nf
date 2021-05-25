@@ -1,9 +1,9 @@
 /*
- *	DRAW INTENSITY PLOT FOR A SNV
- *	=============================
+ *  DRAW INTENSITY PLOT FOR A SNV
+ *  =============================
  *
- *	This script takes as input an illumina gsgt format dataset, and a 
- *	SNV id chosen by the user, and then draws a plot of the intensity 
+ *  This script takes as input an illumina gsgt format dataset, and a 
+ *  SNV id chosen by the user, and then draws a plot of the intensity 
  *  (X,Y) values across all samples in the dataset for this chosen
  *  SNV.
  *
