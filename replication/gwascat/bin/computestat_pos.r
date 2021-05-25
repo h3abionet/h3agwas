@@ -19,7 +19,8 @@ t.col <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],
 invisible(t.col)
 }
 
-
+#plotfreq(MergeAll[QC,],headaf, 'af_gwas_a1cat',cex_pt=90,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
+#dataall<-MergeAll;freq1<-headaf;freq2<-'af_gwas_a1cat';cex_pt=90
 plotfreq<-function(dataall,freq1, freq2,cex_pt,alpha_pt,xlab='GWAS frequencies', ylab='GWAS cat frequencies'){
 nbcat=20
 height=1
@@ -120,8 +121,12 @@ q(2)
 }
 
 #--chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2
+
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
+Test=T
+if(Test)opt=list(gwascat='meanMaxcIMT_eurld_all.csv',gwas='meanMaxcIMT_eurld_pos.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0' ,beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='meanMaxcIMT_eurld_pos')
+
 
 headse=opt[['se_gwas']];headps=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
 headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
@@ -160,26 +165,24 @@ QC<-!is.na(MergeAll[,heada1]) & !is.na(MergeAll[,heada2]) & !is.na(MergeAll[,hea
 #print(table(MergeAll[,heada1] , MergeAll[,heada1cat]))
 BaliseChange<-QC & MergeAll[,heada1]!=MergeAll[,heada1cat]
 MergeAll[,'af_gwas_a1cat']<-NA
-MergeAll[BaliseChange,'af_gwas_a1cat']<-MergeAll[BaliseChange,headafcat]
-MergeAll[!BaliseChange,'af_gwas_a1cat']<-MergeAll[!BaliseChange,headafcat]
+MergeAll[BaliseChange,'af_gwas_a1cat']<- 1 - MergeAll[BaliseChange,headafcat]
+MergeAll[!BaliseChange,'af_gwas_a1cat']<-  MergeAll[!BaliseChange,headafcat]
 
 svg(paste(outhead,'_cmpfrequencies.svg', sep=''))
 cat('af ',headaf, 'afreq \n')
-head(MergeAll[QC,headaf])
-head(MergeAll[QC,headafcat])
-plotfreq(MergeAll[QC,],headaf, 'af_gwas_a1cat',cex_pt=90,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
+plotfreq(MergeAll[QC,],headaf, 'af_gwas_a1cat',cex_pt=1.5,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
 dev.off()
 
 QC<-!is.na(MergeAll[,heada1]) & !is.na(MergeAll[,heada2]) & !is.na(MergeAll[,heada1cat]) & !is.na(MergeAll[,headzcat]) & (MergeAll[,heada1] == MergeAll[,heada1cat] | MergeAll[,heada2] == MergeAll[,heada1cat])
 
 BaliseChange<-QC & MergeAll[,heada1]!=MergeAll[,heada1cat]
 MergeAll[,'z_gwas_a1cat']<-NA
-MergeAll[BaliseChange,'z_gwas_a1cat']<-MergeAll[BaliseChange,headaf]
-MergeAll[!BaliseChange,'z_gwas_a1cat']<-MergeAll[!BaliseChange,headaf]
+MergeAll[BaliseChange,'z_gwas_a1cat']<- - MergeAll[BaliseChange,headzcat]
+MergeAll[!BaliseChange,'z_gwas_a1cat']<-MergeAll[!BaliseChange,headzcat]
 
 
 svg(paste(outhead,'_cmpz.svg', sep=''))
-plotZ(MergeAll,'z_gwas_a1cat', headzcat, xlab='GWAS catalog', ylab='GWAS')
+plotZ(MergeAll,'z_gwas_a1cat', 'z.gwas', xlab='GWAS catalog', ylab='GWAS')
 dev.off()
 
 svg(paste(outhead,'_qq.svg', sep=''))
