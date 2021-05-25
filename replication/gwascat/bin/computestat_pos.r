@@ -29,6 +29,7 @@ ht$counts<-ht$counts/sum(ht$counts)*height
 ht2<-hist(dataall[,freq2], nbcat, plot=F)
 ht2$counts<-ht2$counts/sum(ht2$counts)*height
 layout.matrix <- matrix(c(2, 1, 0, 3), nrow = 2, ncol = 2)
+dataall<-na.omit(dataall[,c(freq1, freq2)])
 
 layout(mat = layout.matrix,
        heights = c(max(ht$counts)*1.2, 1), # Heights of the two rows
@@ -157,14 +158,16 @@ MergeAll[,heada1]<-as.character(MergeAll[,heada1])
 
 QC<-!is.na(MergeAll[,heada1]) & !is.na(MergeAll[,heada2]) & !is.na(MergeAll[,heada1cat]) & !is.na(MergeAll[,headafcat]) & (MergeAll[,heada1] == MergeAll[,heada1cat] | MergeAll[,heada2] == MergeAll[,heada1cat])
 #print(table(MergeAll[,heada1] , MergeAll[,heada1cat]))
-head(MergeAll,2)
 BaliseChange<-QC & MergeAll[,heada1]!=MergeAll[,heada1cat]
 MergeAll[,'af_gwas_a1cat']<-NA
-MergeAll[BaliseChange,'af_gwas_a1cat']<-MergeAll[BaliseChange,headaf]
-MergeAll[!BaliseChange,'af_gwas_a1cat']<-MergeAll[!BaliseChange,headaf]
+MergeAll[BaliseChange,'af_gwas_a1cat']<-MergeAll[BaliseChange,headafcat]
+MergeAll[!BaliseChange,'af_gwas_a1cat']<-MergeAll[!BaliseChange,headafcat]
 
 svg(paste(outhead,'_cmpfrequencies.svg', sep=''))
-plotfreq(MergeAll[QC,],'af_gwas_a1cat', 'risk.allele.af',cex_pt=90,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
+cat('af ',headaf, 'afreq \n')
+head(MergeAll[QC,headaf])
+head(MergeAll[QC,headafcat])
+plotfreq(MergeAll[QC,],headaf, 'af_gwas_a1cat',cex_pt=90,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
 dev.off()
 
 QC<-!is.na(MergeAll[,heada1]) & !is.na(MergeAll[,heada2]) & !is.na(MergeAll[,heada1cat]) & !is.na(MergeAll[,headzcat]) & (MergeAll[,heada1] == MergeAll[,heada1cat] | MergeAll[,heada2] == MergeAll[,heada1cat])

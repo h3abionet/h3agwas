@@ -141,19 +141,10 @@ datalda2<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_B
 dataldallcat<-rbind(datalda1,datalda2)
 
 if(Test){
-#12:2523697","rs55935819:12:2521652
-#    bin chrom chromStart chromEnd       name pubMedID      author    pubDate
-#383 604    12    2521578  2521579 rs55935819 30224653 Evangelou E 2018-09-17
-#      journal
-#383 Nat Genet
-#2:2513893
 rsclump<-"12:2523697";rscat="rs55935819";chrocat<-12;bpcat<-2521579
 datagwas[datagwas[,headchr]==12 & datagwas[,headbp]==2523697,]
 datagwascat[datagwascat[,headchrcat]==chrocat & datagwascat[,headbpcat]==bpcat,]
 datagwascat[datagwascat[,'name']==rscat ,]
-#rs55935819:12:2521652
-#12:2521652
-#  12    1     12:2523697    2523697    0.00061       32     18      6      5      3      0 rs753076(1),rs7296821(1),rs4441076(1),rs2239061(1),rs2239062(1),rs2238084(1),rs1122784(1),rs11836545(1),rs11837126(1),rs10774041(1),rs719024(1),rs78430964(1),rs73037278(1),rs35407591(1),rs4765929(1),rs12422833(1),rs10774042(1),rs11062217(1),12:2519358(1),rs12578775(1),rs11062219(1),rs58017093(1),rs35167730(1),rs2887781(1),rs55935819(1),12:2521652(1),rs17223841(1),rs35124400(1),rs7311607(1),rs7312105(1),rs7312107(1),rs16929368(1)
 
 dataldallcat[dataldallcat$rs_gwas==rsclump,]
 dataldallcat[dataldallcat$rs_cat==rsclump,]
@@ -164,14 +155,6 @@ datald[datald$SNP_B==rscat | datald$SNP_A==rscat,]
 #datagwascat[datagwascat$name=='rs745821',]
 dataldallcat[dataldallcat$rs_cat==rscat,]
 dataldallcat[dataldallcat$rs_gwas==rsclump,]
-
-#> datald[datald$CHR_A==18 & datald$BP_A==48144571 ,]
-#   CHR_A     BP_A      SNP_A CHR_B     BP_B      SNP_B       R2
-#1:    18 48144571 rs17742138    18 48146048  rs3867257 0.541578
-#2:    18 48144571 rs17742138    18 48144571 rs17742138 1.000000
-#> datald[datald$CHR_B==18 & datald$BP_B==48144571 ,]
-#   CHR_A     BP_A      SNP_A CHR_B     BP_B      SNP_B R2
-#1:    18 48144571 rs17742138    18 48144571 rs17742138  1
 }
 
 
@@ -194,8 +177,10 @@ datalda1$info_gwascat<-""
 for(cat in infocat)datalda1$info_gwascat<-paste(datalda1$info_gwascat,cat,':',datalda1[,cat],',',sep='')
 datagwassumm<-aggregate(as.formula(paste('info_gwas~',headbpcat, '+',headchrcat)), data=datalda1,function(x)paste(unique(x), collapse=';'))
 datagwascatsumm<-aggregate(as.formula(paste('info_gwascat~',headbpcat, '+',headchrcat)), data=datalda1, function(x)paste(unique(x), collapse=';'))
+datagwasminpval<-aggregate(as.formula(paste(headpval,'~',headbpcat, '+',headchrcat)), data=datalda1,min)
 
-allresume<-merge(datagwassumm,datagwascatsumm,all=T, by=c(headchrcat,headbpcat))
+
+allresume<-merge(merge(datagwassumm,datagwascatsumm,all=T, by=c(headchrcat,headbpcat)),datagwasminpval, all=T, by=c(headchrcat,headbpcat))
 names(allresume)[c(1,2)]<-c('chr_gwas', 'bp_gwas_cat')
 write.csv(allresume, file=paste(opt[['out']],'_resume.csv',sep=''),row.names=F)
 
