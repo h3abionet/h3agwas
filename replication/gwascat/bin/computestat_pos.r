@@ -124,7 +124,7 @@ q(2)
 
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
-Test=T
+Test=F
 if(Test)opt=list(gwascat='meanMaxcIMT_eurld_all.csv',gwas='meanMaxcIMT_eurld_pos.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0' ,beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='meanMaxcIMT_eurld_pos')
 
 
@@ -182,7 +182,7 @@ MergeAll[!BaliseChange,'z_gwas_a1cat']<-MergeAll[!BaliseChange,headzcat]
 
 
 svg(paste(outhead,'_cmpz.svg', sep=''))
-plotZ(MergeAll,'z_gwas_a1cat', 'z.gwas', xlab='GWAS catalog', ylab='GWAS')
+plotZ(MergeAll[QC,],'z_gwas_a1cat', 'z.gwas', xlab='GWAS catalog', ylab='GWAS')
 dev.off()
 
 svg(paste(outhead,'_qq.svg', sep=''))
