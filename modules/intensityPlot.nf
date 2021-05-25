@@ -8,43 +8,48 @@ def getInputChannels() {
 
 process filterRecordsForChosenSnv() {
     input:
-        path genotypeDataFile
+        path genotypeReport
     output:
-        path "${genotypeDataFile}.xy.csv"
+        path "${genotypeReport}.xy.csv"
     script:
         """
-        zcat ${genotypeDataFile} | grep "${params.snvName}," > ${genotypeDataFile}.xy.csv
+        zcat ${genotypeReport} \
+            | grep "${params.snvName}," \
+            > ${genotypeReport}.xy.csv
         """
 }
 
-process concatenateDataFiles {
+process mergeGenotypeReports {
     input:
-        path dataFiles
+        path genotypeReportList
     output:
         path "${params.snvName}.csv"
     script:
+        mergedReportHeader \
+            = "SNP Name,Sample ID,Allele1 - Top,"
+            + "Allele2 - Top,GC Score,X,Y,B Allele Freq,Log R Ratio"
         """
-        echo 'SNP Name,Sample ID,Allele1 - Top,Allele2 - Top,GC Score,X,Y,B Allele Freq,Log R Ratio' > ${params.snvName}.csv
+        echo ${mergedReportHeader} > ${params.snvName}.csv
         cat ${params.inputFilePrefix}* >> ${params.snvName}.csv
         """
 }
 
-process plotXYintensityData {
+process plotXYintensityFields {
     publishDir "${params.outputDir}", mode: 'copy'
 
     input:
-        path genotypeDataForChosenSnv
+        path snvGenotypeReport
     output:
-        path "${params.snvName}_XYplot.pdf"
+        path "${params.snvName}_XYintensities.pdf"
     script:
         """
         #!/usr/bin/env Rscript --vanilla
         library(tidyverse)
-        snvdata <- read.csv(file="${genotypeDataForChosenSnv}")
-        ggplot(snvdata, aes(x=X,y=Y)) +
+        snvGenotypeReport <- read.csv(file="${snvGenotypeReport}")
+        ggplot(snvGenotypeReport, aes(x=X,y=Y)) +
             geom_point() +
             ggtitle("snv: ${params.snvName}")
-        ggsave("${params.snvName}_XYplot.pdf")
+        ggsave("${params.snvName}_XYintensities.pdf")
         """
 }
 
