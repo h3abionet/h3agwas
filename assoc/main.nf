@@ -1504,7 +1504,7 @@ process FastGWARun{
       file("${out}*")  into report_fastgwa_ch
     script:
       our_pheno = this_pheno.replaceAll("_","-")
-      out = "C052-fastGWA-"+our_pheno
+      out = "C052-fastGWA-"+our_phenosickleinafrica/py3-pandas-datatable
       //CHR	SNP	POS	A1	A2	N	AF1	BETA	SE	P
       """
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNP --pval_header P --beta_header BETA --info_prog fastGWA
