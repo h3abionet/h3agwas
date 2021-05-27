@@ -14,6 +14,25 @@
  *
  */
 
+def getlistchro(listchro){
+ newlistchro=[]
+ for(x in listchro.split(',')) {
+  splx=x.split("-")
+  if(splx.size()==2){
+   r1=splx[0].toInteger()
+   r2=splx[1].toInteger()
+   for(chro in r1..r2){
+    newlistchro.add(chro.toString())
+   }
+  }else if(splx.size()==1){
+   newlistchro.add(x)
+  }else{
+    logger("problem with chro argument "+x+" "+listchro)
+    System.exit(0)
+  }
+ }
+ return(newlistchro)
+}
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
@@ -122,6 +141,11 @@ params.paintor_fileannot=""
 params.paintor_listfileannot=""
 //params.paintor_annot=""
 
+params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
+params.list_chro="1-22"
+params.list_pheno=""
+
+
 
 params.finemap_bin="finemap"
 params.caviarbf_bin="caviarbf"
@@ -129,11 +153,38 @@ params.modelsearch_caviarbf_bin="model_search"
 params.paintor_bin="PAINTOR"
 params.plink_bin="plink"
 
+
 params.chro=""
 params.begin_seq=""
 params.end_seq=""
-if(params.file_gwas==""){
-error('file_gwas option not initialise')
+
+if(params.begin_seq > params.end_seq){
+error('begin_seq > end_seq')
+}
+if(params.gwas_cat==""){
+println('file_gwas option not initialise')
+process GwasCatDl{
+    label 'R'
+    publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+    output :
+       file("${out}_resume.csv") into gwascat_ch
+       file("${out}*")
+    script :
+      phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
+      out="gwascat_format"
+      """
+      wget -c ${params.gwas_cat_ftp}
+      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${params.chro}
+      """
+}
+headgc_chr="chrom"
+headgc_chr="chromEnd"
+}else{
+gwascat_ch=Channel.fromPath(params.gwas_cat, checkIfExists:true)
+headgc_chr=params.headgc_chr
+headgc_bp=params.headgc_bp
+checkColumnHeader(params.gwas_cat, [headgc_chr,headgc_bp])
+
 }
 if(params.chro=="" | params.begin_seq=="" | params.end_seq==""){
 error('chro, begin_seq or end_seq not initialise')
@@ -382,10 +433,6 @@ genes_file_ch=Channel.fromPath(params.genes_file)
 }
 
 
-if(params.gwas_cat==""){
-       error("\n\n------\nError no file for gwas catalgo\n---\n")
-}
-gwascat_ch=Channel.fromPath(params.gwas_cat)
 
 process MergeResult{
     label 'R'
@@ -412,7 +459,7 @@ process MergeResult{
        cat $infopaint > infopaint
        echo "sss $fmsss" > infofinemap 
        echo "cond $fmcond" >> infofinemap 
-       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${params.headgc_bp} --headchr_gc ${params.headgc_chr}  --listfinemap infofinemap  $pfileannot
+       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot
       """
 
 }

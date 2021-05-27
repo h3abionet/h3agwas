@@ -763,18 +763,7 @@ if (params.boltlmm == 1) {
    pval_head = "P_BOLT_LMM"
 
   type_lmm="--lmm"
-//  process doCountNbSnp{
- //   time   params.big_time
-//    input :
-//       file(bim) from bim_ch_bolt
-//    output :
-//       stdout into nbsnp_ch_bolt
-//    script :
-//      """
-//      wc -l $bim|awk '{print \$1}'
-//      """
-//  }
-  /*    nb_snp= CountLinesFile(base+".bim") */
+ }
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
   else rs_ch_exclude_bolt=file('NO_FILE')
 
