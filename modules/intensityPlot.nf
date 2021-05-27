@@ -1,10 +1,24 @@
-def getInputChannels() {
-    return channel.fromPath(
-            params.inputFileDir +
-            params.inputFilePrefix +
-            '_gtReport_File-*')
+include {
+    userEmailAddressIsProvided;
+    checkSnvName;
+    checkInputDir;
+    checkGenotypeReportPrefix;
+    checkEmailAdressProvided;
+} from "./base.nf"
+
+def checkInputParams() {
+    checkSnvName()
+    checkInputDir()
+    checkGenotypeReportPrefix()
+    checkEmailAdressProvided()
 }
 
+def getInputChannels() {
+    return channel.fromPath(
+            params.inputDir +
+            params.genotypeReportPrefix +
+            '*')
+}
 
 process filterRecordsForChosenSnv() {
     input:
@@ -30,11 +44,11 @@ process mergeGenotypeReports {
             + "Allele2 - Top,GC Score,X,Y,B Allele Freq,Log R Ratio"
         """
         echo ${mergedReportHeader} > ${params.snvName}.csv
-        cat ${params.inputFilePrefix}* >> ${params.snvName}.csv
+        cat ${params.genotypeReportPrefix}* >> ${params.snvName}.csv
         """
 }
 
-process plotXYintensityFields {
+process drawXYintensityPlot {
     publishDir "${params.outputDir}", mode: 'copy'
 
     input:
@@ -90,10 +104,11 @@ def sendWorkflowExitEmail() {
         """
     .stripIndent()
 
-    sendMail(
-        to: "${params.email}",
-        subject: "${subject}",
-        body: "${message}",
-        attach: "${attachment}")
-
+    if (userEmailAddressIsProvided()) {
+        sendMail(
+            to: "${params.email}",
+            subject: "${subject}",
+            body: "${message}",
+            attach: "${attachment}")
+    }
 }

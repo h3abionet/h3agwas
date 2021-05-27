@@ -17,6 +17,7 @@
 nextflow.enable.dsl=2
 
 include {
+    checkInputParams;
 	getInputChannels;
 	getAssociationReport;
 	drawManhattanPlot;
@@ -30,6 +31,8 @@ include {
 
 workflow {
 
+    checkInputParams()
+
 	cohortData = getInputChannels()
 
 	associationReport = getAssociationReport(cohortData.collect())
@@ -42,5 +45,5 @@ workflow {
 
 workflow.onComplete {
     printWorkflowExitMessage()
-    //sendWorkflowExitEmail()
+    sendWorkflowExitEmail()
 }

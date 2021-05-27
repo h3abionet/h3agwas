@@ -1,13 +1,25 @@
-def getInputChannels() {
+include {
+    userEmailAddressIsProvided;
+    checkInputDir;
+    checkCohortName;
+    checkGenotypeReportPrefix;
+    checkEmailAdressProvided;
+} from "./base.nf"
 
+def checkInputParams() {
+    checkInputDir()
+    checkCohortName()
+    checkEmailAdressProvided()
+}
+
+def getInputChannels() {
 	return channel.fromPath([
-		"input/${params.cohortName}.bed",
-		"input/${params.cohortName}.bim",
-		"input/${params.cohortName}.fam"])
+		"${params.inputDir}${params.cohortName}.bed",
+		"${params.inputDir}${params.cohortName}.bim",
+		"${params.inputDir}${params.cohortName}.fam"])
 }
 
 process getAssociationReport {
-	container "quay.io/h3abionet_org/py3plink"
 	input:
 		path inputFiles
 	output:
@@ -93,9 +105,11 @@ def sendWorkflowExitEmail() {
         """
     .stripIndent()
 
-    sendMail(
-        to: "${params.email}",
-        subject: "${subject}",
-        body: "${message}",
-        attach: "${attachment1}", "${attachment2}")
+    if (userEmailAddressIsProvided()) {
+	    sendMail(
+	        to: "${params.email}",
+	        subject: "${subject}",
+	        body: "${message}",
+	        attach: "${attachment1}", "${attachment2}")
+	}
 }
