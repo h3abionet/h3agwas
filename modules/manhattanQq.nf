@@ -13,15 +13,20 @@ def checkInputParams() {
 }
 
 def getInputChannels() {
-	return channel.fromPath([
-		"${params.inputDir}${params.cohortName}.bed",
-		"${params.inputDir}${params.cohortName}.bim",
-		"${params.inputDir}${params.cohortName}.fam"])
+
+	bed = channel.fromPath(
+		"${params.inputDir}${params.cohortName}.bed")
+	bim = channel.fromPath(
+		"${params.inputDir}${params.cohortName}.bim")
+	fam = channel.fromPath(
+		"${params.inputDir}${params.cohortName}.fam")
+
+	return bed.combine(bim).combine(fam)
 }
 
 process getAssociationReport {
 	input:
-		path inputFiles
+		tuple path(cohortBed), path(cohortBim), path(cohortFam)
 	output:
 		path "${params.cohortName}.report.assoc"
 	script:
