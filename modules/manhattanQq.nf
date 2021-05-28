@@ -85,8 +85,9 @@ process drawQqPlot {
 def sendWorkflowExitEmail() {
 
     subject = "[nextflow|h3agwaws] run ${workflow.runName} has finished"
-    attachment1 = "${params.outputDir}/manhattanPlot.pdf"
-    attachment2 = "${params.outputDir}/qqplot.pdf"
+    attachment = [
+        "${params.outputDir}manhattan.pdf",
+        "${params.outputDir}qqplot.pdf"]
     message = \
         """\
         Hi there, 
@@ -115,6 +116,6 @@ def sendWorkflowExitEmail() {
 	        to: "${params.email}",
 	        subject: "${subject}",
 	        body: "${message}",
-	        attach: "${attachment1}", "${attachment2}")
+	        attach: ["${attachment[0]}", "${attachment[1]}"])
 	}
 }
