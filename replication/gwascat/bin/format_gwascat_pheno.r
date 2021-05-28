@@ -21,7 +21,33 @@ res
 option_list = list(
   make_option(c("-f", "--file"), type="character", default=NULL, 
               help="dataset file name", metavar="character"),
-    make_option(c("-o", "--out"), type="character", default="out.txt", 
+  make_option(c("--chro"), type="character", default=NULL, 
+              help="dataset file name", metavar="character"),
+  make_option(c("--chro_head"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--bp_head"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--pheno_head"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--beta_head"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--ci_head"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--p_head"), type="character", default=NULL, 
+              help="dataset file name", metavar="character"),
+  make_option(c("--n_head"), type="character", default=NULL, 
+              help="dataset file name", metavar="character"),
+  make_option(c("--freq_head"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--rs_head"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--riskall_head"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--format"), type="character", default="USCS",
+              help="dataset file name", metavar="character"),
+  make_option(c("--typeformat"), type="character", default="csv",
+              help="dataset file name", metavar="character"),
+  make_option(c("-o", "--out"), type="character", default="out.txt", 
               help="output file name [default= %default]", metavar="character")
 ); 
  
@@ -51,14 +77,20 @@ opt = parse_args(opt_parser);
 #platform 	Affymetrix [7791636] (imputed)	varchar(255) 	values 	Platform and [SNPs passing QC]
 #cnv 	N	enum('Y', 'N') 	values 	Y if Copy Number Variant
 
-Data<-read.csv(opt[['file']], header=F, sep='\t')
+
 
 #lisp="Type 2 diabetes";lisc=c("22","21")
-format="USCS"
+format=opt[['format']]
 if(format=="USCS"){
+Data<-read.csv(opt[['file']], header=F, sep='\t')
 chrohead="chrom";phenhead="trait";poshead="chromEnd";OrBetaHead="orOrBeta";headCi95="ci95";pValueHead="pValue";nvalueHead="initSample";freqHead="riskAlFreq";rsHead="name";riskall="riskAllele"
 names(Data)<-c("bin", "chrom", "chromStart", "chromEnd", "name", "pubMedID", "author", "pubDate", "journal", "title", "trait", "initSample","replSample","region", "genes", "riskAllele", "riskAlFreq", "pValue", "pValueDesc", "orOrBeta", "ci95","platform", "cnv")
+}else{
+chrohead=opt[['chro_head']];phenhead=opt[['pheno_head']];poshead=opt[['bp_head']];OrBetaHead=opt[['beta_head']];headCi95=opt[['ci_head']];pValueHead=opt[['p_head']];nvalueHead=opt[['n_head']];freqHead=opt[['freq_head']];rsHead=opt[['rs_head']];riskall=opt[['riskall_head']]
+if(opt[['typeformat']]=='csv')Data<-read.csv(opt[['file']])
+else Data<-read.table(opt[['file']], header=T, sep='\t')
 }
+
 Data[,chrohead]<-gsub('chr', '',as.character(Data[,chrohead]))
 
 Data2Sub<-Data #[, c(chrohead,poshead, OrBetaHead,headCi95,pValueHead,phenhead,nvalueHead,freqHead)]

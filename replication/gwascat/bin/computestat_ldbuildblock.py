@@ -86,7 +86,9 @@ for chro in dicposcat.keys() :
    posnotfoundcat=[]
    dicbloc[chro]=[]
    if chro not in infold :
+     print('not in info_ld',chro)
      continue 
+   print(chro, len(dicposcat[chro] ), dicposcat[chro] )
    pos1ld=infold[chro][0]
    pos2ld=infold[chro][1]
    R2ld=infold[chro][2]
@@ -123,36 +125,40 @@ for chro in dicposcat.keys() :
        writeld2.write(str(chro)+'_'+str(cmtblock)+'\t'+str(chro)+'\t'+str(pos[1])+'\t'+str(pos[1])+'\t'+str(pos[1])+'\n')
      cmtblock+=1
    balise=True 
-   bloc=dicbloc[chro][0]
-   dicbloc[chro].pop(0)
-   newlistbloc=[]
-   cmtblocn=1
-   listwind=[]
-   while balise :
-     listbloctomerge=checkwithotherbloc(bloc, dicbloc[chro])
-     if len(listbloctomerge)==0 :
-        newlistbloc.append(bloc)
-        bloc=dicbloc[chro][0]
-        cmtblocn+=1
-     else :
-       listbloctomerge.sort(reverse=True)
-       for posbloc in listbloctomerge :
-         bloc.update(dicbloc[chro][posbloc])
-         dicbloc[chro].pop(posbloc)
-     if len(dicbloc[chro])==0:
-       balise=False
-   cmtblock=0
-   for bloc in newlistbloc:
-     listpos=""
-     for pos in bloc :
-       writeldmerg.write(str(chro)+')'+str(cmtblock)+'\t'+str(chro)+'\t'+str(pos)+'\n')
-       listpos+=str(pos)+";"
-     if len(bloc)>0 :
-         minbloc=min(bloc)
-         maxbloc=max(bloc)
-         listwind.append([minbloc,maxbloc])
-         writeldmerg2.write(chro+'_'+str(cmtblock)+'\t'+str(chro)+'\t'+str(minbloc)+'\t'+str(maxbloc)+'\t'+listpos+'\n')
-     cmtblock+=1
+   if len(dicbloc[chro])>0 :
+     bloc=dicbloc[chro][0]
+     dicbloc[chro].pop(0)
+     newlistbloc=[]
+     cmtblocn=1
+     listwind=[]
+     while balise :
+       listbloctomerge=checkwithotherbloc(bloc, dicbloc[chro])
+       if len(listbloctomerge)==0 :
+          newlistbloc.append(bloc)
+          if len(dicbloc[chro])==0:
+            balise=False
+          else :
+           bloc=dicbloc[chro][0]
+          cmtblocn+=1
+       else :
+         listbloctomerge.sort(reverse=True)
+         for posbloc in listbloctomerge :
+           bloc.update(dicbloc[chro][posbloc])
+           dicbloc[chro].pop(posbloc)
+       if len(dicbloc[chro])==0:
+         balise=False
+     cmtblock=0
+     for bloc in newlistbloc:
+       listpos=""
+       for pos in bloc :
+         writeldmerg.write(str(chro)+')'+str(cmtblock)+'\t'+str(chro)+'\t'+str(pos)+'\n')
+         listpos+=str(pos)+";"
+       if len(bloc)>0 :
+           minbloc=min(bloc)
+           maxbloc=max(bloc)
+           listwind.append([minbloc,maxbloc])
+           writeldmerg2.write(chro+'_'+str(cmtblock)+'\t'+str(chro)+'\t'+str(minbloc)+'\t'+str(maxbloc)+'\t'+listpos+'\n')
+       cmtblock+=1
    for pos in posnotfoundcat :
      writeldmerg.write(str(cmtblock)+'\t'+str(chro)+'\t'+str(pos[1])+'\n')
      if len([x for x in listwind if pos[1]>=x[0] and pos[1]<=x[1]])==0 :

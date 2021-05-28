@@ -193,22 +193,14 @@ write.csv(allmerge, file=paste(opt[['out']],'_allresume.csv',sep=''),row.names=F
 
 minpval<-as.numeric(opt[['min_pvalue']])
 dataresallsig<-dataresall[!is.na(dataresall[,headpval]) & dataresall[,headpval]<minpval,]
+if(nrow(dataresallsig)>0){
 dataresallsig$info_gwas<-paste(dataresallsig[,headchr],':',dataresallsig[,headbp],'-beta:',dataresallsig[,headbeta], ',se:',dataresallsig[,headse],',pval:',dataresallsig[,headpval])
 
-#dataresallsig$info_gwascat<-""
-#balise<-!apply(dataresallsig[,infocatI], 1, function(x)all(is.na(x)))
-#print(dataresallsig)
-#for(cat in infocat)dataresallsig$info_gwascat[balise]<-paste(dataresallsig$info_gwascat[balise],cat,':',dataresallsig[balise,cat],',',sep='')
-
 chro<-aggregate(as.formula(paste(headchr,"~block")), data=dataresallsig, unique)
-#bpmin<-aggregate(as.formula(paste(headbp,"~block")), data=dataresallsig, min)
-#bpmax<-aggregate(as.formula(paste(headbp,"~block")), data=dataresallsig, max)
-
 
 ndata<-aggregate(as.formula(paste(headpval,"~block")), data=dataresallsig, length)
 names(ndata)<-c('block', 'n_total')
 
-#infocatdata<-aggregate(info_gwascat~block, data=dataresallsig,function(x)paste(unique(x), collapse=';'))
 infodata<-aggregate(info_gwas~block, data=dataresallsig,function(x)paste(unique(x), collapse=';'))
 minpvaldata<-aggregate(as.formula(paste(headpval,"~block")), data=dataresallsig, min)
 ndataSig<-aggregate(as.formula(paste(headpval,"~block")), data=dataresallsig, length)
@@ -225,8 +217,13 @@ names(minpos)<-c('block', 'best_pos')
 
 names(ndataSig)<-c('block', 'n_sig')
 allmergesig<-merge(merge(infobloc,merge(merge(merge(merge(infocatdata,infodata,by='block',all=F),minpvaldata,by='block',all=F), ndata, by='block',all=F), ndataSig, by='block', all=F),by='block',all=F), minpos,by='block',all=F)
-
-
 write.csv(allmergesig, file=paste(opt[['out']],'_resumesig.csv',sep=''),row.names=F)
+}else{
+head=paste(c("block","chro","min_bp","max_bp","info_gwascat","info_gwas","min_pval","n_total","best_pos"), collapse=',')
+writeLines(head, con=paste(opt[['out']],'_resumesig.csv',sep=''))
+
+}
+
+
 
 

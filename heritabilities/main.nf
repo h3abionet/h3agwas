@@ -721,7 +721,7 @@ if(params.gcta_h2==1){
           input :
             set file(bed),file(bim), file(fam) from plink_ch_gcta_multigrm 
             file file_rs from filers_matrel_mat_gcta
-          publishDir "${params.mt_correlation.rutput_dir}/gcta/grlem/", overwrite:true, mode:'copy'
+          publishDir "${params.output_dir}/gcta/grlem/", overwrite:true, mode:'copy'
           output :
             file("$out"+".score.ld") into grlmscoreld
           script :

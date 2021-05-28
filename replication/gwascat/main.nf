@@ -121,12 +121,25 @@ other_cpus_req=params.other_cpus_req
 //params.gene_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
 
 //params gwas cat 
-params.head_bp_gwascat="bp"
-params.head_chro_gwascat="chro"
-params.head_pval_gwascat="pvalue"
-params.head_af_gwascat="risk.allele.af"
-params.head_rs_gwascat="rs"
+
+params.head_bp_gwascat="chromEnd"
+params.head_chro_gwascat="chrom"
+params.head_pval_gwascat="pValue"
+params.head_af_gwascat="riskAlFreq"
+params.head_riskall_gwascat="riskAllele"
+params.head_pheno_gwascat="trait"
+params.head_ci_gwascat="ci95"
+params.head_n_gwascat="initSample"
+params.head_beta_gwascat="orOrBeta"
+params.head_rs_gwascat="name"
+params.head_info_gwascat="pubMedID;author;trait;initSample"
+//csv or tab
+params.typeformat_gwascat='csv'
+
+params.gwascat_format="USCS"
+
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
+
 params.pheno=""
 params.file_pheno=""
 params.list_chro="1-22"
@@ -150,9 +163,19 @@ process dl_gwascat_hg19{
    """
 
 }
+format="USCS"
 gwascathead_chr="chrom"
 gwascathead_bp="chromEnd"
 infogwascat="pubMedID;author;trait;initSample"
+typeformat="tab"
+}else{
+format="Other"
+gwascat_init_ch=Channel.fromPath(params.gwas_cat,checkIfExists:true)
+gwascathead_chr=params.head_chro_gwascat
+gwascathead_bp=params.head_bp_gwascat
+inforgwascat=params.head_info_gwascat
+typeformat=params.typeformat_gwascat
+infogwascat=params.head_info_gwascat
 }
 
 
@@ -168,7 +191,7 @@ process get_gwascat_hg19_pheno{
    script :
      out=params.output
    """
-   format_gwascat_pheno.r --file $gwascat --out $out
+   format_gwascat_pheno.r --file $gwascat --out $out --chro_head $gwascathead_chr --bp_head $gwascathead_bp --pheno_head ${params.head_pheno_gwascat} --beta_head ${params.head_beta_gwascat} --ci_head ${params.head_ci_gwascat} --p_head ${params.head_pval_gwascat}  --n_head ${params.head_n_gwascat} --freq_head ${params.head_af_gwascat} --rs_head ${params.head_rs_gwascat} --riskall_head ${params.head_riskall_gwascat} --format $format --typeformat $typeformat
    """
 }
 
@@ -220,7 +243,8 @@ process get_gwascat_hg19{
      phenoparam= (params.file_pheno=='') ? " $phenoparam " : " --file_pheno $filepheno "
      out=params.output
    """
-   format_gwascat.r --file $gwascat $chroparam $phenoparam --out $out --wind ${params.size_win_kb} 
+   format_gwascat.r --file $gwascat $chroparam $phenoparam --out $out --wind ${params.size_win_kb}  --chro_head ${params.head_chro_gwascat} --bp_head ${params.head_bp_gwascat} --pheno_head ${params.head_pheno_gwascat} --beta_head ${params.head_beta_gwascat} --ci_head ${params.head_ci_gwascat} --p_head ${params.head_pval_gwascat}  --n_head ${params.head_n_gwascat} --freq_head ${params.head_af_gwascat} --rs_head ${params.head_rs_gwascat} --riskall_head ${params.head_riskall_gwascat} --format $format
+
    """
 }
 

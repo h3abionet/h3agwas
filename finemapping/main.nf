@@ -274,7 +274,7 @@ process ComputedLd{
 }
 
 process ComputedFineMapCond{
-  label ''
+  label 'finemapping'
   cpus params.fm_cpus_req
   memory params.fm_mem_req
   input :
@@ -295,6 +295,7 @@ process ComputedFineMapCond{
 }
 
 process ComputedFineMapSSS{
+  label 'finemapping'
   memory params.fm_mem_req
   cpus params.fm_cpus_req
   input :
@@ -316,6 +317,7 @@ process ComputedFineMapSSS{
 
 process ComputedCaviarBF{
   memory params.fm_mem_req
+  label 'finemapping'
   input :
     file(filez) from caviarbf_gwas
     file(ld) from ld_caviarbf
@@ -364,6 +366,7 @@ paintor_fileannotplot=file('NOFILE')
 }
 }
 process ComputedPaintor{
+   label 'finemapping'
    memory params.fm_mem_req
    input :
     file(filez) from paintor_gwas
