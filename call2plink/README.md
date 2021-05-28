@@ -7,7 +7,7 @@ This workflow is run by
 
 and converts from an Illumina TOP/BOTTOM or FORWARD call file. Together with auxiliary input data, this file is first converted into a raw PLINK file and then the PLINK file is aligned to a strand, and then convered into binary PLINK format. This process can take a very long time.
 
-If you don't understand these formats, the bad news is that you really should. See  S. C. Nelson, K. F. Doheny, C. C. Laurie, and D. B. Mirel, "Is 'forward' the same as 'plus'?...and other adventures in SNP allele nomenclature." Trends in Genetics, vol. 28, no. 8, pp. 361-363, 2012. http://dx.doi.org/10.1016/j.tig.2012.05.002  The good news is that you are no talone
+If you don't understand these formats, the bad news is that you really should. See  S. C. Nelson, K. F. Doheny, C. C. Laurie, and D. B. Mirel, "Is 'forward' the same as 'plus'?...and other adventures in SNP allele nomenclature." Trends in Genetics, vol. 28, no. 8, pp. 361-363, 2012. http://dx.doi.org/10.1016/j.tig.2012.05.002  The good news is that you are not alone
 
 Essentially the problem since the reference genome changes over time, what is on the forward strand of one reference could become the reverse in the next. Not likely but could and does happen. Thus what someone sees as a SNP with A/C alleles could become a SNP with T/G alleles etc. For SNPs with A/C alleles we can easily see when something's flipped but if the allele is an A/T or C/G allele we can't differentiate between alternate alleles and reverse complements.
 

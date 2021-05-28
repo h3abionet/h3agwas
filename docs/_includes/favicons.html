@@ -1,0 +1,18 @@
+{% assign favicon_url = relative_root_path | append: '/assets/favicons/' | append: site.carpentry  %}
+
+{% if site.carpentry == 'swc' %}
+{% assign carpentry = 'Software Carpentry' %}
+{% elsif site.carpentry == 'dc' %}
+{% assign carpentry = 'Data Carpentry' %}
+{% elsif site.carpentry == 'lc' %}
+{% assign carpentry = 'Library Carpentry' %}
+{% elsif site.carpentry == 'cp' %}
+{% assign carpentry = 'The Carpentries' %}
+{% endif %}
+
+    <!-- Favicons for everyone -->
+    <link rel="apple-touch-icon-precomposed" sizes="192x192" href="{{ favicon_url }}/android-chrome-192x192.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="512x512" href="{{ favicon_url }}/android-chrome-512x512.png" />
+    <link rel="icon" type="image/png" href="{{ favicon_url }}/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="{{ favicon_url }}/favicon-16x16.png" sizes="16x16" />
+    <meta name="application-name" content="{{ carpentry }} - {{ site.title }}"/>
