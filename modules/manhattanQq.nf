@@ -4,7 +4,7 @@ include {
     checkCohortName;
     checkGenotypeReportPrefix;
     checkEmailAdressProvided;
-} from "./base.nf"
+} from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
     checkInputDir()
