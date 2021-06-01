@@ -42,7 +42,7 @@ include {
    
    convertPlinkLongFormatToPlinkBinary
 
-} from "${projectDir}/modules/getPlinkBinaryFromIlluminaReports.nf"
+} from "${projectDir}/modules/illuminaReportsToPlink.nf"
 
 
 workflow {
