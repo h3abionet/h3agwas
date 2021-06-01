@@ -1,11 +1,12 @@
 #!/usr/bin/env nextflow
 
 /*
- *  CONVERT GENOTYPE REPORTS TO LGEN
- *  ================================
+ *  CONVERT GENOTYPE REPORTS TO PLINK BINARY {bed+bim+fam} FILESET
+ *  ==============================================================
  *
  *  This script takes as input an illumina gsgt format dataset and  
  *  converts it to an lgen format of the PLINK long-format fileset
+ *  and then to PLINK binary fileset: plink.bed, plink.bim, plink.fam
  *
  *  The gsgt illumina data format is a set of
  *  genotype reports. A genotpye report is an csv file that contains 
@@ -23,6 +24,11 @@
 
 nextflow.enable.dsl = 2
 
+include {
+
+   checkCohortName
+
+} from "${projectDir}/modules/base.nf"
 
 include {
 
@@ -46,6 +52,8 @@ include {
 
 
 workflow {
+
+   checkCohortName()
 
    genotypeReports = getGenotypeReports()
 

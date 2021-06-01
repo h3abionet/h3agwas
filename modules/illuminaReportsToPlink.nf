@@ -1,5 +1,6 @@
-def getGenotypeReports() {
 
+def getGenotypeReports() {
+  
    return channel
             .fromPath( params.dataDir + "*_gtReport_*" )
 
@@ -34,9 +35,12 @@ process convertGenotypeReportsToLgen() {
       path "*.lgen"
 
    script:
+
+      gsgt2lgenTemplate = "${projectDir}/modules/templates/gsgt2lgen.py"
+
       """
       python \
-	     ${launchDir}/gsgt2lgen.py \
+        ${gsgt2lgenTemplate} \
 	     ${params.dataDir}${genotypeReports.baseName}.gz
       """
 
@@ -49,11 +53,11 @@ process concatenateLgenFiles() {
 
    output:
       publishDir path: "${params.outDir}", mode: 'copy'
-      path "gwas.lgen"
+      path "${params.cohortName}.lgen"
 
    script:
       """
-      cat ${lgenFiles} > gwas.lgen
+      cat ${lgenFiles} > "${params.cohortName}.lgen"
       """
    
 }
@@ -67,7 +71,7 @@ process getMapFileFromSnpReport() {
 
    output:
       publishDir path: "${params.outDir}", mode: 'copy'
-      path "gwas.map"
+      path "${params.cohortName}.map"
 
    script:
       """
@@ -77,7 +81,7 @@ process getMapFileFromSnpReport() {
       sed 's/,/ /g' | \
       awk '{print \$2,\$1,"0",\$3}' | \
       awk '\$1!="0"' | \
-      sed '1d' > gwas.map
+      sed '1d' > "${params.cohortName}.map"
       """
 
 }
@@ -91,7 +95,7 @@ process getFamFileFromSampleReport() {
 
    output:
       publishDir path: "${params.outDir}", mode: 'copy'
-      path "gwas.fam"
+      path "${params.cohortName}.fam"
 
    script:
       """
@@ -101,28 +105,28 @@ process getFamFileFromSampleReport() {
          -f2,13-14 \
          -d',' | \
       awk 'FS="," {print \$1,\$1,"0","0","-9","-9"}' | \
-      sed '1d' > gwas.fam
+      sed '1d' > "${params.cohortName}.fam"
       """
 }
 
 process convertPlinkLongFormatToPlinkBinary() {
 
    input:
-      path gwas_lgen
-      path gwas_map
-      path gwas_fam
+      path "${params.cohortName}_lgen"
+      path "${params.cohortName}_map"
+      path "${params.cohortName}_fam"
 
    output:
       publishDir path: "${params.outDir}", mode: 'copy'
-      path "cameroonScdGwasCohort.{bed,bim,fam,log}"
+      path "${params.cohortName}.{bed,bim,fam,log}"
 
    script:
       """
       plink \
-         --lfile ${gwas_lgen} \
-         --map ${gwas_map} \
-         --fam ${gwas_fam} \
+         --lfile "${params.cohortName}_lgen" \
+         --map "${params.cohortName}_map" \
+         --fam "${params.cohortName}_fam" \
          --make-bed \
-         --out cameroonScdGwasCohort
+         --out ${params.cohortName}
       """
 }
