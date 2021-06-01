@@ -2,21 +2,21 @@
 def getGenotypeReports() {
   
    return channel
-            .fromPath( params.dataDir + "*_gtReport_*" )
+            .fromPath( params.inputDir + "*_gtReport_*" )
 
 }
 
 def getSampleReport() {
 
    return channel
-            .fromPath( params.dataDir + params.sampleReport )
+            .fromPath( params.inputDir + params.sampleReport )
 
 }
 
 def getSnpReport() {
 
    return channel
-            .fromPath( params.dataDir + params.snpReport )
+            .fromPath( params.inputDir + params.snpReport )
 
 }
 
@@ -25,13 +25,14 @@ def getSnpReport() {
 process convertGenotypeReportsToLgen() {
 
    label 'bigMemory'
+   label 'datatable'
    tag "${genotypeReports.baseName}"
 
    input:
       path genotypeReports
 
    output:
-      publishDir path: "${params.outDir}", mode: 'copy'
+      publishDir path: "${params.outputDir}", mode: 'copy'
       path "*.lgen"
 
    script:
@@ -41,7 +42,8 @@ process convertGenotypeReportsToLgen() {
       """
       python \
         ${gsgt2lgenTemplate} \
-	     ${params.dataDir}${genotypeReports.baseName}.gz
+	     ${params.inputDir}${genotypeReports.baseName}.gz \
+        ${params.threads}
       """
 
 }
@@ -52,7 +54,7 @@ process concatenateLgenFiles() {
       path lgenFiles
 
    output:
-      publishDir path: "${params.outDir}", mode: 'copy'
+      publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.lgen"
 
    script:
@@ -70,7 +72,7 @@ process getMapFileFromSnpReport() {
       path snpReport
 
    output:
-      publishDir path: "${params.outDir}", mode: 'copy'
+      publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.map"
 
    script:
@@ -94,7 +96,7 @@ process getFamFileFromSampleReport() {
       path sampleReport
 
    output:
-      publishDir path: "${params.outDir}", mode: 'copy'
+      publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.fam"
 
    script:
@@ -111,13 +113,15 @@ process getFamFileFromSampleReport() {
 
 process convertPlinkLongFormatToPlinkBinary() {
 
+   label 'plink'
+
    input:
       path "${params.cohortName}_lgen"
       path "${params.cohortName}_map"
       path "${params.cohortName}_fam"
 
    output:
-      publishDir path: "${params.outDir}", mode: 'copy'
+      publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.{bed,bim,fam,log}"
 
    script:

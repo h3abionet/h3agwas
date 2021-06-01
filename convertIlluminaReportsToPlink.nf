@@ -27,25 +27,20 @@ nextflow.enable.dsl = 2
 include {
 
    checkCohortName
+   checkSampleReport
+   checkSnpReport
 
 } from "${projectDir}/modules/base.nf"
 
 include {
 
    getGenotypeReports;
-   
    getSampleReport;
-   
    getSnpReport;
-   
    convertGenotypeReportsToLgen;
-   
    concatenateLgenFiles;
-   
    getFamFileFromSampleReport;
-   
    getMapFileFromSnpReport;
-   
    convertPlinkLongFormatToPlinkBinary
 
 } from "${projectDir}/modules/illuminaReportsToPlink.nf"
@@ -54,22 +49,18 @@ include {
 workflow {
 
    checkCohortName()
+   checkSampleReport()
+   checkSnpReport()
 
    genotypeReports = getGenotypeReports()
-
    sampleReport = getSampleReport()
-   
    snpReport = getSnpReport()
-
-   
-   famFile = getFamFileFromSampleReport( sampleReport )
-   
-   mapFile = getMapFileFromSnpReport( snpReport )
    
    lgenFiles = convertGenotypeReportsToLgen( genotypeReports )
-   
    lgenFile = concatenateLgenFiles( lgenFiles )
-   
+   famFile = getFamFileFromSampleReport( sampleReport )
+   mapFile = getMapFileFromSnpReport( snpReport )
+
    convertPlinkLongFormatToPlinkBinary( lgenFile, 
                                         famFile, 
                                         mapFile )
