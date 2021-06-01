@@ -4,6 +4,8 @@ include {
     checkCohortName;
     checkGenotypeReportPrefix;
     checkEmailAdressProvided;
+    getBasicEmailSubject;
+    getBasicEmailMessage;
 } from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
@@ -25,6 +27,7 @@ def getInputChannels() {
 }
 
 process getAssociationReport {
+	label 'plink'
 	input:
 		tuple path(cohortBed), path(cohortBim), path(cohortFam)
 	output:
@@ -40,6 +43,7 @@ process getAssociationReport {
 }
 
 process drawManhattanPlot {
+	label 'qqman'
 	publishDir "${params.outputDir}", mode: 'copy'
 	input:
 		path associationReport
@@ -65,6 +69,7 @@ process drawManhattanPlot {
 }
 
 process drawQqPlot {
+	label 'qqman'
 	publishDir "${params.outputDir}", mode: 'copy'
 	input:
 		path associationReport
@@ -84,32 +89,11 @@ process drawQqPlot {
 
 def sendWorkflowExitEmail() {
 
-    subject = "[nextflow|h3agwaws] run ${workflow.runName} has finished"
+    subject = getBasicEmailSubject()
     attachment = [
         "${params.outputDir}manhattan.pdf",
         "${params.outputDir}qqplot.pdf"]
-    message = \
-        """\
-        Hi there, 
-
-        Your nextflow job ${workflow.scriptName}: ${workflow.runName} has finished.
-        Please check the attachments to this email,
-        and the execution summary below. 
-
-        All the best,
-        H 3 A G W A S
-
-
-
-        Pipeline execution summary
-        ---------------------------
-        Completed at: ${workflow.complete}
-        Duration    : ${workflow.duration}
-        Success     : ${workflow.success}
-        workDir     : ${workflow.workDir}
-        exit status : ${workflow.exitStatus}
-        """
-    .stripIndent()
+    message = getBasicEmailMessage()
 
     if (userEmailAddressIsProvided()) {
 	    sendMail(
