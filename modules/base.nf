@@ -33,3 +33,30 @@ def userEmailAddressIsProvided() {
 def stringIsNull(string) {
 	return ( string =~ /NULL/ )
 }
+
+def getBasicEmailSubject() {
+    return "[nextflow|h3agwaws] run ${workflow.runName} has finished"
+}
+def getBasicEmailMessage() {
+    return """\
+        Hi there, 
+
+        Your nextflow job ${workflow.scriptName}: ${workflow.runName} has finished.
+        Please check the attachments to this email,
+        and the execution summary below. 
+
+        All the best,
+        H 3 A G W A S
+
+
+
+        Pipeline execution summary
+        ---------------------------
+        Completed at: ${workflow.complete}
+        Duration    : ${workflow.duration}
+        Success     : ${workflow.success}
+        workDir     : ${workflow.workDir}
+        exit status : ${workflow.exitStatus}
+        """
+        .stripIndent()
+}
