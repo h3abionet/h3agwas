@@ -1,8 +1,34 @@
 include {
+    checkInputDir;
+    checkCohortName;
+    checksamplesWithPoorClinicalData;
+    checkEmailAdressProvided;
     userEmailAddressIsProvided;
     getBasicEmailSubject;
     getBasicEmailMessage;
 } from "${projectDir}/modules/base.nf"
+
+def checkInputParams() {
+    checkInputDir()
+    checkCohortName()
+    checkEmailAdressProvided()
+    checksamplesWithPoorClinicalData()
+}
+
+def getInputChannels() {
+
+    bed = channel.fromPath(
+        "${params.inputDir}${params.cohortName}.bed")
+    bim = channel.fromPath(
+        "${params.inputDir}${params.cohortName}.bim")
+    fam = channel.fromPath(
+        "${params.inputDir}${params.cohortName}.fam")
+
+    return [
+        bed.combine(bim).combine(fam),
+        channel.fromPath("${params.samplesWithPoorClinicalData}")]
+
+}
 
 process getListOfDuplicatePositions {
     label 'plink'
@@ -20,6 +46,24 @@ process getListOfDuplicatePositions {
         """
 }
 
+process removeSamplesWithPoorClinicalData {
+    label 'plink'
+    input:
+        tuple path(bed), path(bim), path(fam)
+        path(poorSamples)
+    output:
+        path("${output}.{bed,bim,fam}")        
+    script:
+        output = "${params.cohortName}.sampleFiltered"
+        """
+        plink \
+            --bfile ${params.cohortName} \
+            --remove ${poorSamples} \
+            --make-bed \
+            --out ${output}
+        """
+}
+
 process removeDuplicatedSnvPositions {
     label 'plink'
     publishDir "${params.outputDir}/quality-control", mode: 'copy'
@@ -32,7 +76,7 @@ process removeDuplicatedSnvPositions {
         output = "${params.cohortName}.DuplicatesRemoved"
         """
         plink \
-            --bfile ${params.cohortName} \
+            --bfile ${params.cohortName}.sampleFiltered \
             --make-bed \
             -exclude plink.dupvar \
             --out ${output}

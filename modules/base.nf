@@ -26,6 +26,11 @@ def checkCohortName () {
 		exit 1, 'please provide a cohort name!'
 	}
 }
+def checksamplesWithPoorClinicalData() {
+    if (stringIsNull(params.samplesWithPoorClinicalData)) {
+        exit 1, 'please provide a file listing poor samples to remove'
+    }
+}
 
 def userEmailAddressIsProvided() {
 	return !(stringIsNull(params.email))
