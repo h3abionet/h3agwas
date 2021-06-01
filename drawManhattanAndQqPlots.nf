@@ -35,7 +35,7 @@ workflow {
 
 	cohortData = getInputChannels()
 
-	associationReport = getAssociationReport(cohortData.collect())
+	associationReport = getAssociationReport(cohortData)
 
 	drawManhattanPlot(associationReport)
 
