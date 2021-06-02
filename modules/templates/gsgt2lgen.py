@@ -4,7 +4,7 @@ import pandas as pd
 import sys, os.path
 
 # create file to write out lgen data
-gsgtFile = sys.argv[1]
+gsgtFile = str(sys.argv[1])
 threads = int(sys.argv[2])
 
 outFile = gsgtFile.replace(".csv.gz",".lgen")
