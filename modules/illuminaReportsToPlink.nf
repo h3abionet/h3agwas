@@ -19,7 +19,7 @@ def getInputChannels() {
 
 
 def getGenotypeReports() {
-  
+
    return channel
             .fromPath( params.inputDir + "*_gtReport_*" )
 
@@ -60,9 +60,9 @@ process convertGenotypeReportsToLgen() {
 
       """
       python \
-        ${gsgt2lgenTemplate} \
-	     ${params.inputDir}${genotypeReports.baseName}.gz \
-        ${params.threads}
+          ${gsgt2lgenTemplate} \
+	      ${params.inputDir}${genotypeReports.baseName}.gz \
+          ${task.cpus}
       """
 
 }
@@ -80,7 +80,7 @@ process concatenateLgenFiles() {
       """
       cat ${lgenFiles} > "${params.cohortName}.lgen"
       """
-   
+
 }
 
 process getMapFileFromSnpReport() {
