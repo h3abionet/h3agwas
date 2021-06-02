@@ -47,6 +47,9 @@ result = pd.read_csv(args.inp_resgwas,delim_whitespace=True, dtype={args.chro_he
 
 sub_result=result.loc[result[args.rs_header].isin(list_rs)]
 TAB=chr(9)
+
+out_bed=args.out_head+"_all.bed"
+result[[args.chro_header,  args.pos_header,  args.pos_header, args.rs_header]].to_csv(out_bed, sep=TAB, header=False, index=False)
 if args.freq_header :
    PosCol=[args.chro_header, args.pos_header,  args.pos_header, args.rs_header, args.pval_header, args.freq_header]
 else :
@@ -77,4 +80,5 @@ for x in sub_result[args.rs_header] :
     small.END = small.END.astype(int)
     #small['#CHROM'] = small['#CHROM'].astype(int)
     small.to_csv(out_file, sep=TAB, header=True, index=False,na_rep="NA")
+   
 

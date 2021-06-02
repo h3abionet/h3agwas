@@ -97,6 +97,7 @@ list_vcf2=Channel.fromPath(file(params.file_listvcf).readLines())
 
 if(params.do_stat){
 process computedstat{
+ label 'py3utils'
  memory params.plink_mem_req
   time   params.big_time
   input :
@@ -131,6 +132,7 @@ ref_ch=Channel.fromPath(params.reffasta)
 if(params.min_scoreinfo>0){
 list_vcf=ref_ch.combine(list_vcf)
 process formatvcfscore{
+  label 'py3utils'
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time
@@ -158,6 +160,7 @@ process formatvcfscore{
 
 }else{
 process formatvcf{
+  label 'py3utils'
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time

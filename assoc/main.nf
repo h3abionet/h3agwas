@@ -725,6 +725,7 @@ if (params.boltlmm == 1) {
      covariate_option = "--cov_list ${params.covariates}"
   else
      covariate_option = ""
+
   process  getBoltPhenosCovar {
     input:
       file(covariates) from data_ch_bolt
@@ -749,7 +750,7 @@ if (params.boltlmm == 1) {
   if(params.bolt_covariates_type=="" & params.covariates_type!=""){
     bolt_covariates_type=params.covariates_type
   }else{
-  bolt_covariates_type=params.bolt_covariates_type
+    bolt_covariates_type=params.bolt_covariates_type
   }
    if (params.covariates) 
       cov_bolt = boltlmmCofact(params.covariates,bolt_covariates_type)
@@ -760,10 +761,9 @@ if (params.boltlmm == 1) {
    if(params.bolt_use_missing_cov==1)
      missing_cov=" --covarUseMissingIndic "
 
-   pval_head = "P_BOLT_LMM"
-
+  pval_head = "P_BOLT_LMM"
   type_lmm="--lmm"
- }
+
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
   else rs_ch_exclude_bolt=file('NO_FILE')
 
@@ -794,7 +794,6 @@ if (params.boltlmm == 1) {
     time   params.big_time
     input:
       set file(plinksbed), file(plinksbim), file(plinksfam) from plink_ch_bolt
-      //val nb_snp from nbsnp_ch_bolt
       file(phef) from newdata_ch_bolt
       file(rs_exclude) from rs_ch_exclude_bolt
       file(SnpChoiceMod) from filers_matrel_bolt
@@ -829,8 +828,6 @@ if (params.boltlmm == 1) {
      --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt \
     $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt} \
       --maxModelSnps=\$BoltNbMaxSnps
-      #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp |\
-      #       grep -B 1 -E "^[ ]+h2" 1> $outReml 
       """
   }
 
@@ -850,7 +847,7 @@ if (params.boltlmm == 1) {
   }
 
 
-}/*JT End of boltlmm*/ else {
+}else {
   report_bolt_ch = Channel.empty()
 }
  
@@ -1376,18 +1373,6 @@ if (params.plink_gxe==1) {
   report_plink_gxe=Channel.empty()
 }
 
-// Partition the GRM into 100 parts
-// ${params.gcta64_bin} --bfile test --make-grm-part 100 1 --thread-num 5 --out test
-// ${params.gcta64_bin} --bfile test --make-grm-part 100 2 --thread-num 5 --out test
-// ...
-// ${params.gcta64_bin} --bfile test --make-grm-part 100 100 --thread-num 5 --out test
-// # Merge all the parts together (Linux, Mac)
-// cat test.part_3_*.grm.id > test.grm.id
-// cat test.part_3_*.grm.bin > test.grm.bin
-// cat test.part_3_*.grm.N.bin > test.grm.N.bin
-// # Make a sparse GRM from the merged full-dense GRM
-// ${params.gcta64_bin} --grm test_grm --make-bK-sparse 0.05 --out test_sp_grm
-//
 if(params.fastgwa==1){
 
 if(params.gcta_grmfile==""){

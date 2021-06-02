@@ -45,10 +45,7 @@ error('params.file_listvcf : file contains list vcf not found')
 list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
 
 process formatvcfinbgen{
-
-
-}
-process formatvcfinbgen{
+  label 'py3utils'
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time

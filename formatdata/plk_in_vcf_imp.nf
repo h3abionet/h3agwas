@@ -127,6 +127,7 @@ process convertrsname{
 //remove multi allelic snps:
 
 process deletedmultianddel{
+   label 'R'
    memory params.plink_mem_req
    cpus params.max_plink_cores
    input :
@@ -162,6 +163,7 @@ process refallele{
 hgrefconv=Channel.fromPath(params.reffasta,checkIfExists:true)
 if(params.parralchro==0){
 process convertInVcf {
+   label 'py3utils'
    memory params.plink_mem_req
    cpus params.max_plink_cores
    time params.big_time
@@ -199,7 +201,9 @@ process CounChro{
 check2 = Channel.create()
 ListeChro=chrolist.flatMap { list_str -> list_str.split() }.tap ( check2)
 
+
 process convertInVcfChro{
+   label 'py3utils'
    memory params.plink_mem_req
    cpus params.max_plink_cores
    input :
@@ -224,6 +228,7 @@ vcf=vcf_chro.collect()
 
 
 process mergevcf{
+  label 'py3utils'
   cpus params.max_plink_cores
   input :
    val(allfile) from vcf   
@@ -234,7 +239,7 @@ process mergevcf{
     fnames = allfile.join(" ")
     out="${params.output}"
     """  
-    bcftools concat -Oz -o ${out}.vcf.gz --threads ${params.max_plink_cores} $fnames
+    ${params.bin_bcftools} concat -Oz -o ${out}.vcf.gz --threads ${params.max_plink_cores} $fnames
     """
 }
 
@@ -244,6 +249,7 @@ process mergevcf{
 hgref=Channel.fromPath(params.reffasta, checkIfExists:true)
 hgref2=Channel.fromPath(params.reffasta, checkIfExists:true)
 process checkfixref{
+  label 'py3utils'
   input :
     file(vcf) from vcfi
     file(hg) from hgref
@@ -258,6 +264,7 @@ process checkfixref{
 }
 
 process checkVCF{
+  label 'py3utils'
   input :
     file(vcf) from vcfi2
     file(hg) from hgref2

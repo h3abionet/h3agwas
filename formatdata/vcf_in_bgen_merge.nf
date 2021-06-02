@@ -45,6 +45,7 @@ error('params.file_listvcf : file contains list vcf not found')
 list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
 
 process filter_vcf{
+  label 'py3utils'
   cpus params.max_cores
   memory params.mem_req
   time   params.big_time
@@ -62,6 +63,7 @@ process filter_vcf{
 lcf=list_vcf_filt.collect()
 
 process mergeall{
+  label 'py3utils'
   time   params.big_time
   memory params.mem_req
   input :
@@ -76,6 +78,7 @@ process mergeall{
     
 }
 process formatvcfinbgen{
+  label 'py3utils'
   cpus params.max_cores
   memory params.mem_req
   time   params.big_time

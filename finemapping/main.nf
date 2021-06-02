@@ -73,7 +73,7 @@ params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin"]
+params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req"]
 param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
 param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp"]
 allowed_params+=params_mf
@@ -137,6 +137,7 @@ params.big_time='100h'
 params.threshold_p=5*10**-8
 params.n_causal_snp=3
 params.caviarbf_avalue="0.1,0.2,0.4"
+params.caviar_mem_req="40GB"
 params.paintor_fileannot=""
 params.paintor_listfileannot=""
 //params.paintor_annot=""
@@ -316,7 +317,7 @@ process ComputedFineMapSSS{
 }
 
 process ComputedCaviarBF{
-  memory params.fm_mem_req
+  memory params.caviar_mem_req
   label 'finemapping'
   input :
     file(filez) from caviarbf_gwas

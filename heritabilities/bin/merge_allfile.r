@@ -8,11 +8,13 @@ if (length(args)!=2){
 }
 
 listfile=strsplit(args[1], split=',')[[1]]
-listfile="1-pheno-1_type1_gemma.stat"
+#listfile="1-pheno-1_type1_gemma.stat"
+
 headout=args[2]
 Cmt<-1
 for(file in listfile){
 Data<-read.table(file, header=T)
+Data$InfoSoft<-as.character(Data$InfoSoft)
 if(Cmt==1)DataF<-Data
 else DataF<-rbind(DataF, Data)
 Cmt<-Cmt+1

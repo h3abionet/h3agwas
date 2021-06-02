@@ -183,6 +183,7 @@ gwasformat.collect().into { listgwasform_col1; listgwasform_col2}
 
 /*Mtag*/
 process doMTAG{
+   label 'mtag'
    memory params.mtag_mem_req
    time params.big_time
   input :
@@ -196,10 +197,26 @@ process doMTAG{
    Ninfo=head_N!="" ? " --n_name ${head_N} " : " --n_value ${params.list_N}" 
    ////--info_min $info_min
    """
-   python ${params.bin_mtag} --sumstats $fnames --out ./$out --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps   ${params.opt_mtag}
+   ${params.bin_mtag} --sumstats $fnames --out ./$out --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps   ${params.opt_mtag} --force
 
    """
 }
+/*
+process showMtag{
+    memory params.other_process_mem_req
+    publishDir params.output_dir, overwrite:true, mode:'copy'
+    input:
+      set val(base), val(this_pheno), file(assoc) from res_plink_gxe
+    output:
+      file("${out}*")  into report_plink_gxe
+    script:
+      our_pheno = this_pheno.replaceAll("_","-")
+      out = "C057$our_pheno"
+      """
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNP --pval_header P_GXE --beta_header Z_GXE --info_prog "Plink,GxE : ${params.gxe}"
+      """
+  }
+*/
 
 if(listfilegwas.size()>2){
 list_file2by2=[]
@@ -211,6 +228,7 @@ for (i = 0; i <(nbfile-1); i++){
 }
 
 process doMTAG2by2{
+   label 'mtag'
    memory params.mtag_mem_req
    time params.big_time
    input :
@@ -224,7 +242,7 @@ process doMTAG2by2{
         file2=listfile[poss[1]]
         output=""+file1+"_"+file2
         """
-        python ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps ${params.opt_mtag}
+        ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps ${params.opt_mtag} --force
         """
 }
 }
