@@ -5,7 +5,7 @@ import sys, os.path
 
 # create file to write out lgen data
 gsgtFile = sys.argv[1]
-threads = sys.argv[2]
+threads = int(sys.argv[2])
 
 outFile = gsgtFile.replace(".csv.gz",".lgen")
 lgenFile = open(os.path.basename(outFile), "w")
