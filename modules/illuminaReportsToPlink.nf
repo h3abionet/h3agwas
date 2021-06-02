@@ -54,16 +54,8 @@ process convertGenotypeReportsToLgen() {
         publishDir path: "${params.outputDir}", mode: 'copy'
         path "*.lgen"
 
-   script:
-
-      gsgt2lgenTemplate = "${projectDir}/modules/templates/gsgt2lgen.py"
-
-        """
-        python \
-            ${gsgt2lgenTemplate} \
-            ${params.inputDir}${genotypeReports.baseName}.gz \
-            ${params.threads}
-        """
+    script:
+        template 'convertGenotypeReportsToLgen.py'
 
 }
 

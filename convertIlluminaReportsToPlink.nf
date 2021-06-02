@@ -42,7 +42,7 @@ include {
 
 workflow {
 
-    checkInputParams()
+    //checkInputParams()
 
     (genotypeReports,
     sampleReport,
@@ -51,6 +51,8 @@ workflow {
     lgenFiles = convertGenotypeReportsToLgen( genotypeReports )
 
     lgenFile = concatenateLgenFiles( lgenFiles )
+
+    /*
 
     famFile = getFamFileFromSampleReport( sampleReport )
 
@@ -61,9 +63,10 @@ workflow {
         famFile, 
         mapFile)
 
+    */
 }
 
 workflow.onComplete {
     printWorkflowExitMessage()
-    sendWorkflowExitEmail()
+    //sendWorkflowExitEmail()
 }
