@@ -15,6 +15,18 @@ def checkGenotypeReportPrefix() {
     }
     // also need to check if any file exists... //
 }
+def checkSampleReport() {
+    if (stringIsNull(params.sampleReport)) {
+        exit 1, 'please provide a sample report file!'
+    }
+    // also need to check if any file exists... //
+}
+def checkSnpReport() {
+    if (stringIsNull(params.snpReport)) {
+        exit 1, 'please provide a SNP report file!'
+    }
+    // also need to check if any file exists... //
+}
 def checkEmailAdressProvided() {
     if (!userEmailAddressIsProvided()) {
         println 'You have not specified an email address; ' \
