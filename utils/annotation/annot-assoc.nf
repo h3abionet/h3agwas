@@ -218,40 +218,96 @@ process ExtractAllRs{
     input:
        file(gwas_file) from gwas_ch_annovar
     output :
-      file("${out}_all.bed") into bed_annovar
+      file("${out}_all.annov") into info_annovar, info_annovar_chro, info_annovar_2
     script :
        out=params.output
        """ 
-      an_extract_rs.py --inp_resgwas  $gwas_file --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --list_rs $params.list_rs --around_rs ${params.around_rs} --out_head $out
+      an_extract_rs.py --inp_resgwas  $gwas_file --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --list_rs $params.list_rs --around_rs ${params.around_rs} --out_head $out --a1_header $head_A1 --a2_header  $head_A2
        """
 }
+  process getListeChro{
+        input :
+          file(BimFile) from info_annovar_chro
+        output :
+          stdout into chrolist
+        script:
+         """
+         cat $BimFile|awk '{print \$1}'|uniq|sort|uniq
+        """
+  }
+  chrolist=chrolist.flatMap { list_str -> list_str.split() }
 
-listdb=params.list_db_anovar.split(',').toList()
+
+listdb=Channel.from(params.list_db_anovar.split(','))
 process getannovar_db {
   label 'Annovar'
-  input :
-    file(bedfile) from bed_annovar
+  input : 
+      val(db) from listdb
   publishDir "${params.output_dir}/dbzip/", overwrite:true, mode:'copy'
-  each db from listdb
   output:
-    file("humandb/*") into db_annovar
+    file("humandb/${params.ref_annovar}_*.txt") into db_annovar
   script :
-   output=params.ref_annovar+"_" + db+".zip"
+   output=params.ref_annovar+"_" + db+'.txt'
    """
    ${params.bin_annovar} -downdb -buildver ${params.ref_annovar} -webfrom annovar $db humandb
    """
 }
 
-process extractannovar_pos{
+info_annovar=info_annovar.combine(db_annovar.flatMap())
+
+process annovar_chro_db{
    input :
-     file(inputf) from db_annovar
+     set file(filepos_annov), file(annov_db) from info_annovar
+   each chro from chrolist
+   output :
+      set val(chro),file("$fileout") into list_db_format_ch_chro
    script :
-     dirres=inputf.baseName
+     db=annov_db.baseName
+     out_chro_tmp=db
+     out_annov_tmp=chro+"_tmp.annov"
+     fileout=db+"_"+chro+".txt"
      """
-     unzip $inputf 
-     cd $dirres/
+     awk -v chro=$chro '{if(\$1==chro)print \$0}' $filepos_annov > $out_annov_tmp
+     head -1 $annov_db > $out_chro_tmp
+     awk -v chro=$chro '{if(\$1==chro)print \$0}' $annov_db >> $out_chro_tmp
+     an_extract_info.py --list_pos $out_annov_tmp --annov_file $out_chro_tmp --out $fileout 
+     rm $out_chro_tmp $out_annov_tmp
      """
 }
+
+list_db_chro=info_annovar_2.combine(list_db_format_ch_chro.groupTuple())
+process mergechro_db{
+ input :
+    set file(infoannov),val(chro), file(listfile) from list_db_chro
+  publishDir "${params.output_dir}/db_annov/", overwrite:true, mode:'copy'
+  output :
+    file(out) into merge_chro_ch
+  script :
+    out_annov_tmp=chro+"_tmp.bed"
+    listfch=listfile.join(",")
+    out=chro+"_merge.annov"
+    """
+    awk -v chro=$chro '{if(\$1==chro)print \$0}' $infoannov > $out_annov_tmp
+    merge_file.py --list_pos $out_annov_tmp --list_file $listfch --out $out
+    """
+}
+
+
+db_format_ch=merge_chro_ch.collect()
+process merge_annovar{
+   input :
+    file(listfile) from db_format_ch
+   output:
+    set file(file_annot), file(info_file_annot) into fileannot_ch  
+   script :
+      file_annot="annot"
+      info_file_annot="annot.info"
+      """
+      ls -l ${params.output_dir}/db_annov/*_merge.annov | awk -F"[_/]" '{\${NF-1}"\t"\$0}'> $file_annot  
+      touch $info_file_annot
+      """
+}
+//fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot)))
 }
 
 

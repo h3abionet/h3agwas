@@ -51,6 +51,7 @@ params.poshead_a1_inforef=3
 params.poshead_a2_inforef=4
 params.bin_bcftools="bcftools"
 params.bin_samtools="samtools"
+params.bcftools_mem_req="30GB"
 
 params.plink_mem_req="10GB"
 params.max_plink_cores="5"
@@ -164,7 +165,7 @@ hgrefconv=Channel.fromPath(params.reffasta,checkIfExists:true)
 if(params.parralchro==0){
 process convertInVcf {
    label 'py3utils'
-   memory params.plink_mem_req
+   memory params.bcftools_mem_req
    cpus params.max_plink_cores
    time params.big_time
    input :

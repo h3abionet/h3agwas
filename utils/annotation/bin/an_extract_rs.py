@@ -20,6 +20,8 @@ def parseArguments():
     parser.add_argument('--pval_header',type=str,required=True,help="pvalue header in inp files")
     parser.add_argument('--beta_header',type=str,required=False,help="beta header in inp files")
     parser.add_argument('--freq_header',type=str,required=False,help="frequencies header in inp files")
+    parser.add_argument('--a1_header',type=str,required=False,help="a1 header in inp files")
+    parser.add_argument('--a2_header',type=str,required=False,help="a2 header in inp file")
     parser.add_argument('--around_rs',type=float,required=True,help="around rs (pb)")
     parser.add_argument('--maf',type=float,default=0.0,help="minor allele frequencies")
     parser.add_argument('--out_head',type=str,default="out",help="around rs (pb)")
@@ -48,8 +50,10 @@ result = pd.read_csv(args.inp_resgwas,delim_whitespace=True, dtype={args.chro_he
 sub_result=result.loc[result[args.rs_header].isin(list_rs)]
 TAB=chr(9)
 
-out_bed=args.out_head+"_all.bed"
-result[[args.chro_header,  args.pos_header,  args.pos_header, args.rs_header]].to_csv(out_bed, sep=TAB, header=False, index=False)
+out_annov=args.out_head+"_all.annov"
+if args.a1_header and args.a2_header:
+  result[[args.chro_header,  args.pos_header,  args.pos_header, args.a1_header, args.a2_header]].to_csv(out_annov, sep=TAB, header=False, index=False)
+
 if args.freq_header :
    PosCol=[args.chro_header, args.pos_header,  args.pos_header, args.rs_header, args.pval_header, args.freq_header]
 else :
