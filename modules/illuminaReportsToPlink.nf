@@ -51,7 +51,7 @@ process convertGenotypeReportsToLgen() {
         path genotypeReports
 
     output:
-        publishDir path: "${params.outputDir}", mode: 'copy'
+        //publishDir path: "${params.outputDir}", mode: 'copy'
         path "*.lgen"
 
     script:
@@ -65,7 +65,7 @@ process concatenateLgenFiles() {
       path lgenFiles
 
    output:
-      publishDir path: "${params.outputDir}", mode: 'copy'
+      //publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.lgen"
 
    script:
