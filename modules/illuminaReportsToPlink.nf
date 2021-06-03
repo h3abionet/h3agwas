@@ -43,27 +43,19 @@ def getSnpReport() {
 
 process convertGenotypeReportsToLgen() {
 
-   label 'bigMemory'
-   label 'datatable'
-   tag "${genotypeReports.baseName}"
+    label 'bigMemory'
+    label 'datatable'
+    tag "${genotypeReports.baseName}"
 
-   input:
-      path genotypeReports
+    input:
+        path genotypeReports
 
-   output:
-      publishDir path: "${params.outputDir}", mode: 'copy'
-      path "*.lgen"
+    output:
+        publishDir path: "${params.outputDir}", mode: 'copy'
+        path "*.lgen"
 
-   script:
-
-      gsgt2lgenTemplate = "${projectDir}/modules/templates/gsgt2lgen.py"
-
-      """
-      python \
-          ${gsgt2lgenTemplate} \
-	      ${params.inputDir}${genotypeReports.baseName}.gz \
-          ${task.cpus}
-      """
+    script:
+        template 'convertGenotypeReportsToLgen.py'
 
 }
 

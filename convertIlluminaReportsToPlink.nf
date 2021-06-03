@@ -42,15 +42,20 @@ include {
 
 workflow {
 
-    checkInputParams()
+    //checkInputParams()
 
     (genotypeReports,
     sampleReport,
     snpReport) = getInputChannels()
 
     lgenFiles = convertGenotypeReportsToLgen( genotypeReports )
+
     lgenFile = concatenateLgenFiles( lgenFiles )
+
+    /*
+
     famFile = getFamFileFromSampleReport( sampleReport )
+
     mapFile = getMapFileFromSnpReport( snpReport )
 
     convertPlinkLongFormatToPlinkBinary(
@@ -58,9 +63,10 @@ workflow {
         famFile, 
         mapFile)
 
+    */
 }
 
 workflow.onComplete {
     printWorkflowExitMessage()
-    sendWorkflowExitEmail()
+    //sendWorkflowExitEmail()
 }
