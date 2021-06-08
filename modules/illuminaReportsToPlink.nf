@@ -39,7 +39,7 @@ def getInputChannels() {
 process convertGenotypeReportsToLgen() {
     label 'smallMemory'
     //label 'datatable'
-    tag "${genotypeReports.baseName}"
+    tag "${genotypeReportChunks.baseName}"
     input:
         path genotypeReportChunk
     output:
