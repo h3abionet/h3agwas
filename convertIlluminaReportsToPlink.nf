@@ -35,7 +35,7 @@ include {
     //concatenateLgenFiles;
     getFamFileFromSampleReport;
     getMapFileFromSnpReport;
-    convertPlinkLongFormatToPlinkBinary
+    convertPlinkLongFormatToPlinkBinary;
     sendWorkflowExitEmail;
 } from "${projectDir}/modules/illuminaReportsToPlink.nf"
 
@@ -48,7 +48,7 @@ workflow {
     sampleReport,
     snpReport) = getInputChannels()
 
-    lgenFileChunks = convertGenotypeReportsToLgen( genotypeReportChunks ) | view()
+    lgenFileChunks = convertGenotypeReportsToLgen( genotypeReportChunks )
     lgenFileChunks
         .collectFile( name: "${params.cohortName}.lgen", 
                       sort: true, 
