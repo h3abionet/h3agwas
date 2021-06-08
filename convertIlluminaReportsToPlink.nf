@@ -44,15 +44,18 @@ workflow {
 
     //checkInputParams()
 
-    (genotypeReports,
+    (genotypeReportChunks,
     sampleReport,
     snpReport) = getInputChannels()
 
-    lgenFiles = convertGenotypeReportsToLgen( genotypeReports ) | view()
+    lgenFileChunks = convertGenotypeReportsToLgen( genotypeReportChunks ) | view()
+    lgenFileChunks
+        .collectFile( name: "${params.cohortName}.lgen", 
+                      sort: true, 
+                      storeDir: "${params.outputDir}" )        
 
-    /*
-
-    lgenFile = concatenateLgenFiles( lgenFiles )
+    lgenFile = channel.fromPath( params.outputDir + 
+                                "${params.cohortName}.lgen" )
 
     famFile = getFamFileFromSampleReport( sampleReport )
 
@@ -63,7 +66,6 @@ workflow {
         famFile, 
         mapFile)
 
-    */
 }
 
 workflow.onComplete {

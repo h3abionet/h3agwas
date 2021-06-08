@@ -22,6 +22,10 @@ def getGenotypeReports() {
   
    return channel
             .fromPath( params.inputDir + "*_gtReport_*" )
+            .splitText( by: 5000000,
+                        keepHeader: false,
+                        file: true,
+                        compress: false )
 
 }
 
@@ -43,22 +47,29 @@ def getSnpReport() {
 
 process convertGenotypeReportsToLgen() {
 
-    label 'bigMemory'
-    label 'datatable'
+    label 'smallMemory'
+    //label 'datatable'
     tag "${genotypeReports.baseName}"
 
     input:
-        path genotypeReports
+        path genotypeReportChunk
 
     output:
         //publishDir path: "${params.outputDir}", mode: 'copy'
         path "*.lgen"
 
     script:
-        template 'convertGenotypeReportsToLgen.py'
+        //template 'convertGenotypeReportsToLgen.pl'
+        """
+        perl \
+            "${launchDir}/templates/convertGenotypeReportsToLgen.pl" \
+            ${genotypeReportChunk} \
+            ${params.numberOfGtReportHeaderLines}
+        """
 
 }
 
+/*
 process concatenateLgenFiles() {
 
    input:
@@ -74,6 +85,7 @@ process concatenateLgenFiles() {
       """
    
 }
+*/
 
 process getMapFileFromSnpReport() {
 
@@ -154,7 +166,6 @@ def sendWorkflowExitEmail() {
             subject: getBasicEmailSubject(),
             body: getBasicEmailMessage(),
             attach: [
-                "${params.outputDir}manhattan.pdf",
-                "${params.outputDir}qqplot.pdf"])
+                "${params.reportsDir}/report.html"])
    }
 }
