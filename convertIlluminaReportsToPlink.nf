@@ -42,7 +42,7 @@ include {
 
 workflow {
 
-    //checkInputParams()
+    checkInputParams()
 
     (genotypeReportChunks,
     sampleReport,
