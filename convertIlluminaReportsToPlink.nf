@@ -63,8 +63,8 @@ workflow {
 
     convertPlinkLongFormatToPlinkBinary(
         lgenFile, 
-        famFile, 
-        mapFile)
+        mapFile, 
+        famFile )
 
 }
 
