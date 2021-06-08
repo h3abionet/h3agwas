@@ -38,9 +38,7 @@ include {
     sendWorkflowExitEmail;
 } from "${projectDir}/modules/illuminaReportsToPlink.nf"
 
-
 workflow {
-
     checkInputParams()
 
     (genotypeReportChunks,

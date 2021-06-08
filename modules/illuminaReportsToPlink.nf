@@ -1,7 +1,7 @@
 include {
-    checkCohortName
-    checkSampleReport
-    checkSnpReport
+    checkCohortName;
+    checkSampleReport;
+    checkSnpReport;
 } from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
@@ -17,47 +17,35 @@ def getInputChannels() {
         getSnpReport()]
 }
 
-
-def getGenotypeReports() {
-  
+def getGenotypeReports() { 
    return channel
             .fromPath( params.inputDir + "*_gtReport_*" )
             .splitText( by: 5000000,
                         keepHeader: false,
                         file: true,
                         compress: false )
-
 }
 
 def getSampleReport() {
-
    return channel
             .fromPath( params.inputDir + params.sampleReport )
-
 }
 
 def getSnpReport() {
-
    return channel
             .fromPath( params.inputDir + params.snpReport )
-
 }
 
 
-
 process convertGenotypeReportsToLgen() {
-
     label 'smallMemory'
     //label 'datatable'
     tag "${genotypeReports.baseName}"
-
     input:
         path genotypeReportChunk
-
     output:
-        //publishDir path: "${params.outputDir}", mode: 'copy'
+        publishDir path: "${params.outputDir}"
         path "*.lgen"
-
     script:
         //template 'convertGenotypeReportsToLgen.pl'
         """
@@ -66,38 +54,29 @@ process convertGenotypeReportsToLgen() {
             ${genotypeReportChunk} \
             ${params.numberOfGtReportHeaderLines}
         """
-
 }
 
 /*
 process concatenateLgenFiles() {
-
    input:
       path lgenFiles
-
    output:
       //publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.lgen"
-
    script:
       """
       cat ${lgenFiles} > "${params.cohortName}.lgen"
       """
-   
 }
 */
 
 process getMapFileFromSnpReport() {
-
    label 'smallMemory'
-
    input:
       path snpReport
-
    output:
       publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.map"
-
    script:
       """
       cut \
@@ -108,20 +87,15 @@ process getMapFileFromSnpReport() {
       awk '\$1!="0"' | \
       sed '1d' > "${params.cohortName}.map"
       """
-
 }
 
 process getFamFileFromSampleReport() {
-
    label 'smallMemory'
-
    input:
       path sampleReport
-
    output:
       publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.fam"
-
    script:
       """
       grep \
@@ -135,18 +109,14 @@ process getFamFileFromSampleReport() {
 }
 
 process convertPlinkLongFormatToPlinkBinary() {
-
    label 'plink'
-
    input:
       path "${params.cohortName}.lgen"
       path "${params.cohortName}.map"
       path "${params.cohortName}.fam"
-
    output:
       publishDir path: "${params.outputDir}", mode: 'copy'
       path "${params.cohortName}.{bed,bim,fam,log}"
-
    script:
       """
       plink \
@@ -159,7 +129,6 @@ process convertPlinkLongFormatToPlinkBinary() {
 }
 
 def sendWorkflowExitEmail() {
-
     if (userEmailAddressIsProvided()) {
         sendMail(
             to: "${params.email}",
