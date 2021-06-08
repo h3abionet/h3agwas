@@ -30,18 +30,16 @@ def getSnpReport() {
 }
 
 def getInputChannels() {
-    return [
-        getGenotypeReports(),
-        getSampleReport(),
-        getSnpReport()]
+    return [ getGenotypeReports(),
+             getSampleReport(),
+             getSnpReport()   ]
 }
 
 process convertGenotypeReportsToLgen() {
     label 'smallMemory'
-    //label 'datatable'
     tag "${genotypeReportChunks.baseName}"
     input:
-        path genotypeReportChunk
+        path genotypeReportChunks
     output:
         publishDir path: "${params.outputDir}"
         path "*.lgen"
@@ -50,24 +48,10 @@ process convertGenotypeReportsToLgen() {
         """
         perl \
             ${launchDir}/templates/convertGenotypeReportsToLgen.pl \
-            ${genotypeReportChunk} \
+            ${genotypeReportChunks} \
             ${params.numberOfGtReportHeaderLines}
         """
 }
-
-/*
-process concatenateLgenFiles() {
-   input:
-      path lgenFiles
-   output:
-      //publishDir path: "${params.outputDir}", mode: 'copy'
-      path "${params.cohortName}.lgen"
-   script:
-      """
-      cat ${lgenFiles} > "${params.cohortName}.lgen"
-      """
-}
-*/
 
 process getMapFileFromSnpReport() {
    label 'smallMemory'

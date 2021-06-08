@@ -41,11 +41,16 @@ include {
 workflow {
     checkInputParams()
 
-    (genotypeReportChunks,
-    sampleReport,
-    snpReport) = getInputChannels()
+    (genotypeReportChunks, sampleReport, snpReport) = getInputChannels()
 
+    /*
+    genotypeReportChunks = getGenotypeReports()
+    snpReport = getSnpReport()
+    sampleReport = getSampleReport()
+    */
+    
     lgenFileChunks = convertGenotypeReportsToLgen( genotypeReportChunks )
+
     lgenFileChunks
         .collectFile( name: "${params.cohortName}.lgen", 
                       sort: true, 
