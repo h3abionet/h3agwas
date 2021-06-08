@@ -7,3 +7,4 @@ output/*
 input/*
 /config-gen/nbproject/private/
 /config-gen/build/
+*.html*
