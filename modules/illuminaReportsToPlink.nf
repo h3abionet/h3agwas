@@ -10,13 +10,6 @@ def checkInputParams() {
     checkSnpReport()
 }
 
-def getInputChannels() {
-    return [
-        getGenotypeReports(),
-        getSampleReport(),
-        getSnpReport()]
-}
-
 def getGenotypeReports() { 
    return channel
             .fromPath( params.inputDir + "*_gtReport_*" )
@@ -36,6 +29,12 @@ def getSnpReport() {
             .fromPath( params.inputDir + params.snpReport )
 }
 
+def getInputChannels() {
+    return [
+        getGenotypeReports(),
+        getSampleReport(),
+        getSnpReport()]
+}
 
 process convertGenotypeReportsToLgen() {
     label 'smallMemory'
@@ -50,7 +49,7 @@ process convertGenotypeReportsToLgen() {
         //template 'convertGenotypeReportsToLgen.pl'
         """
         perl \
-            "${launchDir}/templates/convertGenotypeReportsToLgen.pl" \
+            ${launchDir}/templates/convertGenotypeReportsToLgen.pl \
             ${genotypeReportChunk} \
             ${params.numberOfGtReportHeaderLines}
         """
