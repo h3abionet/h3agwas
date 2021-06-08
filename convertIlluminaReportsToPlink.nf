@@ -32,7 +32,6 @@ include {
     checkInputParams;
     getInputChannels;
     convertGenotypeReportsToLgen;
-    //concatenateLgenFiles;
     getFamFileFromSampleReport;
     getMapFileFromSnpReport;
     convertPlinkLongFormatToPlinkBinary;

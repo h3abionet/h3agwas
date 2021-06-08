@@ -139,9 +139,9 @@ process convertPlinkLongFormatToPlinkBinary() {
    label 'plink'
 
    input:
-      path "${params.cohortName}_lgen"
-      path "${params.cohortName}_map"
-      path "${params.cohortName}_fam"
+      path "${params.cohortName}.lgen"
+      path "${params.cohortName}.map"
+      path "${params.cohortName}.fam"
 
    output:
       publishDir path: "${params.outputDir}", mode: 'copy'
@@ -150,9 +150,9 @@ process convertPlinkLongFormatToPlinkBinary() {
    script:
       """
       plink \
-         --lfile "${params.cohortName}_lgen" \
-         --map "${params.cohortName}_map" \
-         --fam "${params.cohortName}_fam" \
+         --lfile "${params.cohortName}.lgen" \
+         --map "${params.cohortName}.map" \
+         --fam "${params.cohortName}.fam" \
          --make-bed \
          --out ${params.cohortName}
       """
