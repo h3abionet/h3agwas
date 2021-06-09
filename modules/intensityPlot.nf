@@ -4,7 +4,9 @@ include {
     checkInputDir;
     checkGenotypeReportPrefix;
     checkEmailAdressProvided;
-} from "./base.nf"
+    getBasicEmailMessage;
+    getBasicEmailSubject;
+} from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
     checkSnvName()
@@ -49,6 +51,7 @@ process mergeGenotypeReports {
 }
 
 process drawXYintensityPlot {
+    label "tidyverse"
     publishDir "${params.outputDir}", mode: 'copy'
 
     input:
@@ -79,30 +82,9 @@ def printWorkflowExitMessage() {
 
 def sendWorkflowExitEmail() {
 
-    subject = "[nextflow|h3agwaws] run ${workflow.runName} has finished"
+    subject = getBasicEmailSubject()
     attachment = "${params.outputDir}/${params.snvName}_XYintensities.pdf"
-    message = \
-        """\
-        Hi there, 
-
-        Your nextflow job ${workflow.scriptName}: ${workflow.runName} has finished.
-        Please check the attachments to this email,
-        and the execution summary below. 
-
-        All the best,
-        H 3 A G W A S
-
-
-
-        Pipeline execution summary
-        ---------------------------
-        Completed at: ${workflow.complete}
-        Duration    : ${workflow.duration}
-        Success     : ${workflow.success}
-        workDir     : ${workflow.workDir}
-        exit status : ${workflow.exitStatus}
-        """
-    .stripIndent()
+    message = getBasicEmailMessage()
 
     if (userEmailAddressIsProvided()) {
         sendMail(

@@ -4,7 +4,9 @@ include {
     checkCohortName;
     checkGenotypeReportPrefix;
     checkEmailAdressProvided;
-} from "./base.nf"
+    getBasicEmailSubject;
+    getBasicEmailMessage;
+} from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
     checkInputDir()
@@ -13,15 +15,21 @@ def checkInputParams() {
 }
 
 def getInputChannels() {
-	return channel.fromPath([
-		"${params.inputDir}${params.cohortName}.bed",
-		"${params.inputDir}${params.cohortName}.bim",
-		"${params.inputDir}${params.cohortName}.fam"])
+
+	bed = channel.fromPath(
+		"${params.inputDir}${params.cohortName}.bed")
+	bim = channel.fromPath(
+		"${params.inputDir}${params.cohortName}.bim")
+	fam = channel.fromPath(
+		"${params.inputDir}${params.cohortName}.fam")
+
+	return bed.combine(bim).combine(fam)
 }
 
 process getAssociationReport {
+	label 'plink'
 	input:
-		path inputFiles
+		tuple path(cohortBed), path(cohortBim), path(cohortFam)
 	output:
 		path "${params.cohortName}.report.assoc"
 	script:
@@ -35,6 +43,7 @@ process getAssociationReport {
 }
 
 process drawManhattanPlot {
+	label 'qqman'
 	publishDir "${params.outputDir}", mode: 'copy'
 	input:
 		path associationReport
@@ -60,6 +69,7 @@ process drawManhattanPlot {
 }
 
 process drawQqPlot {
+	label 'qqman'
 	publishDir "${params.outputDir}", mode: 'copy'
 	input:
 		path associationReport
@@ -79,37 +89,17 @@ process drawQqPlot {
 
 def sendWorkflowExitEmail() {
 
-    subject = "[nextflow|h3agwaws] run ${workflow.runName} has finished"
-    attachment1 = "${params.outputDir}/manhattanPlot.pdf"
-    attachment2 = "${params.outputDir}/qqplot.pdf"
-    message = \
-        """\
-        Hi there, 
-
-        Your nextflow job ${workflow.scriptName}: ${workflow.runName} has finished.
-        Please check the attachments to this email,
-        and the execution summary below. 
-
-        All the best,
-        H 3 A G W A S
-
-
-
-        Pipeline execution summary
-        ---------------------------
-        Completed at: ${workflow.complete}
-        Duration    : ${workflow.duration}
-        Success     : ${workflow.success}
-        workDir     : ${workflow.workDir}
-        exit status : ${workflow.exitStatus}
-        """
-    .stripIndent()
+    subject = getBasicEmailSubject()
+    attachment = [
+        "${params.outputDir}manhattan.pdf",
+        "${params.outputDir}qqplot.pdf"]
+    message = getBasicEmailMessage()
 
     if (userEmailAddressIsProvided()) {
 	    sendMail(
 	        to: "${params.email}",
 	        subject: "${subject}",
 	        body: "${message}",
-	        attach: "${attachment1}", "${attachment2}")
+	        attach: ["${attachment[0]}", "${attachment[1]}"])
 	}
 }

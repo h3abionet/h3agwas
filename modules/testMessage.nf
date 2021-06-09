@@ -1,17 +1,14 @@
 def getInputChannels() {
-    return Channel.of(params.message)
+	return channel.of(params.message)
 }
 
 process printToScreen {
-
-    input:
-        val message
-
-    output:
-        stdout
-    
-    script:
-        """
-        echo ${message}
-        """
+	input:
+		val message
+	output:
+		stdout
+	script:
+		"""
+		echo ${message}
+		"""
 }
