@@ -3,16 +3,16 @@ plink_mem_reqq = params.plink_mem_reqq
 other_mem_reqq = params.other_mem_reqq
 max_plink_cores = params.max_plink_coress
 
-if (!workflow.resume) {
-    def dir = new File(params.output_dir)
-    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
-       println "\n\n============================================"
-       println "Unless you are doing a -resume, the output directory should be empty"
-       println "We do not want to overwrite something valuable in "+params.output_dir
-       println "Either clean your output directory or check if you meant to do a -resume"
-       System.exit(-1)
-    }
-}
+// if (!workflow.resume) {
+//     def dir = new File(params.output_dir)
+//     if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+//        println "\n\n============================================"
+//        println "Unless you are doing a -resume, the output directory should be empty"
+//        println "We do not want to overwrite something valuable in "+params.output_dir
+//        println "Either clean your output directory or check if you meant to do a -resume"
+//        System.exit(-1)
+//     }
+// }
 
 def helps = [ 'help' : 'help' ]
 params.batch = "/home/wilson/sadacc-workflows/projects/testpca/input/sample-batch-site.phe"

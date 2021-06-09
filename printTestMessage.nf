@@ -8,16 +8,14 @@
 nextflow.enable.dsl=2
 
 include {
-    getChannels;
     getInputChannels;
     printToScreen;
 } from "${projectDir}/modules/testMessage.nf"
 
 workflow {
 
-    message = getChannels()
-    messages = getInputChannels()
+    message = getInputChannels()
 
-    printToScreen(message, messages) | view()
+    printToScreen(message) | view()
 
 }
