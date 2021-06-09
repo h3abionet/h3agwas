@@ -24,17 +24,19 @@ nextflow.enable.dsl=2
 
 include {
     getInputChannels;
+    checkInputParams;
     filterRecordsForChosenSnv;
     mergeGenotypeReports;
-    plotXYintensityFields;
+    drawXYintensityPlot;
     printWorkflowExitMessage;
     sendWorkflowExitEmail;
 } from "${projectDir}/modules/intensityPlot.nf"
 
 workflow {
 
-    genotypeReports \
-        = getInputChannels()
+    checkInputParams()
+
+    genotypeReports = getInputChannels()
 
     genotypeReportsOfChosenSnv \
         = filterRecordsForChosenSnv(
@@ -45,7 +47,7 @@ workflow {
             genotypeReportsOfChosenSnv.collect())
 
     intensityPlot \
-        = plotXYintensityFields(
+        = drawXYintensityPlot(
             snvGenotypeReport)
 }
 

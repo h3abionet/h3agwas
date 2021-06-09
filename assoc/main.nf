@@ -1,29 +1,6 @@
 #!/usr/bin/env nextflow
-/*
- * Authors       :
- *
- *
- *      Jean-Tristan Brandenburg
- *      Scott Hazelhurst
- *      Shaun Aron
- *   	Rob Clucas
- *      Eugene de Beste
- *      Lerato Magosi
- *
- *  On behalf of the H3ABionet Consortium
- *  2015-2020
- *
- *
- * Description  : Nextflow pipeline for Wits GWAS.
- *
- */
-
-//---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
-
-
-
 
 def helps = [ 'help' : 'help' ]
 
@@ -159,7 +136,7 @@ plink_mem_req = params.plink_mem_req
 other_mem_req = params.other_process_mem_req
 max_plink_cores = params.max_plink_cores 
 
-params.help = false
+params.help = false  
 
 data_ch = file(params.data)
 
@@ -178,7 +155,6 @@ if (params.help) {
   }
   System.exit(-1)
 }
-
 
 def fileColExists = { fname, pname, cname ->
   f = new File(fname)
@@ -384,17 +360,23 @@ pheno     = ""
 /*Case where we sample builrelatdness*/
 balise_filers_rel=1
 if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
+
  if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
+
   process select_rs_format{
+
      cpus max_plink_cores
      memory plink_mem_req
      time   params.big_time
+
      input :
        set file(bed),file(bim), file(fam) from ch_select_rs_format
+
     output:
        file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line
+     
      script:
-        base = bed.baseName
+        base = "cleaning"
         prune= "${base}-prune"
         """
         plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores}
@@ -423,9 +405,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
            shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
            """
       }
-
   }
-
   }else{
         filers_matrel_mat_fast=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
         filers_matrel_bolt=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
@@ -436,7 +416,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
  }
 }
 
- 
+
 if (params.data != "") {
 
    checker(file(params.data))
@@ -444,8 +424,6 @@ if (params.data != "") {
    if (params.covariates != "") {
       gotcovar = 1
   }
-
-
   
   process extractPheno {
     input:
@@ -472,7 +450,10 @@ if (params.data != "") {
     script:
       "phe_distrib.py --pheno ${params.pheno} $data B050 "
   }
-}  else {
+
+}  
+
+else {
   pheno_report_ch = Channel.empty()
   pheno_label = ""
   pheno_label_ch = Channel.from("")
@@ -480,7 +461,9 @@ if (params.data != "") {
 
 /*JT : Case fastlmm => if yes*/
 if (params.fastlmm == 1) {
+  
   data_ch_fastlmm = Channel.fromPath(params.data, checkIfExists:true)
+
   if(params.fastlmmc_bin=="")fastlmmc="fastlmmc"
   else fastlmmc=params.fastlmmc_bin
 
@@ -560,34 +543,37 @@ if (params.fastlmm == 1) {
 
 
      process doFastlmmMulti{
+
        label 'fastlmm'
        cpus params.fastlmm_num_cores
        memory params.fastlmm_mem_req
        time   params.big_time
        maxForks params.max_forks
-       input:
-	 set file (phef), file(covariate) from fastlmm_data_ch
-	 file(rel) from rel_mat_ch_fastlmm
-	 file(plinks) from  gem_ch_fast
-       each this_pheno from ind_pheno_cols_ch
-       each chro from ListeChro2
-       output:
-	 set (our_pheno, file("$out"), val(base)) into (fastlmm_manhatten_chro,fastlmm_manhatten_chro2)
-       script:
-	 base = plinks[0].baseName
-         our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
-         our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
 
-	 covar_opt_fast =  (params.covariates) ?  " -covar newcov.out" : ""
-	 newbase=base+"-"+chro
-	 out = "$base-$our_pheno"+"-"+chro+".stat"
-	 """
-	 this_pheno_col=`echo ${this_pheno} | awk -F"@" '{print \$1}'`
-         fastlmm_relselind.py --rel $rel --phenofile $phef --relout rel_fastlmm_filter.txt --phenofileout newpheno.out --pospheno \$this_pheno_col --covfile $covariate --covfileout newcov.out
-         plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase --threads ${params.fastlmm_num_cores} --keep newpheno.out
-	 $fastlmmc -REML -simType RRM -verboseOut -sim $rel -bfile $newbase -pheno ${phef} -simLearnType Full -out $out -maxThreads ${params.fastlmm_num_cores} \
-	          $covar_opt_fast  
-	 """
+       input:
+        set file (phef), file(covariate) from fastlmm_data_ch
+        file(rel) from rel_mat_ch_fastlmm
+        file(plinks) from  gem_ch_fast
+            each this_pheno from ind_pheno_cols_ch
+            each chro from ListeChro2
+       output:
+        set (our_pheno, file("$out"), val(base)) into (fastlmm_manhatten_chro,fastlmm_manhatten_chro2)
+            
+       script:
+        base = plinks[0].baseName
+              our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+              our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+
+          covar_opt_fast =  (params.covariates) ?  " -covar newcov.out" : ""
+          newbase=base+"-"+chro
+          out = "$base-$our_pheno"+"-"+chro+".stat"
+          """
+          this_pheno_col=`echo ${this_pheno} | awk -F"@" '{print \$1}'`
+                fastlmm_relselind.py --rel $rel --phenofile $phef --relout rel_fastlmm_filter.txt --phenofileout newpheno.out --pospheno \$this_pheno_col --covfile $covariate --covfileout newcov.out
+                plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase --threads ${params.fastlmm_num_cores} --keep newpheno.out
+          $fastlmmc -REML -simType RRM -verboseOut -sim $rel -bfile $newbase -pheno ${phef} -simLearnType Full -out $out -maxThreads ${params.fastlmm_num_cores} \
+                    $covar_opt_fast  
+          """
        }
 
      fastlmm_manhatten_chroM=fastlmm_manhatten_chro.groupTuple()
@@ -626,17 +612,15 @@ if (params.fastlmm == 1) {
        time   params.big_time
        memory params.fastlmm_mem_req
        input:
-	 set file(phef), file (covariate) from fastlmm_data_ch
-	 file(plinks) from  gem_ch_fast
-       publishDir "${params.output_dir}/fastlmm", overwrite:true, mode:'copy'
-       each this_pheno from ind_pheno_cols_ch
+        set (val(this_pheno),list_file, base_list) from fastlmm_manhatten_chroM
+        publishDir "${params.output_dir}/fastlmm", overwrite:true, mode:'copy'   
        output:
          file(out)
-	 set val(base), val(our_pheno2), file("$out") into fastlmm_manhatten_ch
+	        set val(base), val(our_pheno2), file("$out") into fastlmm_manhatten_ch
        script:
-	 base = plinks[0].baseName
-//	 our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
-//	 our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
+	        base = plinks[0].baseName
+          //	 our_pheno = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"")
+          //	 our_pheno2 = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/-$/,"").replaceAll(/^[0-9]+-/,"")
 
          our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
          our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
@@ -648,7 +632,7 @@ if (params.fastlmm == 1) {
 	           $covar_opt_fast  -mpheno \${this_pheno_col} -bfileSim $base
 	 """
      }
-  }
+}
 
   // this part is plotting done for any fastlmm mode
   //, overwrite:true, mode:'copy'
@@ -666,8 +650,7 @@ if (params.fastlmm == 1) {
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header Chromosome --pos_header Position --rs_header SNP --pval_header Pvalue --beta_header SNPWeight --info_prog FastLmm
       """
   }
-
-
+}
 
 
   // End of FASTLMM
@@ -745,7 +728,6 @@ if (params.boltlmm == 1) {
   check_bolt = Channel.create()
   pheno_cols_ch_bolt.flatMap { list_str -> list_str.split() }.tap ( check_bolt) .set { ind_pheno_cols_ch_bolt }
 
-
   if(params.bolt_covariates_type=="" & params.covariates_type!=""){
     bolt_covariates_type=params.covariates_type
   }else{
@@ -763,17 +745,17 @@ if (params.boltlmm == 1) {
    pval_head = "P_BOLT_LMM"
 
   type_lmm="--lmm"
-//  process doCountNbSnp{
- //   time   params.big_time
-//    input :
-//       file(bim) from bim_ch_bolt
-//    output :
-//       stdout into nbsnp_ch_bolt
-//    script :
-//      """
-//      wc -l $bim|awk '{print \$1}'
-//      """
-//  }
+  //  process doCountNbSnp{
+  //   time   params.big_time
+  //    input :
+  //       file(bim) from bim_ch_bolt
+  //    output :
+  //       stdout into nbsnp_ch_bolt
+  //    script :
+  //      """
+  //      wc -l $bim|awk '{print \$1}'
+  //      """
+  //  }
   /*    nb_snp= CountLinesFile(base+".bim") */
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
   else rs_ch_exclude_bolt=file('NO_FILE')
@@ -785,12 +767,13 @@ if (params.boltlmm == 1) {
   Impute2FileList=file('NO_FILE1')
   Impute2FID = file('NO_FILE2')
   }
+
   if(params.bolt_ld_score_file!=""){
      Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
   }else{
      Bolt_ld_score = file('NO_FILE3')
   }
-//genetic_map_file
+  //genetic_map_file
   if(params.genetic_map_file!=""){
      Bolt_genetic_map= Channel.fromPath(params.genetic_map_file, checkIfExists:true)
   }else{
@@ -874,9 +857,7 @@ if (params.boltlmm == 1) {
       return(SplP)
   }
 
-
-
-if (params.gemma+params.gemma_gxe>0) {
+  if (params.gemma+params.gemma_gxe>0) {
 
   rel_ch_gemma = Channel.create()
   gem_ch_gemma = Channel.create()
@@ -926,10 +907,8 @@ if(params.gemma_multi==1){
   list_chro_gemma=chrolist_gem.flatMap { list_str -> list_str.split() }.tap ( check2)
   check2 = Channel.create()
   list_chro_gemma_gxe=chrolisti_gem_gxe.flatMap { list_str -> list_str.split() }.tap ( check2)
-
-
-
 }
+
 if (params.gemma == 1){
   ind_pheno_cols_ch = newNamePheno(params.pheno)
 
@@ -997,8 +976,9 @@ if (params.gemma == 1){
        """
 }
      gemma_manhatten_ch_chro_merge=gemma_manhatten_ch_chro.groupTuple()
+
      process doMergeGemma{
-          input :
+          input:
             set (val(this_pheno),list_file, base_list) from  gemma_manhatten_ch_chro_merge
          publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
          output :
@@ -1066,7 +1046,6 @@ if (params.gemma == 1){
   }
   }
 
-
   process showGemmaManhatten {
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
@@ -1082,14 +1061,12 @@ if (params.gemma == 1){
       gemma_man.py  $assoc $this_pheno ${out}
       """
   }
-
-
 } else {
   report_gemma_ch = Channel.empty()
 }
 
-
 if (params.gemma_gxe == 1){
+
   data_ch_gxe = Channel.fromPath(params.data, checkIfExists:true)
    
   if (params.gemma_gxe) 
@@ -1108,7 +1085,7 @@ if (params.gemma_gxe == 1){
 
  if(params.gemma_multi==1){
   ind_pheno_cols_ch_gxe_multi = newNamePheno(params.pheno)
-process doGemmaGxEChro{
+  process doGemmaGxEChro{
     maxForks params.max_forks
     cpus params.gemma_num_cores
     memory params.gemma_mem_req
@@ -1156,8 +1133,6 @@ process doGemmaGxEChro{
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
   }
-
-
      gemma_manhatten_ch_chro_gxe_merge=gemma_manhatten_ch_chro_gxe.groupTuple()
      process doMergeGemmaGxE{
           input :
@@ -1228,8 +1203,9 @@ process doGemmaGxEChro{
        mv output ${dir_gemma}
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
-  } 
-}
+    } 
+  }
+
   gemma_manhatten_ch_gxe_freq= gemma_manhatten_ch_gxe_i.combine(Channel.fromPath(params.data, checkIfExists:true)).combine(assoc_ch_gxe_freq)
   process AddedFreqGxEGemma{
     cpus params.gemma_num_cores
@@ -1269,7 +1245,6 @@ process doGemmaGxEChro{
 } else {
   report_gemma_ch_GxE=Channel.empty()
 } 
-
 
 if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
 
@@ -1401,7 +1376,7 @@ if (params.plink_gxe==1) {
 //
 if(params.fastgwa==1){
 
-if(params.gcta_grmfile==""){
+  if(params.gcta_grmfile==""){
  process FastGWADoGRM{
     cpus params.fastgwa_num_cores
     maxForks params.max_forks
@@ -1449,22 +1424,22 @@ if(params.gcta_grmfile==""){
       ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_num_cores}
       """
   }
-}else{
+ }else{
   grm_all=Channel.from("${params.gcta_grmfile}").combine(Channel.fromPath("${params.gcta_grmfile}.grm.id", checkIfExists:true).combine(Channel.fromPath("${params.gcta_grmfile}.grm.sp", checkIfExists:true)))
-}
-data_ch_fastgwa= Channel.fromPath(params.data, checkIfExists:true)
+ }
+ data_ch_fastgwa= Channel.fromPath(params.data, checkIfExists:true)
 
 
-pheno_spl_gcta=params.pheno.split(',')
+ pheno_spl_gcta=params.pheno.split(',')
 
   if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
   else
      covariate_option = ""
 
-balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
-balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
-process FastGWARun{
+ balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
+ balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
+ process FastGWARun{
     maxForks params.max_forks
     label 'gcta'
     memory params.fastgwa_mem_req
@@ -1493,7 +1468,7 @@ process FastGWARun{
      all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
      ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa
      """
-}
+  }
   process showFastGWAManhatten {
    label 'py3fast'
    memory params.other_process_mem_req
@@ -1504,7 +1479,7 @@ process FastGWARun{
       file("${out}*")  into report_fastgwa_ch
     script:
       our_pheno = this_pheno.replaceAll("_","-")
-      out = "C052-fastGWA-"+our_pheno
+      out = "C052-fastGWA-"+our_phenosickleinafrica/py3-pandas-datatable
       //CHR	SNP	POS	A1	A2	N	AF1	BETA	SE	P
       """
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNP --pval_header P --beta_header BETA --info_prog fastGWA
@@ -1514,11 +1489,6 @@ process FastGWARun{
 }else{
 report_fastgwa_ch=Channel.empty()
 }
-
-
-
-
-
 
 def getres(x) {
   def  command1 = "$x"
@@ -1536,7 +1506,6 @@ if (workflow.repository)
   wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
 else
   wflowversion="A local copy of the workflow was used"
-
 
 report_ch = report_fastlmm_ch.flatten().mix(pheno_report_ch.flatten())
                                      .mix(report_pca_ch.flatten())
