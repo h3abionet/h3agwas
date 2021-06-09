@@ -1,25 +1,18 @@
 #!/usr/bin/env nextflow
-nextflow.enable.dsl=2
+// nextflow.enable.dsl=2
 
 plink_mem_req = params.plink_mem_req
 other_mem_req = params.other_process_mem_req
 max_plink_cores = params.max_plink_cores 
 
 src_ch = Channel.from(params.input_testing)
+raw_ch = Channel.from(params.input_testing)
 
-src_cha = Channel.fromPath(params.input_testinga)
-src_chb = Channel.fromPath(params.input_testingb)
-src_chc = Channel.fromPath(params.input_testingc)
+src_cha = Channel.fromPath(params.a)
+src_chb = Channel.fromPath(params.b)
+src_chc = Channel.fromPath(params.c)
 
-workflow {
-
-    out_ch = importplink(src_cha.combine(src_chb).combine(src_chc))
-
-    pca_out_ch = computePCA(out_ch)
-
-    report_pca_ch = drawPCA(pca_out_ch)
-}
-
+// src_cha.combine(src_chb).combine(src_chc)
 
 //Process 1: imported the plink files (bed, bim, fam) from raw_src channel and
 //exported them through 4 new channels: out_ch, ch_select_rs_format, 
@@ -29,10 +22,10 @@ process importplink{
     echo true
 
     input: 
-        tuple file(bed), file(bim), file(fam)
+        set file(bed), file(bim), file(fam) from src_cha.combine(src_chb).combine(src_chc)
 
     output:
-        tuple file(bed), file(bim), file(fam)
+        set  bed, bim, fam into out_ch
 
     script:
         
@@ -58,14 +51,17 @@ process computePCA {
     time   params.big_time
 
         input:
-        tuple file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam')
+        tuple file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from out_ch
 
         output:
-        tuple file("${params.sampled}.eigenval"), file("${params.sampled}.eigenvec")
+        tuple file("${params.sampled}.eigenval"), file("${params.sampled}.eigenvec") into pca_out_ch
 
         script:
 
-        base = "cleaned"
+        """
+        echo believe!
+        """
+
         prune = "${params.output_testing}-prune"
 
         """
@@ -76,12 +72,12 @@ process computePCA {
         """
 }
 
-//Process 3: Imported the eigen files from the pca_out_ch and used the drawPCA.py script to
-//to plot the PCA graph.
+// //Process 3: Imported the eigen files from the pca_out_ch and used the drawPCA.py script to
+// //to plot the PCA graph.
 
 process drawPCA {
     input:
-        tuple file(eigvals), file(eigvecs)
+        tuple file(eigvals), file(eigvecs) from pca_out_ch
     output:
         tuple file (output), file ("B040-pca.tex")
         publishDir params.output, overwrite:true, mode:'copy',pattern: "*.pdf"
