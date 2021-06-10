@@ -2,12 +2,17 @@ include {
     checkCohortName;
     checkSampleReport;
     checkSnpReport;
+    userEmailAddressIsProvided;
+    checkEmailAdressProvided;
+    getBasicEmailSubject;
+    getBasicEmailMessage;
 } from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
     checkCohortName()
     checkSampleReport()
     checkSnpReport()
+    checkEmailAdressProvided()
 }
 
 def getChunksFromGenotypeReports() { 
@@ -32,6 +37,7 @@ def getSnpReport() {
 process convertGenotypeReportsToLgen {
     tag "${chunks.baseName}"
     label 'smallMemory'
+    label 'perl'
     cache 'lenient'
     input:
     	path chunks
@@ -106,5 +112,30 @@ process convertPlinkLongFormatToPlinkBinary() {
          --make-bed \
          --out ${params.cohortName}
       """
+}
+
+def printWorkflowExitMessage() {
+    if (workflow.success) {
+        log.info "Workflow completed without errors".center(60)
+    } else {
+        log.error "Oops .. something went wrong!".center(60)
+    }
+    log.info "Check output files in folder:".center(60)
+    log.info "${params.outputDir}".center(60)
+}
+
+def sendWorkflowExitEmail() {
+
+    subject = getBasicEmailSubject()
+    attachment = "${launchDir}/report.html"
+    message = getBasicEmailMessage()
+
+    if (userEmailAddressIsProvided()) {
+        sendMail(
+            to: "${params.email}",
+            subject: "${subject}",
+            body: "${message}",
+            attach: "${attachment}")
+    }
 }
 

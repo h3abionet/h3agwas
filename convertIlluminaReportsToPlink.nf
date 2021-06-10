@@ -37,7 +37,7 @@ include {
     getFamFileFromSampleReport;
     getMapFileFromSnpReport;
     convertPlinkLongFormatToPlinkBinary;
-   // sendWorkflowExitEmail;
+    sendWorkflowExitEmail;
 } from "${projectDir}/modules/illuminaReportsToPlink.nf"
 
 workflow {
@@ -58,9 +58,8 @@ workflow {
         convertPlinkLongFormatToPlinkBinary( lgenFile, mapFile, famFile )
 }
 
-/*
 workflow.onComplete {
     printWorkflowExitMessage()
-    //sendWorkflowExitEmail()
+    sendWorkflowExitEmail()
 }
-*/
+
