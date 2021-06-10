@@ -2,27 +2,33 @@
 
 use warnings;
 use strict;
-use autodie;
 use File::Basename;
 use IO::Zlib;
 
-my $inputFile = $ARGV[0];
-my $inputBase = basename($ARGV[0]);
-my $numberOfHeaderLines = $ARGV[1]
-my $gtReport = new IO::Zlib;
-$gtReport->open($inputFile, 'rb');
+my \$inputFile = "${chunks}";
+my \$numberOfHeaderLines = ${params.numberOfGtReportHeaderLines};
+my \$gtReport = new IO::Zlib;
+\$gtReport->open(\$inputFile, 'rb');
 
-my $outFileName = $inputBase =~ s/.csv/.lgen/gr;
-open(outputFile,">",$outFileName);
+my \$outFileName = \$inputFile =~ s/.csv/.lgen/gr;
+open(outputFile,">",\$outFileName) or die \$!;
 
-my $lineNumber = 0;
+my \$lineNumber = 0;
 
-while(my $line = <$gtReport>) 
+while(my \$line = <\$gtReport>) 
 {
-  next if $lineNumber++ < $numberOfHeaderLines+1;
-  my @column = split (/,/,$line);
-  my $selectedColumns = "$column[1] $column[1] $column[0] $column[2] $column[3]\n";
-  print outputFile $selectedColumns;
+  next if \$lineNumber++ < \$numberOfHeaderLines+1;
+  my (\$column1, \$column2, \$column3, \$column4) = (split /,/, \$line)[1, 0, 2, 3];
+  my %replace = ( 
+        "-" => "0", 
+        "I" => "0", 
+        "D" => "0" 
+  );
+  \$column3 = \$column3 =~ s/(-|I|D)/\$replace{\$1}/gr;
+  \$column4 = \$column4 =~ s/(-|I|D)/\$replace{\$1}/gr;
+  #\$column3 = \$column3 =~ s/(-)|(I)|(D)/0/gr;
+  #\$column4 = \$column4 =~ s/-/0/gr;
+  print outputFile "\$column1 \$column1 \$column2 \$column3 \$column4\n";
 }
-$gtReport->close;
+\$gtReport->close;
 close(outputFile);

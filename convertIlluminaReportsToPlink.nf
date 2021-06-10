@@ -30,47 +30,46 @@ include {
 
 include {
     checkInputParams;
-    getInputChannels;
+    getChunksFromGenotypeReports;
     convertGenotypeReportsToLgen;
+    getSnpReport;
+    getSampleReport;
     getFamFileFromSampleReport;
     getMapFileFromSnpReport;
     convertPlinkLongFormatToPlinkBinary;
-    sendWorkflowExitEmail;
+   // sendWorkflowExitEmail;
 } from "${projectDir}/modules/illuminaReportsToPlink.nf"
 
 workflow {
-    checkInputParams()
+	checkInputParams()
+	chunks = getChunksFromGenotypeReports()
+        lgenChunks = convertGenotypeReportsToLgen( chunks )
+        lgenChunks
+               .collectFile(name: "${params.cohortName}.lgen",
+                    sort: true,
+                    storeDir: "${params.outputDir}")
+               .set { lgenFile }
 
-    (genotypeReportChunks, sampleReport, snpReport) = getInputChannels()
+        snpReport = getSnpReport()
+        sampleReport = getSampleReport()
 
-    /*
-    genotypeReportChunks = getGenotypeReports()
-    snpReport = getSnpReport()
-    sampleReport = getSampleReport()
-    */
-    
-    lgenFileChunks = convertGenotypeReportsToLgen( genotypeReportChunks )
-
-    lgenFileChunks
-        .collectFile( name: "${params.cohortName}.lgen", 
-                      sort: true, 
-                      storeDir: "${params.outputDir}" )        
-
-    lgenFile = channel.fromPath( params.outputDir + 
-                                "${params.cohortName}.lgen" )
-
-    famFile = getFamFileFromSampleReport( sampleReport )
-
-    mapFile = getMapFileFromSnpReport( snpReport )
-
-    convertPlinkLongFormatToPlinkBinary(
-        lgenFile, 
-        mapFile, 
-        famFile )
-
+        mapFile = getMapFileFromSnpReport( snpReport )
+        famFile = getFamFileFromSampleReport( sampleReport )
+        convertPlinkLongFormatToPlinkBinary( lgenFile, mapFile, famFile )
 }
+
+/*
+workflow {
+        checkInputParams()
+	getLgenFileFromGenotypeReports()
+	getFamFileFromSampleReport()
+	getMapFileFromSnpReport()
+	getPlinkBinaryFromLongFormat()
+}
+
 
 workflow.onComplete {
     printWorkflowExitMessage()
     //sendWorkflowExitEmail()
 }
+*/

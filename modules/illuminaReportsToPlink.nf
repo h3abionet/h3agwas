@@ -10,13 +10,13 @@ def checkInputParams() {
     checkSnpReport()
 }
 
-def getGenotypeReports() { 
+def getChunksFromGenotypeReports() { 
    return channel
-            .fromPath( params.inputDir + "*_gtReport_*" )
-            .splitText( by: 5000000,
-                        keepHeader: false,
-                        file: true,
-                        compress: false )
+      	     .fromPath( params.inputDir + "*_gtReport_*" )
+      	     .splitText( by: 5000000,
+             	         keepHeader: false,
+                  	 file: true,
+                  	 compress: false )
 }
 
 def getSampleReport() {
@@ -29,31 +29,21 @@ def getSnpReport() {
             .fromPath( params.inputDir + params.snpReport )
 }
 
-def getInputChannels() {
-    return [ getGenotypeReports(),
-             getSampleReport(),
-             getSnpReport()   ]
-}
-
-process convertGenotypeReportsToLgen() {
+process convertGenotypeReportsToLgen {
+    tag "${chunks.baseName}"
     label 'smallMemory'
-    tag "${genotypeReportChunks.baseName}"
+    cache 'lenient'
     input:
-        path genotypeReportChunks
+    	path chunks
     output:
-        publishDir path: "${params.outputDir}"
-        path "*.lgen"
+    	publishDir path: "${params.outputDir}"
+    	path "*.lgen"
     script:
-        //template 'convertGenotypeReportsToLgen.pl'
-        """
-        perl \
-            ${launchDir}/templates/convertGenotypeReportsToLgen.pl \
-            ${genotypeReportChunks} \
-            ${params.numberOfGtReportHeaderLines}
-        """
+    	template "convertGenotypeReportsToLgen.pl"
 }
 
 process getMapFileFromSnpReport() {
+   tag "$snpReport"
    label 'smallMemory'
    input:
       path snpReport
@@ -73,6 +63,7 @@ process getMapFileFromSnpReport() {
 }
 
 process getFamFileFromSampleReport() {
+   tag "$sampleReport"
    label 'smallMemory'
    input:
       path sampleReport
@@ -92,6 +83,8 @@ process getFamFileFromSampleReport() {
 }
 
 process convertPlinkLongFormatToPlinkBinary() {
+   tag "LGEN+MAP+FAM ==> BED+BIM+FAM"
+   label 'mediumMemory'
    label 'plink'
    input:
       path "${params.cohortName}.lgen"
@@ -103,21 +96,15 @@ process convertPlinkLongFormatToPlinkBinary() {
    script:
       """
       plink \
-         --lfile "${params.cohortName}.lgen" \
-         --map "${params.cohortName}.map" \
-         --fam "${params.cohortName}.fam" \
+         --lgen ${params.cohortName}.lgen \
+         --map ${params.cohortName}.map \
+         --fam ${params.cohortName}.fam \
+	 --no-parents \
+	 --no-sex \
+	 --no-pheno \
+	 --threads $task.cpus \
          --make-bed \
          --out ${params.cohortName}
       """
 }
 
-def sendWorkflowExitEmail() {
-    if (userEmailAddressIsProvided()) {
-        sendMail(
-            to: "${params.email}",
-            subject: getBasicEmailSubject(),
-            body: getBasicEmailMessage(),
-            attach: [
-                "${params.reportsDir}/report.html"])
-   }
-}
