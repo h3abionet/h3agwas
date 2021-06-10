@@ -59,15 +59,6 @@ workflow {
 }
 
 /*
-workflow {
-        checkInputParams()
-	getLgenFileFromGenotypeReports()
-	getFamFileFromSampleReport()
-	getMapFileFromSnpReport()
-	getPlinkBinaryFromLongFormat()
-}
-
-
 workflow.onComplete {
     printWorkflowExitMessage()
     //sendWorkflowExitEmail()
