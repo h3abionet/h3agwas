@@ -1,0 +1,1 @@
+beagle 5.2 (wget https://faculty.washington.edu/browning/beagle/beagle.29May21.d6d.jar)

@@ -48,11 +48,11 @@ workflow {
     sampleReport,
     snpReport) = getInputChannels()
 
-    lgenFiles = convertGenotypeReportsToLgen( genotypeReports )
-
-    lgenFile = concatenateLgenFiles( lgenFiles )
+    lgenFiles = convertGenotypeReportsToLgen( genotypeReports ) | view()
 
     /*
+
+    lgenFile = concatenateLgenFiles( lgenFiles )
 
     famFile = getFamFileFromSampleReport( sampleReport )
 
