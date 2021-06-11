@@ -37,6 +37,9 @@ include {
     getFamFileFromSampleReport;
     getMapFileFromSnpReport;
     convertPlinkLongFormatToPlinkBinary;
+    alignGenotypeDataToReference;
+    filterSitesWithoutRefOrAltAlleles;
+    getFinalPlinkBinaryFileset;
     sendWorkflowExitEmail;
 } from "${projectDir}/modules/illuminaReportsToPlink.nf"
 
