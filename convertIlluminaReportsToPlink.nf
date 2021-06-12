@@ -59,13 +59,14 @@ workflow {
         mapFile = getMapFileFromSnpReport( snpReport )
         famFile = getFamFileFromSampleReport( sampleReport )
         plinkBinaryFileset = convertPlinkLongFormatToPlinkBinary( lgenFile, mapFile, famFile )
-        tempVcfFile = alignGenotypeDataToReference( plinkBinaryFileset )
+        tempVcfFile = alignGenotypeDataToReference( plinkBinaryFileset, famFile )
         vcfFile = filterSitesWithoutRefOrAltAlleles( tempVcfFile )
         getFinalPlinkBinaryFileset( vcfFile )
 }
 
+/*
 workflow.onComplete {
     printWorkflowExitMessage()
     sendWorkflowExitEmail()
 }
-
+*/

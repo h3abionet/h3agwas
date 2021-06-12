@@ -92,13 +92,14 @@ process convertPlinkLongFormatToPlinkBinary() {
     tag "LGEN+MAP+FAM ==> BED+BIM+FAM"
     label 'mediumMemory'
     label 'plink'
+    cache 'lenient'
     input:
         path "${params.cohortName}.lgen"
         path "${params.cohortName}.map"
         path "${params.cohortName}.fam"
     output:
         publishDir path: "${params.outputDir}"
-        path "${params.cohortName}.{bed,bim,fam,log}"
+        path "${params.cohortName}.{bed,bim,fam}"
     script:
         """
         plink \
@@ -115,18 +116,21 @@ process convertPlinkLongFormatToPlinkBinary() {
 }
 
 process alignGenotypeDataToReference() {
-    tag "${params.cohortName} ==> ${params.reference.baseName}"
+    //tag "${params.cohortName} ==> ${params.reference.baseName}"
     label 'mediumMemory'
     label 'plink2'
+    cache 'lenient'
     input:
-        path plinkBinaryFileset
+	path plinkBinaryFileset
+	path famFile
     output:
         publishDir path: "${params.outputDir}"
         path "temporary.vcf.gz"
     script:
+	plinkBase = famFile.baseName
         """
         plink2 \
-            --bfile ${plinkBinaryFileset} \
+            --bfile ${plinkBase} \
             --fa "${params.reference}" \
             --ref-from-fa force \
             --normalize \
@@ -153,7 +157,8 @@ process filterSitesWithoutRefOrAltAlleles() {
             -m2 \
             --threads $task.cpus \
             -Oz \
-            -o "${params.cohortName}.vcf.gz"
+            -o ${params.cohortName}.vcf.gz \
+	    ${tempVcfFile}
         """
 }
 
