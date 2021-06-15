@@ -24,7 +24,7 @@ args = parseArguments()
 
 DataI=pd.read_csv(args.list_pos,delim_whitespace=True,header=None)
 DataI.columns = ["#Chr","Start","End","Ref","Alt"]
-DataI.drop(["End"])
+del DataI["End"]
 LireFileAnno=args.list_file.split(',') #open(args.list_file).readlines()
 
 for File in LireFileAnno :

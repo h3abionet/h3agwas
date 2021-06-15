@@ -163,6 +163,11 @@ process refallele{
 
 hgrefconv=Channel.fromPath(params.reffasta,checkIfExists:true)
 if(params.parralchro==0){
+plink_mem_req_max=params.bcftools_mem_req.replace('GB','000').replace('Gigabytes','000').replace('KB','').replace('Kilobytes','').replace(' ','')
+
+bcftools_mem_req_max=params.bcftools_mem_req.replace('GB','G').replace('Gigabytes','G').replace('KB','K').replace('Kilobytes','K').replace(' ','')
+
+rs_infogz_2=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
 process convertInVcf {
    label 'py3utils'
    memory params.bcftools_mem_req
@@ -170,6 +175,7 @@ process convertInVcf {
    time params.big_time
    input :
     set file(bed), file(bim), file(fam) from plk_alleleref
+    file(gz_info) from rs_infogz_2
     file(fast) from hgrefconv
    publishDir "${params.output_dir}/vcf/", overwrite:true, mode:'copy'
    output :
@@ -179,10 +185,12 @@ process convertInVcf {
      base=bed.baseName
      out="${params.output}"
      """
+     ulimit -u 5000
      mkdir -p tmp
-     plink --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores} 
-     ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}_tmp.vcf.gz -T tmp/
-     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast T tmp/ -m top &> reportfixref
+     plink --bfile ${base}  --recode vcf --out ${out}_tmpplk --keep-allele-order --snps-only --threads ${params.max_plink_cores}  --memory  $plink_mem_req_max
+     ${params.bin_bcftools} sort  ${out}_tmpplk.vcf -O z > ${out}_tmp.vcf.gz -T tmp/ --max-mem $bcftools_mem_req_max
+     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Ob -o ${out}.vcf.gz -- -f hg19.fa.gz -m flip -d
+
      rm -rf tmp
      """
  }
@@ -203,6 +211,7 @@ check2 = Channel.create()
 ListeChro=chrolist.flatMap { list_str -> list_str.split() }.tap ( check2)
 
 
+rs_infogz_3=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
 process convertInVcfChro{
    label 'py3utils'
    memory params.plink_mem_req
@@ -210,6 +219,7 @@ process convertInVcfChro{
    input :
       set file(bed), file(bim), file(fam) from plk_alleleref
       file(fast) from hgrefconv
+      file(gz_info) from rs_infogz_3
    publishDir "${params.output_dir}/vcf_bychro/", overwrite:true, mode:'copy'
    each chro from ListeChro
    output : 
@@ -219,9 +229,10 @@ process convertInVcfChro{
      base=bed.baseName
      out="${params.output}"+"_"+chro
      """
-     plink  --chr $chro --bfile ${base}  --recode vcf --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
-     ${params.bin_bcftools} sort  ${out}.vcf -O z > ${out}_tmp.vcf.gz
-     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m top &> $out".rep"
+     plink  --chr $chro --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
+     ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort - -O z > ${out}_tmp.vcf.gz
+     rm -f ${out}.vcf.gz
+     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Ob -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
      """
 }
 

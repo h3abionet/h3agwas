@@ -179,7 +179,7 @@ process GwasCatDl{
       """
 }
 headgc_chr="chrom"
-headgc_chr="chromEnd"
+headgc_bp="chromEnd"
 }else{
 gwascat_ch=Channel.fromPath(params.gwas_cat, checkIfExists:true)
 headgc_chr=params.headgc_chr
