@@ -15,13 +15,21 @@ def checkInputParams() {
         checkEmailAdressProvided()
 }
 
-def getChunksFromGenotypeReports() { 
+def getChunksFromGenotypeReports() {
     return channel
-      	        .fromPath( params.inputDir + "*_gtReport_*" )
-      	        .splitText( by: 5000000,
-             	         keepHeader: false,
-                  	 file: true,
-                  	 compress: false )
+        .fromPath( params.inputDir + params.genotypeReport )
+      	.splitText(
+            by: 5000000,
+            keepHeader: false,
+            file: true,
+            compress: false )
+}
+
+def concatenateLgenChunks(lgenChunks) {
+    return lgenChunks
+        .collectFile(
+            name: "${params.cohortName}.lgen",
+            sort: true)
 }
 
 def getSampleReport() {
@@ -42,7 +50,6 @@ process convertGenotypeReportsToLgen {
     input:
     	path chunks
     output:
-    	publishDir path: "${params.outputDir}"
     	path "*.lgen"
     script:
     	template "convertGenotypeReportsToLgen.pl"
@@ -54,7 +61,6 @@ process getMapFileFromSnpReport() {
     input:
         path snpReport
     output:
-        publishDir path: "${params.outputDir}"
         path "${params.cohortName}.map"
     script:
         """
@@ -74,7 +80,6 @@ process getFamFileFromSampleReport() {
     input:
         path sampleReport
     output:
-        publishDir path: "${params.outputDir}"
         path "${params.cohortName}.fam"
     script:
         """
@@ -98,7 +103,6 @@ process convertPlinkLongFormatToPlinkBinary() {
         path "${params.cohortName}.map"
         path "${params.cohortName}.fam"
     output:
-        publishDir path: "${params.outputDir}"
         path "${params.cohortName}.{bed,bim,fam}"
     script:
         """
@@ -106,28 +110,26 @@ process convertPlinkLongFormatToPlinkBinary() {
             --lgen ${params.cohortName}.lgen \
             --map ${params.cohortName}.map \
             --fam ${params.cohortName}.fam \
-	    --no-parents \
-	    --no-sex \
-	    --no-pheno \
-	    --threads $task.cpus \
-        --make-bed \
-        --out ${params.cohortName}
+	        --no-parents \
+	        --no-sex \
+	        --no-pheno \
+	        --threads $task.cpus \
+            --make-bed \
+            --out ${params.cohortName}
         """
 }
 
 process alignGenotypeDataToReference() {
-    //tag "${params.cohortName} ==> ${params.reference.baseName}"
     label 'mediumMemory'
     label 'plink2'
     cache 'lenient'
     input:
-	path plinkBinaryFileset
-	path famFile
+	    path plinkBinaryFileset
+	    path famFile
     output:
-        publishDir path: "${params.outputDir}"
         path "temporary.vcf.gz"
     script:
-	plinkBase = famFile.baseName
+    	plinkBase = famFile.baseName
         """
         plink2 \
             --bfile ${plinkBase} \
@@ -148,7 +150,6 @@ process filterSitesWithoutRefOrAltAlleles() {
     input:
         path tempVcfFile
     output:
-        publishDir path: "${params.outputDir}", mode: 'copy'
         path "${params.cohortName}.vcf.gz"
     script:
         """
@@ -183,16 +184,18 @@ process getFinalPlinkBinaryFileset() {
 
 def sendWorkflowExitEmail() {
 
-    subject = getBasicEmailSubject()
-    attachment = "${launchDir}/report.html"
-    message = getBasicEmailMessage()
+    if("${launchDir}/report.html".exists()) {
+        attachment = "${launchDir}/report.html"
+    } else {
+        attatchment = ""
+    }
 
     if (userEmailAddressIsProvided()) {
         sendMail(
             to: "${params.email}",
-            subject: "${subject}",
-            body: "${message}",
-            attach: "${attachment}")
+            subject: getBasicEmailSubject(),
+            body: getBasicEmailMessage(),
+            attach: ${attachment})
     }
 }
 
