@@ -19,7 +19,7 @@ def getInputChannels() {
 
 
 def getGenotypeReports() {
-  
+
    return channel
             .fromPath( params.inputDir + "*_gtReport_*" )
 
@@ -72,7 +72,7 @@ process concatenateLgenFiles() {
       """
       cat ${lgenFiles} > "${params.cohortName}.lgen"
       """
-   
+
 }
 
 process getMapFileFromSnpReport() {
