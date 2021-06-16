@@ -178,6 +178,7 @@ process getFinalPlinkBinaryFileset() {
             --vcf ${vcfFile} \
             --threads $task.cpus \
             --make-bed \
+	    --double-id \
             --out ${params.cohortName}-clean
         """
 }
