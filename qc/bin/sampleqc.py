@@ -6,16 +6,18 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
-import os.path
+import os.path os.mkdir
+
+mkdir('plates')
 
 num_cols=4
 num_rows=5
 
-inf = sys.argv[1]
-gc10= sys.argv[2]
-idpat = sys.argv[3]
-badf = sys.argv[4]
-outf = sys.argv[5]
+inf = ${inf}
+gc10= ${gc10}
+idpat = $idpat
+badf = ${badf}
+outf = ${outf}
 
 font = {'family': 'serif',
         'color':  'darkred',
@@ -56,7 +58,7 @@ def header(g,graphs,num_bad):
     \textbf{NB: depending on your experiment and analysis, since this
     QC step is at the plate level, this analysis may include samples
     not in your data (if the plates also include samples from other
-    experiments)}.  There were %d samples with 10\%s GenCall value
+    experiments)}.  There were %d samples with 10\\%s GenCall value
     below %s on the plates -- these can be found in \url{poorgc10.lst}. Any of these that were part of the data
     are removed.  """%(num_bad,"%",gc10))
    if len(graphs)>0:

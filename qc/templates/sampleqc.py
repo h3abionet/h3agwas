@@ -6,16 +6,18 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
-import os.path
+import os.path, os.mkdir
+
+mkdir('plates')
 
 num_cols=4
 num_rows=5
 
-inf = sys.argv[1]
-gc10= sys.argv[2]
-idpat = sys.argv[3]
-badf = sys.argv[4]
-outf = sys.argv[5]
+inf = ${inf}
+gc10= ${gc10}
+idpat = $idpat
+badf = ${badf}
+outf = ${outf}
 
 font = {'family': 'serif',
         'color':  'darkred',
@@ -56,14 +58,14 @@ def header(g,graphs,num_bad):
     \textbf{NB: depending on your experiment and analysis, since this
     QC step is at the plate level, this analysis may include samples
     not in your data (if the plates also include samples from other
-    experiments)}.  There were %d samples with 10\%s GenCall value
-    below %s on the plates -- these can be found in \url{poorgc10.lst}. Any of these that were part of the data
+    experiments)}.  There were %d samples with 10\\%s GenCall value
+    below %s on the plates -- these can be found in \\url{poorgc10.lst}. Any of these that were part of the data
     are removed.  """%(num_bad,"%",gc10))
    if len(graphs)>0:
      g.write(r"""
-       Analysis of call rate versus 10\%s GenCall Score
-       can be found in Figure \ref{fig:ccrvgc10}. This should be used to
-       set your QC parameters \url{cut_mind} and \url{gc10}.
+       Analysis of call rate versus 10\\%s GenCall Score
+       can be found in Figure \\ref{fig:ccrvgc10}. This should be used to
+       set your QC parameters \\url{cut_mind} and \\url{gc10}.
       """ % ("%"))
 
 
@@ -73,7 +75,7 @@ def noGCAnalysis(outf,badf):
    g.write("""
     \section{Plate Analysis} 
 
-    No plate analysis can be done because a  10\%  GenCall score can't be found in the sample sheet or 
+    No plate analysis can be done because a  10\\%  GenCall score can't be found in the sample sheet or 
     no sample sheet  given. 
    
    """)
@@ -81,30 +83,30 @@ def noGCAnalysis(outf,badf):
    g=open(badf,"w")
    g.close()
 
-       
-def produceTeX(outf,graphs,num_bad):
-    g = open(outf,"w")
-    header(g,graphs,num_bad)
+     
+# def produceTeX(outf,graphs,num_bad):
+#     g = open(outf,"w")
+#     header(g,graphs,num_bad)
 
-    if len(graphs)==0: 
-        g.close()
-        return
-    g.write((r"\begin{longtable}{%s}"%(("|c"*num_cols)+r"|"))+EOL)
-    g.write(r"\caption{Call rate versus 10\% GenCall score}"+EOL)
-    g.write(r"\label{fig:ccrvgc10}"+EOL+r"\\\hline"+EOL)
-    for r in range(0,len(graphs),num_cols):
-        c_files = list(map(lambda x:r"\includegraphics[width=35mm]{plates/%s.png} "%x,graphs[r:r+num_cols]))
-        c_files = c_files + ([""]*(num_cols-len(c_files)))
-        p_files = list(map(lambda x:r"%s "%x,graphs[r:r+num_cols]))
-        p_files = p_files + ([""]*(num_cols-len(p_files)))
-        c_files = " & ".join(c_files) + r"\\"+EOL
-        p_files = " & ".join(p_files) + r"\\\hline"+EOL
-        g.write(c_files)
-        g.write(p_files)
-    g.write(r"\end{longtable}")
-    g.write(r"\clearpage")
-    g.close()
-        
+#     if len(graphs)==0: 
+#         g.close()
+#         return
+#     g.write((r"\\begin{longtable}{%s}"%(("|c"*num_cols)+r"|"))+EOL)
+#     g.write(r"\\caption{Call rate versus 10\\% GenCall score}"+EOL)
+#     g.write(r"\\label{fig:ccrvgc10}"+EOL)
+#     for r in range(0,len(graphs),num_cols):
+#         c_files = list(map(lambda x:r"\\includegraphics[width=35mm]{plates/%s.png} "%x,graphs[r:r+num_cols]))
+#         c_files = c_files + ([""]*(num_cols-len(c_files)))
+#         p_files = list(map(lambda x:r"%s "%x,graphs[r:r+num_cols]))
+#         p_files = p_files + ([""]*(num_cols-len(p_files)))
+#         c_files = " & ".join(c_files) + r"\\"+EOL
+#         p_files = " & ".join(p_files) + r"\\\hline"+EOL
+#         g.write(c_files)
+#         g.write(p_files)
+#     g.write(r"\\end{longtable}")
+#     g.write(r"\\clearpage")
+#     g.close()
+       
     
 def extractID(x):
     m = re.search(idpat,x)
@@ -112,6 +114,7 @@ def extractID(x):
         
 
 if __name__ == "__main__":
+
     if inf in ["","0","false","False"]:
         noGCAnalysis(outf,badf)
         sys.exit(0)
@@ -138,5 +141,5 @@ if __name__ == "__main__":
         mins  = sdf[["Call_Rate","10%_GC_Score"]].min()
         plateg = sdf.groupby("Institute Plate Label")
         graphs = plotGraphs(plateg,mins)
-    produceTeX(outf,graphs,num_bad)
+    #produceTeX(outf,graphs,num_bad)
         

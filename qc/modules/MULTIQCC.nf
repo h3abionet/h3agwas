@@ -14,6 +14,7 @@ extrasexinfo = "--must-have-sex"
 K = "--keep-allele-order"
 
 process getListOfDuplicatePositions {
+
     label 'plink'
 
     input:
@@ -333,10 +334,12 @@ process noSampleSheet {
      tuple path("poorgc10.lst"), path("plates")
 
     script:
-     """
-       mkdir -p plates
-       sampleqc.py 0 0 0 poorgc10.lst plates/crgc10.tex
-      """
+      inf = 0
+      gc10= 0
+      idpat = 0
+      badf = 'poorgc10.lst'
+      outf = 'plates/crgc10.tex'
+      template 'sampleqc.py'
 }
 
 process removeQCIndivs {
