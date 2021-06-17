@@ -6,18 +6,20 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
-import os.path, os.mkdir
+import os.path
+from os import mkdir
 
 mkdir('plates')
 
 num_cols=4
 num_rows=5
 
-inf = ${inf}
-gc10= ${gc10}
-idpat = $idpat
-badf = ${badf}
-outf = ${outf}
+inf = 0
+gc10= 0
+idpat = 0
+badf = 'poorgc10.lst'
+
+outf = 'plates/crgc10.tex'
 
 font = {'family': 'serif',
         'color':  'darkred',

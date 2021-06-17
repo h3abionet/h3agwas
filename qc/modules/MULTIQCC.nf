@@ -202,7 +202,8 @@ process removeQCPhase1 {
     tuple path(bed), path(bim), path(fam)
 
   output:
-    tuple path("${output}*.bed"), path("${output}*.bim"), path("${output}*.fam"), path("qc1.out"), path("${output}.irem")
+    //tuple path("${output}*.bed"), path("${output}*.bim"), path("${output}*.fam"), path("qc1.out"), path("${output}.irem")
+    tuple path("${output}*.bed"), path("${output}*.bim"), path("${output}*.fam"), path("${output}.irem")
   
   script:
      base = bed.baseName
@@ -217,7 +218,7 @@ process removeQCPhase1 {
      cat *log > logfile
      touch tmp.irem
      cat *.irem > ${output}.irem
-     qc1logextract.py logfile ${output}.irem > qc1.out     
+     # qc1logextract.py logfile ${output}.irem > qc1.out     
   """
 }
 
@@ -228,7 +229,8 @@ process pruneForIBD {
   publishDir "${params.output_dir}/pruneForIBD", overwrite:true, mode:'copy'
 
   input:
-    tuple path(bed), path(bim), path(fam), path(qc1), path(irem)
+    //tuple path(bed), path(bim), path(fam), path(qc1), path(irem)
+    tuple path(bed), path(bim), path(fam), path(irem)
 
   output:
     path "${outf}.genome"
@@ -279,7 +281,9 @@ process calculateSampleHeterozygosity {
    publishDir "${params.output_dir}/Heterozygosity", overwrite:true, mode:'copy'
 
    input:
-      tuple path(bed), path(bim), path(fam), path(qc1), path(irem)
+      // tuple path(bed), path(bim), path(fam), path(qc1), path(irem)
+      tuple path(bed), path(bim), path(fam), path(irem)
+
 
    output:
       tuple path("${hetf}.het"), path("${hetf}.imiss")
@@ -331,16 +335,25 @@ process noSampleSheet {
     tag "Importing samplesheets"
 
     output:
-     tuple path("poorgc10.lst"), path("plates")
+     path("poorgc10.lst")
 
     script:
-      inf = 0
-      gc10= 0
-      idpat = 0
-      badf = 'poorgc10.lst'
-      outf = 'plates/crgc10.tex'
-      template 'sampleqc.py'
+      template 'sampleqc-minimal.py'
 }
+
+
+// process noSampleSheet {
+//     tag "Importing samplesheets"
+
+//     output:
+//      tuple path("poorgc10.lst"), path("plates")
+
+//     script:
+//       """
+//       mkdir -p plates
+//       sampleqc.py 0 0 0 poorgc10.lst plates/crgc10.tex
+//       """
+// }
 
 process removeQCIndivs {
 
@@ -350,8 +363,9 @@ process removeQCIndivs {
     path(f_miss_het)
     path(rel_indivs)
     tuple path(lmissf), path(imiss), path(sexcheck_report), path(hwe), path(f_sex_check_f)
-    tuple path(poorgc), path(plates)
-    tuple path(bed), path(bim), path(fam), path(qc1), path(irem)
+    path(poorgc)
+    // tuple path(bed), path(bim), path(fam), path(qc1), path(irem)
+    tuple path(bed), path(bim), path(fam), path(irem)
     
   output:
     path "${out}.{bed,bim,fam}"

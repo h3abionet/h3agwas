@@ -41,6 +41,10 @@ imiss = channel.fromPath(
     "${params.input_dir}.imiss")
 poor = channel.fromPath(
     "${params.input_dir}.txt")
+plates = channel.fromPath(
+    "${params.inputDir}plates")
+poorgc10 = channel.fromPath(
+    "${params.inputDir}poorgc10.lst")
 
 Channel.fromPath(params.case_control).set { cc_ch }
 
@@ -81,7 +85,7 @@ workflow {
     NoSampleSheet = noSampleSheet()
 
     RemoveQCIndivs = removeQCIndivs(BadIndivsMissingHet,FindRelatedIndiv,IdentifyIndivDiscSexinfo,
-                                    NoSampleSheet,RemoveQCPhase1)
+                                    NoSampleSheet, RemoveQCPhase1)
 
     CalculateSnpSkewStatus = calculateSnpSkewStatus(RemoveQCIndivs.combine(cc_ch))
 
