@@ -14,6 +14,25 @@
  *
  */
 
+def getlistchro(listchro){
+ newlistchro=[]
+ for(x in listchro.split(',')) {
+  splx=x.split("-")
+  if(splx.size()==2){
+   r1=splx[0].toInteger()
+   r2=splx[1].toInteger()
+   for(chro in r1..r2){
+    newlistchro.add(chro.toString())
+   }
+  }else if(splx.size()==1){
+   newlistchro.add(x)
+  }else{
+    logger("problem with chro argument "+x+" "+listchro)
+    System.exit(0)
+  }
+ }
+ return(newlistchro)
+}
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
@@ -54,7 +73,7 @@ params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin"]
+params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req"]
 param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
 param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp"]
 allowed_params+=params_mf
@@ -118,9 +137,15 @@ params.big_time='100h'
 params.threshold_p=5*10**-8
 params.n_causal_snp=3
 params.caviarbf_avalue="0.1,0.2,0.4"
+params.caviar_mem_req="40GB"
 params.paintor_fileannot=""
 params.paintor_listfileannot=""
 //params.paintor_annot=""
+
+params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
+params.list_chro="1-22"
+params.list_pheno=""
+
 
 
 params.finemap_bin="finemap"
@@ -129,11 +154,38 @@ params.modelsearch_caviarbf_bin="model_search"
 params.paintor_bin="PAINTOR"
 params.plink_bin="plink"
 
+
 params.chro=""
 params.begin_seq=""
 params.end_seq=""
-if(params.file_gwas==""){
-error('file_gwas option not initialise')
+
+if(params.begin_seq > params.end_seq){
+error('begin_seq > end_seq')
+}
+if(params.gwas_cat==""){
+println('file_gwas option not initialise')
+process GwasCatDl{
+    label 'R'
+    publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+    output :
+       file("${out}_resume.csv") into gwascat_ch
+       file("${out}*")
+    script :
+      phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
+      out="gwascat_format"
+      """
+      wget -c ${params.gwas_cat_ftp}
+      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${params.chro}
+      """
+}
+headgc_chr="chrom"
+headgc_bp="chromEnd"
+}else{
+gwascat_ch=Channel.fromPath(params.gwas_cat, checkIfExists:true)
+headgc_chr=params.headgc_chr
+headgc_bp=params.headgc_bp
+checkColumnHeader(params.gwas_cat, [headgc_chr,headgc_bp])
+
 }
 if(params.chro=="" | params.begin_seq=="" | params.end_seq==""){
 error('chro, begin_seq or end_seq not initialise')
@@ -223,7 +275,7 @@ process ComputedLd{
 }
 
 process ComputedFineMapCond{
-  label ''
+  label 'finemapping'
   cpus params.fm_cpus_req
   memory params.fm_mem_req
   input :
@@ -244,6 +296,7 @@ process ComputedFineMapCond{
 }
 
 process ComputedFineMapSSS{
+  label 'finemapping'
   memory params.fm_mem_req
   cpus params.fm_cpus_req
   input :
@@ -264,7 +317,8 @@ process ComputedFineMapSSS{
 }
 
 process ComputedCaviarBF{
-  memory params.fm_mem_req
+  memory params.caviar_mem_req
+  label 'finemapping'
   input :
     file(filez) from caviarbf_gwas
     file(ld) from ld_caviarbf
@@ -313,6 +367,7 @@ paintor_fileannotplot=file('NOFILE')
 }
 }
 process ComputedPaintor{
+   label 'finemapping'
    memory params.fm_mem_req
    input :
     file(filez) from paintor_gwas
@@ -382,10 +437,6 @@ genes_file_ch=Channel.fromPath(params.genes_file)
 }
 
 
-if(params.gwas_cat==""){
-       error("\n\n------\nError no file for gwas catalgo\n---\n")
-}
-gwascat_ch=Channel.fromPath(params.gwas_cat)
 
 process MergeResult{
     label 'R'
@@ -412,7 +463,7 @@ process MergeResult{
        cat $infopaint > infopaint
        echo "sss $fmsss" > infofinemap 
        echo "cond $fmcond" >> infofinemap 
-       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${params.headgc_bp} --headchr_gc ${params.headgc_chr}  --listfinemap infofinemap  $pfileannot
+       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot
       """
 
 }

@@ -51,9 +51,12 @@ params.gwama_bin='GWAMA'
 params.mrmega_bin='MR-MEGA'
 params.metasoft_bin="/opt/bin/Metasoft.jar"
 params.plink_bin="plink"
+params.max_plink_cores=4
+
 
 params.ma_mrmega_pc=2
 params.ma_random_effect=1
+params.mrmega_mem_req="20GB"
 params.ma_genomic_cont=0
 params.ma_inv_var_weigth=0
 params.ma_mem_req="10G"
@@ -116,6 +119,10 @@ def configfile_analysis(file){
        CmtL+=1
    }
  return([resFile,resInfo, NumRef])
+}
+if(params.file_config==''){
+println "not file config defined\n exit"
+exit(1)
 }
 checkexi=Channel.fromPath(params.file_config,checkIfExists:true)
 info_file=configfile_analysis(params.file_config)
@@ -208,7 +215,7 @@ if(params.mrmega==1){
   //config channel
   process doMRMEGA {
     label 'metaanalyse'
-    memory ma_mem_req
+    memory params.mrmega_mem_req
     time params.big_time
     input :
       val(list_file) from liste_file_mrmega
@@ -230,7 +237,7 @@ if(params.mrmega==1){
   }
   process showMRMEGA {
     memory ma_mem_req
-    publishDir params.output_dir
+    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       file(assoc) from res_mrmega
     output:
@@ -335,6 +342,7 @@ if(params.plink==1){
   process doPlinkMeta{
      time params.big_time
      memory params.plink_mem_req
+     cpus params.max_plink_cores
      input :
       file(listeplk) from liste_file_plk
     publishDir "${params.output_dir}/plink", overwrite:true, mode:'copy'
@@ -345,14 +353,14 @@ if(params.plink==1){
      lpk=listeplk.join(" ")
      out=params.output+'_plink'
      """
-     ${params.plink_bin} --meta-analysis $lpk + qt -out $out
+     ${params.plink_bin} --meta-analysis $lpk + qt -out $out --threads ${params.max_plink_cores} 
      """
 
   }
 
   process showPlink {
     time params.big_time
-    memory metasoft_mem_req
+    memory ma_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       file(assoc) from res_plink

@@ -81,8 +81,15 @@ params.loczm_source ="1000G_March2012"
 params.loczm_gwascat = ""
 params.data=""
 params.pheno=""
+params.list_rs=""
 
-list_rs=params.list_rs.split(",").toList()
+params.list_file_annot=""
+params.info_file_annot=""
+
+if(params.list_rs==""){
+error("list_rs null")
+}
+
 
 
 /*JT Append initialisation variable*/
@@ -104,6 +111,10 @@ plink_mem_req = params.plink_mem_req
 other_mem_req = params.other_process_memory
 max_plink_cores = params.max_plink_cores 
 params.help = false
+//ListeDB=(refGene cg46 cg69 dbnsfp31a_interpro dbscsnv11 esp6500siv2_all exac03 gme intervar_20170202 knownGene mcap avsnp150 ljb26_all dbnsfp33a 1000g2015aug kaviar_20150923 avsnp150 clinvar_20170905 LoFtool)
+params.list_db_anovar="1000g2015aug,gme"
+params.ref_annovar="hg19"
+params.bin_annovar="annotate_variation.pl"
 
 
 //data_ch = Channel.fromPath(params.data)
@@ -173,7 +184,9 @@ println "Around rs : ${params.around_rs}\n\n"
 
 gwas_ch = Channel.fromPath(params.file_gwas)
 
+list_rs=params.list_rs.split(",")
 rs_label_ch=Channel.from(list_rs)
+
 
 process ExtractInfoRs{
     memory other_mem_req
@@ -195,16 +208,123 @@ process ExtractInfoRs{
       """
 }
 
+if(params.list_file_annot!=""){
+fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot)))
+}else{
+
+gwas_ch_annovar = Channel.fromPath(params.file_gwas)
+process ExtractAllRs{
+    memory other_mem_req
+    input:
+       file(gwas_file) from gwas_ch_annovar
+    output :
+      file("${out}_all.annov") into info_annovar, info_annovar_chro, info_annovar_2
+    script :
+       out=params.output
+       """ 
+      an_extract_rs.py --inp_resgwas  $gwas_file --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} --list_rs $params.list_rs --around_rs ${params.around_rs} --out_head $out --a1_header $head_A1 --a2_header  $head_A2
+       """
+}
+  process getListeChro{
+        input :
+          file(BimFile) from info_annovar_chro
+        output :
+          stdout into chrolist
+        script:
+         """
+         cat $BimFile|awk '{print \$1}'|uniq|sort|uniq
+        """
+  }
+  chrolist=chrolist.flatMap { list_str -> list_str.split() }
+
+
+listdb=Channel.from(params.list_db_anovar.split(','))
+process getannovar_db {
+  label 'Annovar'
+  input : 
+      val(db) from listdb
+  publishDir "${params.output_dir}/dbzip/", overwrite:true, mode:'copy'
+  output:
+    file("humandb/${params.ref_annovar}_*.txt") into db_annovar
+  script :
+   output=params.ref_annovar+"_" + db+'.txt'
+   """
+   ${params.bin_annovar} -downdb -buildver ${params.ref_annovar} -webfrom annovar $db humandb
+   """
+}
+
+info_annovar=info_annovar.combine(db_annovar.flatMap())
+
+process annovar_chro_db{
+   input :
+     set file(filepos_annov), file(annov_db) from info_annovar
+   each chro from chrolist
+   output :
+      set val(chro),file("$fileout") into list_db_format_ch_chro
+   script :
+     db=annov_db.baseName
+     out_chro_tmp=db
+     out_annov_tmp=chro+"_tmp.annov"
+     fileout=db+"_"+chro+".txt"
+     """
+     awk -v chro=$chro '{if(\$1==chro)print \$0}' $filepos_annov > $out_annov_tmp
+     head -1 $annov_db > $out_chro_tmp
+     awk -v chro=$chro '{if(\$1==chro)print \$0}' $annov_db >> $out_chro_tmp
+     an_extract_info.py --list_pos $out_annov_tmp --annov_file $out_chro_tmp --out $fileout 
+     rm $out_chro_tmp $out_annov_tmp
+     """
+}
+
+list_db_chro=info_annovar_2.combine(list_db_format_ch_chro.groupTuple())
+process mergechro_db{
+ input :
+    set file(infoannov),val(chro), file(listfile) from list_db_chro
+  publishDir "${params.output_dir}/db_annov/", overwrite:true, mode:'copy'
+  output :
+    file(out) into merge_chro_ch
+  script :
+    out_annov_tmp=chro+"_tmp.bed"
+    listfch=listfile.join(",")
+    out=chro+"_merge.annov"
+    """
+    awk -v chro=$chro '{if(\$1==chro)print \$0}' $infoannov > $out_annov_tmp
+    merge_file.py --list_pos $out_annov_tmp --list_file $listfch --out $out
+    """
+}
+
+
+db_format_ch=merge_chro_ch.collect()
+process merge_annovar{
+   input :
+    file(listfile) from db_format_ch
+   output:
+    set file(file_annot), file(info_file_annot) into fileannot_ch  
+   script :
+      file_annot="annot"
+      info_file_annot="annot.info"
+      """
+      ls -l ${params.output_dir}/db_annov/*_merge.annov | awk -F"[_/]" '{\${NF-1}"\t"\$0}'> $file_annot  
+      touch $info_file_annot
+      """
+}
+//fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot)))
+}
+
+
 if(params.loczm_gwascat!=""){
 loczm_gwascat=" --gwas-cat ${params.loczm_gwascat}"
 }else{
 loczm_gwascat=""
 }
 
+loczm_dir=file(params.loczm_bin).getParent().getParent()
+dirlz=Channel.fromPath(loczm_dir,type:'dir')
 process PlotLocusZoom{
+    label 'py2R'
     memory plink_mem_req
     input : 
        set rs, file(filegwas) from locuszoom_ch
+       file(lz_dir) from dirlz
     publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
     output :
        file("out_$rsnameout/*.svg")
@@ -212,28 +332,30 @@ process PlotLocusZoom{
     script :
        rsnameout=rs.replace(':',"_")
        """
-       ${params.loczm_bin} --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date 
+       ${lz_dir}/bin/locuszoom --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date 
        """
 }
 
-fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot)))
 process ExtractAnnotation{
+      label 'latex'
       memory plink_mem_req
       input :
         set val(rs),file(file_rs),file(annot_file), file(annot_info) from fileannot_ch
       publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
       output :
-        file("${out}*") 
-        set rs, file("${out}.pdf") into report_info_rs
+        file("${out}*")
+        file("*${rs}*")
+        set val(rs), file("${out}.pdf") into report_info_rs
       script :    
          out="annot-"+rs.replace(':','_')
          rsnameout=rs.replace(':',"_")
          """  
          an_extract_annot.py --list_file_annot $annot_file --info_pos $file_rs --out $out --info_file_annot $annot_info
-         pdflatex $out 
-         pdflatex $out 
+         pdflatex $out
+         pdflatex $out
          """
 }
+
 
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
@@ -253,6 +375,7 @@ else  cov_plot_geno=""
 if(params.gxe!="")gxe_cov_geno="--gxe ${params.gxe}"
 else gxe_cov_geno=""
 process PlotByGenotype{
+    label 'R'
     memory plink_mem_req
     input :
         set val(rs),file(file_rs), file(bed), file(bim), file(fam), file(data)  from fileplotgeno_ch
@@ -273,6 +396,7 @@ all_info_rs_ch=report_lz_ch.join(infors_gwas).join(report_info_rs).join(report_p
 if(params.covariates)covrep="--cov ${params.covariates}"
 else  covrep=""
 process WriteReportRsFile{
+    label 'latex'
     memory plink_mem_req
     input :
        set val(rs), file(locuszoom), file(gwasres),file(annotpdf) ,file(plotgeno) from all_info_rs_ch 

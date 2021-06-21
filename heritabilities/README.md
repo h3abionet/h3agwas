@@ -17,10 +17,13 @@ The key options are:
 * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
 * `output_dir` : output directory
 * `output_pat` : output pattern
-* ̀ data` : same option that _assoc/plink-assoc.nf_, file is optional, used for gemma, bolt and gcta
+* `sample_snps_rel` : do you need to sample snps for relatdness using plink, 1 yes, 0 : no [default 0]
+  * `sample_snps_rel_paramplkl` [default : 100 20 0.1]
+
+* `data` : same option that _assoc/main.nf_, file is optional, used for gemma, bolt and gcta
   * `pheno` :phenotypes used in data to computed in gemma, bolt
 * `file_gwas` : one ore more one file gwas, used for ldsc and gemma, to defined column of files :
-  * ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+  * `head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
   * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
   * `head_rs` : rs header column [default : "SNP"]
   * `head_beta` : beta header colum [default : "BETA"]

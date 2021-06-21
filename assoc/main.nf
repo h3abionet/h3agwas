@@ -39,7 +39,7 @@ allowed_params+=ParamFast
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
 
-FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa']
+FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa', "gcta64_bin"]
 allowed_params+=FastGWA_params
 
 params.each { parm ->
@@ -135,7 +135,7 @@ params.gxe=""
 /**/
 params.fastgwa=0
 params.fastgwa_mem_req="10G"
-params.fastgwa_cpus=5
+params.fastgwa_num_cores=5
 params.grm_nbpart=100
 params.gcta64_bin = "gcta64"
 params.fastgwa_type="--fastGWA-mlm-exact"
@@ -143,6 +143,7 @@ params.grm_cutoff =  0.05
 params.covariates_type=""
 params.gcta_grmfile=""
 params.sample_snps_rel=0
+params.sample_snps_rel_paramplkl="100 20 0.1"
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -159,7 +160,6 @@ other_mem_req = params.other_process_mem_req
 max_plink_cores = params.max_plink_cores 
 
 params.help = false
-
 
 data_ch = file(params.data)
 
@@ -405,7 +405,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
         base = bed.baseName
         prune= "${base}-prune"
         """
-        plink --bfile ${base} --indep-pairwise 100 20 0.1 --out $prune
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores}
         """
    }
    //BoltNbMaxSnps=filers_count_line.countLines()
@@ -528,6 +528,7 @@ if (params.fastlmm == 1) {
   if(params.fastlmm_multi==1){
 
      process getRelForFastLMM {
+        label 'gemma'
 	cpus params.fastlmm_num_cores
 	memory params.fastlmm_mem_req
 	time params.big_time
@@ -585,14 +586,15 @@ if (params.fastlmm == 1) {
          our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
          our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
 
-	 covar_opt_fast =  (params.covariates) ?  " -covar $covariate" : ""
+	 covar_opt_fast =  (params.covariates) ?  " -covar newcov.out" : ""
 	 newbase=base+"-"+chro
 	 out = "$base-$our_pheno"+"-"+chro+".stat"
 	 """
 	 this_pheno_col=`echo ${this_pheno} | awk -F"@" '{print \$1}'`
-	 plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase --threads ${params.fastlmm_num_cores}
+         fastlmm_relselind.py --rel $rel --phenofile $phef --relout rel_fastlmm_filter.txt --phenofileout newpheno.out --pospheno \$this_pheno_col --covfile $covariate --covfileout newcov.out
+         plink --keep-allele-order --bfile $base --chr $chro --make-bed --out $newbase --threads ${params.fastlmm_num_cores} --keep newpheno.out
 	 $fastlmmc -REML -simType RRM -verboseOut -sim $rel -bfile $newbase -pheno ${phef} -simLearnType Full -out $out -maxThreads ${params.fastlmm_num_cores} \
-	          $covar_opt_fast  -mpheno \$this_pheno_col -bfileSim $base
+	          $covar_opt_fast  
 	 """
        }
 
@@ -659,7 +661,7 @@ if (params.fastlmm == 1) {
   // this part is plotting done for any fastlmm mode
   //, overwrite:true, mode:'copy'
   process showFastLmmManhatten {
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from fastlmm_manhatten_ch
@@ -731,6 +733,7 @@ if (params.boltlmm == 1) {
      covariate_option = "--cov_list ${params.covariates}"
   else
      covariate_option = ""
+
   process  getBoltPhenosCovar {
     input:
       file(covariates) from data_ch_bolt
@@ -755,7 +758,7 @@ if (params.boltlmm == 1) {
   if(params.bolt_covariates_type=="" & params.covariates_type!=""){
     bolt_covariates_type=params.covariates_type
   }else{
-  bolt_covariates_type=params.bolt_covariates_type
+    bolt_covariates_type=params.bolt_covariates_type
   }
    if (params.covariates) 
       cov_bolt = boltlmmCofact(params.covariates,bolt_covariates_type)
@@ -766,21 +769,9 @@ if (params.boltlmm == 1) {
    if(params.bolt_use_missing_cov==1)
      missing_cov=" --covarUseMissingIndic "
 
-   pval_head = "P_BOLT_LMM"
-
+  pval_head = "P_BOLT_LMM"
   type_lmm="--lmm"
-  process doCountNbSnp{
-    time   params.big_time
-    input :
-       file(bim) from bim_ch_bolt
-    output :
-       stdout into nbsnp_ch_bolt
-    script :
-      """
-      wc -l $bim|awk '{print \$1}'
-      """
-  }
-  /*    nb_snp= CountLinesFile(base+".bim") */
+
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
   else rs_ch_exclude_bolt=file('NO_FILE')
 
@@ -811,7 +802,6 @@ if (params.boltlmm == 1) {
     time   params.big_time
     input:
       set file(plinksbed), file(plinksbim), file(plinksfam) from plink_ch_bolt
-      val nb_snp from nbsnp_ch_bolt
       file(phef) from newdata_ch_bolt
       file(rs_exclude) from rs_ch_exclude_bolt
       file(SnpChoiceMod) from filers_matrel_bolt
@@ -846,13 +836,11 @@ if (params.boltlmm == 1) {
      --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt \
     $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt} \
       --maxModelSnps=\$BoltNbMaxSnps
-      #bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp |\
-      #       grep -B 1 -E "^[ ]+h2" 1> $outReml 
       """
   }
 
   process showBoltmmManhatten {
-   memory params.other_process_memory
+   memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from bolt_manhatten_ch
@@ -867,7 +855,7 @@ if (params.boltlmm == 1) {
   }
 
 
-}/*JT End of boltlmm*/ else {
+}else {
   report_bolt_ch = Channel.empty()
 }
  
@@ -898,6 +886,7 @@ if (params.gemma+params.gemma_gxe>0) {
     input:
        file plinks from rel_ch_gemma
        file file_rs from filers_matrel_mat_gem
+    publishDir "${params.output_dir}/gemma/rel", overwrite:true, mode:'copy'
     output:
        file("output/${base}.*XX.txt") into (rel_mat_ch, rel_mat_ch_gxe)
     script:
@@ -987,6 +976,7 @@ if (params.gemma == 1){
        out                = "$base-$our_pheno-$chro"
        dir_gemma          =  "gemma"
        """
+       hostname
        list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
        gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
@@ -1072,7 +1062,7 @@ if (params.gemma == 1){
 
 
   process showGemmaManhatten {
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     label 'bigMem'
     input:
@@ -1255,7 +1245,7 @@ process doGemmaGxEChro{
   } 
 
   process showGemmaManhattenGxE { 
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from gemma_manhatten_ch_gxe
@@ -1313,7 +1303,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
   //log_out_ch.subscribe { println "Completed plink test ${it[0]}" }
  
   process drawPlinkResults { 
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     input:
     set val(test), val(pheno_name), file(results) from out_ch//.tap(log_out_ch)
     output:
@@ -1374,7 +1364,7 @@ if (params.plink_gxe==1) {
 
   process showPlinkManhattenGxE {
     label 'gcta'
-    memory params.other_process_memory
+    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from res_plink_gxe
@@ -1391,26 +1381,14 @@ if (params.plink_gxe==1) {
   report_plink_gxe=Channel.empty()
 }
 
-// Partition the GRM into 100 parts
-// ${params.gcta64_bin} --bfile test --make-grm-part 100 1 --thread-num 5 --out test
-// ${params.gcta64_bin} --bfile test --make-grm-part 100 2 --thread-num 5 --out test
-// ...
-// ${params.gcta64_bin} --bfile test --make-grm-part 100 100 --thread-num 5 --out test
-// # Merge all the parts together (Linux, Mac)
-// cat test.part_3_*.grm.id > test.grm.id
-// cat test.part_3_*.grm.bin > test.grm.bin
-// cat test.part_3_*.grm.N.bin > test.grm.N.bin
-// # Make a sparse GRM from the merged full-dense GRM
-// ${params.gcta64_bin} --grm test_grm --make-bK-sparse 0.05 --out test_sp_grm
-//
 if(params.fastgwa==1){
 
 if(params.gcta_grmfile==""){
  process FastGWADoGRM{
+    cpus params.fastgwa_num_cores
     maxForks params.max_forks
     label 'gcta'
     memory params.fastgwa_mem_req
-    cpus params.fastgwa_cpus
     input :
      set file(bed),file(bim),file(fam) from grlm_assoc_ch
      file file_rs from filers_matrel_mat_GWA
@@ -1425,7 +1403,7 @@ if(params.gcta_grmfile==""){
      base   = bed.baseName
      """
      hostname
-     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_cpus} --out mgrm $rs_list
+     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_num_cores} --out mgrm $rs_list
      """
  }
 
@@ -1436,7 +1414,7 @@ if(params.gcta_grmfile==""){
   process MergFastGWADoGRM{
     label 'gcta'
     memory params.fastgwa_mem_req
-    cpus params.fastgwa_cpus
+    cpus params.fastgwa_num_cores
     input :
       file(idgrmallf) from idgrm_c
       file(bingrmallf) from bingrm_c
@@ -1450,7 +1428,7 @@ if(params.gcta_grmfile==""){
       cat mgrm.part_*_*.grm.id > test_grm.grm.id
       cat mgrm.part_*_*.grm.bin > test_grm.grm.bin
       cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
-      ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_cpus}
+      ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_num_cores}
       """
   }
 }else{
@@ -1472,7 +1450,7 @@ process FastGWARun{
     maxForks params.max_forks
     label 'gcta'
     memory params.fastgwa_mem_req
-    cpus params.fastgwa_cpus
+    cpus params.fastgwa_num_cores
     input :
        set val(head),file(alldigrm), file(allbingrm) from grm_all
        set file(bed),file(bim),file(fam) from fastgwa_assoc_ch 
@@ -1495,12 +1473,12 @@ process FastGWARun{
      covqual_cov = (balqualcov) ? " --cov_type ${params.covariates_type} --covqual_file $covfilequal " : ""
      """
      all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
-     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_cpus} --out $out --grm-sparse $head $covqual_fastgwa
+     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa
      """
 }
   process showFastGWAManhatten {
    label 'py3fast'
-   memory params.other_process_memory
+   memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
       set val(base), val(this_pheno), file(assoc) from fastgwa_manhatten_ch
