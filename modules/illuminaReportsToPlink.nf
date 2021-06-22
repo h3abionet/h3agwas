@@ -184,13 +184,6 @@ process getFinalPlinkBinaryFileset() {
 }
 
 def sendWorkflowExitEmail() {
-
-    if("${launchDir}/report.html".exists()) {
-        attachment = "${launchDir}/report.html"
-    } else {
-        attatchment = ""
-    }
-
     if (userEmailAddressIsProvided()) {
         sendMail(
             to: "${params.email}",
