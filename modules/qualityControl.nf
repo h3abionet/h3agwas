@@ -88,7 +88,6 @@ process removeSamplesWithPoorClinicalData {
 process removeDuplicatedSnvPositions {
 
     label 'plink'
-    publishDir "${params.outputDir}/quality-control", mode: 'copy'
 
     input:
     tuple path(bed), path(bim), path(fam)
@@ -111,7 +110,6 @@ process removeDuplicatedSnvPositions {
 process identifyIndivDiscSexinfo {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/IndivDiscSexinfo", overwrite:true, mode:'copy'
 
   input:
      tuple path(bed), path(bim), path(fam),path(log)
@@ -136,7 +134,6 @@ process generateSnpMissingnessPlot {
   tag "Missingness plot"
 
   memory other_mem_req
-  publishDir "${params.output_dir}/miss", overwrite:true, mode:'copy', pattern: "*.pdf"
 
   input:
      tuple path(lmissf), path(imiss), path(sexcheck_report), path(hwe), path(logfile)
@@ -155,7 +152,6 @@ process generateSnpMissingnessPlot {
 process generateIndivMissingnessPlot {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/miss", overwrite:true, mode:'copy', pattern: "*.pdf"
 
   input:
      tuple path(lmissf), path(imissf), path(sexcheck_report), path(hwe), path(logfile)
@@ -193,7 +189,6 @@ process getInitMAF {
 process showInitMAF {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/InitMAF", overwrite:true, mode:'copy', pattern: "*.pdf"
 
   input:
      path freq
@@ -210,7 +205,6 @@ process showInitMAF {
 process showHWEStats {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/HWEStats", overwrite:true, mode:'copy', pattern: "*.pdf"
 
   input:
      tuple path(lmissf), path(imissf), path(sexcheck_report), path(hwe), path(logfile)
@@ -228,7 +222,6 @@ process removeQCPhase1 {
   tag "Removing QC Phase 1"
 
   memory plink_mem_req
-  publishDir "${params.output_dir}/QCPhase1", overwrite:true, mode:'copy'
 
   input:
     tuple path(bed), path(bim), path(fam)
@@ -258,7 +251,6 @@ process pruneForIBD {
 
   cpus max_plink_cores
   memory plink_mem_req
-  publishDir "${params.output_dir}/pruneForIBD", overwrite:true, mode:'copy'
 
   input:
     //tuple path(bed), path(bim), path(fam), path(qc1), path(irem)
@@ -289,10 +281,10 @@ process pruneForIBD {
 
 // run script to find a tuple of individuals we can remove to ensure no relatedness
 //  Future - perhaps replaced with Primus
+
 process findRelatedIndiv {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/findRelatedIndiv", overwrite:true, mode:'copy'
 
   input:
     tuple path(lmiss), path(missing), path(sexcheck_report), path(hwe), path(logfile)
@@ -310,7 +302,6 @@ process findRelatedIndiv {
 process calculateSampleHeterozygosity {
 
    memory plink_mem_req
-   publishDir "${params.output_dir}/Heterozygosity", overwrite:true, mode:'copy'
 
    input:
       // tuple path(bed), path(bim), path(fam), path(qc1), path(irem)
@@ -331,7 +322,6 @@ process calculateSampleHeterozygosity {
 process generateMissHetPlot {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/MissHetPlot", overwrite:true, mode:'copy', pattern: "*.pdf"
 
   input:
     tuple path(het), path(imiss)
@@ -349,7 +339,6 @@ process generateMissHetPlot {
 process getBadIndivsMissingHet {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/BadIndivsMissingHet", overwrite:true, mode:'copy', pattern: "*.txt"
 
   input:
     tuple path(het), path(imiss)
@@ -446,7 +435,6 @@ process calculateSnpSkewStatus {
 process generateDifferentialMissingnessPlot {
 
    memory other_mem_req
-   publishDir "${params.output_dir}/DMP", overwrite:true, mode:'copy', pattern: "*.pdf"
 
    input:
      tuple path(clean_missing), path(mperm), path(hwe)
@@ -487,27 +475,26 @@ process generateDifferentialMissingnessPlot {
 process removeSkewSnps {
 
   memory plink_mem_req
-  publishDir "${params.output_dir}/skewSnps", overwrite:true, mode:'copy'  
+  publishDir "${params.outputDir}quality-control", overwrite:true, mode:'copy'  
 
   input:
     tuple path(bed), path(bim), path(fam)
     path(failed)
 
   output:
-    tuple path("${output}.bed"), path("${output}.bim" ), path("${output}.fam"), path("${output}.log")
+    path "${output}.{bed,bim,fam,log}"
   
   script:
-  base = bed.baseName
-  output = params.output.replace(".","_")
-  """
-  plink $K --bfile $base $sexinfo --exclude $failed --make-bed --out $output
-  """
+    base = bed.baseName
+    output = params.cohortName+".filtered"
+    """
+    plink $K --bfile $base $sexinfo --exclude $failed --make-bed --out $output
+    """
 }
 
 process calculateMaf {
 
   memory plink_mem_req
-  publishDir "${params.output_dir}/Maf", overwrite:true, mode:'copy', pattern: "*.frq"
 
   input:
     tuple path(bed), path(bim), path(fam), path(log)
@@ -517,7 +504,7 @@ process calculateMaf {
 
   script:
     base = bed.baseName
-    out  = base.replace(".","_")
+    out  = base
     """
       plink --bfile $base $sexinfo  --freq --out $out
     """
@@ -526,7 +513,6 @@ process calculateMaf {
 process generateMafPlot {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/Maf", overwrite:true, mode:'copy', pattern: "*.pdf"
 
   input:
     path(input)
@@ -562,7 +548,6 @@ process findHWEofSNPs {
 process generateHwePlot {
 
   memory other_mem_req
-  publishDir "${params.output_dir}/HwePlot", overwrite:true, mode:'copy', pattern: "*.pdf"
 
   input:
     path(unaff)
