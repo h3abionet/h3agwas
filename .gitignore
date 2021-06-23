@@ -9,3 +9,9 @@ input/*
 /config-gen/build/
 *.jar
 plink2
+
+*.bed
+*.bim
+*.fam
+
+*.html*
