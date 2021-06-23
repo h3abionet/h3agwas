@@ -18,7 +18,6 @@ if len(sys.argv)<=1:
 template = """
 *-paragraph*{Hardy Weinberg Statistics}: 
 Figure~*-ref{fig:hweinit} shows the cumulative distribution of Hardy-Weinberg ##p##-value for  the SNPs in the raw data. This can be used to assess the cost of excluding SNPs with a particular ##p##-cutoff. We expect the curve the fit tightly to the main diagonal, except for a very small ##p## values (and this deviation may not be observable on a linear plot).
-
 *-begin{figure}[htb]*-centering
 *-includegraphics[width=10cm]{%s}
 *-caption{HWE distribution. For an HWE-value shown on the ##x##-axis, the corresponding ##y##-value shows the proportion of SNPs with HWE p-value *-emph{at least this frequency}; that is, it shows the proportion of SNPs which will *-emph{be removed} if the HWE filter of this ##x##-value is chosen. File is *-protect*-url{%s}.}
@@ -72,11 +71,8 @@ def drawQQ(result,outf):
 
 
 qq_template = """
-
 The QQ plot for the HWE scores can be found in Figure *-ref{fig:qq}. The region of deviation from the line of expected versus observed ##p##-values will be more observable here. Note that if there are very small observed ##p##-values in relation to expected values, the expected curve may be very flat --- pay attention to the x and y axis coordinates.  Since we are plotting on a negative log-scale, note that regions of low probabiliy of deviation from HWE (##p##-value close to 1) are at the left, and regions of high probability (low ##p##-value) are at the right. The tail of the plot where deviation from the diagonal occurs is likely to be a good cut-off to use for QC.  
-
 However, care needs to be taken not exclude SNPs. We are using HWE ##p##-value as a proxy for something having gone wrong with the sample or genotyping, and this is a little crude. In a study with participants from different population groups in a recently admixed group, deviation from HWE is expected and does not indicate problems with QC. Moreover, in a disease study, it is likely that those individuals that are affected, those SNPs that are associated with the condition under study will not in be in HWE. Care needs to be taken -- it is easier to handle in a pure case/control study. In a population cross-section study with different conditions being considered, it might be advisable to re-run the QC pipeline for HWE for each study.  The current version of the pipeline does not support his more complex analysis, though we plan to extend. 
-
 *-begin{figure}[ht]
 *-begin{center}
 *-includegraphics[width=10cm]{%(qqfile)s}
@@ -84,7 +80,6 @@ However, care needs to be taken not exclude SNPs. We are using HWE ##p##-value a
 *-caption{QQ plot for Hardy-Weinberg scores. The graphic can be found in the file *-protect*-url{%(qqfile)s}}
 *-label{fig:qq}
 *-end{figure}
-
 """
 
 

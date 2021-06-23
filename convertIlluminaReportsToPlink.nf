@@ -30,43 +30,53 @@ include {
 
 include {
     checkInputParams;
-    getInputChannels;
+    getChunksFromGenotypeReports;
+    concatenateLgenChunks;
     convertGenotypeReportsToLgen;
-    concatenateLgenFiles;
+    getSnpReport;
+    getSampleReport;
     getFamFileFromSampleReport;
     getMapFileFromSnpReport;
-    convertPlinkLongFormatToPlinkBinary
+    convertPlinkLongFormatToPlinkBinary;
+    alignGenotypeDataToReference;
+    filterSitesWithoutRefOrAltAlleles;
+    getFinalPlinkBinaryFileset;
     sendWorkflowExitEmail;
 } from "${projectDir}/modules/illuminaReportsToPlink.nf"
 
-
 workflow {
 
-    //checkInputParams()
+    checkInputParams()
 
-    (genotypeReports,
-    sampleReport,
-    snpReport) = getInputChannels()
+    chunks = getChunksFromGenotypeReports()
 
-    lgenFiles = convertGenotypeReportsToLgen( genotypeReports ) | view()
+    lgenChunks = convertGenotypeReportsToLgen( chunks )
 
-    /*
+    lgenFile = concatenateLgenChunks(lgenChunks)
 
-    lgenFile = concatenateLgenFiles( lgenFiles )
+    snpReport = getSnpReport()
 
-    famFile = getFamFileFromSampleReport( sampleReport )
+    sampleReport = getSampleReport()
 
     mapFile = getMapFileFromSnpReport( snpReport )
 
-    convertPlinkLongFormatToPlinkBinary(
-        lgenFile, 
-        famFile, 
-        mapFile)
+    famFile = getFamFileFromSampleReport( sampleReport )
 
-    */
+    plinkBinaryFileset = convertPlinkLongFormatToPlinkBinary(
+        lgenFile,
+        mapFile,
+        famFile )
+
+    tempVcfFile = alignGenotypeDataToReference( plinkBinaryFileset, famFile )
+
+    vcfFile = filterSitesWithoutRefOrAltAlleles( tempVcfFile )
+
+    getFinalPlinkBinaryFileset( vcfFile )
+
 }
 
 workflow.onComplete {
     printWorkflowExitMessage()
-    //sendWorkflowExitEmail()
+    sendWorkflowExitEmail()
 }
+

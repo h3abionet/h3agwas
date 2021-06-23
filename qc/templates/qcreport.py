@@ -368,41 +368,27 @@ ${workflow.commandLine}
 # gymnastics to get backslash and dollar
 template=template.replace("*-",chr(92)).replace("##",chr(36))
 
+
 def countLines(fn):
     count=0
     with open(fn) as f:
         for  line in f:
             count=count+1
     return count
-
+    
 def readLines(fn):
     resp=""
     with open(fn) as f:
         for  line in f:
             resp=resp+line
     return resp
-
-def getImages(images):
-   images =images.replace("[","").replace("]","").replace(",","").split()
-   result = "Table "+chr(92)+"ref{table:docker}"+chr(10)+chr(92)+"begin{table}"+chr(92)+"begin{tabular}{ll}"+chr(92)+"textbf{Nextflow process} &" + chr(92)+"textbf{Docker Image}"+chr(92)+chr(92)+chr(92)+"hline"+chr(10)
-   for img in images:
-      dets = img.split(":",1)
-      if len(dets)==1:
-         (proc,dimg)=("default",dets[0])
-      else:
-         (proc,dimg)=dets
-      result = result +  \
-                  proc + "&" + chr(92) + "url{%s}"%dimg+\
-                  chr(92)+chr(92)
-   result = result+chr(92)+"end{tabular}"+chr(92)+"caption{Docker Images Used}" +chr(92)+"label{table:docker}"+chr(92)+"end{table}"
-   return result
-
+    
 
 s=os.stat("$diffmisspdf")
 
 diff_miss_text = diff_miss_text_exists if s.st_size>0 else diff_miss_text_not_exists
 pdict["diff_miss_text"] = diff_miss_text
- 
+
 f=open(args.orig)
 pdict['numrsnps'] = f.readline().split()[0]
 pdict['numrfam']  = f.readline().split()[0]
@@ -411,7 +397,6 @@ f.close()
 f=open("$ilog")
 pdict['plinkversion']=f.readline()
 f.close()
-
 
 pdict['numhetrem'] =  countLines("$misshetremf")
 pdict['numcsnps'] =  countLines(args.cbim)
@@ -423,21 +408,8 @@ pdict['irem']       = "$irem"
 pdict['inpmd5']= readLines("$inpmd5")
 pdict['outmd5']= readLines("$outmd5")
 
-
-pdict['configuration']="""$config_text""".replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10))
-
-if "${workflow.container}"=="[:]":
-   pdict["dockerimages"] = ": locally installed binaries used"
-else:
-   images = getImages("${workflow.container}")
-   pdict["dockerimages"] = ": the docker images used are found in "+images
-
-
-pdict["dockerimages"]=pdict["dockerimages"].replace(chr(36),"")
-
 # changed to support Python 3.5 and before
 pdict["date"]=check_output("date").strip()
-
 
 num_fs = countLines(args.fsex)
 if num_fs == 1:
@@ -445,6 +417,9 @@ if num_fs == 1:
     if "No sex" in head: num_fs=0
 pdict['numfailedsex']=num_fs
 pdict['fullsex']=re.sub("badsex","sexcheck",args.fsex)
+
+pdict["dockerimages"] = ": the docker images used are found in "
+pdict['configuration']=": the docker images used are found in "
 
 out=open("%s.tex"%args.base,"w")
 text = template%pdict
@@ -454,4 +429,28 @@ out.close()
 
 os.system("pdflatex %s >& /dev/null"%args.base)
 os.system("pdflatex %s"%args.base)
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

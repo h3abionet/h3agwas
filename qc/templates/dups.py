@@ -5,15 +5,30 @@ import os
 
 # Called as a template from nextflow
 if len(sys.argv) == 1:
-    sys.argv=["dups.py","$inpfname","$outfname","$remove_on_bp"]
-
-
+    sys.argv=["dups.py","$inpfname","$outfname"]
+    
 def getChrom(chrom):
     try:
         result = int(chrom)
     except ValueError:
         result = chrom
     return result
+    
+os.system("hostname > hostname")
+f=open(sys.argv[1])
+
+if not f:
+    sys.exit("File <%s> not opened"%sys.argv[1])
+s_name = set()
+out=open(sys.argv[2],"w")
+for line in f:
+    data=line.strip().split()
+    snp_name = data[1]
+    if snp_name in s_name:
+        out.write( "%s\\n"%snp_name)
+    else:
+        s_name.add(data[1])
+f.close()
 
 def removeOnBP(fname, out):
     f = open(fname)
@@ -41,29 +56,9 @@ def removeOnBP(fname, out):
             print(old_chrom, old_bp, old_snp)
             print(chrom,bp,snp)
             print(""" 
-
               The BIM file <%s> is not sorted see <%s> and <%s>"
             """ % (fname, old_snp, snp))
             sys.exit(10)
 
-
-os.system("hostname > hostname")
-f=open(sys.argv[1])
-if not f:
-    sys.exit("File <%s> not opened"%sys.argv[1])
-s_name = set()
-out=open(sys.argv[2],"w")
-for line in f:
-    data=line.strip().split()
-    snp_name = data[1]
-    if snp_name in s_name:
-        out.write( "%s\\n"%snp_name)
-    else:
-        s_name.add(data[1])
-f.close()
-
-if sys.argv[3] in ["1",1,True,"True","true"]:
-    removeOnBP(sys.argv[1],out)
-
+removeOnBP(sys.argv[1],out)
 out.close()
-
