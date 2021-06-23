@@ -58,7 +58,7 @@ process convertGenotypeReportsToLgen {
     output:
     	path "*.lgen"
     script:
-        template 'convertGenotypeReportsToLgen.py'
+        template 'convertGenotypeReportsToLgen.pl'
 
 }
 
