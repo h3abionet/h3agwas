@@ -7,6 +7,8 @@
 #  variants from the PLINK .bim file. These variants will be
 #  excluded prior to phasing
 #
+#  It is a nextflow template, therefore cannot be executed
+#  directly on the command line
 #
 ##############################################################
 
