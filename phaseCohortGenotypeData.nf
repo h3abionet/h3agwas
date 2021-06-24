@@ -2,158 +2,89 @@
  *  PHASE COHORT GENOTYPE DATA
  *  ==========================
  *
+ *  This script estimates the underlying haplotypes of the genotypes
+ *  provided by the user, and imputes them, using reference panels and 
+ *  genetic maps. The input is a plink binary trio (bed, bim, fam) 
+ *  data set, below colectively referred to as `cohortData`. 
+ *
+ *  First the cohort data is read into a channel, along with the
+ *  reference panels and genetic maps. We assume there is one panel
+ *  and one map per chromosome. Then the reference panels are filtered
+ *  such that only biallelic snvs are used. The genotype set of the
+ *  cohort are extracted and saved temporarily in the VCF format.    
+ *
+ *  The genotype set of the cohort is then aligned to the reference 
+ *  panels. Any snvs in this genotype set not found in the reference
+ *  panels are removed. When aligning the genotype set to a given 
+ *  reference panel, only the snvs on the chromosome represented by 
+ *  the panel are output. Therefore a set of genotype subsets are 
+ *  produced by the aligning step, where each subset contains snvs
+ *  on a given chromosome.
+ *
+ *  Each of these genotype subsets is then phased with beagle, using
+ *  the corresponding reference panel and genetic map. The snvs from 
+ *  the panel are also imputed into the cohort data at this stage. 
+ *  the result of this phasing step are imputed haplotype subsets. 
+ *
+ *  Finally, these haplotype subsets are indexed and then concatenated
+ *  together to form a single haplotype set for the cohort, in vcf
+ *  format. Using this file and the input cohort fam file we rebuild
+ *  the plink binary trio (bed, bim, fam) for the phased cohort data.    
  *
  ********************************************************************/
 nextflow.enable.dsl=2
 
 include {
-    checkCohortName;
-    checkReferencePanelsDir;
-    checkEmailAdressProvided;
-    userEmailAddressIsProvided;
-    getBasicEmailSubject;
-    getBasicEmailMessage;
-} from "${projectDir}/modules/base.nf"
+    checkInputParams;
+    getInputChannels;
+    selectBiallelicSnvsWithBcftools;
+    selectGenotypeSetWithPlink;
+    alignWithConformGt;
+    phaseWithBeagle;
+    indexWithTabix;
+    concatenateWithBcftools;
+    rebuildCohortDataWithPlink;
+    sendWorkflowExitEmail;
+} from "${projectDir}/modules/phasing.nf"
+
+include {
+    printWorkflowExitMessage;
+} from "${projectDir}/modules/intensityPlot.nf"
 
 workflow {
 
     checkInputParams()
 
-    (cohortData, referencePanels) = getInputChannels()
+    (inputCohortData,
+     referencePanels,
+     geneticMaps) = getInputChannels()
 
-    filteredReferencePanels = keepOnlyBiallelicSnvs(referencePanels)
+    filteredReferencePanels = selectBiallelicSnvsWithBcftools(
+        referencePanels)
 
-    cohortGenotypes = convertPlinkBinaryToVcf(cohortData)
+    genotypeSet = selectGenotypeSetWithPlink(
+        inputCohortData)
 
-    alignedCohortGenotypesPerChromosome \
-        = alignGenotypesToReference(
-            cohortGenotypes.combine(filteredReferencePanels))
+    alignedGenotypeSubsets = alignWithConformGt(
+        genotypeSet.combine(filteredReferencePanels))
 
-    indexedGenotypesPerChromosome = indexGenotypes(alignedCohortGenotypesPerChromosome)
+    haplotypeSubsets = phaseWithBeagle(
+        alignedGenotypeSubsets
+            .join(filteredReferencePanels)
+            .join(geneticMaps))
 
-    alignedCohortGenotypes \
-        = concatenateAndSort(
-            indexedGenotypesPerChromosome.collect())
+    indexedHaplotypeSubsets = indexWithTabix(
+        haplotypeSubsets)
+
+    haplotypeSet = concatenateWithBcftools(
+        indexedHaplotypeSubsets.collect())
+
+    phasedCohortData = rebuildCohortDataWithPlink(
+        haplotypeSet, inputCohortData)
 }
 
-def checkInputParams() {
-
-    checkCohortName()
-    checkReferencePanelsDir()
+workflow.onComplete {
+    printWorkflowExitMessage()
+    sendWorkflowExitEmail()
 }
 
-def getInputChannels() {
-
-    inputDataTag = 'clean'
-
-    bed = channel.fromPath(
-        params.outputDir + params.cohortName + "-${inputDataTag}.bed")
-    bim = channel.fromPath(
-        params.outputDir + params.cohortName + "-${inputDataTag}.bim")
-    fam = channel.fromPath(
-        params.outputDir + params.cohortName + "-${inputDataTag}.fam")
-
-    referencePanels = channel
-        .of(1..22,'X')
-        .map{ it -> [
-            it,
-            file(params.referencePanelsDir + '*chr' + it + '.*.vcf.gz')[0],
-            file(params.referencePanelsDir + '*chr' + it + '.*.vcf.gz.tbi')[0]]}
-
-    return [
-        bed.combine(bim).combine(fam),
-        referencePanels]
-}
-
-process keepOnlyBiallelicSnvs {
-    label 'bcftools'
-    label 'mediumMemory'
-
-    tag "chromosome ${chromosome}"
-
-    input:
-        tuple val(chromosome), path(referencePanel), path(referencePanelIndex)
-    output:
-        tuple val("${chromosome}"), path("chr${chromosome}.refpanel.biallelic.vcf.gz")
-    script:
-        """
-        bcftools \
-            view \
-            -M2 \
-            -v snps \
-            --threads $task.cpus \
-            -Oz \
-            -o chr${chromosome}.refpanel.biallelic.vcf.gz \
-            ${referencePanel}
-        """
-}
-
-
-process convertPlinkBinaryToVcf {
-    label 'plink2'
-    label 'smallMemory'
-
-    input:
-        tuple path(cohortBed), path(cohortBim), path(cohortFam)
-
-    output:
-        path "${cohortBed.getBaseName()}.vcf.gz"
-
-    script:
-        """
-        plink2 \
-            --bfile ${cohortBed.getBaseName()} \
-            --export vcf-4.2 bgz id-paste='fid' \
-            --out ${cohortBed.getBaseName()}
-        """
-}
-
-process alignGenotypesToReference {
-    label 'beagle'
-    label 'bigMemory'
-
-    tag "chromosome ${chromosome}"
-
-    input:
-        tuple path(cohortGenotypes), val(chromosome), path(referencePanel)
-    output:
-        path "${cohortGenotypes.getSimpleName()}.${chromosome}.vcf.gz"
-    script:
-        """
-        conform-gt \
-            ref=${referencePanel} \
-            gt=${cohortGenotypes} \
-            chrom=${chromosome} \
-            out="${cohortGenotypes.getSimpleName()}.${chromosome}"
-        """
-}
-
-process indexGenotypes {
-    label 'samtools'
-    label 'mediumMemory'
-
-    tag "${vcfFile}"
-
-    input:
-        path vcfFile
-    output:
-        tuple path("${vcfFile}"), path("${vcfFile}.tbi")
-    script:
-        """
-        tabix -p vcf ${vcfFile}
-        """
-}
-
-process concatenateAndSort {
-    label 'bcftools'
-    label 'mediumMemory'
-
-    input:
-        path vcfFiles
-    output:
-        path "${params.cohortName}-aligned.vcf.gz"
-    script:
-        """
-        bcftools concat -Oz -o ${params.cohortName}-aligned.vcf.gz ${vcfFiles}
-        """
-}
