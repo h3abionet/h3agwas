@@ -42,7 +42,7 @@ process convertGenotypeReportsToLgen {
     input:
     	path chunks
     output:
-    	publishDir path: "${params.outputDir}"
+    	// publishDir path: "${params.outputDir}"
     	path "*.lgen"
     script:
     	template "convertGenotypeReportsToLgen.pl"
@@ -54,7 +54,7 @@ process getMapFileFromSnpReport() {
     input:
         path snpReport
     output:
-        publishDir path: "${params.outputDir}"
+        // publishDir path: "${params.outputDir}"
         path "${params.cohortName}.map"
     script:
         """
@@ -74,7 +74,7 @@ process getFamFileFromSampleReport() {
     input:
         path sampleReport
     output:
-        publishDir path: "${params.outputDir}"
+        // publishDir path: "${params.outputDir}"
         path "${params.cohortName}.fam"
     script:
         """
@@ -98,7 +98,7 @@ process convertPlinkLongFormatToPlinkBinary() {
         path "${params.cohortName}.map"
         path "${params.cohortName}.fam"
     output:
-        publishDir path: "${params.outputDir}"
+        // publishDir path: "${params.outputDir}"
         path "${params.cohortName}.{bed,bim,fam}"
     script:
         """
@@ -124,7 +124,7 @@ process alignGenotypeDataToReference() {
 	path plinkBinaryFileset
 	path famFile
     output:
-        publishDir path: "${params.outputDir}"
+        // publishDir path: "${params.outputDir}"
         path "temporary.vcf.gz"
     script:
 	plinkBase = famFile.baseName
