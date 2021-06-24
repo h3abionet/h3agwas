@@ -12,10 +12,10 @@ workflow {
 
     perChromosomeVcfFiles = convertPlinkBinaryToVcf( plinkBinaryFileset, palindromes, chromosome )
     perChromosomeVcfFiles
-	.map { chrom, vcfFile -> tuple( chrom, vcfFile ) }
-	.join( thousandGenomesReference )
-	.join( geneticMap )
-	.set { checkstrand_inputs }
+		.map { chrom, vcfFile -> tuple( chrom, vcfFile ) }
+		.join( thousandGenomesReference )
+		.join( geneticMap )
+		.set { checkstrand_inputs }
 
     alignedVcfs = alignGenotypesToReference( checkstrand_inputs )
     alignedVcfs
@@ -43,16 +43,16 @@ def getChromosomes() {
 
 def getThousandGenomesReference() {
     return channel.fromFilePairs( params.thousandGenomesDir + 'chr*1kg.phase3.v5a.vcf.gz', size: 1 )
-	   	  .map { group_key, ref_file -> 
-			 tuple( group_key.replaceFirst(/chr/,""), ref_file.first())
-	    	  }
+	   			.map { group_key, ref_file -> 
+					tuple( group_key.replaceFirst(/chr/,""), ref_file.first())
+	    		}
 }
 
 def getGeneticMapFiles() {
     return channel.fromFilePairs( params.thousandGenomesDir + 'plink.chr*.GRCh37.map', size: 1 )
-		  .map { group_key, map_file ->
-			 tuple( group_key.replaceFirst(/^plink\.chr/,""), map_file.first() )
-		  }
+				.map { group_key, map_file ->
+					tuple( group_key.replaceFirst(/^plink\.chr/,""), map_file.first() )
+		  		}
 }
 
 process getPalindromicSnvs() {
@@ -73,64 +73,63 @@ process convertPlinkBinaryToVcf() {
     label 'plink2'
     label 'smallMemory'
     input:
-	tuple path(bim), path(bed), path(fam)
-	path palindromes
-	val chromosome
+		tuple path(bim), path(bed), path(fam)
+		path palindromes
+		val chromosome
     output:
-	publishDir path: "${params.outputDir}"
-	tuple val("${chromosome}"), path("chr${chromosome}_forPhasing.vcf.gz")
+		publishDir path: "${params.outputDir}"
+		tuple val("${chromosome}"), path("chr${chromosome}_forPhasing.vcf.gz")
     script:
-	"""
-	plink2 \
+		"""
+		plink2 \
 	    --bfile ${params.outputDir}${bed.baseName} \
 	    --exclude ${palindromes} \
 	    --export vcf-4.2 bgz id-paste='iid' \
 	    --threads $task.cpus \
 	    --chr ${chromosome} \
 	    --out "chr${chromosome}_forPhasing"
-	"""
+		"""
 }
 
 process alignGenotypesToReference() {
     label 'beagle'
-    //label 'mediumMemory'
     input:
-	tuple val(chromosome), path(vcfFile), path(refFile), path(geneticMap)
+		tuple val(chromosome), path(vcfFile), path(refFile), path(geneticMap)
     output:
-	publishDir path: "${params.outputDir}"
+		publishDir path: "${params.outputDir}"
         tuple val("${chromosome}"), path("chr${chromosome}-aligned.vcf.gz")
     script:
-	"""
-	conform-gt \
-	    gt="${vcfFile}" \
-	    ref="${refFile}" \
-	    chrom=${chromosome} \
-	    match=POS \
-	    out="chr${chromosome}-aligned"
-	"""
+		"""
+		conform-gt \
+	    	gt="${vcfFile}" \
+	    	ref="${refFile}" \
+	    	chrom=${chromosome} \
+	    	match=POS \
+	    	out="chr${chromosome}-aligned"
+		"""
 }
 
 process phaseGenotypes() {
     label 'beagle'
     label 'bigMemory'
     input:
-	tuple val(chromosome), path(vcfFile), path(refFile), path(geneticMap)
+		tuple val(chromosome), path(vcfFile), path(refFile), path(geneticMap)
     output:
-	publishDir path: "${params.outputDir}", mode: 'copy'
-	path "chr${chromosome}-phased.vcf.gz"
+		publishDir path: "${params.outputDir}", mode: 'copy'
+		path "chr${chromosome}-phased.vcf.gz"
     script:
-	"""
-	beagle \
-	    gt="${vcfFile}" \
-	    ref="${refFile}" \
-	    map="${geneticMap}" \
-	    chrom=${chromosome} \
-	    burnin=3 \
-	    iterations=12 \
-	    ne=20000 \
-	    impute=false \
-	    nthreads=${task.cpus} \
-	    out="chr${chromosome}-phased"
-	"""
+		"""
+		beagle \
+	    	gt="${vcfFile}" \
+	    	ref="${refFile}" \
+	    	map="${geneticMap}" \
+	    	chrom=${chromosome} \
+	    	burnin=3 \
+	    	iterations=12 \
+	    	ne=20000 \
+	    	impute=false \
+	    	nthreads=${task.cpus} \
+	    	out="chr${chromosome}-phased"
+		"""
 }
 
