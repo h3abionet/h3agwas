@@ -82,3 +82,17 @@ def getBasicEmailMessage() {
         """
         .stripIndent()
 }
+
+def getCohortData(inputDataTag) {
+
+    dataTag = (inputDataTag == '') ? '' : "-${inputDataTag}"
+
+    bed = channel.fromPath(
+        params.outputDir + params.cohortName + "${dataTag}.bed")
+    bim = channel.fromPath(
+        params.outputDir + params.cohortName + "${dataTag}.bim")
+    fam = channel.fromPath(
+        params.outputDir + params.cohortName + "${dataTag}.fam")
+
+    return bed.combine(bim).combine(fam)
+}
