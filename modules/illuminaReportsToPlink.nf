@@ -25,6 +25,12 @@ def getChunksFromGenotypeReports() {
             compress: false )
 }
 
+def getGenotypeReports() {
+
+   return channel
+            .fromPath( params.inputDir + "*_gtReport_*" )
+}
+
 def concatenateLgenChunks(lgenChunks) {
     return lgenChunks
         .collectFile(
@@ -52,7 +58,27 @@ process convertGenotypeReportsToLgen {
     output:
     	path "*.lgen"
     script:
-    	template "convertGenotypeReportsToLgen.pl"
+<<<<<<< HEAD
+        template 'convertGenotypeReportsToLgen.py'
+=======
+        template 'convertGenotypeReportsToLgen.pl'
+>>>>>>> 248854c9e6270e86ad730a982eaaadd40e21e82e
+
+}
+
+process concatenateLgenFiles() {
+
+   input:
+      path lgenFiles
+
+   output:
+      //publishDir path: "${params.outputDir}", mode: 'copy'
+      path "${params.cohortName}.lgen"
+
+   script:
+      """
+      cat ${lgenFiles} > "${params.cohortName}.lgen"
+      """
 }
 
 process getMapFileFromSnpReport() {
@@ -188,8 +214,16 @@ def sendWorkflowExitEmail() {
         sendMail(
             to: "${params.email}",
             subject: getBasicEmailSubject(),
+<<<<<<< HEAD
             body: getBasicEmailMessage(),
-            attach: ${attachment})
-    }
+            attach: [
+                "${params.outputDir}manhattan.pdf",
+                "${params.outputDir}qqplot.pdf"])
+   }
 }
 
+=======
+            body: getBasicEmailMessage())
+   }
+}
+>>>>>>> 248854c9e6270e86ad730a982eaaadd40e21e82e

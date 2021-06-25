@@ -7,11 +7,9 @@ output/*
 input/*
 /config-gen/nbproject/private/
 /config-gen/build/
+*.jar
 *.bed
 *.bim
 *.fam
-
 *.html*
-
-*.jar
-
+plink2
