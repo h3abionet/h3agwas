@@ -43,6 +43,11 @@ def checksamplesWithPoorClinicalData() {
         exit 1, 'please provide a file listing poor samples to remove'
     }
 }
+def checkReferencePanelsDir() {
+    if (stringIsNull(params.referencePanelsDir)) {
+        exit 1, 'please provide a directory of reference panels e.g. from 1000 Genomes'
+    }
+}
 
 def userEmailAddressIsProvided() {
 	return !(stringIsNull(params.email))

@@ -29,7 +29,7 @@ def getGenotypeReports() {
 
    return channel
             .fromPath( params.inputDir + "*_gtReport_*" )
-
+}
 
 def concatenateLgenChunks(lgenChunks) {
     return lgenChunks
@@ -58,7 +58,11 @@ process convertGenotypeReportsToLgen {
     output:
     	path "*.lgen"
     script:
+<<<<<<< HEAD
         template 'convertGenotypeReportsToLgen.py'
+=======
+        template 'convertGenotypeReportsToLgen.pl'
+>>>>>>> 248854c9e6270e86ad730a982eaaadd40e21e82e
 
 }
 
@@ -210,6 +214,7 @@ def sendWorkflowExitEmail() {
         sendMail(
             to: "${params.email}",
             subject: getBasicEmailSubject(),
+<<<<<<< HEAD
             body: getBasicEmailMessage(),
             attach: [
                 "${params.outputDir}manhattan.pdf",
@@ -217,3 +222,8 @@ def sendWorkflowExitEmail() {
    }
 }
 
+=======
+            body: getBasicEmailMessage())
+   }
+}
+>>>>>>> 248854c9e6270e86ad730a982eaaadd40e21e82e

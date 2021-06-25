@@ -8,10 +8,9 @@ input/*
 /config-gen/nbproject/private/
 /config-gen/build/
 *.jar
-plink2
-
 *.bed
 *.bim
 *.fam
 
 *.html*
+plink2

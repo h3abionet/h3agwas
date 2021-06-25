@@ -2,250 +2,89 @@
  *  PHASE COHORT GENOTYPE DATA
  *  ==========================
  *
+ *  This script estimates the underlying haplotypes of the genotypes
+ *  provided by the user, and imputes them, using reference panels and 
+ *  genetic maps. The input is a plink binary trio (bed, bim, fam) 
+ *  data set, below colectively referred to as `cohortData`. 
+ *
+ *  First the cohort data is read into a channel, along with the
+ *  reference panels and genetic maps. We assume there is one panel
+ *  and one map per chromosome. Then the reference panels are filtered
+ *  such that only biallelic snvs are used. The genotype set of the
+ *  cohort are extracted and saved temporarily in the VCF format.    
+ *
+ *  The genotype set of the cohort is then aligned to the reference 
+ *  panels. Any snvs in this genotype set not found in the reference
+ *  panels are removed. When aligning the genotype set to a given 
+ *  reference panel, only the snvs on the chromosome represented by 
+ *  the panel are output. Therefore a set of genotype subsets are 
+ *  produced by the aligning step, where each subset contains snvs
+ *  on a given chromosome.
+ *
+ *  Each of these genotype subsets is then phased with beagle, using
+ *  the corresponding reference panel and genetic map. The snvs from 
+ *  the panel are also imputed into the cohort data at this stage. 
+ *  the result of this phasing step are imputed haplotype subsets. 
+ *
+ *  Finally, these haplotype subsets are indexed and then concatenated
+ *  together to form a single haplotype set for the cohort, in vcf
+ *  format. Using this file and the input cohort fam file we rebuild
+ *  the plink binary trio (bed, bim, fam) for the phased cohort data.    
  *
  ********************************************************************/
 nextflow.enable.dsl=2
 
+include {
+    checkInputParams;
+    getInputChannels;
+    selectBiallelicSnvsWithBcftools;
+    selectGenotypeSetWithPlink;
+    alignWithConformGt;
+    phaseWithBeagle;
+    indexWithTabix;
+    concatenateWithBcftools;
+    rebuildCohortDataWithPlink;
+    sendWorkflowExitEmail;
+} from "${projectDir}/modules/phasing.nf"
+
+include {
+    printWorkflowExitMessage;
+} from "${projectDir}/modules/intensityPlot.nf"
+
 workflow {
 
-/*
-    test = channel.fromPath(
-        params.inputDir + "test.29May21.d6d.vcf.gz")
-    ref = channel.fromPath(
-        params.inputDir + "ref.29May21.d6d.vcf.gz")
-    target = channel.fromPath(
-        params.inputDir + "target.29May21.d6d.vcf.gz")
-*/
+    checkInputParams()
 
-    (cohortData, legendFile) = getInputChannels()
+    (inputCohortData,
+     referencePanels,
+     geneticMaps) = getInputChannels()
 
-    cohortVcfFile = convertPlinkBinaryToVcf(cohortData)
-    cohortFrequencyFile = getFrequencyFile(cohortData)
-    excludeFiles = checkStrand(
-        cohortData,
-        cohortFrequencyFile,
-        legendFile)
+    filteredReferencePanels = selectBiallelicSnvsWithBcftools(
+        referencePanels)
 
-    concatenatedExcludeFile = concatenate(excludeFiles) | view()
-    excludeFile = removeDuplicateLines(concatenatedExcludeFile)
+    genotypeSet = selectGenotypeSetWithPlink(
+        inputCohortData)
 
-    cohortDataFiltered = removeUnalignedSnvs(
-        cohortData,
-        excludeFile) | view()
+    alignedGenotypeSubsets = alignWithConformGt(
+        genotypeSet.combine(filteredReferencePanels))
 
-/*
+    haplotypeSubsets = phaseWithBeagle(
+        alignedGenotypeSubsets
+            .join(filteredReferencePanels)
+            .join(geneticMaps))
 
-    testBeagleWithGtInput(test)
+    indexedHaplotypeSubsets = indexWithTabix(
+        haplotypeSubsets)
 
-    testBeagleWithGtAndRefInputs(target, ref)
+    haplotypeSet = concatenateWithBcftools(
+        indexedHaplotypeSubsets.collect())
 
-    bref3 = makeBref3FromRef(ref)
-
-    testBeagleWithGtAndBref3Inputs(target, bref3)
-
-*/
+    phasedCohortData = rebuildCohortDataWithPlink(
+        haplotypeSet, inputCohortData)
 }
 
-def getInputChannels() {
-    bed = channel.fromPath(
-        params.inputDir + params.cohortName + ".bed")
-    bim = channel.fromPath(
-        params.inputDir + params.cohortName + ".bim")
-    fam = channel.fromPath(
-        params.inputDir + params.cohortName + ".fam")
-
-    legendFile = channel.fromPath(
-        params.databasesDir
-        + 'Human/GRCh37/1000GP_Phase3/1000GP_Phase3_chr*.legend.gz')
-
-    return [
-        bed.combine(bim).combine(fam),
-        legendFile]
+workflow.onComplete {
+    printWorkflowExitMessage()
+    sendWorkflowExitEmail()
 }
 
-process convertPlinkBinaryToVcf {
-    label 'plink2'
-    label 'smallMemory'
-
-    input:
-        tuple path(cohortBed), path(cohortBim), path(cohortFam)
-
-    output:
-        path "${cohortBed.getBaseName()}.vcf.gz"
-
-    script:
-        """
-        plink2 \
-            --bfile ${cohortBed.getBaseName()} \
-            --export vcf \
-            --out ${cohortBed.getBaseName()}
-        gzip ${cohortBed.getBaseName()}.vcf
-        """
-}
-
-process getFrequencyFile {
-    label 'plink'
-    label 'smallMemory'
-
-    input:
-        tuple path(cohortBed), path(cohortBim), path(cohortFam)
-
-    output:
-        path "${cohortBed.getBaseName()}.frq"
-
-    script:
-        """
-        plink \
-            --bfile ${cohortBed.getBaseName()} \
-            --freq \
-            --out ${cohortBed.getBaseName()}
-        """
-}
-
-process checkStrand {
-    label 'checkStrand'
-    label 'smallMemory'
-
-    tag "${legendFile.getSimpleName()}"
-
-    input:
-        tuple path(cohortBed), path(cohortBim), path(cohortFam)
-        path cohortFrequencyFile
-        each path(legendFile)
-
-    output:
-        path "Exclude-${cohortBed.getBaseName()}-1000G.txt"
-
-    script:
-        """
-        HRC-1000G-check-bim.pl \
-            -b ${cohortBim} \
-            -f ${cohortFrequencyFile} \
-            -r ${legendFile} \
-            -g \
-            -p "AFR"
-        """
-}
-
-def concatenate(inputFiles) {
-    return inputFiles.collectFile(
-        name: 'concatenated.txt',
-        newLine: true)
-}
-
-process removeDuplicateLines {
-    label 'smallMemory'
-
-    input:
-        path inputFile
-
-    output:
-        path "${outputFile}"
-
-    script:
-        outputFile = \
-            "${inputFile.getBaseName()}" \
-            + ".duplicatesRemoved." \
-            + "${inputFile.getExtension()}"
-        """
-        sort ${inputFile} | sed '/^\$/d' | uniq > ${outputFile}
-        echo '' >> ${outputFile}
-        """
-}
-
-process removeUnalignedSnvs {
-    label 'plink'
-    label 'smallMemory'
-
-    input:
-        tuple path(cohortBed), path(cohortBim), path(cohortFam)
-        path snvsToExclude
-
-    output:
-        path "${outputBase}.{bed, bim, fam}"
-        
-    script:
-        outputBase = "${cohortBed.getBaseName()}.filtered"
-        """
-        plink \
-            --bfile ${cohortBed.getBaseName()} \
-            --exclude ${snvsToExclude} \
-            --make-bed \
-            --out ${outputBase}
-        """
-}
-
-process testBeagleWithGtInput {
-    label 'beagle'
-    label 'smallMemory'
-    publishDir "${params.outputDir}phased", mode: 'copy'
-
-    input:
-        path test
-
-    output:
-        path "out.gt.vcf.gz"
-
-    script:
-        """
-        beagle gt=${test} out=out.gt
-        """
-}
-
-process testBeagleWithGtAndRefInputs {
-    label 'beagle'
-    label 'smallMemory'
-    publishDir "${params.outputDir}phased", mode: 'copy'
-
-    input:
-        path target
-        path ref
-
-    output:
-        path "out.usingRef.gt.vcf.gz"
-
-    script:
-        """
-        beagle \
-            ref=${ref} \
-            gt=${target} \
-            out=out.usingRef.gt
-        """
-
-}
-
-process makeBref3FromRef {
-    label 'beagle'
-    label 'smallMemory'
-
-    input:
-        path ref
-
-    output:
-        path "${output}"
-
-    script:
-        output = "${ref}".replaceFirst(/.vcf.gz/, ".bref3")
-        """
-        bref3 ${ref} > ${output}
-        """
-}
-
-process testBeagleWithGtAndBref3Inputs {
-    label 'beagle'
-    label 'smallMemory'
-    publishDir "${params.outputDir}/phased", mode: 'copy'
-
-    input:
-        path target
-        path bref3
-
-    output:
-        path "out.bref3.vcf.gz"
-
-    script:
-        """
-        beagle ref=${bref3} gt=${target} out=out.bref3
-        """
-
-}
