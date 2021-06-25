@@ -1,0 +1,2 @@
+beagle 5.2 (wget https://faculty.washington.edu/browning/beagle/beagle.29May21.d6d.jar)
+beagle utils (wget http://faculty.washington.edu/browning/beagle/bref3.29May21.d6d.jar)
