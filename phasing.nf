@@ -27,7 +27,7 @@ workflow {
     phasedVcfFiles = phaseGenotypes( phasing_inputs )
 
 /*
-    qualityReports = getVariantQualityReports()
+    prePhasingQualityReports = getCheckStrandReports()
 */
 	
 }
@@ -62,7 +62,7 @@ process getPalindromicSnvs() {
     input:
         tuple path(bim), path(bed), path(fam)
     output:
-        publishDir path: "${params.outputDir}"
+        //publishDir path: "${params.outputDir}"
         path "${params.cohortName}.palindromic.snvs.txt"
     script:
         template "filterPalindromicVariants.r"
@@ -77,7 +77,7 @@ process convertPlinkBinaryToVcf() {
 	path palindromes
 	val chromosome
     output:
-	publishDir path: "${params.outputDir}"
+	//publishDir path: "${params.outputDir}"
 	tuple val("${chromosome}"), path("chr${chromosome}_forPhasing.vcf.gz")
     script:
 	"""
@@ -96,7 +96,7 @@ process alignGenotypesToReference() {
     input:
 	tuple val(chromosome), path(vcfFile), path(refFile), path(geneticMap)
     output:
-	publishDir path: "${params.outputDir}"
+	//publishDir path: "${params.outputDir}"
         tuple val("${chromosome}"), path("chr${chromosome}-aligned.vcf.gz")
     script:
 	"""
