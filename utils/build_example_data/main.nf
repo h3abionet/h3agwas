@@ -75,7 +75,6 @@ listchro_pheno=getlistchro(params.list_chro_pheno)
 
 listchro_ch=Channel.from(listchro)
 listchro_ch2=Channel.from(listchro)
-//Pattern100G="ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
 
 
 listchro_ch=listchro_ch.combine(Channel.fromPath(params.pos_allgeno, checkIfExists:true))
@@ -159,6 +158,8 @@ process mergePlinkFile{
 }
 
 process addSexFile{
+ label 'R'
+
  cpus params.nb_cpus
  input :
    tuple file(bed), file(bim), file(fam) from allplkres_ch_befsex
@@ -176,6 +177,7 @@ process addSexFile{
      """
 }
 process GwasCatDl{
+    label 'R'
     publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
     output :
        file("${out}.bed") into gwascat_bed
@@ -269,6 +271,7 @@ process mergePlinkFile_GC{
 }
 
 process format_simulated{
+   label 'R'
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam) from allplkres_ch_gc
@@ -288,6 +291,7 @@ process format_simulated{
 
 
 process simulation_quantitatif{
+   label 'R'
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_qt
@@ -304,6 +308,7 @@ process simulation_quantitatif{
 }
 
 process simulation_qualitatif{
+   label 'R'
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_ql
