@@ -124,7 +124,6 @@ process GwasCatDl{
 
 
 process extract_gc_dl{
-   py3Image = "quay.io/h3abionet_org/py3plink"
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam) from gwas_plk_ch

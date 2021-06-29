@@ -64,14 +64,15 @@ params.clump_p1=0.0001
 params.clump_p2=0.01 
 params.clump_r2=0.50 
 params.clump_kb=250
-params.dir_vcf="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/"
+//ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz
+params.dir_vcf="ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/"
 
 
 if(params.list_chro_pheno==""){
-params.list_chro_pheno=params.list_chro
+list_chro_pheno=params.list_chro
 }
 listchro=getlistchro(params.list_chro)
-listchro_pheno=getlistchro(params.list_chro_pheno)
+listchro_pheno=getlistchro(list_chro_pheno)
 
 listchro_ch=Channel.from(listchro)
 listchro_ch2=Channel.from(listchro)
@@ -83,15 +84,16 @@ listchro_ch=listchro_ch.combine(Channel.fromPath(params.pos_allgeno, checkIfExis
 
 
 process Dl1000G{
+   label 'Utils'
    cpus params.nb_cpus
    input :
       tuple val(chro), file(pos_geno) from listchro_ch 
    output :
        tuple val(chro), file("${file1000G}") into file1000G
    script :
-      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
-      //ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz
-      file1000G= (chro=='Y') ? "ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz" : "$file1000G"
+      //ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/ALL.chr17.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
+      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz"
+      file1000G= (chro=='Y') ? "ALL.chrY.phase3_integrated_v2b.20130502.genotypes.vcf.gz" : "$file1000G"
       """
       awk -v chro=$chro '{if(\$1==chro)print \$1"\\t"\$2-1"\\t"\$2"\\t"\$1":"\$2}' $pos_geno > pos.bed 
       bcftools view --threads ${params.nb_cpus} -R pos.bed ${params.dir_vcf}/$file1000G|bgzip -c > $file1000G
@@ -124,7 +126,8 @@ process cleanPlinkFile{
      cp "$bim" "${bim}.save"
      awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}.save" > "$bim"
      awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $bim > ${bim}.wellpos.pos
-     plink -bfile $plk  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus}
+     awk '{print \$2}' $plk".bim" | sort | uniq -d > duplicated_snps.snplist
+     plink -bfile $plk  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus} --exclude duplicated_snps.snplist
      """
 }
 plk_chro_flt=plk_chro_cl.collect()
@@ -192,17 +195,32 @@ process GwasCatDl{
       """
 }
 
-listchro_ch_gwascat=Channel.from(listchro_pheno)
-listchro_ch_gwascat=listchro_ch_gwascat.combine(gwascat_pos)
+process getchr_gc{
+  input :
+    file(bedfile) from  gwascat_bed
+  output :
+    stdout into listchro_ch_gwascat
+  script :
+    """
+    awk '{print \$1}' $bedfile|sort|uniq
+    """
+}
+
+//listchro_ch_gwascat=Channel.from(listchro_pheno)
+  newlistchro_ch_gwascat=Channel.create()
+  check = Channel.create()
+  listchro_ch_gwascat.flatMap { list_str -> list_str.split() }.tap ( check) .set { newlistchro_ch_gwascat}
+    newlistchro_ch_gwascat= newlistchro_ch_gwascat.combine(gwascat_pos)
 
 process Dl1000G_GC{
+   label 'Utils'
    input :
-      tuple val(chro), file(pos_geno) from listchro_ch_gwascat
+      tuple val(chro), file(pos_geno) from newlistchro_ch_gwascat
    output :
        tuple val(chro), file("${file1000G}")  into file1000G_gwasc
    script :
-      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
-      file1000G= (chro=='Y' ) ? "ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz" : "$file1000G"
+      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz"
+      file1000G= (chro=='Y') ? "ALL.chrY.phase3_integrated_v2b.20130502.genotypes.vcf.gz" : "$file1000G"
       """
       tabix -fh ${params.dir_vcf}/$file1000G -R $pos_geno |bgzip -c > $file1000G
       """
@@ -234,8 +252,10 @@ process cleanPlinkFile_GC{
      """
      cp "$bim" "${bim}.save"
      awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}.save" > "$bim"
+     awk '{print \$2}' $plk".bim" | sort | uniq -d > duplicated_snps.snplist
      awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $bim > ${bim}.wellpos.pos 
-     plink -bfile $plk  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus}
+     plink -bfile $plk  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus}  --exclude duplicated_snps.snplist
+
      """
 }
 
@@ -250,7 +270,6 @@ process mergePlinkFile_GC{
    output :
      tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch_gc
    script :
-     println allfile
      allfile2=allfile.toList().collect {it.toString().replaceFirst(~/\.[^\.]+$/, '')}
      allfile2=allfile2.unique()
      firstbed=allfile2[0]
@@ -289,38 +308,61 @@ process format_simulated{
      """
 }
 
-
 process simulation_quantitatif{
-   label 'R'
+   label 'gcta'
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_qt
-   publishDir "${params.output_dir}/simul_pheno/quant_pheno/",  overwrite:true, mode:'copy'
    output :
-      file("$out")
+      file("sim.phen") into sim_ql
    script :
-     out=params.output+"_qt.pheno"
      plk=bed.baseName
      """
      ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-qt --simu-hsq ${params.simu_hsq} --out sim --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}
-     format_file_sim.r --file sim".phen" --out $out   
      """
 }
 
+process format_sim_quantitatif{
+    label 'R'
+    input :
+       file(file) from sim_ql
+   publishDir "${params.output_dir}/simul_pheno/quant_pheno/",  overwrite:true, mode:'copy'
+    output :
+      file("$out")
+    script :
+      out=params.output+"_qt.pheno"
+      """
+      format_file_sim.r --file $file --out $out
+      """
+}
+
 process simulation_qualitatif{
-   label 'R'
+   label 'gcta'
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam), file(outeffect) from info_sim_ql
-   publishDir "${params.output_dir}/simul_pheno/qual_pheno/",  overwrite:true, mode:'copy'
    output :
-      file("$out")
+      file("sim.phen") into sim_qt
    script :
      out=params.output+"_ql.pheno"
      plk=bed.baseName
      """
      ${params.gcta_bin} --bfile $plk --simu-causal-loci $outeffect  --simu-hsq ${params.simu_hsq} --out sim --simu-rep ${params.simu_rep}   --simu-k ${params.simu_k}  --simu-cc `estimated_cc.py $fam ${params.simu_k}`
-     format_file_sim.r --file sim".phen" --out $out   
      """
+}
+
+
+process format_sim_qualitatif{
+    label 'R'
+    input :
+       file(file) from sim_qt
+   publishDir "${params.output_dir}/simul_pheno/qual_pheno/",  overwrite:true, mode:'copy'
+    output :
+      file("$out")
+    script :
+      out=params.output+"_ql.pheno"
+      """
+      format_file_sim.r --file $file --out $out
+      """
 }
 
