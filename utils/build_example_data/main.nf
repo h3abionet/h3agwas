@@ -241,6 +241,7 @@ process transfvcfInBed1000G_GC{
 }
 
 process cleanPlinkFile_GC{
+    errorStrategy 'ignore'
     cpus params.nb_cpus
     input :
      tuple val(chro), file(bim), file(fam), file(bed) from plk_chro_gc
