@@ -1,29 +1,34 @@
+def checkOutputDir() {
+    if (stringIsNull(params.outputDir)) {
+        exit 1, 'params.outputDir not set -> please provide an output directory with enough space to save the results'
+    }   
+}
 def checkSnvName() {
     if (stringIsNull(params.snvName)) {
         exit 1, 'please provide a snv id!'
     }
 }
-def checkInputDir() {
-    if (stringIsNull(params.inputDir)) {
-        exit 1, 'please provide an input directory!'
-    }
-    // also need to check is input directory exists... //
-}
-def checkGenotypeReportPrefix() {
-    if (stringIsNull(params.genotypeReportPrefix)) {
-        exit 1, 'please provide a genotype report prefix!'
+def checkIlluminaGenotypeReports() {
+    if (stringIsNull(params.illumina.genotypeReports)) {
+        exit 1, 'params.illumina.genotypeReports not set -> please provide a genotype report path glob pattern'
     }
     // also need to check if any file exists... //
 }
-def checkSampleReport() {
-    if (stringIsNull(params.sampleReport)) {
-        exit 1, 'please provide a sample report file!'
+def checkIlluminaSampleReport() {
+    if (stringIsNull(params.illumina.sampleReport)) {
+        exit 1, 'params.illumina.sampleReport not set -> please provide a sample report file path'
     }
     // also need to check if any file exists... //
 }
-def checkSnpReport() {
-    if (stringIsNull(params.snpReport)) {
-        exit 1, 'please provide a SNP report file!'
+def checkIlluminaLocusReport() {
+    if (stringIsNull(params.illumina.locusReport)) {
+        exit 1, 'params.illumina.locusReport not set -> please provide a locus report file path'
+    }
+    // also need to check if any file exists... //
+}
+def checkClinicalPhenotypeFam() {
+    if (stringIsNull(params.clinicalPhenotypeFam)) {
+        exit 1, 'params.clinicalPhenotypeFam not set -> please provide a clinical phenotype fam file path'
     }
     // also need to check if any file exists... //
 }
@@ -35,18 +40,19 @@ def checkEmailAdressProvided() {
 }
 def checkCohortName () {
 	if (stringIsNull(params.cohortName)) {
-		exit 1, 'please provide a cohort name!'
+		exit 1, 'params.cohortName not set -> please provide a short cohort name to label your output files'
 	}
-}
-def checksamplesWithPoorClinicalData() {
-    if (stringIsNull(params.samplesWithPoorClinicalData)) {
-        exit 1, 'please provide a file listing poor samples to remove'
-    }
 }
 def checkReferencePanelsDir() {
     if (stringIsNull(params.referencePanelsDir)) {
         exit 1, 'please provide a directory of reference panels e.g. from 1000 Genomes'
     }
+}
+def checkReferenceSequence() {
+    if (stringIsNull(params.referenceSequence)) {
+        exit 1, 'params.referenceSequence not set -> please provide a reference sequence fasta file path'
+    }
+    // also need to check if any file exists... //
 }
 
 def userEmailAddressIsProvided() {

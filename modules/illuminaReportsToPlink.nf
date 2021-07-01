@@ -1,7 +1,11 @@
 include {
     checkCohortName;
-    checkSampleReport;
-    checkSnpReport;
+    checkOutputDir;
+    checkIlluminaGenotypeReports;
+    checkIlluminaSampleReport;
+    checkIlluminaLocusReport;
+    checkClinicalPhenotypeFam;
+    checkReferenceSequence;
     userEmailAddressIsProvided;
     checkEmailAdressProvided;
     getBasicEmailSubject;
@@ -10,8 +14,12 @@ include {
 
 def checkInputParams() {
         checkCohortName()
-        checkSampleReport()
-        checkSnpReport()
+        checkOutputDir()
+        checkIlluminaGenotypeReports()
+        checkIlluminaSampleReport()
+        checkIlluminaLocusReport()
+        checkClinicalPhenotypeFam()
+        checkReferenceSequence()
         checkEmailAdressProvided()
 }
 
@@ -172,7 +180,7 @@ process buildCohortData {
         path cohortMap
         path cohortFam
     output:
-        path "${params.cohortName}.{bed,bim,fam}"
+        path "cohortData.{bed,bim,fam}"
     script:
         """
         plink \
@@ -184,7 +192,7 @@ process buildCohortData {
             --no-pheno \
             --threads $task.cpus \
             --make-bed \
-            --out ${params.cohortName}
+            --out cohortData
         """
 }
 
@@ -206,7 +214,7 @@ process alignGenotypesToReference() {
         """
         plink2 \
             --bfile ${plinkBase} \
-            --fa "${params.reference}" \
+            --fa "${referenceSequence}" \
             --ref-from-fa force \
             --normalize \
             --threads $task.cpus \
@@ -223,9 +231,9 @@ process selectBiallelicSnvs() {
     tag "aligned genotypeSet"
 
     input:
-        path tempVcfFile
+        path genotypeSet
     output:
-        path "${params.cohortName}.vcf.gz"
+        path "filtered.vcf.gz"
     script:
         """
         bcftools \
@@ -235,8 +243,8 @@ process selectBiallelicSnvs() {
             -v snps \
             --threads $task.cpus \
             -Oz \
-            -o ${params.cohortName}.vcf.gz \
-        ${tempVcfFile}
+            -o $filtered.vcf.gz \
+        ${genotypeSet}
         """
 }
 

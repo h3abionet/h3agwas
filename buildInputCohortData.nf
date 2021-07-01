@@ -1,27 +1,43 @@
 #!/usr/bin/env nextflow
-
 /*
  *  CONVERT GENOTYPE REPORTS TO PLINK BINARY {bed+bim+fam} FILESET
  *  ==============================================================
  *
- *  This script takes as input an illumina gsgt format dataset and  
- *  converts it to an lgen format of the PLINK long-format fileset
- *  and then to PLINK binary fileset: plink.bed, plink.bim, plink.fam
+ *  This script builds the plink binary data files - bed, bim, fam - 
+ *  needed in downstream analysis from illumina genotype reports and
+ *  a clinical phenotype fam file. We refer to the plink binary files
+ *  collectively as the *cohortData*. 
  *
- *  The gsgt illumina data format is a set of
- *  genotype reports. A genotpye report is an csv file that contains 
- *  a portion of the genotype results for the cohort. 
- *  There are several genotpye reports for a illumina sequencing 
- *  project, and one file does not correspond to any one snv or any 
- *  one sample.
+ *  The input illumina genotype files required are:
+ *      + genotype reports: n files containing all cohort genotypes
+ *      + sample report: a file with details of the samples
+ *      + locus report: a file with details of the loci
+ * 
+ *  The clinical phenotype file must be in *fam* format, and you
+ *  must prepare it yourself before you start the analysis.
+ *  It is neccesary that the sample IDs in the clinical fam file match
+ *  those in the illumina sample report, *for the samples that are 
+ *  present in both files*.
  *
- *  The path to all the input genotype reports are specified in an 
- *  input tsv file, and this file is passed to the workflow by adding:
- *  --input <relative path to tsv file>
- *  to the command line.
+ *  We start by pulling in the illumina reports, and the clinical
+ *  phenotype fam file. The illumina locus report is converted to a 
+ *  map file; the illumina sample report is converted to a fam file
+ *  with blank phenotype information. We compute the intersection
+ *  between the illumina and the clinical phenotype fam files and add
+ *  the phenotype information. 
+ *
+ *  We split the genotype reports into small chunks, and convert each
+ *  chunk into a plink long-format genotype (lgen) file. These files
+ *  are concatenated into a single lgen file for the cohort. We then
+ *  use plink to build the cohortData from the map, fam, and lgen 
+ *  files efficiently.
+ *
+ *  Finally, we align the genotypes of the cohortData to a reference
+ *  sequence, select only the loci that were biallelic with respect to
+ *  this cohort, and then rebuild the cohortData with the filtered
+ *  genotypes.
  *
  ********************************************************************/
-
 nextflow.enable.dsl = 2
 
 include {
@@ -55,27 +71,54 @@ workflow {
      referenceSequence) \
         = getInputChannels()
 
-    genotypeReportChunks = splitTextFiles(genotypeReports)
+    genotypeReportChunks \
+        = splitTextFiles(
+            genotypeReports)
 
-    lgenChunks = convertGenotypeReportToLongFormat(genotypeReportChunks)
+    lgenChunks \
+        = convertGenotypeReportToLongFormat(
+            genotypeReportChunks)
 
-    cohortLgen = concatenateLgenFiles(lgenChunks)
+    cohortLgen \
+        = concatenateLgenFiles(
+            lgenChunks)
 
-    cohortMap = convertLocusReportToMap(locusReport)
+    cohortMap \
+        = convertLocusReportToMap(
+            locusReport)
 
-    filteredSampleReport = removeSamplesWithFailedGenotypes(sampleReport)
+    filteredSampleReport \
+        = removeSamplesWithFailedGenotypes(
+            sampleReport)
 
-    illuminaFam = convertSampleReportToFam(filteredSampleReport)
+    illuminaFam \
+        = convertSampleReportToFam(
+            filteredSampleReport)
 
-    cohortFam = intersectFamFilesBySampleId(phenotypeFam, illuminaFam)
+    cohortFam \
+        = intersectFamFilesBySampleId(
+            phenotypeFam, 
+            illuminaFam)
 
-    cohortData = buildCohortData(cohortLgen, cohortMap, cohortFam)
+    cohortData \
+        = buildCohortData(
+            cohortLgen, 
+            cohortMap, 
+            cohortFam)
 
-    alignedGenotypeSet = alignGenotypesToReference(cohortData, referenceSequence)
+    alignedGenotypeSet \
+        = alignGenotypesToReference(
+            cohortData, 
+            referenceSequence)
 
-    filteredGenotypeSet = selectBiallelicSnvs(alignedGenotypeSet)
+    filteredGenotypeSet \
+        = selectBiallelicSnvs(
+            alignedGenotypeSet)
 
-    alignedCohortData = rebuildCohortData(filteredGenotypeSet, cohortFam)
+    alignedCohortData \
+        = rebuildCohortData(
+            filteredGenotypeSet,
+            cohortFam)
 
 }
 
