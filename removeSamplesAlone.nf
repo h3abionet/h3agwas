@@ -18,11 +18,7 @@ include {
     removeSamplesWithPoorClinicalData;
     removeDuplicatedSnvPositions;
     identifyIndivDiscSexinfo;
-    generateSnpMissingnessPlot;
     generateIndivMissingnessPlot;
-    getInitMAF;
-    showInitMAF;
-    showHWEStats;
     removeQCPhase1;
     pruneForIBD;
     findRelatedIndiv;
@@ -31,14 +27,6 @@ include {
     getBadIndivsMissingHet;
     noSampleSheet;
     removeQCIndivs;
-    calculateSnpSkewStatus;
-    generateDifferentialMissingnessPlot;
-    findSnpExtremeDifferentialMissingness;
-    removeSkewSnps;
-    calculateMaf;
-    generateMafPlot;
-    findHWEofSNPs;
-    generateHwePlot;
     collectPlotsTogetherAndZip;
     sendWorkflowExitEmail;
 
@@ -63,15 +51,7 @@ workflow {
 
     IdentifyIndivDiscSexinfo = identifyIndivDiscSexinfo(RemoveDuplicateSnps)
 
-    GenerateSnpMissingnessPlot = generateSnpMissingnessPlot(IdentifyIndivDiscSexinfo)
-
     GenerateIndivMissingnessPlot = generateIndivMissingnessPlot(IdentifyIndivDiscSexinfo)
-
-    GetInitMAF = getInitMAF(cohortData)
-
-    ShowInitMAF = showInitMAF(GetInitMAF)
-
-    ShowHWEStats = showHWEStats(IdentifyIndivDiscSexinfo)
 
     RemoveQCPhase1 = removeQCPhase1(cohortData)
 
@@ -90,29 +70,8 @@ workflow {
     RemoveQCIndivs = removeQCIndivs(BadIndivsMissingHet,FindRelatedIndiv,IdentifyIndivDiscSexinfo,
                                     NoSampleSheet, RemoveQCPhase1)
 
-    CalculateSnpSkewStatus = calculateSnpSkewStatus(RemoveQCIndivs,additionalPhenotypes)
-
-    DifferentialMissingnessPlot = generateDifferentialMissingnessPlot(CalculateSnpSkewStatus)
-
-    FindSnpExtremeDifferentialMissingness = findSnpExtremeDifferentialMissingness(CalculateSnpSkewStatus)
-
-    RemoveSkewSnps = removeSkewSnps(RemoveQCIndivs,FindSnpExtremeDifferentialMissingness)
-
-    CalculateMaf = calculateMaf(RemoveSkewSnps)
-
-    GenerateMafPlot = generateMafPlot(CalculateMaf)
-
-    FindHWEofSNPs = findHWEofSNPs(CalculateSnpSkewStatus)
-
-    GenerateHwePlot  = generateHwePlot(FindHWEofSNPs)
-
     plots = channel.empty().mix(
-        DifferentialMissingnessPlot,
-        GenerateHwePlot,
-        ShowHWEStats,
-        ShowInitMAF,
-        CalculateMaf,
-        GenerateSnpMissingnessPlot,
+        GenerateIndivMissingnessPlot,	
         GenerateMissHetPlot).collect()
 
     collectPlotsTogetherAndZip(plots)

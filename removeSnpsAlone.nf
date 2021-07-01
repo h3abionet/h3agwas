@@ -19,10 +19,6 @@ include {
     removeDuplicatedSnvPositions;
     identifyIndivDiscSexinfo;
     generateSnpMissingnessPlot;
-    generateIndivMissingnessPlot;
-    getInitMAF;
-    showInitMAF;
-    showHWEStats;
     removeQCPhase1;
     pruneForIBD;
     findRelatedIndiv;
@@ -42,7 +38,7 @@ include {
     collectPlotsTogetherAndZip;
     sendWorkflowExitEmail;
 
-} from './modules/qualityControl.nf';
+} from './modules/qualityControlSnps.nf';
 
 include {
     printWorkflowExitMessage;
@@ -65,15 +61,9 @@ workflow {
 
     GenerateSnpMissingnessPlot = generateSnpMissingnessPlot(IdentifyIndivDiscSexinfo)
 
-    GenerateIndivMissingnessPlot = generateIndivMissingnessPlot(IdentifyIndivDiscSexinfo)
-
-    GetInitMAF = getInitMAF(cohortData)
-
-    ShowInitMAF = showInitMAF(GetInitMAF)
-
-    ShowHWEStats = showHWEStats(IdentifyIndivDiscSexinfo)
-
     RemoveQCPhase1 = removeQCPhase1(cohortData)
+
+    NoSampleSheet = noSampleSheet()
 
     PruneForIBD  = pruneForIBD(RemoveQCPhase1)
 
@@ -81,11 +71,7 @@ workflow {
 
     SampleHeterozygosity = calculateSampleHeterozygosity(RemoveQCPhase1)
 
-    GenerateMissHetPlot = generateMissHetPlot(SampleHeterozygosity)
-
     BadIndivsMissingHet = getBadIndivsMissingHet(SampleHeterozygosity)
-
-    NoSampleSheet = noSampleSheet()
 
     RemoveQCIndivs = removeQCIndivs(BadIndivsMissingHet,FindRelatedIndiv,IdentifyIndivDiscSexinfo,
                                     NoSampleSheet, RemoveQCPhase1)
@@ -108,12 +94,8 @@ workflow {
 
     plots = channel.empty().mix(
         DifferentialMissingnessPlot,
-        GenerateHwePlot,
-        ShowHWEStats,
-        ShowInitMAF,
         CalculateMaf,
-        GenerateSnpMissingnessPlot,
-        GenerateMissHetPlot).collect()
+        GenerateSnpMissingnessPlot).collect()
 
     collectPlotsTogetherAndZip(plots)
 }

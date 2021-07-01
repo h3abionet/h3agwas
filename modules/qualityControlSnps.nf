@@ -486,7 +486,7 @@ process removeSkewSnps {
   
   script:
     base = bed.baseName
-    output = params.cohortName+".filtered"
+    output = params.cohortName+".filtered-Snps"
     """
     plink $K --bfile $base $sexinfo --exclude $failed --make-bed --out $output
     """
@@ -568,12 +568,12 @@ process collectPlotsTogetherAndZip {
   input:
     path plots
   output:
-    path "plots.tar.gz"
+    path "sampleA-Snps-plots.tar.gz"
   script:
     """
     mkdir plots
     cp -L *.pdf plots
-    tar -zcvf plots.tar.gz plots
+    tar -zcvf sampleA-Snps-plots.tar.gz plots
     """
 
 }
@@ -585,6 +585,6 @@ def sendWorkflowExitEmail() {
           to: "${params.email}",
           subject: getBasicEmailSubject(),
           body: getBasicEmailMessage(),
-          attach: "${params.outputDir}/quality-control/plots.tar.gz")
+          attach: "${params.outputDir}/quality-control/sampleA-Snps-plots.tar.gz")
   }
 }

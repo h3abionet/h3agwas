@@ -11,7 +11,7 @@ workflow {
     checkTidyverseContainer() | view()
     checkQqmanContainer() | view()
     checkPlink2Container() | view()
-    checkBcftoolsContainer() | view()
+    //checkBcftoolsContainer() | view()
     checkDatatableContainer() | view()
 }
 
