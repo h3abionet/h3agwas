@@ -15,147 +15,186 @@ def checkInputParams() {
         checkEmailAdressProvided()
 }
 
-def getChunksFromGenotypeReports() {
+def getInputChannels() {
+    return [
+        getIlluminaGenotypeReports(),
+        getIlluminaSampleReport(),
+        getIlluminaLocusReport(),
+        getClinicalPhenotypeReport(),
+        getReferenceSequence()]
+}
+
+def getIlluminaGenotypeReports() {
     return channel
-        .fromPath( params.inputDir + params.genotypeReport )
-      	.splitText(
+        .fromPath(params.illumina.genotypeReports)
+}
+
+def getIlluminaSampleReport() {
+    return channel
+        .fromPath(params.illumina.sampleReport)
+}
+
+def getIlluminaLocusReport() {
+    return channel
+        .fromPath(params.illumina.locusReport)
+}
+
+def getClinicalPhenotypeFam() {
+    return channel
+        .fromPath(params.clinicalPhenotypeFam)
+}
+
+def getReferenceSequence() {
+    return channel
+        .fromPath(params.referenceSequence)
+}
+
+def splitTextFiles(inputFiles) {
+    return inputFiles
+        .splitText(
             by: 5000000,
             keepHeader: false,
             file: true,
             compress: false )
 }
 
-def getGenotypeReports() {
+process convertGenotypeReportToLongFormat {
+    label 'smallMemory'
+    label 'perl'
 
-   return channel
-            .fromPath( params.inputDir + "*_gtReport_*" )
+    tag "${genotypeReport.baseName()}"
+
+    cache 'lenient'
+
+    input:
+        path genotypeReport
+    output:
+        path "*.lgen"
+    script:
+        template 'convertGenotypeReportToLongFormat.pl'
 }
 
-def concatenateLgenChunks(lgenChunks) {
-    return lgenChunks
+def concatenateLgenFiles(inputLgenFiles) {
+    return inputLgenFiles
         .collectFile(
-            name: "${params.cohortName}.lgen",
+            name: "concatenated.lgen",
             sort: true)
 }
 
-def getSampleReport() {
-    return channel
-                .fromPath( params.inputDir + params.sampleReport )
-}
-
-def getSnpReport() {
-    return channel
-                .fromPath( params.inputDir + params.snpReport )
-}
-
-process convertGenotypeReportsToLgen {
-    tag "${chunks.baseName}"
+process convertLocusReportToMap {
     label 'smallMemory'
-    label 'perl'
-    cache 'lenient'
+
+    tag "$locusReport"
+
     input:
-    	path chunks
+        path locusReport
     output:
-    	path "*.lgen"
+        path "${outputFile}"
     script:
-<<<<<<< HEAD
-        template 'convertGenotypeReportsToLgen.py'
-=======
-        template 'convertGenotypeReportsToLgen.pl'
->>>>>>> 248854c9e6270e86ad730a982eaaadd40e21e82e
-
-}
-
-process concatenateLgenFiles() {
-
-   input:
-      path lgenFiles
-
-   output:
-      //publishDir path: "${params.outputDir}", mode: 'copy'
-      path "${params.cohortName}.lgen"
-
-   script:
-      """
-      cat ${lgenFiles} > "${params.cohortName}.lgen"
-      """
-}
-
-process getMapFileFromSnpReport() {
-    tag "$snpReport"
-    label 'smallMemory'
-    input:
-        path snpReport
-    output:
-        path "${params.cohortName}.map"
-    script:
+        outputFile = "${locusReport.getBaseName()}.map"
         """
         cut \
             -f2-4 \
-            -d',' ${snpReport} | \
-        sed 's/,/ /g' | \
-        awk '{print \$2,\$1,"0",\$3}' | \
-        awk '\$1!="0"' | \
-        sed '1d' > "${params.cohortName}.map"
+            -d',' ${locusReport} \
+            | sed 's/,/ /g' \
+                | awk \
+                    '{print \$2,\$1,"0",\$3}' \
+                    | awk '\$1!="0"' \
+                        | sed '1d' \
+                            > ${outputFile}
         """
 }
 
-process getFamFileFromSampleReport() {
-    tag "$sampleReport"
+process removeSamplesWithFailedGenotypes {
     label 'smallMemory'
+
+    tag "${sampleReport.getBaseName()}"
+
     input:
         path sampleReport
     output:
-        path "${params.cohortName}.fam"
+        path "${outputFile}"
     script:
+        outputFile = "${sampleReport.getBaseName()}.filtered.${sampleReport.getExtension()}"
         """
         grep \
-             -v "Failed Sample" ${sampleReport} | \
-        cut \
-             -f2,13-14 \
-            -d',' | \
-        awk 'FS="," {print \$1,\$1,"0","0","-9","-9"}' | \
-        sed '1d' > "${params.cohortName}.fam"
+            -v "Failed Sample" ${sampleReport} \
+            > ${outputFile}
         """
 }
 
-process convertPlinkLongFormatToPlinkBinary() {
-    tag "LGEN+MAP+FAM ==> BED+BIM+FAM"
+process convertSampleReportToFam {
+    label 'smallMemory'
+
+    tag "$sampleReport"
+
+    input:
+        path sampleReport
+    output:
+        path "${outputFile}"
+    script:
+        outputFile = "${sampleReport.getBaseName()}.fam"
+        """
+        cat ${sampleReport} \
+            | cut \
+                -f2,13-14 \
+                -d',' \
+                | awk \
+                    'FS="," \
+                    {print \$1,\$1,"0","0","-9","-9"}' \
+                    | sed '1d' \
+                        > ${outputFile}
+        """
+}
+
+process intersectFamFiles {
+    ...
+}
+
+process buildCohortData {
     label 'mediumMemory'
     label 'plink'
+
+    tag "lgen, map, fam"
+
     cache 'lenient'
+    
     input:
-        path "${params.cohortName}.lgen"
-        path "${params.cohortName}.map"
-        path "${params.cohortName}.fam"
+        path cohortLgen
+        path cohortMap
+        path cohortFam
     output:
         path "${params.cohortName}.{bed,bim,fam}"
     script:
         """
         plink \
-            --lgen ${params.cohortName}.lgen \
-            --map ${params.cohortName}.map \
-            --fam ${params.cohortName}.fam \
-	        --no-parents \
-	        --no-sex \
-	        --no-pheno \
-	        --threads $task.cpus \
+            --lgen ${cohortLgen} \
+            --map ${cohortMap} \
+            --fam ${cohortFam} \
+            --no-parents \
+            --no-sex \
+            --no-pheno \
+            --threads $task.cpus \
             --make-bed \
             --out ${params.cohortName}
         """
 }
 
-process alignGenotypeDataToReference() {
+process alignGenotypesToReference() {
     label 'mediumMemory'
     label 'plink2'
+
+    tag "cohortData, reference"
+
     cache 'lenient'
+    
     input:
-	    path plinkBinaryFileset
-	    path famFile
+        tuple path(cohortBed), path(cohortBim), path(cohortFam)
+        path referenceSequence
     output:
         path "temporary.vcf.gz"
     script:
-    	plinkBase = famFile.baseName
+        plinkBase = cohortBed.getBaseName()
         """
         plink2 \
             --bfile ${plinkBase} \
@@ -169,10 +208,12 @@ process alignGenotypeDataToReference() {
         """
 }
 
-process filterSitesWithoutRefOrAltAlleles() {
-    tag "BCFTOOLS VIEW"
+process selectBiallelicSnvs() {
     label 'mediumMemory'
     label 'bcftools'
+
+    tag "aligned genotypeSet"
+
     input:
         path tempVcfFile
     output:
@@ -182,30 +223,36 @@ process filterSitesWithoutRefOrAltAlleles() {
         bcftools \
             view \
             -m2 \
+            -M2 \
+            -v snps \
             --threads $task.cpus \
             -Oz \
             -o ${params.cohortName}.vcf.gz \
-	    ${tempVcfFile}
+        ${tempVcfFile}
         """
 }
 
-process getFinalPlinkBinaryFileset() {
-    tag "VCF ==> PLINKBINARY"
-    label 'mediumMemory'
+process rebuildCohortData() {
+    label 'bigMemory'
     label 'plink2'
+
+    tag "alignedGenotypes, cohortFam"
+
     input:
-        path vcfFile
+        path alignedGenotypes
+        path cohortFam
     output:
         publishDir path: "${params.outputDir}", mode: 'copy'
-        path "${params.cohortName}-clean.{bed,bim,fam,log}"
+        path "${params.cohortName}.input.{bed,bim,fam,log}"
     script:
         """
         plink2 \
-            --vcf ${vcfFile} \
+            --vcf ${alignedGenotypes} \
+            --fam ${cohortFam} \
             --threads $task.cpus \
             --make-bed \
-	    --double-id \
-            --out ${params.cohortName}-clean
+            --double-id \
+            --out ${params.cohortName}.input
         """
 }
 
@@ -214,16 +261,6 @@ def sendWorkflowExitEmail() {
         sendMail(
             to: "${params.email}",
             subject: getBasicEmailSubject(),
-<<<<<<< HEAD
-            body: getBasicEmailMessage(),
-            attach: [
-                "${params.outputDir}manhattan.pdf",
-                "${params.outputDir}qqplot.pdf"])
-   }
-}
-
-=======
             body: getBasicEmailMessage())
    }
 }
->>>>>>> 248854c9e6270e86ad730a982eaaadd40e21e82e

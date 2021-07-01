@@ -26,10 +26,11 @@ nextflow.enable.dsl = 2
 
 include {
     printWorkflowExitMessage;
-} from "${projectDir}/modules/intensityPlot.nf"
+} from "${projectDir}/modules/base.nf"
 
 include {
     checkInputParams;
+    getInputChannels;
     getChunksFromGenotypeReports;
     concatenateLgenChunks;
     convertGenotypeReportsToLgen;
@@ -48,30 +49,34 @@ workflow {
 
     checkInputParams()
 
-    chunks = getChunksFromGenotypeReports()
+    (genotypeReports, 
+     sampleReport, 
+     locusReport, 
+     phenotypeFam,
+     referenceSequence) \
+        = getInputChannels()
 
-    lgenChunks = convertGenotypeReportsToLgen( chunks )
+    genotypeReportChunks = splitTextFiles(genotypeReports)
 
-    lgenFile = concatenateLgenChunks(lgenChunks)
+    lgenChunks = convertGenotypeReportToLongFormat(genotypeReportChunks)
 
-    snpReport = getSnpReport()
+    cohortLgen = concatenateLgenFiles(lgenChunks)
 
-    sampleReport = getSampleReport()
+    cohortMap = convertLocusReportToMap(locusReport)
 
-    mapFile = getMapFileFromSnpReport( snpReport )
+    filteredSampleReport = removeSamplesWithFailedGenotypes(sampleReport)
 
-    famFile = getFamFileFromSampleReport( sampleReport )
+    illuminaFam = convertSampleReportToFam(filteredSampleReport)
 
-    plinkBinaryFileset = convertPlinkLongFormatToPlinkBinary(
-        lgenFile,
-        mapFile,
-        famFile )
+    cohortFam = intersectFamFiles(phenotypeFam, illuminaFam)
 
-    tempVcfFile = alignGenotypeDataToReference( plinkBinaryFileset, famFile )
+    cohortData = buildCohortData(cohortLgen, cohortMap, cohortFam)
 
-    vcfFile = filterSitesWithoutRefOrAltAlleles( tempVcfFile )
+    alignedGenotypeSet = alignGenotypesToReference(cohortData, referenceSequence)
 
-    getFinalPlinkBinaryFileset( vcfFile )
+    filteredGenotypeSet = selectBiallelicSnvs(alignedGenotypeSet)
+
+    alignedCohortData = rebuildCohortData(filteredGenotypeSet, cohortFam)
 
 }
 

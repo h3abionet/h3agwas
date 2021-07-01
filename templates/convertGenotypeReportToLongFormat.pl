@@ -5,7 +5,7 @@ use strict;
 use File::Basename;
 use IO::Zlib;
 
-my \$inputFile = "${chunks}";
+my \$inputFile = "${genotypeReport}";
 my \$numberOfHeaderLines = ${params.numberOfGtReportHeaderLines};
 my \$gtReport = new IO::Zlib;
 \$gtReport->open(\$inputFile, 'rb');

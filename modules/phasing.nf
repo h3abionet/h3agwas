@@ -166,7 +166,7 @@ process rebuildCohortDataWithPlink() {
             --threads $task.cpus \
             --make-bed \
             --double-id \
-            --out ${params.cohortName}-phased
+            --out ${params.cohortName}.phased
         """
 }
 

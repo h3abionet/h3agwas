@@ -96,3 +96,13 @@ def getCohortData(inputDataTag) {
 
     return bed.combine(bim).combine(fam)
 }
+
+def printWorkflowExitMessage() {
+    if (workflow.success) {
+        log.info "Workflow completed without errors".center(60)
+    } else {
+        log.error "Oops .. something went wrong!".center(60)
+    }
+    log.info "Check output files in folder:".center(60)
+    log.info "${params.outputDir}".center(60)
+}
