@@ -1,2 +1,4 @@
-beagle 5.2 (wget https://faculty.washington.edu/browning/beagle/beagle.29May21.d6d.jar)
-beagle utils (wget http://faculty.washington.edu/browning/beagle/bref3.29May21.d6d.jar)
+https://faculty.washington.edu/browning/beagle/beagle.29May21.d6d.jar
+https://faculty.washington.edu/browning/beagle/bref3.29May21.d6d.jar
+https://faculty.washington.edu/browning/beagle/unbref3.29May21.d6d.jar
+https://faculty.washington.edu/browning/conform-gt/conform-gt.24May16.cee.jar

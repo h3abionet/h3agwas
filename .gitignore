@@ -11,6 +11,5 @@ input/*
 *.bed
 *.bim
 *.fam
-
 *.html*
 plink2

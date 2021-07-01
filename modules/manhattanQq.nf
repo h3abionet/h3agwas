@@ -6,6 +6,7 @@ include {
     checkEmailAdressProvided;
     getBasicEmailSubject;
     getBasicEmailMessage;
+    getCohortData;
 } from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
@@ -15,15 +16,7 @@ def checkInputParams() {
 }
 
 def getInputChannels() {
-
-	bed = channel.fromPath(
-		"${params.inputDir}${params.cohortName}.bed")
-	bim = channel.fromPath(
-		"${params.inputDir}${params.cohortName}.bim")
-	fam = channel.fromPath(
-		"${params.inputDir}${params.cohortName}.fam")
-
-	return bed.combine(bim).combine(fam)
+	return getCohortData(params.inputStep)
 }
 
 process getAssociationReport {

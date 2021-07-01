@@ -9,6 +9,7 @@ include {
     userEmailAddressIsProvided;
     getBasicEmailSubject;
     getBasicEmailMessage;
+    getCohortData;
 } from "${projectDir}/modules/base.nf"
 
 
@@ -20,7 +21,7 @@ def checkInputParams() {
 
 def getInputChannels() {
     return [
-        getCohortData('-clean'),
+        getCohortData('clean'),
         getReferencePanels(),
         getGeneticMaps()]
 }
@@ -176,17 +177,6 @@ def sendWorkflowExitEmail() {
             subject: getBasicEmailSubject(),
             body: getBasicEmailMessage())
    }
-}
-
-def getCohortData(inputDataTag) {
-    bed = channel.fromPath(
-        params.outputDir + params.cohortName + "${inputDataTag}.bed")
-    bim = channel.fromPath(
-        params.outputDir + params.cohortName + "${inputDataTag}.bim")
-    fam = channel.fromPath(
-        params.outputDir + params.cohortName + "${inputDataTag}.fam")
-
-    return bed.combine(bim).combine(fam)
 }
 
 
