@@ -1,2 +1,0 @@
-# Checkstrand perl script from McCarthy group tools
-wget https://www.well.ox.ac.uk/~wrayner/tools/HRC-1000G-check-bim-v4.3.0.zip

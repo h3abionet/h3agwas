@@ -1,6 +1,0 @@
-# get plink2 binary:
-wget https://s3.amazonaws.com/plink2-assets/alpha2/plink2_linux_x86_64.zip
-# unzip the archive:
-unzip plink2_linux_x86_64.zip
-# and remove the archive:
-rm plink2_linux_x86_64.zip
