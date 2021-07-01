@@ -33,7 +33,7 @@
  *  files efficiently.
  *
  *  Finally, we align the genotypes of the cohortData to a reference
- *  sequence, select only the loci that were biallelic with respect to
+ *  sequence, select only the loci that are biallelic with respect to
  *  this cohort, and then rebuild the cohortData with the filtered
  *  genotypes.
  *
