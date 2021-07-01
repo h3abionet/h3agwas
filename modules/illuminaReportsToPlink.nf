@@ -147,8 +147,16 @@ process convertSampleReportToFam {
         """
 }
 
-process intersectFamFiles {
-    ...
+process intersectFamFilesBySampleId {
+    input:
+        path fam1
+        path fam2
+    output:
+        path "intersection.fam"
+    script:
+        """
+        awk 'NR==FNR{a[\$2];next} \$2 in a' ${fam2} ${fam1} > intersection.fam
+        """
 }
 
 process buildCohortData {

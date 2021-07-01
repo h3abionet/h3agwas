@@ -31,18 +31,17 @@ include {
 include {
     checkInputParams;
     getInputChannels;
-    getChunksFromGenotypeReports;
-    concatenateLgenChunks;
-    convertGenotypeReportsToLgen;
-    getSnpReport;
-    getSampleReport;
-    getFamFileFromSampleReport;
-    getMapFileFromSnpReport;
-    convertPlinkLongFormatToPlinkBinary;
-    alignGenotypeDataToReference;
-    filterSitesWithoutRefOrAltAlleles;
-    getFinalPlinkBinaryFileset;
-    sendWorkflowExitEmail;
+    splitTextFiles;
+    convertGenotypeReportToLongFormat;
+    concatenateLgenFiles;
+    convertLocusReportToMap;
+    removeSamplesWithFailedGenotypes;
+    convertSampleReportToFam;
+    intersectFamFilesBySampleId;
+    buildCohortData;
+    alignGenotypesToReference;
+    selectBiallelicSnvs;
+    rebuildCohortData;
 } from "${projectDir}/modules/illuminaReportsToPlink.nf"
 
 workflow {
@@ -68,7 +67,7 @@ workflow {
 
     illuminaFam = convertSampleReportToFam(filteredSampleReport)
 
-    cohortFam = intersectFamFiles(phenotypeFam, illuminaFam)
+    cohortFam = intersectFamFilesBySampleId(phenotypeFam, illuminaFam)
 
     cohortData = buildCohortData(cohortLgen, cohortMap, cohortFam)
 
