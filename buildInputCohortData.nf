@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 /*
- *  CONVERT GENOTYPE REPORTS TO PLINK BINARY {bed+bim+fam} FILESET
- *  ==============================================================
+ *  BUILD INPUT COHORT DATA FOR ANALYSIS
+ *  ====================================
  *
  *  This script builds the plink binary data files - bed, bim, fam - 
  *  needed in downstream analysis from illumina genotype reports and
@@ -23,14 +23,20 @@
  *  phenotype fam file. The illumina locus report is converted to a 
  *  map file; the illumina sample report is converted to a fam file
  *  with blank phenotype information. We compute the intersection
- *  between the illumina and the clinical phenotype fam files and add
- *  the phenotype information. 
+ *  between the illumina fam and the clinical phenotype fam files; only
+ *  sample records whose sample id is in both fam files are kept for
+ *  downstream analysis, and the sample records *kept* are those from the 
+ *  clinical phenotype fam, not the illumina fam. This means that both
+ *  the self-reported sex and the phenotype values carried forward are
+ *  those from the clinical fam; those values from the illumina fam are
+ *  discarded.
  *
  *  We split the genotype reports into small chunks, and convert each
  *  chunk into a plink long-format genotype (lgen) file. These files
  *  are concatenated into a single lgen file for the cohort. We then
  *  use plink to build the cohortData from the map, fam, and lgen 
- *  files efficiently.
+ *  files efficiently. We remove any variants appearing more than once
+ *  in the cohort genotypes from this cohortData.
  *
  *  Finally, we align the genotypes of the cohortData to a reference
  *  sequence, select only the loci that are biallelic with respect to
@@ -55,6 +61,8 @@ include {
     convertSampleReportToFam;
     intersectFamFilesBySampleId;
     buildCohortData;
+    selectDuplicatedVariants;
+    removeDuplicatedVariants;
     alignGenotypesToReference;
     selectBiallelicSnvs;
     rebuildCohortData;
@@ -106,18 +114,27 @@ workflow {
             cohortMap, 
             cohortFam)
 
+    duplicatedVariantIds \
+        = selectDuplicatedVariants(
+            cohortData)
+
+    filteredCohortData \
+        = removeDuplicatedVariants(
+            cohortData,
+            duplicatedVariantIds)
+
     alignedGenotypeSet \
         = alignGenotypesToReference(
-            cohortData, 
+            filteredCohortData, 
             referenceSequence)
 
-    filteredGenotypeSet \
+    biallelicGenotypeSet \
         = selectBiallelicSnvs(
             alignedGenotypeSet)
 
     alignedCohortData \
         = rebuildCohortData(
-            filteredGenotypeSet,
+            biallelicGenotypeSet,
             cohortFam)
 
 }

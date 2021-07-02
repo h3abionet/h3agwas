@@ -196,6 +196,51 @@ process buildCohortData {
         """
 }
 
+
+process selectDuplicatedVariants {
+    label 'plink'
+
+    tag "cohortData"
+
+    input:
+        tuple path(cohortBed), path(cohortBim), path(cohortFam)
+
+    output:
+        path 'plink.dupvar'
+
+    script:
+        """
+        plink \
+            --bfile ${cohortBed.getBaseName()} \
+            --list-duplicate-vars \
+            ids-only \
+            suppress-first
+        """
+}
+
+process removeDuplicatedVariants {
+    label 'plink'
+
+    tag "cohortData, dupVars"
+
+    input:
+    tuple path(cohortBed), path(cohortBim), path(cohortFam)
+    path duplicatedVariants
+
+    output:
+        path("duplicatedVariantsRemoved.{bed,bim,fam,log}")
+
+    script:
+        """
+        plink \
+            --bfile ${cohortBed.getBaseName()} \
+            --make-bed \
+            -exclude ${duplicatedVariants} \
+            --out duplicatedVariantsRemoved
+        """
+}
+
+
 process alignGenotypesToReference() {
     label 'mediumMemory'
     label 'plink2'

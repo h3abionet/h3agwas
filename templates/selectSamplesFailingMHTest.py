@@ -9,7 +9,7 @@ import sys
 
 TAB = chr(9)
 if len(sys.argv)<=1:
-  sys.argv = ["select_miss_het.qcplink.py","$het",float("${params.cut_het_low}"),float("${params.cut_het_high}"),"$outfname"]
+  sys.argv = ["select_miss_het.qcplink.py","$cohortHet",float("${params.cut_het_low}"),float("${params.cut_het_high}"),"$outfname"]
 
 hetf = sys.argv[1]
 cut_het_high=float(sys.argv[3])
@@ -21,4 +21,4 @@ het      = read_csv(hetf,delim_whitespace=True)
 mean_het = (het["N(NM)"]-het["O(HOM)"])/het["N(NM)"]
 failed   = het[(mean_het<cut_het_low) | (mean_het>cut_het_high)]
 
-failed.to_csv(outfname,header=False,sep=TAB)
+failed[['FID','IID']].to_csv(outfname,index=False,header=False,sep="\t")

@@ -91,7 +91,7 @@ def getBasicEmailMessage() {
 
 def getCohortData(inputDataTag) {
 
-    dataTag = (inputDataTag == '') ? '' : "-${inputDataTag}"
+    dataTag = (inputDataTag == '') ? '' : ".${inputDataTag}"
 
     bed = channel.fromPath(
         params.outputDir + params.cohortName + "${dataTag}.bed")

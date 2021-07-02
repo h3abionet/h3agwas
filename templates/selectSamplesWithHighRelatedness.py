@@ -5,7 +5,7 @@ import pandas as pd
 import sys
 
 if len(sys.argv)<=1:
-    sys.argv=["removeRelInds.py","$missing","$ibd_genome","$outfname","$super_pi_hat"]
+    sys.argv=["removeRelInds.py","$cohortImiss","$cohortGenome","$outfname","${params.relatedness.superPiHat}"]
 
 
 EOL=chr(10)
@@ -62,6 +62,6 @@ for i,c in candidates.iteritems():
                 
 
 remove = sorted(list(remove))
-outf.write(EOL.join(map (lambda x: "%s %s"%(x[0],x[1]),remove)))
+outf.write(EOL.join(map (lambda x: "%s\t%s"%(x[0],x[1]),remove)))
 outf.close()
         
