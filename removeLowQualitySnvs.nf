@@ -11,93 +11,103 @@
 nextflow.enable.dsl=2
 
 include {
-
-    getInputChannels;
-    checkInputParams;
-    getListOfDuplicatePositions;
-    removeSamplesWithPoorClinicalData;
-    removeDuplicatedSnvPositions;
-    identifyIndivDiscSexinfo;
-    generateSnpMissingnessPlot;
-    removeQCPhase1;
-    pruneForIBD;
-    findRelatedIndiv;
-    calculateSampleHeterozygosity;
-    generateMissHetPlot;
-    getBadIndivsMissingHet;
-    noSampleSheet;
-    removeQCIndivs;
-    calculateSnpSkewStatus;
-    generateDifferentialMissingnessPlot;
-    findSnpExtremeDifferentialMissingness;
-    removeSkewSnps;
-    calculateMaf;
-    generateMafPlot;
-    findHWEofSNPs;
-    generateHwePlot;
+    printWorkflowExitMessage;
     collectPlotsTogetherAndZip;
-    sendWorkflowExitEmail;
-
-} from './modules/qualityControlSnps.nf';
+} from "${projectDir}/modules/base.nf"
 
 include {
-    printWorkflowExitMessage;
-} from "${projectDir}/modules/intensityPlot.nf"
+    checkInputParams;
+    getInputChannels;
+    getMissingnessReport;
+    drawDifferentialMissingnessPlot;
+    selectSnvsWithHighDifferentialMissingness;
+    getAlleleFrequencyReport;
+    drawAlleleFrequencyPlot;
+    selectlowMinorAlleleFrequencySnvs;
+    selectSnvsWithHighMissingness;
+    getHardyWeinbergEquilibriumReport;
+    selectControlOnlyHWETests;
+    drawHardyWeinbergEquilibriumPlot;
+    selectSnvsOutOfHardyWeinbergEquilibrium;
+    concatenateSnvLists;
+    removeLowQualitySnvs;
+    sendWorkflowExitEmail;
+} from "${projectDir}/modules/snvQualityControl.nf"
 
 
 workflow {
 
     checkInputParams()
 
-    (cohortData, poorSamples, additionalPhenotypes) = getInputChannels()
+    cohortData = getInputChannels()
 
-    DuplicatePositions = getListOfDuplicatePositions(cohortData)
+    cohortMissing \
+        = getMissingnessReport(
+            cohortData)
 
-    RemovePoorSamples = removeSamplesWithPoorClinicalData(cohortData,poorSamples)
+    highMissingnessSnvs \
+        = selectSnvsWithHighMissingness(
+            cohortMissing)
 
-    RemoveDuplicateSnps = removeDuplicatedSnvPositions(RemovePoorSamples,DuplicatePositions)
+    differentialMissingnessPlot \
+        = drawDifferentialMissingnessPlot(
+            cohortMissing)
 
-    IdentifyIndivDiscSexinfo = identifyIndivDiscSexinfo(RemoveDuplicateSnps)
+    highDifferentialMissingnessSnvs \
+        = selectSnvsWithHighDifferentialMissingness(
+            cohortMissing)
 
-    GenerateSnpMissingnessPlot = generateSnpMissingnessPlot(IdentifyIndivDiscSexinfo)
+    cohortFrq \
+        = getAlleleFrequencyReport(
+            cohortData)
 
-    RemoveQCPhase1 = removeQCPhase1(cohortData)
+    alleleFrequencyPlot \
+        = drawAlleleFrequencyPlot(
+            cohortFrq)
 
-    NoSampleSheet = noSampleSheet()
+    lowMinorAlleleFrequencySnvs \
+        = selectlowMinorAlleleFrequencySnvs(
+            cohortFrq)
 
-    PruneForIBD  = pruneForIBD(RemoveQCPhase1)
+    cohortHwe \
+        = getHardyWeinbergEquilibriumReport(
+            cohortData)
 
-    FindRelatedIndiv = findRelatedIndiv(IdentifyIndivDiscSexinfo,PruneForIBD)
+    controlOnlyCohortHwe \
+        = selectControlOnlyHWETests(
+            cohortHwe)
 
-    SampleHeterozygosity = calculateSampleHeterozygosity(RemoveQCPhase1)
+    controlOnlyHwePlot \
+        = drawHardyWeinbergEquilibriumPlot(
+            controlOnlyCohortHwe)
 
-    BadIndivsMissingHet = getBadIndivsMissingHet(SampleHeterozygosity)
+    outOfHardyWeinbergEquilibriumSnvs \
+        = selectSnvsOutOfHardyWeinbergEquilibrium(
+            controlOnlyCohortHwe)
 
-    RemoveQCIndivs = removeQCIndivs(BadIndivsMissingHet,FindRelatedIndiv,IdentifyIndivDiscSexinfo,
-                                    NoSampleSheet, RemoveQCPhase1)
+    lowQualitySnvs \
+        = concatenateSnvLists(channel.empty().mix(
+            highMissingnessSnvs,
+            highDifferentialMissingnessSnvs,
+            lowMinorAlleleFrequencySnvs,
+            outOfHardyWeinbergEquilibriumSnvs).collect())
 
-    CalculateSnpSkewStatus = calculateSnpSkewStatus(RemoveQCIndivs,additionalPhenotypes)
+    snvFilteredCohortData \
+        = removeLowQualitySnvs(
+            cohortData,
+            lowQualitySnvs)
 
-    DifferentialMissingnessPlot = generateDifferentialMissingnessPlot(CalculateSnpSkewStatus)
+    plots = channel
+        .empty().mix(
+            differentialMissingnessPlot,
+            alleleFrequencyPlot,
+            controlOnlyHwePlot)
+        .collect()
 
-    FindSnpExtremeDifferentialMissingness = findSnpExtremeDifferentialMissingness(CalculateSnpSkewStatus)
+    collectPlotsTogetherAndZip(
+        "snvFiltering",
+        plots)
 
-    RemoveSkewSnps = removeSkewSnps(RemoveQCIndivs,FindSnpExtremeDifferentialMissingness)
-
-    CalculateMaf = calculateMaf(RemoveSkewSnps)
-
-    GenerateMafPlot = generateMafPlot(CalculateMaf)
-
-    FindHWEofSNPs = findHWEofSNPs(CalculateSnpSkewStatus)
-
-    GenerateHwePlot  = generateHwePlot(FindHWEofSNPs)
-
-    plots = channel.empty().mix(
-        DifferentialMissingnessPlot,
-        CalculateMaf,
-        GenerateSnpMissingnessPlot).collect()
-
-    collectPlotsTogetherAndZip(plots)
 }
 
 workflow.onComplete {

@@ -55,10 +55,6 @@ workflow {
         = drawSampleMissingnessHistogram(
             cohortImiss)
 
-    cohortHwe \
-        = getHardyWeinbergEquilibriumReport(
-            cohortData)
-
     cohortGenome \
         = getIdentityByDescentReport(
             cohortData)
@@ -88,9 +84,15 @@ workflow {
             highRelatednessSamples,
             failedMHTestSamples).collect())
 
-    collectPlotsTogetherAndZip(channel.empty().mix(
-        sampleMissingnessHistogram,   
-        missingnessHeterozygosityPlot).collect())
+    plots = channel
+        .empty().mix(
+            sampleMissingnessHistogram,   
+            missingnessHeterozygosityPlot)
+        .collect()
+
+    collectPlotsTogetherAndZip(
+        "sampleFiltering",
+        plots)
 
     sampleFilteredCohortData \
         = removeLowQualitySamples(

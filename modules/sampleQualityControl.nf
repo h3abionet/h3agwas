@@ -97,26 +97,6 @@ process drawSampleMissingnessHistogram {
         template "drawSampleMissingnessHistogram.py"
 }
 
-process getHardyWeinbergEquilibriumReport {
-    label 'smallMemory'
-
-    tag "cohortData"
-
-    input:
-        tuple path(cohortBed), path(cohortBim), path(cohortFam)
-
-    output:
-        path "plink.hwe"
-
-    script:
-        """
-        plink \
-            --keep-allele-order \
-            --bfile ${cohortBed.getBaseName()} \
-            --hardy
-        """
-}
-
 process getIdentityByDescentReport {
     label 'smallMemory'
 

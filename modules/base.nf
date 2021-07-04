@@ -112,3 +112,21 @@ def printWorkflowExitMessage() {
     log.info "Check output files in folder:".center(60)
     log.info "${params.outputDir}".center(60)
 }
+
+process collectPlotsTogetherAndZip {
+
+    input:
+        val label
+        path plots
+
+    output:
+        publishDir "${params.outputDir}", mode: 'copy'
+        path "plots-${label}.tar.gz"
+
+    script:
+        """
+        mkdir plots-${label}
+        cp -L *.pdf plots-${label}
+        tar -zcvf plots-${label}.tar.gz plots-${label}
+        """
+}

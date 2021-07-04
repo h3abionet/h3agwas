@@ -16,7 +16,7 @@ from scipy.stats import gaussian_kde
 def parseArguments():
    if len(sys.argv)<=1:
       sys.argv=\
-      "diffMiss.py $input $output".split() 
+      "drawDifferentialMissingnessPlot.py $input $output".split() 
    parser=argparse.ArgumentParser()
    parser.add_argument('input', type=str, metavar='imiss'),
    parser.add_argument('output', type=str, metavar='output'),

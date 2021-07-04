@@ -9,22 +9,24 @@ from matplotlib import use
 use('Agg')
 import matplotlib.pyplot as plt
 
-EOL=chr(10)
+
+def main():
+    EOL=chr(10)
+    args=parseArguments()
+    frm = pd.read_csv(args.input,delim_whitespace=True)
+    getPic(frm,args)
 
 
 def parseArguments():
     if len(sys.argv)<=1:
-        sys.argv="mafplot.py $input $output".split()
+        sys.argv="drawAlleleFrequencyPlot.py $input $output".split()
     parser=argparse.ArgumentParser()
     parser.add_argument('input', type=str, metavar='input'),
     parser.add_argument('output', type=str, metavar='output'),
     args = parser.parse_args()
     return args
 
-
-
-
-def getPic(frm):
+def getPic(frm,args):
     mafs = np.sort(frm['MAF'])
     n = np.arange(1,len(mafs)+1) / np.float(len(mafs))
     fig,ax = plt.subplots()
@@ -37,9 +39,5 @@ def getPic(frm):
     plt.savefig(args.output)
 
 
-args=parseArguments()
-frm = pd.read_csv(args.input,delim_whitespace=True)
-getPic(frm)
-
-
-
+if __name__ == '__main__':
+    main()
