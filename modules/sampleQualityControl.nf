@@ -33,6 +33,7 @@ process getPopulationStratificationReports {
     script:
         """
         plink \
+            --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
             --pca \
             --out ${params.cohortName}
@@ -40,7 +41,7 @@ process getPopulationStratificationReports {
 }
 
 process drawPopulationStratificationPlot {
-    label 'plink'
+    label 'matplotlib'
     label 'smallMemory'
 
     tag "eignvals, eigenvecs"
@@ -60,6 +61,7 @@ process drawPopulationStratificationPlot {
 }
 
 process getDiscordantSampleSexInfoReport {
+    label 'plink'
     label 'smallMemory'
 
     tag "cohortData"
@@ -102,6 +104,7 @@ process selectSamplesWithDiscordantSexInfo {
 }
 
 process getSampleBasedMissingnessReport {
+    label 'plink'
     label 'smallMemory'
 
     tag "cohortData"
@@ -124,6 +127,7 @@ process getSampleBasedMissingnessReport {
 }
 
 process drawSampleMissingnessHistogram {
+    label 'matplotlib'
     label 'smallMemory'
 
     tag "cohortImiss"
@@ -144,6 +148,7 @@ process drawSampleMissingnessHistogram {
 }
 
 process getIdentityByDescentReport {
+    label 'plink'
     label 'smallMemory'
 
     tag "cohortData"
@@ -207,7 +212,7 @@ process getSampleHeterozygosityReport {
 }
 
 process drawMissingnessHeterozygosityPlot {
-    label 'plink'
+    label 'matplotlib'
     label 'smallMemory'
 
     tag "imiss, het"

@@ -1,1 +1,0 @@
-../../../assoc/bin/phe_distrib.py

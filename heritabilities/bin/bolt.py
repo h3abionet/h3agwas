@@ -1,1 +1,0 @@
-../../assoc/bin/bolt.py

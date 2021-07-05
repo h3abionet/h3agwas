@@ -43,6 +43,7 @@ process selectDuplicatedVariants {
     script:
         """
         plink \
+            --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
             --list-duplicate-vars \
             ids-only \
@@ -65,6 +66,7 @@ process removeDuplicatedVariants {
     script:
         """
         plink \
+            --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
             -exclude ${duplicatedVariants} \
             --make-bed \
@@ -149,6 +151,7 @@ process rebuildCohortData() {
 }
 
 process removeReallyLowQualitySamplesAndSnvs {
+    label 'plink'
     label 'smallMemory' 
 
     tag "cohortData"

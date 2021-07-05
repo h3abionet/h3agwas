@@ -177,6 +177,7 @@ process buildCohortData {
     script:
         """
         plink \
+            --keep-allele-order \
             --lgen ${cohortLgen} \
             --map ${cohortMap} \
             --fam ${cohortFam} \
@@ -185,7 +186,6 @@ process buildCohortData {
             --no-pheno \
             --threads $task.cpus \
             --make-bed \
-            --keep-allele-order \
             --out ${params.cohortName}.input
         """
 }

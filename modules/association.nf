@@ -32,9 +32,10 @@ process getAssociationReport {
 	script:
 		"""
 		 plink \
+            --keep-allele-order \
 		 	--bfile ${params.cohortName} \
 		 	--assoc \
-		 	--maf 0.05 \
+		 	--maf 0.01 \
 		 	--out ${params.cohortName} 
 		"""
 }

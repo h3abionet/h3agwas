@@ -20,6 +20,7 @@ def getInputChannels() {
 }
 
 process getMissingnessReport {
+    label 'plink'
     label 'smallMemory'
 
     input:
@@ -32,6 +33,7 @@ process getMissingnessReport {
     script:
         """
         plink \
+            --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
             --threads ${task.cpus} \
             --autosome \
@@ -42,6 +44,7 @@ process getMissingnessReport {
 }
 
 process drawDifferentialMissingnessPlot {
+    label 'matplotlib'
     label 'smallMemory'
 
     input:
@@ -76,6 +79,7 @@ process selectSnvsWithHighDifferentialMissingness {
 }
 
 process getAlleleFrequencyReport {
+    label 'plink'
     label 'smallMemory'
 
     input:
@@ -88,6 +92,7 @@ process getAlleleFrequencyReport {
     script:
         """
         plink \
+            --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
             --freq \
             --out ${params.cohortName}
@@ -95,6 +100,7 @@ process getAlleleFrequencyReport {
 }
 
 process drawAlleleFrequencyPlot {
+    label 'matplotlib'
     label 'smallMemory'
 
     input:
@@ -145,6 +151,7 @@ process selectSnvsWithHighMissingness {
 }
 
 process getHardyWeinbergEquilibriumReport {
+    label 'plink'
     label 'smallMemory'
 
     tag "cohortData"
@@ -159,6 +166,7 @@ process getHardyWeinbergEquilibriumReport {
     script:
         """
         plink \
+            --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
             --hardy \
             --out ${params.cohortName}
@@ -185,6 +193,7 @@ process selectControlOnlyHWETests {
 }
 
 process drawHardyWeinbergEquilibriumPlot {
+    label 'matplotlib'
     label 'smallMemory'
 
     input:
