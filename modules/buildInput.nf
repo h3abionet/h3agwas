@@ -44,7 +44,7 @@ def getIlluminaLocusReport() {
         .fromPath(params.input.locusReport)
 }
 
-def getClinicalPhenotypeFam() {
+def getClinicalPhenotypeReport() {
     return channel
         .fromPath(params.input.clinicalPhenotypeFam)
 }
@@ -62,7 +62,7 @@ process convertGenotypeReportToLongFormat {
     label 'smallMemory'
     label 'perl'
 
-    tag "${genotypeReport.baseName()}"
+    tag "${genotypeReport.getBaseName()}"
 
     cache 'lenient'
 
@@ -84,7 +84,7 @@ def concatenateLgenFiles(inputLgenFiles) {
 process convertLocusReportToMap {
     label 'smallMemory'
 
-    tag "$locusReport"
+    tag "${locusReport.getBaseName()}"
 
     input:
         path locusReport
@@ -126,7 +126,7 @@ process removeSamplesWithFailedGenotypes {
 process convertSampleReportToFam {
     label 'smallMemory'
 
-    tag "$sampleReport"
+    tag "${sampleReport.getBaseName()}"
 
     input:
         path sampleReport
@@ -148,6 +148,9 @@ process convertSampleReportToFam {
 }
 
 process intersectFamFilesBySampleId {
+
+    tag "${fam1}, ${fam2}"
+
     input:
         path fam1
         path fam2
@@ -166,11 +169,38 @@ process buildCohortData {
     tag "lgen, map, fam"
 
     cache 'lenient'
-    
+
     input:
         path cohortLgen
         path cohortMap
-        path cohortFam
+        path illuminaFam
+    output:
+        path "nophenotypes.{bed,bim,fam}"
+    script:
+        """
+        plink \
+            --keep-allele-order \
+            --lgen ${cohortLgen} \
+            --map ${cohortMap} \
+            --fam ${illuminaFam} \
+            --no-parents \
+            --no-sex \
+            --no-pheno \
+            --threads $task.cpus \
+            --make-bed \
+            --out nophenotypes
+        """
+}
+
+process rebuildCohortDataWithPhenotypes {
+    label 'plink'
+    label 'mediumMemory'
+
+    tag "cohortData, phenotypesFam"
+
+    input:
+        tuple path(cohortBed), path(cohortBim), path(unphenotypedFam)
+        path phenotypesFam
     output:
         publishDir "${params.outputDir}/input/cohortData", mode: 'copy'
         path "${params.cohortName}.input.{bed,bim,fam}"
@@ -178,12 +208,11 @@ process buildCohortData {
         """
         plink \
             --keep-allele-order \
-            --lgen ${cohortLgen} \
-            --map ${cohortMap} \
-            --fam ${cohortFam} \
-            --no-parents \
-            --no-sex \
-            --no-pheno \
+            --bfile ${cohortBed.getBaseName()} \
+            --keep ${phenotypesFam} \
+            --pheno ${phenotypesFam} \
+            --mpheno 4 \
+            --update-sex ${phenotypesFam} 3 \
             --threads $task.cpus \
             --make-bed \
             --out ${params.cohortName}.input

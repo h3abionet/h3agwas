@@ -55,15 +55,17 @@ include {
     convertSampleReportToFam;
     intersectFamFilesBySampleId;
     buildCohortData;
+    rebuildCohortDataWithPhenotypes;
+    sendWorkflowExitEmail;
 } from "${projectDir}/modules/buildInput.nf"
 
 workflow {
 
     checkInputParams()
 
-    (genotypeReports, 
-     sampleReport, 
-     locusReport, 
+    (genotypeReports,
+     sampleReport,
+     locusReport,
      phenotypeFam) \
         = getInputChannels()
 
@@ -91,15 +93,20 @@ workflow {
         = convertSampleReportToFam(
             filteredSampleReport)
 
-    cohortFam \
-        = intersectFamFilesBySampleId(
-            phenotypeFam, 
-            illuminaFam)
-
     cohortData \
         = buildCohortData(
-            cohortLgen, 
-            cohortMap, 
+            cohortLgen,
+            cohortMap,
+            illuminaFam)
+
+    cohortFam \
+        = intersectFamFilesBySampleId(
+            phenotypeFam,
+            illuminaFam)
+
+    phenotypedCohortData \
+        = rebuildCohortDataWithPhenotypes(
+            cohortData,
             cohortFam)
 
 }

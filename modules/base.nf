@@ -1,7 +1,7 @@
 def checkOutputDir() {
     if (stringIsNull(params.outputDir)) {
         exit 1, 'params.outputDir not set -> please provide an output directory with enough space to save the results'
-    }   
+    }
 }
 def checkSelectedSnv() {
     if (stringIsNull(params.selectedSnv)) {
@@ -19,25 +19,25 @@ def checkAssociationInput() {
 }
 def checkIlluminaGenotypeReports() {
     if (stringIsNull(params.input.genotypeReports)) {
-        exit 1, 'params.illumina.genotypeReports not set -> please provide a genotype report path glob pattern'
+        exit 1, 'params.input.genotypeReports not set -> please provide a genotype report path glob pattern'
     }
     // also need to check if any file exists... //
 }
 def checkIlluminaSampleReport() {
     if (stringIsNull(params.input.sampleReport)) {
-        exit 1, 'params.illumina.sampleReport not set -> please provide a sample report file path'
+        exit 1, 'params.input.sampleReport not set -> please provide a sample report file path'
     }
     // also need to check if any file exists... //
 }
 def checkIlluminaLocusReport() {
     if (stringIsNull(params.input.locusReport)) {
-        exit 1, 'params.illumina.locusReport not set -> please provide a locus report file path'
+        exit 1, 'params.input.locusReport not set -> please provide a locus report file path'
     }
     // also need to check if any file exists... //
 }
 def checkClinicalPhenotypeFam() {
     if (stringIsNull(params.input.clinicalPhenotypeFam)) {
-        exit 1, 'params.clinicalPhenotypeFam not set -> please provide a clinical phenotype fam file path'
+        exit 1, 'params.input.clinicalPhenotypeFam not set -> please provide a clinical phenotype fam file path'
     }
     // also need to check if any file exists... //
 }
