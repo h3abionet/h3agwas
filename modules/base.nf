@@ -3,31 +3,40 @@ def checkOutputDir() {
         exit 1, 'params.outputDir not set -> please provide an output directory with enough space to save the results'
     }   
 }
-def checkSnvName() {
-    if (stringIsNull(params.snvName)) {
+def checkSelectedSnv() {
+    if (stringIsNull(params.selectedSnv)) {
         exit 1, 'please provide a snv id!'
     }
 }
+def checkAssociationInput() {
+    if (stringIsNull(params.associationInput)) {
+        exit 1, 'params.associationInput not set -> please chose an input step to use in association test, e.g. input'
+    }
+    posibleInputs = ["input", "basicFiltered", "sampleFiltered", "snvFiltered", "phased"]
+    if (!posibleInputs.contains(params.associationInput)) {
+        exit 1, 'params.associationInput not recognised -> please set it to one of the following items: ["input", "basicFiltered", "sampleFiltered", "snvFiltered", "phased"]'
+    }
+}
 def checkIlluminaGenotypeReports() {
-    if (stringIsNull(params.illumina.genotypeReports)) {
+    if (stringIsNull(params.input.genotypeReports)) {
         exit 1, 'params.illumina.genotypeReports not set -> please provide a genotype report path glob pattern'
     }
     // also need to check if any file exists... //
 }
 def checkIlluminaSampleReport() {
-    if (stringIsNull(params.illumina.sampleReport)) {
+    if (stringIsNull(params.input.sampleReport)) {
         exit 1, 'params.illumina.sampleReport not set -> please provide a sample report file path'
     }
     // also need to check if any file exists... //
 }
 def checkIlluminaLocusReport() {
-    if (stringIsNull(params.illumina.locusReport)) {
+    if (stringIsNull(params.input.locusReport)) {
         exit 1, 'params.illumina.locusReport not set -> please provide a locus report file path'
     }
     // also need to check if any file exists... //
 }
 def checkClinicalPhenotypeFam() {
-    if (stringIsNull(params.clinicalPhenotypeFam)) {
+    if (stringIsNull(params.input.clinicalPhenotypeFam)) {
         exit 1, 'params.clinicalPhenotypeFam not set -> please provide a clinical phenotype fam file path'
     }
     // also need to check if any file exists... //
@@ -48,13 +57,33 @@ def checkReferencePanelsDir() {
         exit 1, 'please provide a directory of reference panels e.g. from 1000 Genomes'
     }
 }
+def checkGeneticMapsDir() {
+    if (stringIsNull(params.phase.geneticMapsDir)) {
+        exit 1, 'please provide a directory of genetic maps'
+    }
+}
 def checkReferenceSequence() {
-    if (stringIsNull(params.referenceSequence)) {
+    if (stringIsNull(params.baseQC.referenceSequence)) {
         exit 1, 'params.referenceSequence not set -> please provide a reference sequence fasta file path'
     }
     // also need to check if any file exists... //
 }
+def checkInputCohortData(inputDataTag) {
 
+    bedFile = file(params.outputDir + "${inputDataTag}/cohortData/" + params.cohortName + ".${inputDataTag}.bed")
+    bimFile = file(params.outputDir + "${inputDataTag}/cohortData/" + params.cohortName + ".${inputDataTag}.bim")
+    famFile = file(params.outputDir + "${inputDataTag}/cohortData/" + params.cohortName + ".${inputDataTag}.fam")
+
+    if (!(bedFile.exists())) {
+        exit 1, 'could not find input bed file at ${bedFile} please check your output directory and try again'
+    }
+    if (!(bimFile.exists())) {
+        exit 1, 'could not find input bim file at ${bimFile} please check your output directory and try again'
+    }
+    if (!(famFile.exists())) {
+        exit 1, 'could not find input fam file at ${famFile} please check your output directory and try again'
+    }
+}
 def userEmailAddressIsProvided() {
 	return !(stringIsNull(params.email))
 }
@@ -91,14 +120,12 @@ def getBasicEmailMessage() {
 
 def getCohortData(inputDataTag) {
 
-    dataTag = (inputDataTag == '') ? '' : ".${inputDataTag}"
-
     bed = channel.fromPath(
-        params.outputDir + params.cohortName + "${dataTag}.bed")
+        params.outputDir + "${inputDataTag}/cohortData/" + params.cohortName + ".${inputDataTag}.bed")
     bim = channel.fromPath(
-        params.outputDir + params.cohortName + "${dataTag}.bim")
+        params.outputDir + "${inputDataTag}/cohortData/" + params.cohortName + ".${inputDataTag}.bim")
     fam = channel.fromPath(
-        params.outputDir + params.cohortName + "${dataTag}.fam")
+        params.outputDir + "${inputDataTag}/cohortData/" + params.cohortName + ".${inputDataTag}.fam")
 
     return bed.combine(bim).combine(fam)
 }
@@ -121,12 +148,12 @@ process collectPlotsTogetherAndZip {
 
     output:
         publishDir "${params.outputDir}", mode: 'copy'
-        path "plots-${label}.tar.gz"
+        path "${label}.tar.gz"
 
     script:
         """
-        mkdir plots-${label}
-        cp -L *.pdf plots-${label}
-        tar -zcvf plots-${label}.tar.gz plots-${label}
+        mkdir temp
+        cp -L *.pdf temp
+        tar -zcvf ${label}.tar.gz temp
         """
 }

@@ -35,13 +35,7 @@
  *  chunk into a plink long-format genotype (lgen) file. These files
  *  are concatenated into a single lgen file for the cohort. We then
  *  use plink to build the cohortData from the map, fam, and lgen 
- *  files efficiently. We remove any variants appearing more than once
- *  in the cohort genotypes from this cohortData.
- *
- *  Finally, we align the genotypes of the cohortData to a reference
- *  sequence, select only the loci that are biallelic with respect to
- *  this cohort, and then rebuild the cohortData with the filtered
- *  genotypes.
+ *  files efficiently. 
  *
  ********************************************************************/
 nextflow.enable.dsl = 2
@@ -61,12 +55,7 @@ include {
     convertSampleReportToFam;
     intersectFamFilesBySampleId;
     buildCohortData;
-    selectDuplicatedVariants;
-    removeDuplicatedVariants;
-    alignGenotypesToReference;
-    selectBiallelicSnvs;
-    rebuildCohortData;
-} from "${projectDir}/modules/illuminaReportsToPlink.nf"
+} from "${projectDir}/modules/buildInput.nf"
 
 workflow {
 
@@ -75,8 +64,7 @@ workflow {
     (genotypeReports, 
      sampleReport, 
      locusReport, 
-     phenotypeFam,
-     referenceSequence) \
+     phenotypeFam) \
         = getInputChannels()
 
     genotypeReportChunks \
@@ -112,29 +100,6 @@ workflow {
         = buildCohortData(
             cohortLgen, 
             cohortMap, 
-            cohortFam)
-
-    duplicatedVariantIds \
-        = selectDuplicatedVariants(
-            cohortData)
-
-    filteredCohortData \
-        = removeDuplicatedVariants(
-            cohortData,
-            duplicatedVariantIds)
-
-    alignedGenotypeSet \
-        = alignGenotypesToReference(
-            filteredCohortData, 
-            referenceSequence)
-
-    biallelicGenotypeSet \
-        = selectBiallelicSnvs(
-            alignedGenotypeSet)
-
-    alignedCohortData \
-        = rebuildCohortData(
-            biallelicGenotypeSet,
             cohortFam)
 
 }

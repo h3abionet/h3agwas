@@ -2,21 +2,24 @@ include {
     userEmailAddressIsProvided;
     checkInputDir;
     checkCohortName;
-    checkGenotypeReportPrefix;
     checkEmailAdressProvided;
     getBasicEmailSubject;
     getBasicEmailMessage;
     getCohortData;
+    checkInputCohortData;
+    checkAssociationInput;
 } from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
-    checkInputDir()
     checkCohortName()
+    checkOutputDir()
     checkEmailAdressProvided()
+    checkInputCohortData('sampleFiltered')
+    checkAssociationInput()
 }
 
 def getInputChannels() {
-	return getCohortData(params.inputStep)
+	return getCohortData(params.associationInput)
 }
 
 process getAssociationReport {
@@ -24,14 +27,15 @@ process getAssociationReport {
 	input:
 		tuple path(cohortBed), path(cohortBim), path(cohortFam)
 	output:
-		path "${params.cohortName}.report.assoc"
+        publishDir "${params.outputDir}/${params.associationInput}/reports", mode: 'copy'
+		path "${params.cohortName}.assoc"
 	script:
 		"""
 		 plink \
 		 	--bfile ${params.cohortName} \
 		 	--assoc \
 		 	--maf 0.05 \
-		 	--out ${params.cohortName}.report 
+		 	--out ${params.cohortName} 
 		"""
 }
 
@@ -41,9 +45,10 @@ process drawManhattanPlot {
 	input:
 		path associationReport
 	output:
+        publishDir "${params.outputDir}/${params.associationInput}/plots", mode: 'copy'
 		path manhattanPlot
 	script:
-		manhattanPlot = "manhattan.pdf"
+		manhattanPlot = "${params.cohortName}.manhattan.pdf"
 		"""
 		#!/usr/bin/env Rscript --vanilla
 		library(qqman)
@@ -67,6 +72,7 @@ process drawQqPlot {
 	input:
 		path associationReport
 	output:
+        publishDir "${params.outputDir}/${params.associationInput}/plots", mode: 'copy'
 		path qqplot
 	script:
 		qqplot = "qqplot.pdf"
@@ -81,18 +87,11 @@ process drawQqPlot {
 }
 
 def sendWorkflowExitEmail() {
-
-    subject = getBasicEmailSubject()
-    attachment = [
-        "${params.outputDir}manhattan.pdf",
-        "${params.outputDir}qqplot.pdf"]
-    message = getBasicEmailMessage()
-
     if (userEmailAddressIsProvided()) {
 	    sendMail(
 	        to: "${params.email}",
-	        subject: "${subject}",
-	        body: "${message}",
-	        attach: ["${attachment[0]}", "${attachment[1]}"])
+	        subject: getBasicEmailSubject(),
+	        body: getBasicEmailMessage(),
+	        attach: "${params.outputDir}/association" + params.associationInput + ".tar.gz")
 	}
 }

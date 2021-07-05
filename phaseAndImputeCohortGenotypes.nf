@@ -35,6 +35,10 @@
 nextflow.enable.dsl=2
 
 include {
+    printWorkflowExitMessage;
+} from "${projectDir}/modules/base.nf"
+
+include {
     checkInputParams;
     getInputChannels;
     selectBiallelicSnvsWithBcftools;
@@ -47,9 +51,6 @@ include {
     sendWorkflowExitEmail;
 } from "${projectDir}/modules/phasing.nf"
 
-include {
-    printWorkflowExitMessage;
-} from "${projectDir}/modules/intensityPlot.nf"
 
 workflow {
 

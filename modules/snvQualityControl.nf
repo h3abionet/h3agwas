@@ -5,11 +5,14 @@ include {
     userEmailAddressIsProvided;
     getBasicEmailSubject;
     getBasicEmailMessage;
+    checkInputCohortData;
 } from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
     checkCohortName()
+    checkOutputDir()
     checkEmailAdressProvided()
+    checkInputCohortData('sampleFiltered')
 }
 
 def getInputChannels() {
@@ -23,7 +26,8 @@ process getMissingnessReport {
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
 
     output:
-        path "plink.missing"
+        publishDir "${params.outputDir}/snvFiltered/reports", mode: 'copy'
+        path "${params.cohortName}.missing"
 
     script:
         """
@@ -32,7 +36,8 @@ process getMissingnessReport {
             --threads ${task.cpus} \
             --autosome \
             --test-missing \
-                mperm=${params.differentialMissingness.mperm}
+                mperm=${params.snvQC.numberOfMaxTPermutations} \
+            --out ${params.cohortName}
         """
 }
 
@@ -43,11 +48,12 @@ process drawDifferentialMissingnessPlot {
         path cohortMissing
 
     output:
+        publishDir "${params.outputDir}/snvFiltered/plots", mode: 'copy'
         path output
 
     script:
         input = cohortMissing
-        output = "differentialMissingness.pdf"
+        output = "${params.cohortName}.differentialMissingness.pdf"
         template "drawDifferentialMissingnessPlot.py"
 }
 
@@ -63,7 +69,7 @@ process selectSnvsWithHighDifferentialMissingness {
     script:
         """
         awk \
-            '{ if (\$5 <= ${params.differentialMissingness.cut}) { print \$2 } }' \
+            '{ if (\$5 <= ${params.snvQC.minDifferentialMissingnessPvalue}) { print \$2 } }' \
             ${cohortMissing} \
             > highDifferentialMissingnessSnvs.txt
         """
@@ -76,13 +82,15 @@ process getAlleleFrequencyReport {
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
 
     output:
-        path "plink.frq"
+        publishDir "${params.outputDir}/snvFiltered/reports", mode: 'copy'
+        path "${params.cohortName}.frq"
 
     script:
         """
         plink \
             --bfile ${cohortBed.getBaseName()} \
             --freq \
+            --out ${params.cohortName}
         """
 }
 
@@ -93,11 +101,12 @@ process drawAlleleFrequencyPlot {
         path cohortFrq
 
     output:
+        publishDir "${params.outputDir}/snvFiltered/plots", mode: 'copy'
         path output
 
     script:
         input = cohortFrq
-        output  = "alleleFrequencies.pdf"
+        output  = "${params.cohortName}.alleleFrequencies.pdf"
         template "drawAlleleFrequencyPlot.py"
 }
 
@@ -111,7 +120,7 @@ process selectlowMinorAlleleFrequencySnvs {
     script:
         """
         awk \
-            '\$5<${params.minMAF} { print \$2 }' \
+            '\$5<${params.snvQC.minAlleleFrequency} { print \$2 }' \
             ${cohortFrq} \
             > lowMinorAlleleFrequencySnvs.txt
         """
@@ -129,7 +138,7 @@ process selectSnvsWithHighMissingness {
     script:
         """
         awk \
-            'NR!=1 && (\$3>=${params.missingness.maxRate.cases} || \$4>=${params.missingness.maxRate.controls}) { print \$2 }' \
+            'NR!=1 && (\$3>=${params.snvQC.maxMissingnessPerSnv.cases} || \$4>=${params.snvQC.maxMissingnessPerSnv.controls}) { print \$2 }' \
             ${cohortMissing} \
             > highMissingnessSnvs.txt
         """
@@ -144,13 +153,15 @@ process getHardyWeinbergEquilibriumReport {
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
 
     output:
-        path "plink.hwe"
+        publishDir "${params.outputDir}/snvFiltered/reports", mode: 'copy'
+        path "${params.cohortName}.hwe"
 
     script:
         """
         plink \
             --bfile ${cohortBed.getBaseName()} \
-            --hardy
+            --hardy \
+            --out ${params.cohortName}
         """
 }
 
@@ -180,11 +191,12 @@ process drawHardyWeinbergEquilibriumPlot {
         path controlOnlyCohortHwe
 
     output:
+        publishDir "${params.outputDir}/snvFiltered/plots", mode: 'copy'
         path output
 
     script:
         input  = controlOnlyCohortHwe
-        output = "controlOnlyCohortHwe.pdf"
+        output = "${params.cohortName}.controlOnlyCohortHwe.pdf"
         template "drawHardyWeinbergEquilibriumPlot.py"
 }
 
@@ -200,7 +212,7 @@ process selectSnvsOutOfHardyWeinbergEquilibrium {
     script:
         """
         awk \
-            '{ if (\$9 <= ${params.hwe.cut}) { print \$2 } }' \
+            '{ if (\$9 <= ${params.snvQC.minHardyWeinbergEquilibriumPvalue}) { print \$2 } }' \
             ${controlOnlyCohortHwe} \
             > outOfHardyWeinbergEquilibriumSnvs.txt        
         """
@@ -226,13 +238,12 @@ process removeLowQualitySnvs {
 
     tag "cohortData, lowQualitySnvs"
 
-    publishDir path: "${params.outputDir}", mode: 'copy'
-
     input:
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
         path lowQualitySnvs
 
     output:
+        publishDir path: "${params.outputDir}/snvFiltered/cohortData", mode: 'copy'
         path "${params.cohortName}.snvFiltered.{bed,bim,fam}"
 
     script:

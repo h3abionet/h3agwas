@@ -1,10 +1,23 @@
 #!/usr/bin/env nextflow
 /*
- *  REMOVE LOW QUALITY SAMPLES AND SNVS
+ *  REMOVE LOW QUALITY SNVS
  *  ===================================
  *
- *  This script performs a detailed sample and snv quality control for
- *  your GWAS study. 
+ *  This script removes poor snvs from the cohort data. It is a best
+ *  practice in GWAS studies to remove the low quality snvs *after*
+ *  removing the snvs, so this is what you must do here. 
+ *
+ *  The tests that snvs in the cohort data must pass are:
+ *      + low missingness rate across the cohort samples
+ *      + low p-vaues of differential missingness (i.e. low
+ *          associations between missingness and case/control status)
+ *      + high minor allele frequencies
+ *      + in hardy weinberg equilibrium
+ *
+ *  As for the sample quality control step before, we select all snvs
+ *  first, combine them into one list, and then remove all snvs 
+ *  together at the end of the script, thus the plots represent the 
+ *  data *before* quality cuts. 
  *
  ********************************************************************/
 

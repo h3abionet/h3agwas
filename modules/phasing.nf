@@ -1,27 +1,28 @@
 include {
-    printWorkflowExitMessage;
-} from "${projectDir}/modules/intensityPlot.nf"
-
-include {
     checkCohortName;
+    checkOutputDir;
     checkReferencePanelsDir;
+    checkGeneticMapsDir;
     checkEmailAdressProvided;
+    checkInputCohortData;
     userEmailAddressIsProvided;
     getBasicEmailSubject;
     getBasicEmailMessage;
     getCohortData;
 } from "${projectDir}/modules/base.nf"
 
-
 def checkInputParams() {
-
     checkCohortName()
+    checkOutputDir()
+    checkEmailAdressProvided()
+    checkInputCohortData('snvFiltered')
     checkReferencePanelsDir()
+    checkGeneticMapsDir()
 }
 
 def getInputChannels() {
     return [
-        getCohortData('clean'),
+        getCohortData('snvFiltered'),
         getReferencePanels(),
         getGeneticMaps()]
 }
@@ -156,8 +157,8 @@ process rebuildCohortDataWithPlink() {
         path haplotypes
         tuple path(unphasedBed), path(unphasedBim), path(unphasedFam)
     output:
-        publishDir path: "${params.outputDir}phasing", mode: 'copy'
-        path "${params.cohortName}-phased.{bed,bim,fam,log}"
+        publishDir path: "${params.outputDir}/phased/cohortData", mode: 'copy'
+        path "${params.cohortName}.phased.{bed,bim,fam,log}"
     script:
         """
         plink2 \

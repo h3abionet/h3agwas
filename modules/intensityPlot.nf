@@ -1,25 +1,28 @@
 include {
+    checkCohortName;
     userEmailAddressIsProvided;
-    checkSnvName;
-    checkInputDir;
-    checkGenotypeReportPrefix;
+    checkOutputDir;
+    checkSelectedSnv;
     checkEmailAdressProvided;
+    checkIlluminaGenotypeReports;
     getBasicEmailMessage;
     getBasicEmailSubject;
 } from "${projectDir}/modules/base.nf"
 
+include {
+    getIlluminaGenotypeReports;
+} from "${projectDir}/modules/buildInput.nf"
+
 def checkInputParams() {
-    checkSnvName()
-    checkInputDir()
-    checkGenotypeReportPrefix()
+    checkCohortName()
+    checkOutputDir()
     checkEmailAdressProvided()
+    checkIlluminaGenotypeReports()
+    checkSelectedSnv()
 }
 
 def getInputChannels() {
-    return channel.fromPath(
-            params.inputDir +
-            params.genotypeReportPrefix +
-            '*')
+    return getIlluminaGenotypeReports()
 }
 
 process filterRecordsForChosenSnv() {
@@ -30,7 +33,7 @@ process filterRecordsForChosenSnv() {
     script:
         """
         zcat ${genotypeReport} \
-            | grep "${params.snvName}," \
+            | grep "${params.selectedSnv}," \
             > ${genotypeReport}.xy.csv
         """
 }
@@ -39,25 +42,25 @@ process mergeGenotypeReports {
     input:
         path genotypeReportList
     output:
-        path "${params.snvName}.csv"
+        path "${params.selectedSnv}.csv"
     script:
         mergedReportHeader \
             = "SNP Name,Sample ID,Allele1 - Top," \
             + "Allele2 - Top,GC Score,X,Y,B Allele Freq,Log R Ratio"
         """
         echo ${mergedReportHeader} > ${params.snvName}.csv
-        cat ${params.genotypeReportPrefix}* >> ${params.snvName}.csv
+        cat ${params.genotypeReportPrefix}* >> ${params.selectedSnv}.csv
         """
 }
 
 process drawXYintensityPlot {
     label "tidyverse"
-    publishDir "${params.outputDir}", mode: 'copy'
 
     input:
         path snvGenotypeReport
     output:
-        path "${params.snvName}_XYintensities.pdf"
+        publishDir "${params.outputDir}/intensityPlots", mode: 'copy'
+        path "${params.cohortName}.${params.selectedSnv}.XY.pdf"
     script:
         """
         #!/usr/bin/env Rscript --vanilla
@@ -65,32 +68,17 @@ process drawXYintensityPlot {
         snvGenotypeReport <- read.csv(file="${snvGenotypeReport}")
         ggplot(snvGenotypeReport, aes(x=X,y=Y)) +
             geom_point() +
-            ggtitle("snv: ${params.snvName}")
-        ggsave("${params.snvName}_XYintensities.pdf")
+            ggtitle("snv: ${params.selectedSnv}")
+        ggsave("${params.cohortName}.${params.selectedSnv}.XY.pdf")
         """
 }
 
-def printWorkflowExitMessage() {
-    if (workflow.success) {
-        log.info "Workflow completed without errors".center(60)
-    } else {
-        log.error "Oops .. something went wrong!".center(60)
-    }
-    log.info "Check output files in folder:".center(60)
-    log.info "${params.outputDir}".center(60)
-}
-
 def sendWorkflowExitEmail() {
-
-    subject = getBasicEmailSubject()
-    attachment = "${params.outputDir}/${params.snvName}_XYintensities.pdf"
-    message = getBasicEmailMessage()
-
     if (userEmailAddressIsProvided()) {
         sendMail(
             to: "${params.email}",
-            subject: "${subject}",
-            body: "${message}",
-            attach: "${attachment}")
+            subject: getBasicEmailSubject(),
+            body: getBasicEmailMessage(),
+            attach: "${params.outputDir}/intensityPlots/${params.cohortName}.${params.selectedSnv}.XY.pdf")
     }
 }

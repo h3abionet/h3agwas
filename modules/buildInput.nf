@@ -5,7 +5,6 @@ include {
     checkIlluminaSampleReport;
     checkIlluminaLocusReport;
     checkClinicalPhenotypeFam;
-    checkReferenceSequence;
     userEmailAddressIsProvided;
     checkEmailAdressProvided;
     getBasicEmailSubject;
@@ -13,14 +12,13 @@ include {
 } from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
-        checkCohortName()
-        checkOutputDir()
-        checkIlluminaGenotypeReports()
-        checkIlluminaSampleReport()
-        checkIlluminaLocusReport()
-        checkClinicalPhenotypeFam()
-        checkReferenceSequence()
-        checkEmailAdressProvided()
+    checkCohortName()
+    checkOutputDir()
+    checkEmailAdressProvided()
+    checkIlluminaGenotypeReports()
+    checkIlluminaSampleReport()
+    checkIlluminaLocusReport()
+    checkClinicalPhenotypeFam()
 }
 
 def getInputChannels() {
@@ -28,33 +26,27 @@ def getInputChannels() {
         getIlluminaGenotypeReports(),
         getIlluminaSampleReport(),
         getIlluminaLocusReport(),
-        getClinicalPhenotypeReport(),
-        getReferenceSequence()]
+        getClinicalPhenotypeReport()]
 }
 
 def getIlluminaGenotypeReports() {
     return channel
-        .fromPath(params.illumina.genotypeReports)
+        .fromPath(params.input.genotypeReports)
 }
 
 def getIlluminaSampleReport() {
     return channel
-        .fromPath(params.illumina.sampleReport)
+        .fromPath(params.input.sampleReport)
 }
 
 def getIlluminaLocusReport() {
     return channel
-        .fromPath(params.illumina.locusReport)
+        .fromPath(params.input.locusReport)
 }
 
 def getClinicalPhenotypeFam() {
     return channel
-        .fromPath(params.clinicalPhenotypeFam)
-}
-
-def getReferenceSequence() {
-    return channel
-        .fromPath(params.referenceSequence)
+        .fromPath(params.input.clinicalPhenotypeFam)
 }
 
 def splitTextFiles(inputFiles) {
@@ -180,7 +172,8 @@ process buildCohortData {
         path cohortMap
         path cohortFam
     output:
-        path "cohortData.{bed,bim,fam}"
+        publishDir "${params.outputDir}/input/cohortData", mode: 'copy'
+        path "${params.cohortName}.input.{bed,bim,fam}"
     script:
         """
         plink \
@@ -192,127 +185,7 @@ process buildCohortData {
             --no-pheno \
             --threads $task.cpus \
             --make-bed \
-            --out cohortData
-        """
-}
-
-
-process selectDuplicatedVariants {
-    label 'plink'
-
-    tag "cohortData"
-
-    input:
-        tuple path(cohortBed), path(cohortBim), path(cohortFam)
-
-    output:
-        path 'plink.dupvar'
-
-    script:
-        """
-        plink \
-            --bfile ${cohortBed.getBaseName()} \
-            --list-duplicate-vars \
-            ids-only \
-            suppress-first
-        """
-}
-
-process removeDuplicatedVariants {
-    label 'plink'
-
-    tag "cohortData, dupVars"
-
-    input:
-    tuple path(cohortBed), path(cohortBim), path(cohortFam)
-    path duplicatedVariants
-
-    output:
-        path("duplicatedVariantsRemoved.{bed,bim,fam,log}")
-
-    script:
-        """
-        plink \
-            --bfile ${cohortBed.getBaseName()} \
-            --make-bed \
-            -exclude ${duplicatedVariants} \
-            --out duplicatedVariantsRemoved
-        """
-}
-
-
-process alignGenotypesToReference() {
-    label 'mediumMemory'
-    label 'plink2'
-
-    tag "cohortData, reference"
-
-    cache 'lenient'
-    
-    input:
-        tuple path(cohortBed), path(cohortBim), path(cohortFam)
-        path referenceSequence
-    output:
-        path "temporary.vcf.gz"
-    script:
-        plinkBase = cohortBed.getBaseName()
-        """
-        plink2 \
-            --bfile ${plinkBase} \
-            --fa "${referenceSequence}" \
-            --ref-from-fa force \
-            --normalize \
-            --threads $task.cpus \
-            --export vcf-4.2 id-paste=iid bgz \
-            --real-ref-alleles \
-            --out temporary
-        """
-}
-
-process selectBiallelicSnvs() {
-    label 'mediumMemory'
-    label 'bcftools'
-
-    tag "aligned genotypeSet"
-
-    input:
-        path genotypeSet
-    output:
-        path "filtered.vcf.gz"
-    script:
-        """
-        bcftools \
-            view \
-            -m2 \
-            -M2 \
-            -v snps \
-            --threads $task.cpus \
-            -Oz \
-            -o $filtered.vcf.gz \
-        ${genotypeSet}
-        """
-}
-
-process rebuildCohortData() {
-    label 'bigMemory'
-    label 'plink2'
-
-    tag "alignedGenotypes, cohortFam"
-
-    input:
-        path alignedGenotypes
-        path cohortFam
-    output:
-        publishDir path: "${params.outputDir}", mode: 'copy'
-        path "${params.cohortName}.input.{bed,bim,fam,log}"
-    script:
-        """
-        plink2 \
-            --vcf ${alignedGenotypes} \
-            --fam ${cohortFam} \
-            --threads $task.cpus \
-            --make-bed \
-            --double-id \
+            --keep-allele-order \
             --out ${params.cohortName}.input
         """
 }

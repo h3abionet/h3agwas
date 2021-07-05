@@ -1,5 +1,5 @@
 def getInputChannels() {
-	return channel.of(params.message)
+	return channel.of(params.testMessage)
 }
 
 process printToScreen {

@@ -3,19 +3,60 @@ include {
     checkCohortName;
     checkEmailAdressProvided;
     userEmailAddressIsProvided;
+    checkInputCohortData;
     getCohortData;
     getBasicEmailSubject;
     getBasicEmailMessage;
 } from "${projectDir}/modules/base.nf"
 
 def checkInputParams() {
-    checkOutputDir()
     checkCohortName()
+    checkOutputDir()
     checkEmailAdressProvided()
+    checkInputCohortData('basicFiltered')
 }
 
 def getInputChannels() {
-    return getCohortData('input')
+    return getCohortData('basicFiltered')
+}
+
+process getPopulationStratificationReports {
+    label 'plink'
+    label 'smallMemory'
+
+    tag "cohortData"
+
+    input:
+        tuple path(cohortBed), path(cohortBim), path(cohortFam)
+    output:
+        tuple path("${params.cohortName}.eignval"), path("${params.cohortName}.eigenvec")
+    script:
+        """
+        plink \
+            --bfile ${cohortBed.getBaseName()} \
+            --pca \
+            --out ${params.cohortName}
+        """
+}
+
+process drawPopulationStratificationPlot {
+    label 'plink'
+    label 'smallMemory'
+
+    tag "eignvals, eigenvecs"
+
+    input:
+        tuple path(cohortEigenval), path(cohortEigenvec)
+    output:
+        publishDir "${params.outputDir}/sampleFiltered/plots", mode: 'copy'
+        path "${params.cohortName}.pca.pdf"
+        path "${params.cohortName}.eigenvalue.pdf"
+    script:
+        cc_fname = 0
+        cc       = 0
+        col      = 0
+        output="${params.cohortName}.pca.pdf"
+        template "drawPopulationStratificationPlot.py"
 }
 
 process getDiscordantSampleSexInfoReport {
@@ -27,7 +68,8 @@ process getDiscordantSampleSexInfoReport {
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
 
     output:
-        path "plink.sexcheck"
+        publishDir "${params.outputDir}/sampleFiltered/reports", mode: 'copy'
+        path "${params.cohortName}.sexcheck"
 
     script:
         """
@@ -35,8 +77,9 @@ process getDiscordantSampleSexInfoReport {
             --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
             --check-sex \
-                ${params.checkSex.femaleMaxF} \
-                ${params.checkSex.maleMinF}
+                ${params.sampleQC.maxInbreedingCoefficientForFemaleCalls} \
+                ${params.sampleQC.minInbreedingCoefficientForMaleCalls} \
+            --out ${params.cohortName}
         """
 }
 
@@ -67,14 +110,16 @@ process getSampleBasedMissingnessReport {
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
 
     output:
-        path "plink.imiss"
+        publishDir "${params.outputDir}/sampleFiltered/reports", mode: 'copy'
+        path "${params.cohortName}.imiss"
 
     script:
         """
         plink \
             --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
-            --missing
+            --missing \
+            --out ${params.cohortName}
         """
 }
 
@@ -87,13 +132,14 @@ process drawSampleMissingnessHistogram {
         path cohortImiss
   
     output:
+        publishDir "${params.outputDir}/sampleFiltered/plots", mode: 'copy'
         path output
   
     script:
         input  = cohortImiss
         base   = cohortImiss.getBaseName()
         label  = "samples"
-        output = "${base}-indmiss_plot".replace(".","_")+".pdf"
+        output = "${params.cohortName}.sampleMissingness.pdf"
         template "drawSampleMissingnessHistogram.py"
 }
 
@@ -106,7 +152,8 @@ process getIdentityByDescentReport {
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
 
     output:
-        path "plink.genome"
+        publishDir "${params.outputDir}/sampleFiltered/reports", mode: 'copy'
+        path "${params.cohortName}.genome"
 
     script:
         """
@@ -114,8 +161,9 @@ process getIdentityByDescentReport {
             --keep-allele-order \
             -bfile ${cohortBed.getBaseName()} \
             --threads ${task.cpus} \
-            --min ${params.relatedness.piHat} \
-            --genome
+            --min ${params.sampleQC.minRelatednessPiHat} \
+            --genome \
+            --out ${params.cohortName}
         """
 }
 
@@ -146,13 +194,15 @@ process getSampleHeterozygosityReport {
     input:
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
     output:
-        path "plink.het"
+        publishDir "${params.outputDir}/sampleFiltered/reports", mode: 'copy'
+        path "${params.cohortName}.het"
     script:
         """
         plink \
             --keep-allele-order \
             --bfile ${cohortBed.getBaseName()} \
-            --het
+            --het \
+            --out ${params.cohortName}
         """
 }
 
@@ -166,10 +216,11 @@ process drawMissingnessHeterozygosityPlot {
         path cohortImiss
         path cohortHet
     output:
+        publishDir "${params.outputDir}/sampleFiltered/plots", mode: 'copy'
         path output
     script:
         base = cohortImiss.baseName
-        output  = "${base}-imiss-vs-het".replace(".","_")+".pdf"
+        output  = "${params.cohortName}.missingnessHeterozygosity.pdf"
         template "drawMissingnessHeterozygosityPlot.py"
 }
 
@@ -209,13 +260,12 @@ process removeLowQualitySamples {
 
     tag "cohortData, lowQualitySamples"
 
-    publishDir path: "${params.outputDir}", mode: 'copy'
-
     input:
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
         path lowQualitySamples
 
     output:
+        publishDir path: "${params.outputDir}/sampleFiltered/cohortData", mode: 'copy'
         path "${params.cohortName}.sampleFiltered.{bed,bim,fam}"
 
     script:
@@ -229,30 +279,12 @@ process removeLowQualitySamples {
         """
 }
 
-process collectPlotsTogetherAndZip {
-
-    input:
-        path plots
-
-    output:
-        publishDir "${params.outputDir}", mode: 'copy'
-        path "plots-sampleFiltering.tar.gz"
-
-    script:
-        """
-        mkdir plots-sampleFiltering
-        cp -L *.pdf plots-sampleFiltering
-        tar -zcvf plots-sampleFiltering.tar.gz plots-sampleFiltering
-        """
-}
-
-
 def sendWorkflowExitEmail() {
     if (userEmailAddressIsProvided()) {
         sendMail(
             to: "${params.email}",
             subject: getBasicEmailSubject(),
             body: getBasicEmailMessage(),
-            attach: "${params.outputDir}/quality-control/sampleA-Samples-plots.tar.gz")
+            attach: "${params.outputDir}/sampleFiltering.tar.gz")
     }
 }

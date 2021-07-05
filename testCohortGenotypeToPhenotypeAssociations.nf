@@ -17,17 +17,17 @@
 nextflow.enable.dsl=2
 
 include {
+    printWorkflowExitMessage;
+} from "${projectDir}/modules/intensityPlot.nf"
+
+include {
     checkInputParams;
 	getInputChannels;
 	getAssociationReport;
 	drawManhattanPlot;
 	drawQqPlot;
 	sendWorkflowExitEmail;
-} from "${projectDir}/modules/manhattanQq.nf"
-
-include {
-    printWorkflowExitMessage;
-} from "${projectDir}/modules/intensityPlot.nf"
+} from "${projectDir}/modules/association.nf"
 
 workflow {
 
@@ -35,11 +35,27 @@ workflow {
 
 	cohortData = getInputChannels()
 
-	associationReport = getAssociationReport(cohortData)
+	associationReport \
+        = getAssociationReport(
+            cohortData)
 
-	drawManhattanPlot(associationReport)
+	manhattanPlot \
+        = drawManhattanPlot(
+            associationReport)
 
-	drawQqPlot(associationReport)
+	qqPlot \
+        = drawQqPlot(
+            associationReport)
+
+    plots = channel
+        .empty().mix(
+            manhattanPlot,   
+            qqPlot)
+        .collect()
+
+    collectPlotsTogetherAndZip(
+        "association" + params.associationInput,
+        plots)
 
 }
 

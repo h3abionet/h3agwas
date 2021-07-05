@@ -6,57 +6,194 @@ include {
     getCohortData;
     getBasicEmailSubject;
     getBasicEmailMessage;
+    checkReferenceSequence;
+    checkInputCohortData;
 } from "${projectDir}/modules/base.nf"
 
-def getInputChannels() {
-    return getCohortData('input')
+def checkInputParams() {
+    checkCohortName()
+    checkOutputDir()
+    checkEmailAdressProvided()
+    checkInputCohortData('input')
+    checkReferenceSequence()
 }
 
-process removeReallyLowQualitySamplesAndSnvs {
-    label 'smallMemory' 
+def getInputChannels() {
+    return [
+        getCohortData('input'),
+        getReferenceSequence()]
+}
 
-    tag "Removing QC Phase 1"
+def getReferenceSequence() {
+    return channel
+        .fromPath(params.baseQC.referenceSequence)
+}
+
+process selectDuplicatedVariants {
+    label 'plink'
+
+    tag "cohortData"
 
     input:
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
 
     output:
-        publishDir "${params.outputDir}", mode: 'copy'
+        path 'plink.dupvar'
+
+    script:
+        """
+        plink \
+            --bfile ${cohortBed.getBaseName()} \
+            --list-duplicate-vars \
+            ids-only \
+            suppress-first
+        """
+}
+
+process removeDuplicatedVariants {
+    label 'plink'
+
+    tag "cohortData, dupVars"
+
+    input:
+    tuple path(cohortBed), path(cohortBim), path(cohortFam)
+    path duplicatedVariants
+
+    output:
+        path("duplicatedVariantsRemoved.{bed,bim,fam,log}")
+
+    script:
+        """
+        plink \
+            --bfile ${cohortBed.getBaseName()} \
+            -exclude ${duplicatedVariants} \
+            --make-bed \
+            --out duplicatedVariantsRemoved
+        """
+}
+
+
+process alignGenotypesToReference() {
+    label 'mediumMemory'
+    label 'plink2'
+
+    tag "cohortData, reference"
+
+    cache 'lenient'
+    
+    input:
+        tuple path(cohortBed), path(cohortBim), path(cohortFam)
+        path referenceSequence
+    output:
+        path "temporary.vcf.gz"
+    script:
+        plinkBase = cohortBed.getBaseName()
+        """
+        plink2 \
+            --bfile ${plinkBase} \
+            --fa "${referenceSequence}" \
+            --ref-from-fa force \
+            --normalize \
+            --threads $task.cpus \
+            --export vcf-4.2 id-paste=iid bgz \
+            --real-ref-alleles \
+            --out temporary
+        """
+}
+
+process selectBiallelicSnvs() {
+    label 'mediumMemory'
+    label 'bcftools'
+
+    tag "aligned genotypeSet"
+
+    input:
+        path genotypeSet
+    output:
+        path "filtered.vcf.gz"
+    script:
+        """
+        bcftools \
+            view \
+            -m2 \
+            -M2 \
+            -v snps \
+            --threads $task.cpus \
+            -Oz \
+            -o $filtered.vcf.gz \
+        ${genotypeSet}
+        """
+}
+
+process rebuildCohortData() {
+    label 'bigMemory'
+    label 'plink2'
+
+    tag "alignedGenotypes, cohortFam"
+
+    input:
+        path alignedGenotypes
+        path cohortFam
+    output:
+        path "aligned.{bed,bim,fam,log}"
+    script:
+        """
+        plink2 \
+            --vcf ${alignedGenotypes} \
+            --fam ${cohortFam} \
+            --threads $task.cpus \
+            --make-bed \
+            --double-id \
+            --out aligned
+        """
+}
+
+process removeReallyLowQualitySamplesAndSnvs {
+    label 'smallMemory' 
+
+    tag "cohortData"
+
+    input:
+        tuple path(cohortBed), path(cohortBim), path(cohortFam)
+
+    output:
+        publishDir "${params.outputDir}/basicFiltered/cohortData", mode: 'copy'
         path "${params.cohortName}.basicFiltered.{bed,bim,fam}"
 
     script:
         """
         plink \
             --keep-allele-order \
-            --autosome \
-            --bfile ${cohortBed.getBaseName()} \
-            --mind 0.1 \
-            --geno 0.1 \
+            --bfile ${cohortBed.getBaseName()}  \
+            --mind ${params.baseQC.maxMissingnessPerSample} \
             --make-bed \
             --out temp1
         plink \
             --keep-allele-order \
-            --bfile temp1  \
-            --mind $params.cut_mind \
+            --bfile temp1 \
+            --geno ${params.baseQC.maxMissingnessPerSnv} \
             --make-bed \
             --out temp2
         plink \
             --keep-allele-order \
             --bfile temp2 \
-            --geno $params.cut_geno \
+            --maf ${params.baseQC.minAlleleFrequency} \
             --make-bed \
             --out temp3
         plink \
             --keep-allele-order \
-            --bfile temp3 \
-            --maf $params.cut_maf \
-            --make-bed \
-            --out temp4
-        plink \
-            --keep-allele-order \
-            --bfile temp4  \
-            --hwe $params.cut_hwe \
+            --bfile temp3  \
+            --hwe ${params.baseQC.minHardyWeinbergEquilibriumPvalue} \
             --make-bed \
             --out ${params.cohortName}.basicFiltered     
         """
+}
+
+def sendWorkflowExitEmail() {
+    if (userEmailAddressIsProvided()) {
+        sendMail(
+            to: "${params.email}",
+            subject: getBasicEmailSubject(),
+            body: getBasicEmailMessage())
+   }
 }

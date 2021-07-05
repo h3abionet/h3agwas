@@ -9,7 +9,12 @@ import sys
 
 TAB = chr(9)
 if len(sys.argv)<=1:
-  sys.argv = ["select_miss_het.qcplink.py","$cohortHet",float("${params.cut_het_low}"),float("${params.cut_het_high}"),"$outfname"]
+  sys.argv = [
+    "select_miss_het.qcplink.py",
+    "$cohortHet",
+    "${params.sampleQC.minHeterozygosity}",
+    "${params.sampleQC.maxHeterozygosity}",
+    "$outfname"]
 
 hetf = sys.argv[1]
 cut_het_high=float(sys.argv[3])

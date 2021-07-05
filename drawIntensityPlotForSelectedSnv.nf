@@ -1,6 +1,6 @@
 /*
- *  DRAW INTENSITY PLOT FOR A SNV
- *  =============================
+ *  DRAW INTENSITY PLOT FOR A SELECTED SNV
+ *  ======================================
  *
  *  This script takes as input an illumina gsgt format dataset, and a 
  *  SNV id chosen by the user, and then draws a plot of the intensity 
@@ -14,13 +14,18 @@
  *  project, and one file does not correspond to any one snv or any 
  *  one sample.
  *
- *  The path to all the input genotype reports are specified in an 
- *  input tsv file, and this file is passed to the workflow by adding:
- *  --input <relative path to tsv file>
- *  to the command line.
+ *  The script first reads in the genotype reports and, for each
+ *  report, extracts the lines relevant to our selected snv and 
+ *  adds them to a list. There is then a list for each genotype report
+ *  and these lists are merged together. Finally, we draw the
+ *  intensity plot from this merged data file. 
  *
  ********************************************************************/
 nextflow.enable.dsl=2
+
+include {
+    printWorkflowExitMessage;
+} from "${projectDir}/modules/base.nf"
 
 include {
     getInputChannels;
