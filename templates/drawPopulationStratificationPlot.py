@@ -17,29 +17,25 @@ colour_choices=["black","magenta","darkcyan","red","blue","orange","aqua","beige
 
 def main():
     args = parseArguments()
-    labels, phe =  getColours()
-    evecs =  getEigens()
-    draw(*evecs,labels,phe)
+    labels, phe =  getColours(args)
+    evecs =  getEigens(args)
+    draw(*evecs,labels,phe,args)
 
 
 def parseArguments():
-   if len(sys.argv)<=1:
-      sys.argv=\
-      "drawPCA.py $base $cc $cc_fname $col $cohortEigenval $cohortEigenvec $output".split()
-   parser=argparse.ArgumentParser()
-   parser.add_argument('input', type=str, metavar='input'),
-   parser.add_argument('cc', type=str, metavar='label'),
-   parser.add_argument('cc_fname', type=str, metavar='label'),
-   parser.add_argument('column', type=str, metavar='label'),
-   parser.add_argument('eigvals', type=str, metavar='label'),
-   parser.add_argument('eigvecs', type=str, metavar='output'),
-   parser.add_argument('output', type=str, metavar='output'),
-   args = parser.parse_args()
-   return args
+    if len(sys.argv)<=1:
+        sys.argv=\
+        "drawPCA.py $cc $cc_fname $col $cohortEigenval $cohortEigenvec $output".split()
+    class Args:
+        cc = "$cc"
+        cc_fname = "$cc_fname"
+        cc_column = "$col"
+        eigvals = "$cohortEigenval"
+        eigvecs = "$cohortEigenvec"
+        output = "$output"
+    return Args
 
-
-
-def getColours():
+def getColours(args):
     if len(args.cc_fname)==0 or args.cc_fname=="0":
         return [], "_None_"
     phe = pd.read_csv(args.cc,delim_whitespace=True)
@@ -59,7 +55,7 @@ def getColours():
     return list(enumerate(all_labels)), phe
 
 
-def getEigens():
+def getEigens(args):
     evals = np.loadtxt(args.eigvals)
     fig, ax = plt.subplots(figsize=(10,8))
     ax.plot(range(len(evals)),evals)
@@ -75,7 +71,7 @@ def getEigens():
     return pc1, pc2, evecs
 
 
-def draw(pc1,pc2,evecs,labels,phe):
+def draw(pc1,pc2,evecs,labels,phe,args):
    if type(phe)==str and phe == "_None_":
        evecs["colour"] = "black"
    else:
@@ -98,7 +94,7 @@ def draw(pc1,pc2,evecs,labels,phe):
    plt.xlabel("PC1 (variation %4.1f %%)"%pc1,fontsize=15)
    plt.ylabel("PC2 (variation %4.1f %%)"%pc2,fontsize=15)
    plt.tight_layout()
-   plt.savefig(args.output,type="pdf")
+   plt.savefig(args.output,format="pdf")
    fig, ax = plt.subplots(figsize=(10,8))
 
 

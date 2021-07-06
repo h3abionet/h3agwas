@@ -37,11 +37,12 @@ include {
 include {
     getInputChannels;
     checkInputParams;
+    getPopulationStratificationReports;
     getDiscordantSampleSexInfoReport;
     getSampleBasedMissingnessReport;
-    getHardyWeinbergEquilibriumReport;
     getIdentityByDescentReport;
     getSampleHeterozygosityReport;
+    drawPopulationStratificationPlot;
     drawSampleMissingnessHistogram;
     drawMissingnessHeterozygosityPlot;
     selectSamplesWithDiscordantSexInfo;
@@ -116,7 +117,7 @@ workflow {
         .empty().mix(
             pcaPlot,
             eigenvaluePlot,
-            sampleMissingnessHistogram,   
+            sampleMissingnessHistogram,
             missingnessHeterozygosityPlot)
         .collect()
 

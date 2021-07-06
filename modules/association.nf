@@ -1,6 +1,6 @@
 include {
     userEmailAddressIsProvided;
-    checkInputDir;
+    checkOutputDir;
     checkCohortName;
     checkEmailAdressProvided;
     getBasicEmailSubject;
@@ -14,8 +14,8 @@ def checkInputParams() {
     checkCohortName()
     checkOutputDir()
     checkEmailAdressProvided()
-    checkInputCohortData('sampleFiltered')
     checkAssociationInput()
+    checkInputCohortData(params.associationInput)
 }
 
 def getInputChannels() {
@@ -24,6 +24,9 @@ def getInputChannels() {
 
 process getAssociationReport {
 	label 'plink'
+
+    tag "cohortData"
+
 	input:
 		tuple path(cohortBed), path(cohortBim), path(cohortFam)
 	output:
@@ -33,7 +36,7 @@ process getAssociationReport {
 		"""
 		 plink \
             --keep-allele-order \
-		 	--bfile ${params.cohortName} \
+		 	--bfile ${cohortBed.getBaseName()} \
 		 	--assoc \
 		 	--maf 0.01 \
 		 	--out ${params.cohortName} 
@@ -42,7 +45,9 @@ process getAssociationReport {
 
 process drawManhattanPlot {
 	label 'qqman'
-	publishDir "${params.outputDir}", mode: 'copy'
+
+    tag "associationReport"
+
 	input:
 		path associationReport
 	output:
@@ -69,14 +74,16 @@ process drawManhattanPlot {
 
 process drawQqPlot {
 	label 'qqman'
-	publishDir "${params.outputDir}", mode: 'copy'
+	
+    tag "associationReport"
+
 	input:
 		path associationReport
 	output:
         publishDir "${params.outputDir}/${params.associationInput}/plots", mode: 'copy'
 		path qqplot
 	script:
-		qqplot = "qqplot.pdf"
+		qqplot = "${params.cohortName}.qqplot.pdf"
 		"""
 		#!/usr/bin/env Rscript --vanilla
 		library(qqman)
@@ -93,6 +100,6 @@ def sendWorkflowExitEmail() {
 	        to: "${params.email}",
 	        subject: getBasicEmailSubject(),
 	        body: getBasicEmailMessage(),
-	        attach: "${params.outputDir}/association" + params.associationInput + ".tar.gz")
+	        attach: "${params.outputDir}/association-" + params.associationInput + ".tar.gz")
 	}
 }

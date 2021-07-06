@@ -29,7 +29,7 @@ process getPopulationStratificationReports {
     input:
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
     output:
-        tuple path("${params.cohortName}.eignval"), path("${params.cohortName}.eigenvec")
+        tuple path("${params.cohortName}.eigenval"), path("${params.cohortName}.eigenvec")
     script:
         """
         plink \
@@ -42,7 +42,7 @@ process getPopulationStratificationReports {
 
 process drawPopulationStratificationPlot {
     label 'matplotlib'
-    label 'smallMemory'
+    label 'mediumMemory'
 
     tag "eignvals, eigenvecs"
 
@@ -128,17 +128,17 @@ process getSampleBasedMissingnessReport {
 
 process drawSampleMissingnessHistogram {
     label 'matplotlib'
-    label 'smallMemory'
+    label 'mediumMemory'
 
     tag "cohortImiss"
 
     input:
         path cohortImiss
-  
+
     output:
         publishDir "${params.outputDir}/sampleFiltered/plots", mode: 'copy'
         path output
-  
+
     script:
         input  = cohortImiss
         base   = cohortImiss.getBaseName()
@@ -173,7 +173,8 @@ process getIdentityByDescentReport {
 }
 
 process selectSamplesWithHighRelatedness {
-    label 'smallMemory'
+    label 'python3'
+    label 'mediumMemory'
 
     tag "genome, imiss"
 
@@ -192,7 +193,7 @@ process selectSamplesWithHighRelatedness {
 
 process getSampleHeterozygosityReport {
     label 'plink'
-    label 'smallMemory'
+    label 'mediumMemory'
 
     tag "cohortData"
 
@@ -230,7 +231,8 @@ process drawMissingnessHeterozygosityPlot {
 }
 
 process selectSamplesFailingMHTest {
-    label 'smallMemory'
+    label 'python3'
+    label 'mediumMemory'
 
     tag "imiss, het"
 

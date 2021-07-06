@@ -64,7 +64,7 @@ workflow {
 
     alignedGenotypeSet \
         = alignGenotypesToReference(
-            filteredCohortData, 
+            filteredCohortData,
             referenceSequence)
 
     biallelicGenotypeSet \
@@ -74,7 +74,7 @@ workflow {
     alignedCohortData \
         = rebuildCohortData(
             biallelicGenotypeSet,
-            cohortFam)
+            filteredCohortData)
 
     basicFilteredCohortData \
         = removeReallyLowQualitySamplesAndSnvs(

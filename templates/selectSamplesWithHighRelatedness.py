@@ -5,7 +5,12 @@ import pandas as pd
 import sys
 
 if len(sys.argv)<=1:
-    sys.argv=["removeRelInds.py","$cohortImiss","$cohortGenome","$outfname","${params.relatedness.superPiHat}"]
+    sys.argv=[
+        "removeRelInds.py",
+        "$cohortImiss",
+        "$cohortGenome",
+        "$outfname",
+        "${params.sampleQC.maxRelatednessPiHat}"]
 
 
 EOL=chr(10)

@@ -1,6 +1,7 @@
 include {
     getCohortData;
     checkCohortName;
+    checkOutputDir;
     checkEmailAdressProvided;
     userEmailAddressIsProvided;
     getBasicEmailSubject;
@@ -45,7 +46,7 @@ process getMissingnessReport {
 
 process drawDifferentialMissingnessPlot {
     label 'matplotlib'
-    label 'smallMemory'
+    label 'mediumMemory'
 
     input:
         path cohortMissing
@@ -101,7 +102,7 @@ process getAlleleFrequencyReport {
 
 process drawAlleleFrequencyPlot {
     label 'matplotlib'
-    label 'smallMemory'
+    label 'mediumMemory'
 
     input:
         path cohortFrq
@@ -194,7 +195,7 @@ process selectControlOnlyHWETests {
 
 process drawHardyWeinbergEquilibriumPlot {
     label 'matplotlib'
-    label 'smallMemory'
+    label 'mediumMemory'
 
     input:
         path controlOnlyCohortHwe

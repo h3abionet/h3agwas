@@ -54,14 +54,14 @@ process selectDuplicatedVariants {
 process removeDuplicatedVariants {
     label 'plink'
 
-    tag "cohortData, dupVars"
+    tag "cohortData, duplicatedVariants"
 
     input:
     tuple path(cohortBed), path(cohortBim), path(cohortFam)
     path duplicatedVariants
 
     output:
-        path("duplicatedVariantsRemoved.{bed,bim,fam,log}")
+        path("duplicatedVariantsRemoved.{bed,bim,fam}")
 
     script:
         """
@@ -79,10 +79,10 @@ process alignGenotypesToReference() {
     label 'mediumMemory'
     label 'plink2'
 
-    tag "cohortData, reference"
+    tag "filteredCohortData, reference"
 
     cache 'lenient'
-    
+
     input:
         tuple path(cohortBed), path(cohortBim), path(cohortFam)
         path referenceSequence
@@ -107,7 +107,7 @@ process selectBiallelicSnvs() {
     label 'mediumMemory'
     label 'bcftools'
 
-    tag "aligned genotypeSet"
+    tag "alignedGenotypes"
 
     input:
         path genotypeSet
@@ -122,7 +122,7 @@ process selectBiallelicSnvs() {
             -v snps \
             --threads $task.cpus \
             -Oz \
-            -o $filtered.vcf.gz \
+            -o filtered.vcf.gz \
         ${genotypeSet}
         """
 }
@@ -131,13 +131,13 @@ process rebuildCohortData() {
     label 'bigMemory'
     label 'plink2'
 
-    tag "alignedGenotypes, cohortFam"
+    tag "alignedGenotypes, filteredCohortFam"
 
     input:
         path alignedGenotypes
-        path cohortFam
+        tuple path(cohortBed), path(cohortBim), path(cohortFam)
     output:
-        path "aligned.{bed,bim,fam,log}"
+        path "aligned.{bed,bim,fam}"
     script:
         """
         plink2 \
@@ -152,9 +152,9 @@ process rebuildCohortData() {
 
 process removeReallyLowQualitySamplesAndSnvs {
     label 'plink'
-    label 'smallMemory' 
+    label 'smallMemory'
 
-    tag "cohortData"
+    tag "alignedCohortData"
 
     input:
         tuple path(cohortBed), path(cohortBim), path(cohortFam)

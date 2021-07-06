@@ -64,7 +64,7 @@ def checkGeneticMapsDir() {
 }
 def checkReferenceSequence() {
     if (stringIsNull(params.baseQC.referenceSequence)) {
-        exit 1, 'params.referenceSequence not set -> please provide a reference sequence fasta file path'
+        exit 1, 'params.baseQC.referenceSequence not set -> please provide a reference sequence fasta file path'
     }
     // also need to check if any file exists... //
 }
@@ -75,13 +75,13 @@ def checkInputCohortData(inputDataTag) {
     famFile = file(params.outputDir + "${inputDataTag}/cohortData/" + params.cohortName + ".${inputDataTag}.fam")
 
     if (!(bedFile.exists())) {
-        exit 1, 'could not find input bed file at ${bedFile} please check your output directory and try again'
+        exit 1, "could not find input bed file at ${bedFile} please check your output directory and try again"
     }
     if (!(bimFile.exists())) {
-        exit 1, 'could not find input bim file at ${bimFile} please check your output directory and try again'
+        exit 1, "could not find input bim file at ${bimFile} please check your output directory and try again"
     }
     if (!(famFile.exists())) {
-        exit 1, 'could not find input fam file at ${famFile} please check your output directory and try again'
+        exit 1, "could not find input fam file at ${famFile} please check your output directory and try again"
     }
 }
 def userEmailAddressIsProvided() {
@@ -152,8 +152,8 @@ process collectPlotsTogetherAndZip {
 
     script:
         """
-        mkdir temp
-        cp -L *.pdf temp
-        tar -zcvf ${label}.tar.gz temp
+        mkdir plots
+        cp -L *.pdf plots
+        tar -zcvf ${label}.tar.gz plots
         """
 }
