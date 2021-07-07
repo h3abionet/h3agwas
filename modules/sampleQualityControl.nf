@@ -292,6 +292,6 @@ def sendWorkflowExitEmail() {
             to: "${params.email}",
             subject: getBasicEmailSubject(),
             body: getBasicEmailMessage(),
-            attach: "${params.outputDir}/sampleFiltering.tar.gz")
+            attach: "${params.outputDir}plotArchives/sampleFiltering.tar.gz")
     }
 }

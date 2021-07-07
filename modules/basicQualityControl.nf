@@ -128,7 +128,7 @@ process selectBiallelicSnvs() {
 }
 
 process rebuildCohortData() {
-    label 'bigMemory'
+    label 'mediumMemory'
     label 'plink2'
 
     tag "alignedGenotypes, filteredCohortFam"

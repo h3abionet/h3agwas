@@ -53,13 +53,13 @@ def checkCohortName () {
 	}
 }
 def checkReferencePanelsDir() {
-    if (stringIsNull(params.referencePanelsDir)) {
-        exit 1, 'please provide a directory of reference panels e.g. from 1000 Genomes'
+    if (stringIsNull(params.phase.referencePanelsDir)) {
+        exit 1, 'params.phase.referencePanelsDir not set -> please provide a directory of reference panels e.g. from 1000 Genomes'
     }
 }
 def checkGeneticMapsDir() {
     if (stringIsNull(params.phase.geneticMapsDir)) {
-        exit 1, 'please provide a directory of genetic maps'
+        exit 1, 'params.phase.geneticMapsDir not set -> please provide a directory of genetic maps'
     }
 }
 def checkReferenceSequence() {
@@ -147,13 +147,13 @@ process collectPlotsTogetherAndZip {
         path plots
 
     output:
-        publishDir "${params.outputDir}", mode: 'copy'
+        publishDir "${params.outputDir}plotArchives/", mode: 'copy'
         path "${label}.tar.gz"
 
     script:
         """
         mkdir plots
-        cp -L *.pdf plots
-        tar -zcvf ${label}.tar.gz plots
+        cp -L *.pdf plots/
+        tar -czf ${label}.tar.gz plots
         """
 }

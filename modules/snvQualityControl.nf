@@ -272,6 +272,7 @@ def sendWorkflowExitEmail() {
       sendMail(
           to: "${params.email}",
           subject: getBasicEmailSubject(),
-          body: getBasicEmailMessage())
+          body: getBasicEmailMessage(),
+	  attach: "${params.outputDir}plotArchives/snvFiltering.tar.gz")
   }
 }

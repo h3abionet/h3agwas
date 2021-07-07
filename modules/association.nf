@@ -25,7 +25,7 @@ def getInputChannels() {
 process getAssociationReport {
 	label 'plink'
 
-    tag "cohortData"
+    tag "${params.associationInput}CohortData"
 
 	input:
 		tuple path(cohortBed), path(cohortBim), path(cohortFam)
@@ -100,6 +100,6 @@ def sendWorkflowExitEmail() {
 	        to: "${params.email}",
 	        subject: getBasicEmailSubject(),
 	        body: getBasicEmailMessage(),
-	        attach: "${params.outputDir}/association-" + params.associationInput + ".tar.gz")
+	        attach: "${params.outputDir}/plotArchives/association-${params.associationInput}.tar.gz")
 	}
 }

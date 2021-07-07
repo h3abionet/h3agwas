@@ -73,7 +73,7 @@ process selectGenotypeSetWithPlink {
 
 process alignWithConformGt {
     label 'beagle'
-    label 'bigMemory'
+    label 'mediumMemory'
 
     tag "genotypeSet, referencePanel_chr${chromosome}"
 
@@ -93,7 +93,7 @@ process alignWithConformGt {
 
 process phaseWithBeagle {
     label 'beagle'
-    label 'bigMemory'
+    label 'mediumMemory'
 
     tag "genotypeSubset_chr${chromosome}, referencePanel_chr${chromosome}, geneticMap_chr${chromosome}"
 
@@ -133,7 +133,7 @@ process indexWithTabix {
 
 process concatenateWithBcftools {
     label 'bcftools'
-    label 'bigMemory'
+    label 'mediumMemory'
 
     tag "all haplotypeSubsets"
 
@@ -148,7 +148,7 @@ process concatenateWithBcftools {
 }
 
 process rebuildCohortDataWithPlink() {
-    label 'bigMemory'
+    label 'mediumMemory'
     label 'plink2'
 
     tag "haplotypeSet, inputFam"
@@ -186,8 +186,8 @@ def getReferencePanels() {
         .of(1..22)
         .map{ it -> [
             it,
-            file(params.referencePanelsDir + '*chr' + it + '.*.vcf.gz')[0],
-            file(params.referencePanelsDir + '*chr' + it + '.*.vcf.gz.tbi')[0]]}
+            file(params.phase.referencePanelsDir + '*chr' + it + '.*.vcf.gz')[0],
+            file(params.phase.referencePanelsDir + '*chr' + it + '.*.vcf.gz.tbi')[0]]}
 }
 
 def getGeneticMaps() {
@@ -195,6 +195,6 @@ def getGeneticMaps() {
         .of(1..22)
         .map{ it -> [
             it,
-            file(params.geneticMapsDir + '*chr' + it + '.*.map')[0]]}
+            file(params.phase.geneticMapsDir + '*chr' + it + '.*.map')[0]]}
 }
 
