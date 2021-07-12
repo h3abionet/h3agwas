@@ -1294,6 +1294,11 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
            if (params.covariates) covariate = "--covar ${phenof} --covar-name ${params.covariates} "
            out = pheno
        }
+       if(params.sexinfo_available=='true'){
+         sexallow=""
+       }else{
+        sexallow="--allow-no-sex"
+       }
        template "test.sh"
    }
 
