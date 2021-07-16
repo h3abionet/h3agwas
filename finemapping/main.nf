@@ -163,7 +163,7 @@ if(params.begin_seq > params.end_seq){
 error('begin_seq > end_seq')
 }
 if(params.gwas_cat==""){
-println('file_gwas option not initialise')
+println('gwas_cat : gwas catalog option not initialise, will be downloaded')
 process GwasCatDl{
     label 'R'
     publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
@@ -184,7 +184,7 @@ headgc_bp="chromEnd"
 gwascat_ch=Channel.fromPath(params.gwas_cat, checkIfExists:true)
 headgc_chr=params.headgc_chr
 headgc_bp=params.headgc_bp
-checkColumnHeader(params.gwas_cat, [headgc_chr,headgc_bp])
+//checkColumnHeader(params.gwas_cat, [headgc_chr,headgc_bp])
 
 }
 if(params.chro=="" | params.begin_seq=="" | params.end_seq==""){

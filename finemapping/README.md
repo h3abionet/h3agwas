@@ -8,10 +8,10 @@ The purpose of this pipeline is to perform a initial analysis of finemapping
 
 Our script, *finemapping* takes as input PLINK files, gwas file
 ## to do
-* instalation of programmes  caviarbf, finemapping....
-* figures for annotation need included at figures
-* caviarbf : need to integrate annotation
 * problem with output of option  `--cond` of finemapping
+
+## some limits 
+* pipeline discarded positions duplicated from genetics file and bed file
 ## Running
 
 The pipeline is run: `nextflow run finemapping`

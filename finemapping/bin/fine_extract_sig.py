@@ -13,13 +13,21 @@ def extractinfobim(chro, begin, end,bimfile):
    listpos=[]
    listref=[]
    listalt=[]
+   listdup=set([])
    for line in readbim :
       splline=line.split()
       pos=int(splline[3])
-      if chro == splline[0] and pos>=begin and pos<=end :
-         listpos.append(pos)
-         listref.append(splline[4])
-         listalt.append(splline[5])
+      if chro == splline[0] and pos>=begin and pos<=end and (pos not in listdup):
+         if pos in listpos :
+           posindex=listpos.index(pos)
+           listpos.pop(posindex) 
+           listref.pop(posindex) 
+           listalt.pop(posindex) 
+           listdup.add(pos)
+         else : 
+          listpos.append(pos)
+          listref.append(splline[4])
+          listalt.append(splline[5])
    return (listpos, listref, listalt)
 
 def appendfreq(bfile, result, freq_header,rs_header, n_header, chr_header,bp_header, bin_plk, keep, threads) :
@@ -91,6 +99,7 @@ args = parseArguments()
 
 result = pd.read_csv(args.inp_resgwas,delim_whitespace=True, dtype={args.chro_header:str})
 result[args.chro_header]=result[args.chro_header].astype(str)
+result.drop_duplicates(subset=[args.chro_header, args.pos_header],keep=False,inplace=True)
 rs=args.rs
 freq_header=args.freq_header
 n_header=args.n_header
