@@ -7,6 +7,8 @@ import pandas as pd
 import argparse
 import numpy as np
 import os
+import scipy.stats as stats
+
 
 def extractinfobim(chro, begin, end,bimfile):
    readbim=open(bimfile) 
@@ -89,6 +91,7 @@ def parseArguments():
     parser.add_argument('--bin_plk',type=str,required=False,help="plink binary", default="plink")
     parser.add_argument('--bfile',type=str,required=False,help="bfile if need to compute frequency or N", default=None)
     parser.add_argument('--keep',type=str,required=False,help="file of data used for if need to compute frequency or N", default=None)
+    parser.add_argument('--z_pval',type=int,required=False,help="file of data used for if need to compute frequency or N", default=0)
     parser.add_argument('--threads',type=int,required=False,help="", default=1)
     parser.add_argument('--n',required=False, help="bim file ")
     args = parser.parse_args()
@@ -165,7 +168,16 @@ small.loc[bal,'allele2']=small.loc[bal,'allele1_tmp']
 small.loc[bal,'beta']= - small.loc[bal,'beta_tmp']
 small.loc[bal,'maf']= 1 - small.loc[bal,'maf_tmp']
 
-small['Z']=small['beta']/small['se']
+if args.z_pval==0 :
+  small['Z']=small['beta']/small['se']
+else :
+  tmpbeta=small['beta'].copy()
+  tmpbeta[tmpbeta>=0]=1
+  tmpbeta[tmpbeta<=0]=-1
+  small['Z']=stats.norm.ppf(1-small['p']/2)
+  small['Z']=small['Z'].abs()*tmpbeta
+
+#small.to_csv('test_z', sep=' ', header=True, index=False,na_rep="NA")
 
 small[["rsid","chromosome","position","allele1","allele2","maf", "beta", "se"]].to_csv(out_file, sep=" ", header=True, index=False,na_rep="NA")
 small[["rsid","Z"]].to_csv(out_fileZ, sep=" ", header=False, index=False,na_rep="NA")
