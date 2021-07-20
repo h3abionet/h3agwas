@@ -233,6 +233,7 @@ process ExtractPositionGwas{
     file("${out}.range") into range_plink
     file("${out}.all") into data_i
     file("${out}.pos") into paintor_gwas_annot
+  publishDir "${params.output_dir}/file_format/", overwrite:true, mode:'copy'
   script :
     freq= (params.head_freq=="") ? "":" --freq_header ${params.head_freq} "
     nheader= (params.head_n=="") ? "":" --n_header ${params.head_n}"

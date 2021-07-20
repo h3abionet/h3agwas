@@ -176,6 +176,7 @@ else :
   tmpbeta[tmpbeta<=0]=-1
   small['Z']=stats.norm.ppf(1-small['p']/2)
   small['Z']=small['Z'].abs()*tmpbeta
+  small['beta']=small['Z']*small['se']
 
 #small.to_csv('test_z', sep=' ', header=True, index=False,na_rep="NA")
 
