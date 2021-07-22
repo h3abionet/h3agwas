@@ -985,7 +985,7 @@ if (params.gemma == 1){
      gemma_manhatten_ch_chro_merge=gemma_manhatten_ch_chro.groupTuple()
      process doMergeGemma{
           input :
-            set (val(this_pheno),list_file, base_list) from  gemma_manhatten_ch_chro_merge
+            set (val(this_pheno),file(list_file), base_list) from  gemma_manhatten_ch_chro_merge
          publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
          output :
              set val(base), val(our_pheno2), file("$out") into gemma_manhatten_ch
@@ -1147,7 +1147,7 @@ process doGemmaGxEChro{
      gemma_manhatten_ch_chro_gxe_merge=gemma_manhatten_ch_chro_gxe.groupTuple()
      process doMergeGemmaGxE{
           input :
-            set (val(this_pheno),list_file, base_list) from  gemma_manhatten_ch_chro_gxe_merge
+            set (val(this_pheno),file(list_file), base_list) from  gemma_manhatten_ch_chro_gxe_merge
          publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
          output :
              set val(base), val(this_pheno), file("$out") into (gemma_manhatten_ch_gxe_i, gemma_manhatten_ch_gxe)
