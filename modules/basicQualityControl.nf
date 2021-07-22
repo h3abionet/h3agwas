@@ -93,7 +93,7 @@ process alignGenotypesToReference() {
         """
         plink2 \
             --bfile ${plinkBase} \
-            --fa "${referenceSequence}" \
+            --fa ${referenceSequence} \
             --ref-from-fa force \
             --normalize \
             --threads $task.cpus \
