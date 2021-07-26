@@ -420,9 +420,9 @@ infoargs: type of cofactor separate by a comma : 0 for qualitative, 1 for quanti
 
 if(params.bolt_h2){
     println "bolt_h2"
-    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
     boltlmm_assoc_ch= Channel.create()
     Channel.from(file(bed),file(bim),file(fam)).buffer(size:3)
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
@@ -596,9 +596,9 @@ report_bolt=Channel.empty()
 //////
 
 if(params.gcta_h2==1){
-   gctabed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-   gctabim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-   gctafam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+   gctabed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+   gctabim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+   gctafam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
    h2gcta_assoc_ch= Channel.create()
    Channel
     .from(file(gctabed),file(gctabim),file(gctafam))
@@ -875,9 +875,9 @@ if(params.gcta_h2==1){
   }
 
 if(params.gemma_h2==1){
-    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
     gemma_assoc_ch= Channel.create()
     Channel.from(file(bed),file(bim),file(fam)).buffer(size:3)
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
@@ -984,9 +984,9 @@ report_gemma=Channel.empty()
 }
 if(params.gemma_h2_pval==1){
 
-    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
     gemmapval_assoc_ch= Channel.create()
     Channel.from(file(bed),file(bim),file(fam)).buffer(size:3)
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }

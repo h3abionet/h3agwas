@@ -98,6 +98,7 @@ def checkColumnHeader(fname, columns) {
 def checkSampleSheet(fname)  {
   if (workflow.profile == "awsbatch") return;
   if (fname.contains("s3://") )return;
+  if (fname.contains("az://") ) return;
   if (nullfile.contains(fname) || fname.contains(".xls")) return;
   new File(fname).withReader { line = it.readLine()}  
   problem  = false
@@ -211,6 +212,10 @@ def getSubChannel = { parm, parm_name, col_name ->
     println "The file <$parm> is in S3 so we cannot do a pre-check";
     return Channel.fromPath(parm);
   }
+  if (parm.toString().contains("az://")) {
+    println "The file <$parm> is in Azure so we cannot do a pre-check";
+    return Channel.fromPath(parm);
+  }
   if ((parm==0) || (parm=="0") || (parm==false) || (parm=="false")) {
     filename = "emptyZ0${parm_name}.txt";
     new File(filename).createNewFile()  
@@ -238,8 +243,8 @@ if (params.case_control) {
   Channel.fromPath(ccfile).into { cc_ch; cc2_ch }
   col    = params.case_control_col
   diffpheno = "--pheno cc.phe --pheno-name $col"
-  if (params.case_control.toString().contains("s3://")) {
-       println "Case control file is in s3 so we can't check it"
+  if (params.case_control.toString().contains("s3://") || params.case_control.toString().contains("az://")) {
+       println "Case control file is in the cloud so we can't check it"
   } else 
   if (! file(params.case_control).exists()) {
      error("\n\nThe file <${params.case_control}> given for <params.case_control> does not exist")
@@ -295,7 +300,7 @@ inpat = "${params.input_dir}/${params.input_pat}"
 
 
 
-if (inpat.contains("s3://")) {
+if (inpat.contains("s3://") || inpat.contains("az://")) {
   print "Here"
   this_checker = { it -> return it}
 } else {
