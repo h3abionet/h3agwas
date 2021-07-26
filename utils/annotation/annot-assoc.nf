@@ -97,8 +97,9 @@ params.bolt_impute2fidiid=""
 /*gxe param : contains column of gxe*/
 params.gxe=""
 
-
 params.input_pat  = 'raw-GWA-data'
+//format boltlmm
+params.boltlmm = 0
 
 params.sexinfo_available = "false"
 
@@ -318,13 +319,13 @@ loczm_gwascat=""
 }
 
 loczm_dir=file(params.loczm_bin).getParent().getParent()
-dirlz=Channel.fromPath(loczm_dir,type:'dir')
+
+locuszoom_ch=locuszoom_ch.combine(Channel.fromPath(loczm_dir,type:'dir'))
 process PlotLocusZoom{
     label 'py2R'
     memory plink_mem_req
     input : 
-       set rs, file(filegwas) from locuszoom_ch
-       file(lz_dir) from dirlz
+       set val(rs), file(filegwas),file(lz_dir) from locuszoom_ch
     publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
     output :
        file("out_$rsnameout/*.svg")
@@ -344,7 +345,7 @@ process ExtractAnnotation{
       publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
       output :
         file("${out}*")
-        file("*${rs}*")
+        file("*${rsnameout}*")
         set val(rs), file("${out}.pdf") into report_info_rs
       script :    
          out="annot-"+rs.replace(':','_')
