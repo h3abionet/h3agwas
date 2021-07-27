@@ -118,6 +118,8 @@ params.headgc_chr=""
 params.headgc_bp=""
 params.gwas_cat = ""
 
+params.prob_cred_set=0.95
+
 params.cut_maf=0.01
 params.plink_mem_req="6GB"
 
@@ -292,7 +294,7 @@ process ComputedFineMapCond{
   """ 
   echo "z;ld;snp;config;cred;log;n_samples" > $fileconfig
   echo "$filez;$ld;${out}.snp;${out}.config;${out}.cred;${out}.log;${params.n_pop}" >> $fileconfig
-  ${params.finemap_bin} --cond --in-files $fileconfig   --log --cond-pvalue ${params.threshold_p}  --n-causal-snps ${params.n_causal_snp}
+  ${params.finemap_bin} --cond --in-files $fileconfig   --log --cond-pvalue ${params.threshold_p}  --n-causal-snps ${params.n_causal_snp}  --prob-cred-set ${params.prob_cred_set}
   """
 }
 
@@ -313,7 +315,7 @@ process ComputedFineMapSSS{
   """
   echo "z;ld;snp;config;cred;log;n_samples" > $fileconfig
   echo "$filez;$ld;${out}.snp;${out}.config;${out}.cred;${out}.log;${params.n_pop}" >> $fileconfig
-  ${params.finemap_bin} --sss --in-files $fileconfig  --n-threads ${params.fm_cpus_req}  --log --n-causal-snps ${params.n_causal_snp}
+  ${params.finemap_bin} --sss --in-files $fileconfig  --n-threads ${params.fm_cpus_req}  --log --n-causal-snps ${params.n_causal_snp} --prob-cred-set ${params.prob_cred_set}
   """
 }
 
@@ -352,7 +354,7 @@ baliseannotpaint=1
     file(list_loc) from paintor_gwas_annot
    publishDir "${params.output_dir}/paintor/annot", overwrite:true, mode:'copy'
    output :
-    file(out) into (paintor_fileannot, paintor_fileannotplot)
+    file(out) into (paintor_fileannot, paintor_fileannotplot, paintor_fileannot2)
    script :
    outtmp="tmp.res"
    out="annotationinfo"
@@ -362,9 +364,20 @@ baliseannotpaint=1
    annotate_locus_paint.py --input $listinfo  --locus $outtmp --out $out --chr chromosome --pos position
    """
   }
+  paintor_listfileannot2=Channel.fromPath(params.paintor_listfileannot)
+  process paintor_extractannotname{
+    input :
+       file(fileannot) from paintor_fileannot2
+    output :
+       stdout into annotname
+    """
+    head -1 $fileannot | sed 's/ /,/g' 
+    """ 
+  }
 } else{
 paintor_fileannot=file('NOFILE')
 paintor_fileannotplot=file('NOFILE')
+annotname=Channel.from("N")
 }
 }
 process ComputedPaintor{
@@ -374,15 +387,17 @@ process ComputedPaintor{
     file(filez) from paintor_gwas
     file(ld) from ld_paintor
     file(fileannot) from paintor_fileannot
+    val(annot_name) from annotname
   each ncausal from NCausalSnp
   publishDir "${params.output_dir}/paintor/", overwrite:true, mode:'copy'
   output :
       set file("${output}.results"), file("$BayesFactor") into res_paintor
       file(FileInfo) into infores_paintor
+      file("${output}*")
   script :
     output=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_paintor_$ncausal" 
     DirPaintor=output
-    annot=(baliseannotpaint==0) ? "" : " -annotations ${fileannot}"
+    annot=(baliseannotpaint==0) ? "" : " -Gname ${output}_an  -annotations ${annot_name}"
     BayesFactor=output+".BayesFactor"
     FileInfo=output+".info"
     Info="$ncausal;${output}.results;$BayesFactor"
@@ -393,7 +408,7 @@ process ComputedPaintor{
     cp $ld $output".ld"
     paint_annotation.py $fileannot $output 
     cp $fileannot $output".annotations"
-    ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal -num_samples  ${params.n_pop} -Lname $BayesFactor
+    ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal -num_samples  ${params.n_pop} -Lname $BayesFactor $annot
     """
 }
 res_paintor_ch=res_paintor.collect()

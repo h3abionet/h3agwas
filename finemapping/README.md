@@ -73,12 +73,12 @@ The key options are:
   * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
   * `output_dir` : output directory
   * `output` : output pattern
-  * ̀ data` : same option that _assoc/main.nf_, file is optional, used if need select specific individus for gcta,  compute frequencies or N, if mission in `file_gwas`
+  * `data` : same option that _assoc/main.nf_, file is optional, used if need select specific individus for gcta,  compute frequencies or N, if mission in `file_gwas`
   * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
   * `pheno` : optional, header in data, if present select individuals with no missiong individual to keep individuals for computed frequencie or gcta
   * `cut_maf` minor allele frequencies [ default : 0.0001]
   * ̀`file_gwas` : file contains gwas result, if N or frequencies is not available, it is computed with plink file and `data` file, to change format header must be defined :
-    * ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+    * `head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
     * `head_freq` : freq header [ default : None], if not present computed with plink, (and data/pheno if present)
     * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
     * `head_rs` : rs header column [default : "SNP"]
@@ -86,6 +86,7 @@ The key options are:
     * `head_se`  : column for standard error of beta "SE"
     * `head_A1` : column for A0 :[default : "ALLELE0" ]
     * `head_A2` : column for A1 :[default : "ALLELE1" ]
+ * `prob_cred_set` :  prob of credible set [default : 0.95], for FINEMAP software
 
 Cojo parameter :
   * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ]
