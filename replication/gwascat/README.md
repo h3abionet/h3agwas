@@ -36,40 +36,47 @@ extract from gwas catalog postiion and chromosome relative to `file_pheno` or `p
 OR transformed using log2 and defined if column contains information higher than 1
 
 
-### positions replication
-algorithm :
+### exact replication by positions
 
+algorithm :
 * extract from gwas catalog information relative to phenotype defined previously
-* extract from gwas file (`gwas_file`) list corresponding to file found in gwas catalog and around each positoins  
+* extract from gwas file (`gwas_file`) list corresponding to positions found in gwas catalog 
+* merge and computed p value adjusted with bonferonni or fdr 
+* result in `resultat/exact_rep` folder
 
 ### ld replications 
 algoritm :
-* computed ld between each positions of gwas catalog and position from summary statistics
-* merged 
-* keep each positions where p-value < `min pvalue` and r2 < `clump_r2`
-* position of gwas catalog cannot be in dataset and will be computed distance with positions from dataset
-* min p-value extracted
+* computed ld between each positions of gwas catalog and position from summary statistics.
+* merged positions of summary statistics in ld with gwas catalog  and gwas catalog.
+* keep each positions where p-value < `min pvalue` and r2 < `clump_r2`.
+* for all positions in LD with one position gwas catalog, min p-value extracted from summary statistics.
+some specificity :
+* position of gwas catalog cannot be in sumstat file but in genetics file and LD can be computed
+* One positions from sumstat can be in ld with more than one position of gwas catalog
+* result in `result/ld`
 
 ### clump replcation 
 algoritm :
-* used clump function of  plink using min pvalue and min r2 with windows to defined clump
-* each input of gwas catalog and summary statistics will be merge with windows
+* used clump function of  plink with min pvalue and `clump_r2` to defined groups of snps 
+* each input of gwas catalog and summary statistics will be merge by groups
 * keep p-value clump (min from ld)
+* result in `result/clump/`
 
 ### windows using kb
 algoritm :
 * around each position of gwas catalog extract around  `size_win_kb` information from positions keep min p-value
+* result in `result/wind`
 
 ### windows using ld 
 
 * algoritm windows :
- * computed ld between positon  using `clump_r2`, and windows size of `size_win_kb`
- * defined different groups of positions contains gwas catalog position
- * defined windows using chro, min position and max position
+ * run clump function of plink using `clump_r2` and `size_win_kb` using summary statistics
+ * keep group of 
  * extracted all positons from summary position between begin, and end used min
  * extracted min p-value by windows
+* result in `result/ldwind/wind`
 
-* algoritm wind extextend :
+* algoritm wind extended :
  * computed ld between positon  using `clump_r2`, and windows size of `size_win_kb`
  * defined different groups of positions 
  * merged groups where two positions are in two group
@@ -77,19 +84,8 @@ algoritm :
  * defined windows using chro, min position and max position
  * extracted all positons from summary position between begin, and end used min
  * extracted min p-value by windows 
+* result in `result/ldwind/windext`
 
-* algoritm group :
- * computed ld between positon  using `clump_r2`, and windows size of `size_win_kb`
- * defined different groups of positions 
- * keep group positons where gwas catalog positon
- * extracted min p-value by group
-
-* algoritm group extended: 
- * computed ld between positon  using `clump_r2`, and windows size of `size_win_kb`
- * defined different groups of positions 
- * merged groups where two positions are in two group
- * keep group positons where gwas catalog positon
- * extracted min p-value by group
 
 
 ### heritabilities computed

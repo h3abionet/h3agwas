@@ -315,7 +315,7 @@ process clump_aroundgwascat{
    input :
       file(assocclump) from clump_file_ch
       set file(bed), file(bim), file(fam) from plk_ch_clump
-   publishDir "${params.output_dir}/res/clump/tmp",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/result/clump/tmp",  overwrite:true, mode:'copy'
    output :
       file("${out}.clumped") into clump_res_ch
       file("$out*")   
@@ -335,7 +335,7 @@ process computedstat_pos{
    input :
         file(assocpos) from pos_file_ch
         file(gwascat)  from gwascat_all_statpos
-   publishDir "${params.output_dir}/res/pos",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/result/exact_rep",  overwrite:true, mode:'copy'
    output :
       set file("${out}.csv"), file("${out}_cmpfrequencies.svg"), file("${out}_cmpz.svg") 
       file("$out*") 
@@ -355,7 +355,7 @@ process computedstat_win{
    input :
         file(assocpos) from wind_file_ch
         file(gwascat)  from gwascat_all_statwind
-   publishDir "${params.output_dir}/res/wind",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/result/wind",  overwrite:true, mode:'copy'
    output :
       file("${out}*")
    script :
@@ -373,7 +373,7 @@ process computed_ld{
     memory plink_mem_req
   input :
       set file(bed), file(bim), file(fam) from plk_ch_ld
-    publishDir "${params.output_dir}/res/ld/tmp",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ld/tmp",  overwrite:true, mode:'copy'
     output :
        file("${out}.ld") into (ld_res_ch,ld2_res_ch)
        file("$out*") 
@@ -395,7 +395,7 @@ process computed_ld_stat{
       file(fileld) from  ld_res_ch
       file(gwascat) from gwascat_all_statld
       file(assocpos) from range_file_ch_ld
-    publishDir "${params.output_dir}/res/ld/",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ld/",  overwrite:true, mode:'copy'
     output :
        file("$out*")
     script :      
@@ -416,7 +416,7 @@ process computed_clump_stat{
       file(assocpos) from range_file_ch_clump
       set file(bed), file(bim), file(fam) from plk_ch_clumpstat
 
-    publishDir "${params.output_dir}/res/clump/",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/clump/",  overwrite:true, mode:'copy'
     output :
        file("$out*")
     script :
@@ -436,7 +436,7 @@ process computed_clump_stat{
       file(gwascatbed) from gwascat_pos_ld2
       file(gwascat) from gwascat_all_statld2
       file(assocpos) from range_file_ch_ld2
-    publishDir "${params.output_dir}/res/ld2/",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ld2/",  overwrite:true, mode:'copy'
     output :
        file("$out")
     script :
@@ -449,13 +449,7 @@ process computed_clump_stat{
       """
 }*/
 
-/*
-writeld1=open(args.out+'_ld.out','w')
-writeld2=open(args.out+'_ld_resume.out','w')
 
-writeldmerg=open(args.out+'_ldmerge.out','w')
-writeldmerg2=open(args.out+'_ldmerge_resume.out','w')
-*/
 process build_ldwind{
     memory other_mem_req
     cpus other_cpus_req
@@ -464,7 +458,7 @@ process build_ldwind{
       file(gwascatbed) from gwascat_pos_ld2
       file(gwascat) from gwascat_all_statld2
       file(assocpos) from range_file_ch_ld2
-    publishDir "${params.output_dir}/res/ldwind/tmp",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ldwind/tmp",  overwrite:true, mode:'copy'
     output :
       set file(gwascat), file(assocpos),file(fileld), file("${out}_ldext.out") into ldext_ch 
       set file(gwascat), file(assocpos),file(fileld), file("${out}_ldext_wind.out") into ldext_wind_ch 
@@ -477,12 +471,13 @@ process build_ldwind{
       """
 }
 
+/*
 process computed_ld2_stat{
    memory other_mem_req
    cpus other_cpus_req
    input :
      set file(gwascat), file(assocpos),file(fileld), file(out_ldblock) from ld_v2_ch  
-    publishDir "${params.output_dir}/res/ldwind/noext",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ldwind/noext",  overwrite:true, mode:'copy'
     output :
        file("$out*")
    script :
@@ -497,7 +492,7 @@ process computed_ldext_stat{
    cpus other_cpus_req
    input :
      set file(gwascat), file(assocpos),file(fileld), file(out_ldblock) from ldext_ch
-    publishDir "${params.output_dir}/res/ldwind/ext",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ldwind/ext",  overwrite:true, mode:'copy'
     output :
        file("$out*")
    script :
@@ -507,11 +502,25 @@ process computed_ldext_stat{
     """
 }
 
-process computed_ldwind_stat{
+* algoritm group :
+ * computed ld between positon  using `clump_r2`, and windows size of `size_win_kb`
+ * defined different groups of positions
+ * keep group positons where gwas catalog positon
+ * extracted min p-value by group
 
+* algoritm group extended:
+ * computed ld between positon  using `clump_r2`, and windows size of `size_win_kb`
+ * defined different groups of positions
+ * merged groups where two positions are in two group
+ * keep group positons where gwas catalog positon
+ * extracted min p-value by group
+
+
+*/
+process computed_ldwind_stat{
  input :
       set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ld_wind_ch
- publishDir "${params.output_dir}/res/ldwind/wind",  overwrite:true, mode:'copy'
+ publishDir "${params.output_dir}/result/ldwind/wind",  overwrite:true, mode:'copy'
  output:
    file("$out*")
  script :
@@ -528,7 +537,7 @@ process computed_ldwindext_stat{
  
  input :
       set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ldext_wind_ch
- publishDir "${params.output_dir}/res/ldwind/windext",  overwrite:true, mode:'copy'
+ publishDir "${params.output_dir}/result/ldwind/windext",  overwrite:true, mode:'copy'
  output:
    file("$out*")
  script :
@@ -541,6 +550,5 @@ process computed_ldwindext_stat{
 }  
  
 
-
-
 }
+
