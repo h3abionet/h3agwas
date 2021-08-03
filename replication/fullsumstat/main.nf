@@ -23,8 +23,8 @@ import java.nio.file.Paths
 def helps = [ 'help' : 'help' ]
 allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "min_pval_clump", "size_win_kb"]
 allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances","instance-type", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts"]
-allowed_params_head_sumstat1 = ["file_gwas_sumstat1","head_pval_sumstat1", "head_freq_sumstat1", "head_bp_sumstat1", "head_chr_sumstat1", "head_rs_sumstat1", "head_beta_sumstat1", "head_se_sumstat1", "head_a1_sumstat1", "head_a2_sumstat1"]
-allowed_params_head_sumstat2 = ["file_gwas_sumstat2","head_pval_sumstat2", "head_freq_sumstat2", "head_bp_sumstat2", "head_chr_sumstat2", "head_rs_sumstat2", "head_beta_sumstat2", "head_se_sumstat2", "head_a1_sumstat2", "head_a2_sumstat2"]
+allowed_params_head_sumstat1 = ["file_gwas_sumstat1","head_pval_sumstat1", "head_freq_sumstat1", "head_bp_sumstat1", "head_chr_sumstat1", "head_rs_sumstat1", "head_beta_sumstat1", "head_se_sumstat1", "head_a1_sumstat1", "head_a2_sumstat1", "head_n_sumstat1", "n_count1"]
+allowed_params_head_sumstat2 = ["file_gwas_sumstat2","head_pval_sumstat2", "head_freq_sumstat2", "head_bp_sumstat2", "head_chr_sumstat2", "head_rs_sumstat2", "head_beta_sumstat2", "head_se_sumstat2", "head_a1_sumstat2", "head_a2_sumstat2", "head_n_sumstat2", 'n_count2']
 allowed_params_clump= []
 
 
@@ -53,11 +53,17 @@ params.output_dir = "${params.work_dir}/output"
 params.output = "replication"
 params.cut_maf = 0.01
 
+params.head_n_sumstat1=""
+params.n_count1=""
+
+params.head_n_sumstat2=""
+params.n_count2=""
 
 params.mem_req="8G"
 params.big_time="1000H"
 
 params.file_gwas_sumstat1=""
+params.bin_metal="metal"
 params.head_pval_sumstat1 = "P_BOLT_LMM"
 params.head_freq_sumstat1 = ""
 params.head_bp_sumstat1 = "BP"
@@ -67,6 +73,8 @@ params.head_beta_sumstat1=""
 params.head_se_sumstat1=""
 params.head_a1_sumstat1="ALLELE1"
 params.head_a2_sumstat1="ALLELE0"
+params.head_n_sumstat1=""
+params.head_ncount_sumstat1=""
 
 
 params.file_gwas_sumstat2=""
@@ -79,6 +87,8 @@ params.head_beta_sumstat2=""
 params.head_se_sumstat2=""
 params.head_a1_sumstat2=""
 params.head_a2_sumstat2=""
+params.head_n_sumstat2=""
+params.head_ncount_sumstat2=""
 
 
 
@@ -175,7 +185,7 @@ process plink_sumstat1_rep{
       set file(bed), file(bim), file(fam) from raw_src_ch
     publishDir "${params.output_dir}/clump/",  overwrite:true, mode:'copy'
     output :
-       file("${out}.clumped") into clumped_sumstat1
+       file("${out}.clumped") into clumped_sumstat1, clumped_sumstat1_2
        file("${out}.log")
     script :
     out=params.output+"_subplk"
@@ -188,25 +198,59 @@ process plink_sumstat1_rep{
 filegwas_sum1_stat=Channel.fromPath(params.file_gwas_sumstat1,checkIfExists:true)
 filegwas_sum2_stat=Channel.fromPath(params.file_gwas_sumstat2,checkIfExists:true)
 
+
 process computed_stat{
   input :
     file(clump) from clumped_sumstat1 
     file(sumstat1) from filegwas_sum1_stat
     file(sumstat2) from filegwas_sum2_stat
-  publishDir "${params.output_dir}/",  overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/tmp",  overwrite:true, mode:'copy', pattern: "${out}*"
   output :
     file("$out*")
+    file("${out}_all_clump.csv") into resume_all
+    set file('sumstat_ref.metal'), file('sumstat_cmp.metal') into metalanalyse_ch
  script :
    out=params.output+"_stat" 
+   n_ref=(params.head_n_sumstat1!="") ? " --gwas_ref_n ${params.head_n_sumstat1} " :  " --gwas_ref_ncount ${params.head_ncount_sumstat1}"
+   n_cmp=(params.head_n_sumstat2!="") ? " --gwas_cmp_n ${params.head_n_sumstat2} " :  " --gwas_cmp_ncount ${params.head_ncount_sumstat2}"
  """ 
 #
  extract_pvalue.r \
  --gwas_ref $sumstat1 --gwas_ref_chr ${params.head_chr_sumstat1} --gwas_ref_bp ${params.head_bp_sumstat1} --gwas_ref_a1 ${params.head_a1_sumstat1} --gwas_ref_a2 ${params.head_a2_sumstat1} --gwas_ref_beta ${params.head_beta_sumstat1} --gwas_ref_se ${params.head_se_sumstat1} --gwas_ref_p ${params.head_pval_sumstat1} --gwas_ref_af ${params.head_freq_sumstat1} \
- --gwas_cmp $sumstat2 --gwas_cmp_chr ${params.head_chr_sumstat2} --gwas_cmp_bp ${params.head_bp_sumstat2} --gwas_cmp_a1 ${params.head_a1_sumstat2} --gwas_cmp_a2 ${params.head_a2_sumstat2} --gwas_cmp_beta ${params.head_beta_sumstat2} --gwas_cmp_se ${params.head_se_sumstat2} --gwas_cmp_p ${params.head_pval_sumstat2} --gwas_cmp_af ${params.head_freq_sumstat2}i \
- --file_clump $clump --out $out
-
- 
-
+ --gwas_cmp $sumstat2 --gwas_cmp_chr ${params.head_chr_sumstat2} --gwas_cmp_bp ${params.head_bp_sumstat2} --gwas_cmp_a1 ${params.head_a1_sumstat2} --gwas_cmp_a2 ${params.head_a2_sumstat2} --gwas_cmp_beta ${params.head_beta_sumstat2} --gwas_cmp_se ${params.head_se_sumstat2} --gwas_cmp_p ${params.head_pval_sumstat2} --gwas_cmp_af ${params.head_freq_sumstat2} \
+ --file_clump $clump --out $out $n_ref $n_cmp
   """
 }
 
+
+process do_metal{
+  input :
+    set file(sumstat1), file(sumstat2) from metalanalyse_ch
+  publishDir "${params.output_dir}/tmp/metal",  overwrite:true, mode:'copy'
+  output :
+     file("${out}1.stat") into metal_res_ch
+     file("${metal_config}")
+  script :
+      metal_config="metal_config.config"
+      out=params.output+'_metal'
+      """
+      echo $sumstat1 > fileListe
+      echo $sumstat2 >> fileListe
+      ma_get_configmetal.py --filelist fileListe  --output_configmetal $metal_config  --out_file_metal $out --genomic_control F
+      ${params.bin_metal} $metal_config
+      """
+}
+
+process merge_res{
+  input  :
+     file(metal) from metal_res_ch
+     file(fileres) from resume_all
+  publishDir "${params.output_dir}/",  overwrite:true, mode:'copy'
+  output : 
+     file(res)
+  script :
+    res=params.output+'_all.csv'
+    """
+    merge_metalandres.r --metal $metal --resume $fileres --out $res
+    """ 
+}

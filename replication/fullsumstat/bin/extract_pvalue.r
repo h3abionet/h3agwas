@@ -18,6 +18,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c( "--gwas_ref_n"), type="character", default=NA,
               help="dataset file name", metavar="character"),
+  make_option(c( "--gwas_ref_ncount"), type="character", default=NA,
+              help="dataset file name", metavar="character"),
   make_option(c( "--gwas_ref_beta"), type="character", default=NA,
               help="dataset file name", metavar="character"),
   make_option(c( "--gwas_ref_se"), type="character", default=NA,
@@ -35,6 +37,8 @@ option_list = list(
   make_option(c( "--gwas_cmp_a2"), type="character", default=NA,
               help="dataset file name", metavar="character"),
   make_option(c( "--gwas_cmp_n"), type="character", default=NA,
+              help="dataset file name", metavar="character"),
+  make_option(c( "--gwas_cmp_ncount"), type="character", default=NA,
               help="dataset file name", metavar="character"),
   make_option(c( "--gwas_cmp_af"), type="character", default=NA,
               help="dataset file name", metavar="character"),
@@ -115,6 +119,32 @@ dataclump<-read.table(opt[['file_clump']], header=T)
 
 dataclump_ref<-merge(dataclump, dataref, by.x=c('CHR','BP'),by.y=c('chr_ref', 'bp_ref'), all.x=T)
 dataclump_all<-merge(dataclump_ref, datacmp, by.x=c('CHR','BP'),by.y=c('chr_cmp', 'bp_cmp'), all.x=T)
+
+## 
+dataclump_allsave<-as.data.frame(dataclump_all)
+dataclump_allsave[,'rsid']<-paste(dataclump_allsave[,'CHR'], dataclump_allsave[,'BP'],sep='_')
+if(is.na(opt[['gwas_ref_n']])){
+dataclump_allsave[,'n_ref']<-as.integer(opt[['gwas_ref_ncount']])
+}
+if(is.na(opt[['gwas_cmp_n']])){
+dataclump_allsave[,'n_cmp']<-as.integer(opt[['gwas_cmp_ncount']])
+}
+names(dataclump_allsave)
+# [1] "CHR"      "BP"       "F"        "SNP"      "P"        "TOTAL"   
+# [7] "NSIG"     "S05"      "S01"      "S001"     "S0001"    "SP2"     
+#[13] "rs"       "n_miss"   "a1_ref"   "a2_ref"   "af_ref"   "beta_ref"
+#[19] "se_ref"   "logl_H1"  "l_remle"  "p_ref"    "RSID"     "a1_cmp"  
+#[25] "a2_cmp"   "af_cmp"   "beta_cmp" "se_cmp"   "p_cmp"    "n_cmp"   
+#[31] "rsid"   
+Data1<-dataclump_allsave[,c('CHR', 'BP', 'rsid','a1_ref', 'a2_ref','beta_ref','n_ref','p_ref')]
+#"rsID","Beta","Se","Pval","N","freqA1","direction","Imputed"
+names(Data1)<-c("chr", 'bp', "rsID", "A1", "A2", "Beta","N",'Pval')
+write.table(Data1, quote=F, sep='\t', col.names=T, row.names=F, file='sumstat_ref.metal')
+Data2<-dataclump_allsave[,c('CHR', 'BP', 'rsid','a1_cmp', 'a2_cmp','beta_cmp','n_cmp','p_cmp')]
+names(Data2)<-c("chr", 'bp', "rsID", "A1", "A2", "Beta","N",'Pval')
+#"rsID","Beta","Se","Pval","N","freqA1","direction","Imputed"
+write.table(Data2, quote=F, sep='\t', col.names=T, row.names=F, file='sumstat_cmp.metal')
+
 
 balise<-!is.na(dataclump_all$p_cmp)
 dataclump_all$p_cmp.adj[balise]<-p.adjust(dataclump_all$p_cmp[balise])
