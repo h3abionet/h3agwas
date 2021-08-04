@@ -84,6 +84,41 @@ def checkInputCohortData(inputDataTag) {
         exit 1, "could not find input fam file at ${famFile} please check your output directory and try again"
     }
 }
+def checkFilePath(inputPath) {
+    checkFileOrDirExists(file(inputPath))
+    checkFileNonempty(file(inputPath))
+    checkFileIsFile(file(inputPath))  
+}
+def checkDirPath(inputPath) {
+    checkDirPathStringFormat(inputPath)
+    checkFileOrDirExists(file(inputPath))
+    checkDirIsDir(file(params.testArchive))
+}
+def checkFileOrDirExists(inputFile) {
+    if (!inputFile.exists()) {
+        exit 1, "the file or directory:\n  ${inputFile}\ndoes not exist. Please check the path you entered is correct, and try again"
+    }
+}
+def checkFileNonempty(inputFile) {
+    if (inputFile.isEmpty()) {
+        exit 1, "the file:\n  ${inputFile}\nis empty. Please check the file you specified, and try again"
+    }
+}
+def checkFileIsFile(inputFile) {
+    if (!inputFile.isFile()) {
+        exit 1, "the file:\n  ${inputFile}\nis not actually a file. Maybe you entered a directory by mistake? Please check the file you specified, and try again"
+    }
+}
+def checkDirPathStringFormat(inputPath) {
+    if(inputPath[-1] != '/') {
+        exit 1, "the directory path:\n  ${inputPath}\n is not formatted correctly. Please end all directory paths with a \'/\'"
+    }
+}
+def checkDirIsDir(inputFile) {
+    if (!inputFile.isDirectory()) {
+        exit 1, "the directory:\n  ${inputFile}\n is not actually a directory. Perhaps you forgot to unzip an archive?"
+    }
+}
 def userEmailAddressIsProvided() {
 	return !(stringIsNull(params.email))
 }
