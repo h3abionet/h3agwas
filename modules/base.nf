@@ -27,19 +27,19 @@ def checkIlluminaSampleReport() {
     if (stringIsNull(params.input.sampleReport)) {
         exit 1, 'params.input.sampleReport not set -> please provide a sample report file path'
     }
-    // also need to check if any file exists... //
+    checkFilePath(params.input.sampleReport)
 }
 def checkIlluminaLocusReport() {
     if (stringIsNull(params.input.locusReport)) {
         exit 1, 'params.input.locusReport not set -> please provide a locus report file path'
     }
-    // also need to check if any file exists... //
+    checkFilePath(params.input.locusReport)
 }
 def checkClinicalPhenotypeFam() {
     if (stringIsNull(params.input.clinicalPhenotypeFam)) {
         exit 1, 'params.input.clinicalPhenotypeFam not set -> please provide a clinical phenotype fam file path'
     }
-    // also need to check if any file exists... //
+    checkFilePath(params.input.clinicalPhenotypeFam)
 }
 def checkEmailAdressProvided() {
     if (!userEmailAddressIsProvided()) {
@@ -56,17 +56,19 @@ def checkReferencePanelsDir() {
     if (stringIsNull(params.phase.referencePanelsDir)) {
         exit 1, 'params.phase.referencePanelsDir not set -> please provide a directory of reference panels e.g. from 1000 Genomes'
     }
+    checkDirPath(params.phase.referencePanelsDir)
 }
 def checkGeneticMapsDir() {
     if (stringIsNull(params.phase.geneticMapsDir)) {
         exit 1, 'params.phase.geneticMapsDir not set -> please provide a directory of genetic maps'
     }
+    checkDirPath(params.phase.geneticMapsDir)
 }
 def checkReferenceSequence() {
     if (stringIsNull(params.baseQC.referenceSequence)) {
         exit 1, 'params.baseQC.referenceSequence not set -> please provide a reference sequence fasta file path'
     }
-    // also need to check if any file exists... //
+    checkFilePath(params.baseQC.referenceSequence)
 }
 def checkInputCohortData(inputDataTag) {
 
