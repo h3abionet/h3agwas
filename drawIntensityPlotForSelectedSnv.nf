@@ -33,7 +33,6 @@ include {
     filterRecordsForChosenSnv;
     mergeGenotypeReports;
     drawXYintensityPlot;
-    printWorkflowExitMessage;
     sendWorkflowExitEmail;
 } from "${projectDir}/modules/intensityPlot.nf"
 
