@@ -110,7 +110,7 @@ process phaseWithBeagle {
             gt=${alignedGenotypes} \
             chrom=${chromosome} \
             nthreads=${task.cpus} \
-            window=${params.phasingWindowSize} \
+            window=${params.phase.windowSize} \
             out=${params.cohortName}.${chromosomeString}.phased
         """
 }
