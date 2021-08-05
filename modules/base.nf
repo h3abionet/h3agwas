@@ -94,7 +94,7 @@ def checkFilePath(inputPath) {
 def checkDirPath(inputPath) {
     checkDirPathStringFormat(inputPath)
     checkFileOrDirExists(file(inputPath))
-    checkDirIsDir(file(params.testArchive))
+    checkDirIsDir(file(inputPath))
 }
 def checkFileOrDirExists(inputFile) {
     if (!inputFile.exists()) {
