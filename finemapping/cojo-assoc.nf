@@ -71,6 +71,7 @@ params.cojo_slct_other=""
 params.cojo_actual_geno=0
 params.cojo_top_snps=0
 params.big_time='100h'
+params.cojo_top_snps_chro=0
 
 
 

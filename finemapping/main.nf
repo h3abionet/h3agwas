@@ -334,7 +334,7 @@ process ComputedCaviarBF{
    """
    ${params.caviarbf_bin} -z ${filez} -r $ld  -t 0 -a ${params.caviarbf_avalue} -c ${params.n_causal_snp} -o ${output} -n ${params.n_pop}
    nb=`cat ${filez}|wc -l `
-   ${params.modelsearch_caviarbf_bin} -i $output -p 0 -o $output -m \$nb
+   ${params.modelsearch_caviarbf_bin} -i $output -p 0 -o $output -m \$nb 2> ${output}_modelsearch.log
    """
 }
 
