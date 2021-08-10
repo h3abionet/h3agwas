@@ -71,6 +71,25 @@ process selectGenotypeSetWithPlink {
         """
 }
 
+process recodeMaleXHaploidAsDiploid {
+    label 'smallMemory'
+    
+    tag 'genotypeSet'
+    
+    input:
+        path cohortGenotypes
+    output:
+        path "recodedCohortGenotypes.vcf.gz"
+    script:
+        """
+        zcat ${cohortGenotypes} \
+            | sed 's/\t1\t/\t1\/1\t/g' | sed 's/\t1\t/\t1\/1\t/g' \
+            | sed 's/\t1\t/\t1\/1\t/g' | sed 's/\t1\t/\t1\/1\t/g' \
+            > recodedCohortGenotypes.vcf
+        gzip recodedCohortGenotypes.vcf
+        """
+}
+
 process alignWithConformGt {
     label 'beagle'
     label 'mediumMemory'
