@@ -82,6 +82,12 @@ process recodeMaleXHaploidAsDiploid {
         path "recodedCohortGenotypes.vcf.gz"
     script:
         """
+        # ** Note to future developers! **
+        # the sed command appears twice on each line (i.e. 4 times
+        # in total) on purpose. It is to catch the cases were the 
+        # input strings overlap, for example:
+        #   ...1/0  1   1   1/1...
+        
         zcat ${cohortGenotypes} \
             | sed 's|\t0\t|\t0/0\t|g' | sed 's|\t0\t|\t0/0\t|g' \
             | sed 's|\t1\t|\t1/1\t|g' | sed 's|\t1\t|\t1/1\t|g' \
