@@ -43,6 +43,7 @@ include {
     getInputChannels;
     selectBiallelicSnvsWithBcftools;
     selectGenotypeSetWithPlink;
+    recodeMaleXHaploidAsDiploid;
     alignWithConformGt;
     phaseWithBeagle;
     indexWithTabix;
@@ -65,9 +66,12 @@ workflow {
 
     genotypeSet = selectGenotypeSetWithPlink(
         inputCohortData)
+        
+    recodedGenotypeSet = recodeMaleXHaploidAsDiploid(
+        genotypeSet)
 
     alignedGenotypeSubsets = alignWithConformGt(
-        genotypeSet.combine(filteredReferencePanels))
+        recodedGenotypeSet.combine(filteredReferencePanels))
 
     haplotypeSubsets = phaseWithBeagle(
         alignedGenotypeSubsets
