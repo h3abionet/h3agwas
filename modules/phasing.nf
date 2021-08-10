@@ -83,8 +83,8 @@ process recodeMaleXHaploidAsDiploid {
     script:
         """
         zcat ${cohortGenotypes} \
-            | sed 's/\t1\t/\t1\/1\t/g' | sed 's/\t1\t/\t1\/1\t/g' \
-            | sed 's/\t1\t/\t1\/1\t/g' | sed 's/\t1\t/\t1\/1\t/g' \
+            | sed 's|\t1\t|\t1/1\t|g' | sed 's|\t1\t|\t1/1\t|g' \
+            | sed 's|\t1\t|\t1/1\t|g' | sed 's|\t1\t|\t1/1\t|g' \
             > recodedCohortGenotypes.vcf
         gzip recodedCohortGenotypes.vcf
         """
