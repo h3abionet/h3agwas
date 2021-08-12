@@ -3,6 +3,8 @@
 
 # H3Agwas Pipeline Version 3
 
+biotools:h3agwas
+
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
 
