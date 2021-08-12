@@ -17,4 +17,5 @@ authors:
     given-names: Rob
 title: "H3AGWAS: Pan-African Bioinformatics Network for H3Africa Genome Wide Association Study Workflow"
 version: 3
+doi: 10.5281/zenodo.1234
 date-released: 2020-03-01
