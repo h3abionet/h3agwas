@@ -3,9 +3,10 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Brandenburg
     given-names: Jean-Tristan
-    orcid: 
+    orcid: 0000-0003-0197-2648
   - family-names: Hazelhurst
     given-names: Scott
+    orcid: 0000-0002-0581-149X
   - family-names: Magosi
     given-names: Lerato
   - family-names: Clark
