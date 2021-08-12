@@ -11,6 +11,8 @@ authors:
   given-names: Lerato
 - family-names: Clark
   given-names: Lindsay
+- family-names "De Beste"
+  given-names: Eugene
 title: "H3AGWAS: Pan-African Bioinformatics Network for H3Africa Genome Wide Association Study Workflow"
 version: 3.0
 date-released: 2019-12-18
