@@ -889,3 +889,4 @@ We acknowledge the support from the NIH NHGRI H3ABioNet (U24HG006941)   and AWI-
 `git clone https://github.com/h3abionet/h3agwas`
 
 
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8F%20%20%E2%97%8B-orange)](https://fair-software.eu)
