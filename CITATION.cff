@@ -1,1 +1,19 @@
-
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Brandenburg
+    given-names: Jean-Tristan
+    orcid: 
+  - family-names: Hazelhurst
+    given-names: Scott
+  - family-names: Magosi
+    given-names: Lerato
+  - family-names: Clark
+    given-names: Lindsay
+  - family-names De Beste
+    given-names: Eugene
+  - family-names: Clucas
+    given-names: Rob
+title: "My Research Software"
+version: 3
+date-released: 2020-03-01
