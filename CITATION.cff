@@ -9,6 +9,8 @@ authors:
   orcid: https://orcid.org/0000-0002-0581-149X
 - family-names: Magosi
   given-names: Lerato
+- family-names: Clark
+  given-names: Lindsay
 title: "H3AGWAS: Pan-African Bioinformatics Network for H3Africa Genome Wide Association Study Workflow"
 version: 3.0
 date-released: 2019-12-18
