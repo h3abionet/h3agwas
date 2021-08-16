@@ -16,6 +16,7 @@ authors:
 - family-names: Clucas
   given-names: Rob
 title: "H3AGWAS: Pan-African Bioinformatics Network for H3Africa Genome Wide Association Study Workflow"
+doi: doi.org/10.25375/uct.14405990.v2
 version: 3.0
 date-released: 2019-12-18
 url: "https://github.com/h3abionet/h3agwas"
