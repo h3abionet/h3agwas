@@ -6,7 +6,7 @@
 [![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu)
 
 
-biotools:h3agwas
+[biotools:h3agwas](hhttps://bio.tools/h3agwas)
 
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
@@ -787,7 +787,7 @@ If you spot the error, you can re-run the workflow (from the original directory)
 If you are still stuck you can ask for help at two places
 
 
-* H3ABioNet Help desk --- https://www.h3abionet.org/support
+* [H3ABioNet Help desk](https://helpdesk.h3abionet.org)
 
 
 * On GitHub -- need a GitHub account if you have a GitHub account
