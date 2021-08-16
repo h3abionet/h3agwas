@@ -3,6 +3,9 @@
 
 # H3Agwas Pipeline Version 3
 
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu)
+
+
 biotools:h3agwas
 
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
@@ -891,4 +894,4 @@ We acknowledge the support from the NIH NHGRI H3ABioNet (U24HG006941)   and AWI-
 `git clone https://github.com/h3abionet/h3agwas`
 
 
-[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8F%20%20%E2%97%8B-orange)](https://fair-software.eu)
+
