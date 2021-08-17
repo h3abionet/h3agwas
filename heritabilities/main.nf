@@ -1051,6 +1051,9 @@ process DoGemmah2Pval{
 
 
 
+}else{
+report_gemmah2=Channel.empty()
+
 }
 
 report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).toList()
