@@ -123,7 +123,8 @@ if IsN :
    Head.append(n_head)
    NewHead.append("N")
 
-result=result.loc[Head]
+print(result)
+result=result[Head]
 result.columns=NewHead
 
 
