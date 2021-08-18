@@ -59,7 +59,7 @@ process drawManhattanPlot {
 		#!/usr/bin/env Rscript --vanilla
 		library(qqman)
 		assoc <- read.table("${associationReport}", header=TRUE)
-		png("${manhattanPlot}")
+		png("${manhattanPlot}", width = 480, height = 480, units = "px")
 		manhattan(
 			assoc,
 			chr="CHR",
@@ -88,7 +88,7 @@ process drawQqPlot {
 		#!/usr/bin/env Rscript --vanilla
 		library(qqman)
 		assoc <- read.table("${associationReport}", header=TRUE)
-		png("${qqplot}")
+		png("${qqplot}", width = 480, height = 480, units = "px")
 		qq(assoc\$P)
 		dev.off()
 		"""
