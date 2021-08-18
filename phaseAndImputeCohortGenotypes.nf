@@ -67,11 +67,11 @@ workflow {
     genotypeSet = selectGenotypeSetWithPlink(
         inputCohortData)
         
-    recodedGenotypeSet = recodeMaleXHaploidAsDiploid(
-        genotypeSet)
+    //recodedGenotypeSet = recodeMaleXHaploidAsDiploid(
+    //    genotypeSet)
 
     alignedGenotypeSubsets = alignWithConformGt(
-        recodedGenotypeSet.combine(filteredReferencePanels))
+        genotypeSet.combine(filteredReferencePanels))
 
     haplotypeSubsets = phaseWithBeagle(
         alignedGenotypeSubsets
