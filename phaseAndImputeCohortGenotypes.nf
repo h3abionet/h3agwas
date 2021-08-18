@@ -64,11 +64,8 @@ workflow {
     filteredReferencePanels = selectBiallelicSnvsWithBcftools(
         referencePanels)
 
-    genotypeSet = selectGenotypeSetWithPlink(
+    genotypeSet = selectAutosomalGenotypeSet(
         inputCohortData)
-        
-    //recodedGenotypeSet = recodeMaleXHaploidAsDiploid(
-    //    genotypeSet)
 
     alignedGenotypeSubsets = alignWithConformGt(
         genotypeSet.combine(filteredReferencePanels))
