@@ -1064,12 +1064,11 @@ process MergeH2{
        file(allfile) from report_ch    
    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
    output :       
-       file("{params.output}.*")
+       file("${params.output}.*")
    script :
        allfile=allfile.join(',')
        """
        merge_allfile.r $allfile ${params.output}
        """
-
 }
 
