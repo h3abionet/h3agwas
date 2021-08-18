@@ -42,7 +42,7 @@ include {
     checkInputParams;
     getInputChannels;
     selectBiallelicSnvsWithBcftools;
-    selectGenotypeSetWithPlink;
+    selectAutosomalGenotypeSet;
     recodeMaleXHaploidAsDiploid;
     alignWithConformGt;
     phaseWithBeagle;
