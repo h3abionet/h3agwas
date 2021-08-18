@@ -71,6 +71,28 @@ process selectGenotypeSetWithPlink {
         """
 }
 
+process selectAutosomalGenotypeSet {
+    label 'plink2'
+    label 'smallMemory'
+
+    tag "cohortData"
+
+    input:
+        tuple path(cohortBed), path(cohortBim), path(cohortFam)
+
+    output:
+        path "${cohortBed.getBaseName()}.vcf.gz"
+
+    script:
+        """
+        plink2 \
+            --bfile ${cohortBed.getBaseName()} \
+            --chr 1-22 \
+            --export vcf-4.2 bgz id-paste='fid' \
+            --out ${cohortBed.getBaseName()}
+        """
+}
+
 process recodeMaleXHaploidAsDiploid {
     label 'smallMemory'
     
