@@ -19,79 +19,79 @@ def checkInputParams() {
 }
 
 def getInputChannels() {
-	return getCohortData(params.associationInput)
+    return getCohortData(params.associationInput)
 }
 
 process getAssociationReport {
-	label 'plink'
+    label 'plink'
 
     tag "${params.associationInput}CohortData"
 
-	input:
-		tuple path(cohortBed), path(cohortBim), path(cohortFam)
-	output:
+    input:
+        tuple path(cohortBed), path(cohortBim), path(cohortFam)
+    output:
         publishDir "${params.outputDir}/${params.associationInput}/reports", mode: 'copy'
-		path "${params.cohortName}.assoc"
-	script:
-		"""
-		 plink \
+        path "${params.cohortName}.assoc"
+    script:
+        """
+        plink \
             --keep-allele-order \
-		 	--bfile ${cohortBed.getBaseName()} \
-		 	--assoc \
-		 	--maf 0.01 \
-		 	--out ${params.cohortName} 
-		"""
+            --bfile ${cohortBed.getBaseName()} \
+	    --assoc \
+	    --maf 0.01 \
+	    --out ${params.cohortName}
+	"""
 }
 
 process drawManhattanPlot {
-	label 'qqman'
+    label 'qqman'
 
     tag "associationReport"
 
-	input:
-		path associationReport
-	output:
+    input:
+        path associationReport
+    output:
         publishDir "${params.outputDir}/${params.associationInput}/plots", mode: 'copy'
-		path manhattanPlot
-	script:
-		manhattanPlot = "${params.cohortName}.manhattan.png"
-		"""
-		#!/usr/bin/env Rscript --vanilla
-		library(qqman)
-		assoc <- read.table("${associationReport}", header=TRUE)
-		png("${manhattanPlot}", width = 480, height = 480, units = "px")
-		manhattan(
-			assoc,
-			chr="CHR",
-			bp="BP",
-			snp="SNP",
-			p="P",
-			logp=TRUE,
-			ylim = c(0, 8))
-		dev.off()
-		"""
+        path manhattanPlot
+    script:
+        manhattanPlot = "${params.cohortName}.manhattan.png"
+        """
+        #!/usr/bin/env Rscript --vanilla
+        library(qqman)
+        assoc <- read.table("${associationReport}", header=TRUE)
+        png("${manhattanPlot}", width = 480, height = 480, units = "px")
+        manhattan(
+	    assoc,
+	    chr="CHR",
+	    bp="BP",
+	    snp="SNP",
+	    p="P",
+	    logp=TRUE,
+	    ylim = c(0, 8))
+        dev.off()
+        """
 }
 
 process drawQqPlot {
-	label 'qqman'
+    label 'qqman'
 	
     tag "associationReport"
 
-	input:
-		path associationReport
-	output:
+    input:
+        path associationReport
+    output:
         publishDir "${params.outputDir}/${params.associationInput}/plots", mode: 'copy'
-		path qqplot
-	script:
-		qqplot = "${params.cohortName}.qqplot.png"
-		"""
-		#!/usr/bin/env Rscript --vanilla
-		library(qqman)
-		assoc <- read.table("${associationReport}", header=TRUE)
-		png("${qqplot}", width = 480, height = 480, units = "px")
-		qq(assoc\$P)
-		dev.off()
-		"""
+        path qqplot
+    script:
+        qqplot = "${params.cohortName}.qqplot.png"
+        """
+        #!/usr/bin/env Rscript --vanilla
+        library(qqman)
+        assoc <- read.table("${associationReport}", header=TRUE)
+        png("${qqplot}", width = 480, height = 480, units = "px")
+        qq(assoc\$P)
+        dev.off()
+        """
 }
 
 def sendWorkflowExitEmail() {
