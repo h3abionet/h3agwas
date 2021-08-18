@@ -190,7 +190,7 @@ process collectPlotsTogetherAndZip {
     script:
         """
         mkdir plots
-        cp -L *.pdf plots/
+        cp -L {*.pdf, *.png} plots/
         tar -czf ${label}.tar.gz plots
         """
 }
