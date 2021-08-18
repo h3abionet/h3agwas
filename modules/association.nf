@@ -54,12 +54,12 @@ process drawManhattanPlot {
         publishDir "${params.outputDir}/${params.associationInput}/plots", mode: 'copy'
 		path manhattanPlot
 	script:
-		manhattanPlot = "${params.cohortName}.manhattan.pdf"
+		manhattanPlot = "${params.cohortName}.manhattan.png"
 		"""
 		#!/usr/bin/env Rscript --vanilla
 		library(qqman)
 		assoc <- read.table("${associationReport}", header=TRUE)
-		pdf("${manhattanPlot}")
+		png("${manhattanPlot}")
 		manhattan(
 			assoc,
 			chr="CHR",
@@ -83,12 +83,12 @@ process drawQqPlot {
         publishDir "${params.outputDir}/${params.associationInput}/plots", mode: 'copy'
 		path qqplot
 	script:
-		qqplot = "${params.cohortName}.qqplot.pdf"
+		qqplot = "${params.cohortName}.qqplot.png"
 		"""
 		#!/usr/bin/env Rscript --vanilla
 		library(qqman)
 		assoc <- read.table("${associationReport}", header=TRUE)
-		pdf("${qqplot}")
+		png("${qqplot}")
 		qq(assoc\$P)
 		dev.off()
 		"""
