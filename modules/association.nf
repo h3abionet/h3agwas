@@ -96,10 +96,10 @@ process drawQqPlot {
 
 def sendWorkflowExitEmail() {
     if (userEmailAddressIsProvided()) {
-	    sendMail(
-	        to: "${params.email}",
-	        subject: getBasicEmailSubject(),
-	        body: getBasicEmailMessage(),
-	        attach: "${params.outputDir}/plotArchives/association-${params.associationInput}.tar.gz")
-	}
+        sendMail(
+            to: "${params.email}",
+            subject: getBasicEmailSubject(),
+            body: getBasicEmailMessage(),
+            attach: "${params.outputDir}/plotArchives/association-${params.associationInput}.tar.gz")
+    }
 }
