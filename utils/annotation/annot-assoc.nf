@@ -118,7 +118,7 @@ params.ref_annovar="hg19"
 params.bin_annovar="annotate_variation.pl"
 
 
-//data_ch = Channel.fromPath(params.data)
+//data_ch = Channel.fromPath(params.data, checkIfExists:true)
 
 //---- Modification of variables for pipeline -------------------------------//
 
@@ -183,7 +183,7 @@ println "Testing for gwas file : ${params.file_gwas}\n"
 println "Using covariates        : ${params.covariates}\n"
 println "Around rs : ${params.around_rs}\n\n"
 
-gwas_ch = Channel.fromPath(params.file_gwas)
+gwas_ch = Channel.fromPath(params.file_gwas, checkIfExists:true)
 
 list_rs=params.list_rs.split(",")
 rs_label_ch=Channel.from(list_rs)
@@ -210,10 +210,10 @@ process ExtractInfoRs{
 }
 
 if(params.list_file_annot!=""){
-fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot)))
+fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot,checkIfExists:true))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot,checkIfExists:true)))
 }else{
 
-gwas_ch_annovar = Channel.fromPath(params.file_gwas)
+gwas_ch_annovar = Channel.fromPath(params.file_gwas,checkIfExists:true)
 process ExtractAllRs{
     memory other_mem_req
     input:
@@ -370,7 +370,7 @@ Channel
     .set { plink_src_ch }
 
 
-fileplotgeno_ch = infors_rs2.join(Channel.from(list_rs).combine(plink_src_ch)).join(Channel.from(list_rs).combine(Channel.fromPath(params.data)))
+fileplotgeno_ch = infors_rs2.join(Channel.from(list_rs).combine(plink_src_ch)).join(Channel.from(list_rs).combine(Channel.fromPath(params.data,checkIfExists:true)))
 if(params.covariates)cov_plot_geno="--cov ${params.covariates}"
 else  cov_plot_geno=""
 if(params.gxe!="")gxe_cov_geno="--gxe ${params.gxe}"

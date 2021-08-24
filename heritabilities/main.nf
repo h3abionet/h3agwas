@@ -773,7 +773,7 @@ if(params.gcta_h2==1){
             fileout="g"
             lfile2=linfo.flatten().join("\n")
             """
-             echo \"\"\"$lfile2 \"\"\"|grep \".log\"|sed 's/.log//g'> $fileout
+             echo \"\"\"$lfile2 \"\"\"|grep \".log\$\" |sed 's/.log\$//g'> $fileout
            """
      } 
    }
@@ -788,7 +788,7 @@ if(params.gcta_h2==1){
         set file(listfile),pheno, file(phef),file(covfile) from filemultigrmcta_gcta
     publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
      output :
-       file("$output"+".hsq")
+       set val(pheno), val(output), file("$output"+".hsq") into dogrelmstat_mgrm
      script :
         output=pheno.replace('_','-')+"_gcta"
         covargcta= (params.covariates=="")? "" : " --qcovar  $covfile "
@@ -800,6 +800,21 @@ if(params.gcta_h2==1){
         fi
         """
   }
+   process doGRLEM_GCTA_Stat_multi{
+       label 'R'
+       input :
+         set val(pheno), val(output), file(hsq) from dogrelmstat_mgrm
+       publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
+       output :
+         file("${output}_gcta.stat") into report_gcta_mgrm
+       script :
+        """
+        format_correlation.r  $hsq ${output}_gcta.stat gcta2 ${pheno} None
+        """
+    }
+
+  }else{
+  report_gcta_mgrm=Channel.empty()
   }
   listpheno=params.pheno.split(",")
   nbpheno=listpheno.size()
@@ -1056,7 +1071,7 @@ report_gemmah2=Channel.empty()
 
 }
 
-report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).toList()
+report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).mix(report_gcta_mgrm.flatten()).toList()
 
 process MergeH2{
    label 'R'

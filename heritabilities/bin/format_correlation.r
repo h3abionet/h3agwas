@@ -39,11 +39,14 @@ data.frame(Gen=Gen[1], GenSd=Gen[2], Env=Env[1], EnvSd=Env[2])
 
 ## probleme ?
 GetGCTA<-function(File){
+print(File)
 if(length(File)==0)return(data.frame(Gen=NA, GenSd=NA, Env=NA, EnvSd=NA))
 Env<-c("NA","NA")
 Data<-readLines(File)
 if(length(grep('Error:', Data))>0)return(data.frame(Gen=NA, GenSd=NA, Env=NA, EnvSd=NA))
 Gen<-grep("Sum of V(G)/Vp", Data, fixed=T, value=T)
+print(Gen)
+#Sum of V(G)/Vp 
 if(length(Gen)==0){
 Gen<-grep("V(G)/Vp", Data, fixed=T, value=T)
 }
@@ -121,7 +124,7 @@ FileOut=args[2]
 TypeCor=args[3]
 Info=args[4]
 InfoSoft=args[5]
-listTypeCor=c("ldsc", "bolt", "gemma", "gcta", "gemmah2")
+listTypeCor=c("ldsc", "bolt", "gemma", "gcta", "gemmah2", "gcta2")
 if(!(TypeCor %in% listTypeCor)){
   stop(paste("Type estimation :",TypeCor," not implemented",sep=''), call.=FALSE)
 }
@@ -140,9 +143,12 @@ DataCor<-GetGemmaH2(File)
 if(TypeCor=="gcta"){
 DataCor<-ExtractCorGCTA(File)
 }
+if(TypeCor=="gcta2"){
+TypeCor<-"gcta"
+DataCor<-GetGCTA(File)
+}
 DataCor$TypeCor<-TypeCor
 DataCor$Info<-Info
 DataCor$InfoSoft<-InfoSoft
 write.table(DataCor, row.names=F, col.names=T, sep="\t", quote=F, file=FileOut)
-
 
