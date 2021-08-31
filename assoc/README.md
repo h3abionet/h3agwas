@@ -1,4 +1,4 @@
-<img src="../auxfiles/H3ABioNetlogo2.jpg"/>
+<img src="../helperfiles/H3ABioNetlogo2.jpg"/>
 
 #  Association pipeline: `assoc/main.nf`
 

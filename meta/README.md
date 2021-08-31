@@ -1,4 +1,4 @@
-<img src="../auxfiles/H3ABioNetlogo2.jpg"/> 
+<img src="../helperfiles/H3ABioNetlogo2.jpg"/> 
 #  Meta analyse pipeline: `assoc/main.nf`
 
 # 3. MetaAnalysis pipeline : `assoc/meta-assoc.nf`

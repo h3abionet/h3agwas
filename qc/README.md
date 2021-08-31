@@ -1,4 +1,4 @@
-<img src="../auxfiles/H3ABioNetlogo2.jpg"/>
+<img src="../helperfiles/H3ABioNetlogo2.jpg"/>
 
 # The QC pipeline: `qc.nf`
 

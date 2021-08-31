@@ -1,4 +1,4 @@
-<img src="../auxfiles/H3ABioNetlogo2.jpg"/>
+<img src="../helperfiles/H3ABioNetlogo2.jpg"/>
 #Heritabilies estimation  : `heritabilities/main.nf`
 
 This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, grmel of bolt and greml of gcta, gemma
