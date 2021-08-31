@@ -3,6 +3,11 @@
 
 # H3Agwas Pipeline Version 3
 
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu)
+
+
+[biotools:h3agwas](https://bio.tools/h3agwas)
+
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
 
@@ -669,6 +674,77 @@ Run the job (in this example the _qc_ worfklow).  You need to specify the s3 buc
 nextflow run -c aws.config -c job.config qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
 ```
 
+## 5.8 Running on Azure Batch
+
+### Uploading your data
+
+Uploading your data to Blob Storage is optional.  You can read and write to local storage while using Azure batch computing, although Nextflow will still need a work directory in Blob Storage.
+
+The easiest way to get your data onto and off of Azure Blob Storage is generally to use the [AzCopy](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) program.  It can be downloaded as an executable file that does not require installation (although you may want to add its location to your `PATH` variable).
+
+You will need a [SAS (shared access signature) token](https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview) to transfer data.  This is a temporary code that grants you customizable permissions.  Go to https://portal.azure.com/#home, select "Storage Accounts", and click on the storage account you want to use (e.g. `batchstore`).  Then click "Containers".  Click the name of the container you want to use (e.g. `container`).  If there are any files there already, you will see them.  (You can also upload and download from here, although I couldn't figure out how to make folders, which is why I recommend `azcopy`.)  Then in the left pane click "Shared access signature".  You'll see a dialogue that gives you options for customizing your SAS.  Be sure to add "create" and "list" permissions.  I did not need to add an IP address when I tried it.  Click "Generate SAS token and URL".  Copy the Blob SAS URL.
+
+You can test out `azcopy` with the `list` command.  Here is an example on my Windows machine, where I had not updated my `PATH` variable.
+
+```
+azcopy_windows_amd64_10.9.0\azcopy.exe list "https://batchstore.blob.core.windows.net/container?sp=rcl&st=2021-03-25T14:42:42Z&se=2021-03-25T22:42:42Z&spr=https&sv=2020-02-10&sr=c&sig=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%3D"
+```
+
+If there are any files there already, you should see them listed.  Now you can try the `copy` command.  Use the `--recursive` flag to upload an entire folder (the `sample` folder in the example below).
+
+```
+azcopy_windows_amd64_10.9.0\azcopy.exe copy --recursive sample "https://batchstore.blob.core.windows.net/container?sp=rawdl&st=2021-03-24T20:46:30Z&se=2021-03-25T04:46:30Z&spr=https&sv=2020-02-10&sr=c&sig=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%3D"
+```
+
+Now you can run `list` again or look in the web browser to see that the files have been uploaded.
+
+### Access keys
+
+To run the Nextflow pipeline with Azure Batch, you will need access keys both for your batch account and your storage account.  At https://portal.azure.com/#home, go to Batch Accounts and then the name of your account (e.g. `h3abionet`), then click "Keys" on the left pane.  Here you should be able to copy a key for your batch account as well as your storage account.  Paste them into a plain text file to hang onto it for now.
+
+### Auxilliary config file
+
+You should create an auxilliary config file with your credentials.  I named mine `lindsay.azure.config`.  (You could instead edit the `nextflow.config` file, but that's a little more dangerous in terms of accidentally sharing your keys via GitHub.)  You should specify either `endpoint` or `location`, but not both.  An example file is below.
+
+```
+azure {
+  storage {
+    accountName = "batchstore"
+    accountKey = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=="
+  }
+  batch {
+    endpoint='https://h3abionet.eastus.batch.azure.com'
+    accountName = 'h3abionet'
+    accountKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=='
+    autoPoolMode = true
+    allowPoolCreation = true
+    deletePoolsOnCompletion = true
+  }
+}
+```
+
+### Running the pipeline
+
+Once all of the above has been set up, you can run the pipeline.  Below is an example command using Blob Storage.
+
+```
+nextflow run h3abionet/h3agwas/qc/main.nf -c lindsay.azure.config -w az://container/workdir -profile azurebatch --work_dir az://container --input_dir az://container/sample
+```
+
+Here is an alternative using local storage.
+
+```
+nextflow run h3abionet/h3agwas/qc/main.nf -c lindsay.azure.config -w az://container//workdir2 -profile azurebatch --work_dir . --input_dir ./sample
+```
+
+### Downloading the results from blob storage
+
+Follow the instructions above for generating a SAS token, with the only difference being that now you need "Read" and "List" permissions.  Then use the SAS token with `azcopy` to download the pipeline output.  For example:
+
+```
+azcopy_windows_amd64_10.9.0\azcopy.exe copy --recursive "https://batchstore.blob.core.windows.net/container/output?sp=rl&st=2021-05-17T19:55:25Z&se=2021-05-18T03:55:25Z&spr=https&sv=2020-02-10&sr=c&sig=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" output_azure_2021-05-17
+```
+
 # 6. Dealing with errors
 
 One problem with our current workflow is that error messages can be obscure. Errors can be caused by
@@ -728,10 +804,10 @@ If you spot the error, you can re-run the workflow (from the original directory)
 If you are still stuck you can ask for help at two places
 
 
-* H3ABioNet Help desk --- https://www.h3abionet.org/support
+* [H3ABioNet Help desk](https://helpdesk.h3abionet.org)   Help on how to do GWAS
 
 
-* On GitHub -- need a GitHub account if you have a GitHub account
+* On GitHub -- need a GitHub account if you have a GitHub account: problems with the workflow 
 
    https://github.com/h3abionet/h3agwas/issues
 
@@ -833,5 +909,6 @@ We acknowledge the support from the NIH NHGRI H3ABioNet (U24HG006941)   and AWI-
 ### Download
 
 `git clone https://github.com/h3abionet/h3agwas`
+
 
 

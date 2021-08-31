@@ -38,7 +38,7 @@ params.poshead_rs_inforef=2
 params.poshead_bp_inforef=3
 params.file_ref_gzip=""
 params.link_rs_info="ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/All_20180423.vcf.gz"
-params.bin_crossmap="~/.local/bin/CrossMap.py"
+params.bin_crossmap="CrossMap.py"
 params.data_crossmap=''
 params.link_data_crossmap='http://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz'
 

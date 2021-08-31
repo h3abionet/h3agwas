@@ -8,6 +8,7 @@ import os
 import argparse
 import numpy as np
 import pandas as pd
+import re
 import sys
 
 EOL = chr(10)

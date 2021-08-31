@@ -21,7 +21,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gc10"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "gc10","sample_snps_rel"]
 
 // define param for
 annotation_param=[ "file_gwas", "Nind"]
@@ -138,6 +138,9 @@ params.gemma_num_cores=6
 params.gemma_mem_req="10GB"
 params.gemma_relopt = 1
 
+params.sample_snps_rel=0
+params.sample_snps_rel_paramplkl="100 20 0.1"
+
 
 
 params.output="heritabilies"
@@ -178,7 +181,7 @@ checker = { fn ->
        error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
 
-println "\nTesting data : ${params.data}\n"
+
 println "Testing for gwas file : ${params.file_gwas}\n"
 
 //////
@@ -201,11 +204,13 @@ if(params.ldsc_h2==1){
        error("\n\n------\ndir_ref_ld_chr must be allowed with full path\n\n---\n")
 
  }
+ dir_ref_ld_chr_ch_ldsc = Channel.fromPath(params.dir_ref_ld_chr, type: 'dir' ,checkIfExists:true)
  process DoLDSC{
    label 'py2ldsc'
    memory ldsc_mem_req
    input :
       file(gwas) from gwas_file_ldsc
+      file(dir_ld) from dir_ref_ld_chr_ch_ldsc
    publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
    output :
      file("$out"+".log") 
@@ -218,20 +223,20 @@ if(params.ldsc_h2==1){
      """
      ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out"_mg" --snp ${params.head_rs} --p ${params.head_pval} \
      --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --no-alleles
-     ${params.ldsc_bin} --h2 $out"_mg.sumstats.gz" --ref-ld-chr ${params.dir_ref_ld_chr} --w-ld-chr ${params.dir_ref_ld_chr} --out $out ${params.ldsc_h2opt}
+     ${params.ldsc_bin} --h2 $out"_mg.sumstats.gz" --ref-ld-chr $dir_ld/ --w-ld-chr $dir_ld/ --out $out ${params.ldsc_h2opt}
      """ 
 }
 
    process doLDSC_Stat{
        label 'R'
        input :
-         set val(gwas), val(out), file(log) from logldsc
+         set val(gwas), val(out), file(logiciel) from logldsc
        publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
        output :
          file("${out}_ldsc.stat") into report_ldsc
        script :
         """
-       format_correlation.r $log $out"_ldsc.stat" ldsc $gwas None
+       format_correlation.r $logiciel $out"_ldsc.stat" ldsc $gwas None
        """
     }
 
@@ -281,12 +286,14 @@ if(params.ldsc_h2_multi==1){
   }
 
  list_gwas_formatldsc3=list_gwas_formatldsc.collect()
+ dir_ref_ld_chr_ch = Channel.fromPath(params.dir_ref_ld_chr, type: 'dir' ,checkIfExists:true)
  process DoCorrLDSC{
    label 'py2ldsc'
   time params.big_time
   memory ldsc_mem_req
   input :
-   file(listfilegwas) from list_gwas_formatldsc3
+    file(listfilegwas) from list_gwas_formatldsc3
+    file(dirredld) from dir_ref_ld_chr_ch
   publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
    each pos from 1..params.file_gwas.split(",").size()
   output :
@@ -300,14 +307,75 @@ if(params.ldsc_h2_multi==1){
     println filegwas
     """
     ${params.ldsc_bin} --rg $listfil \
-    --ref-ld-chr ${params.dir_ref_ld_chr}\
-    --w-ld-chr  ${params.dir_ref_ld_chr} \
+    --ref-ld-chr $dirredld/ \
+    --w-ld-chr  $dirredld/ \
     --out  $out
     """ 
   }
 }
 
 
+balise_filers_rel=1
+if(params.bolt_h2 || param.params.gcta_h2 || params.gemma_h2){
+ bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
+ bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
+ fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+ ch_select_rs_format= Channel.create()
+ Channel.from(file(bed),file(bim),file(fam)).buffer(size:3)
+        .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
+        .set { ch_select_rs_format }
+ if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
+  process select_rs_format{
+     cpus max_plink_cores
+     memory plink_mem_req
+     time   params.big_time
+     input :
+       set file(bed),file(bim), file(fam) from ch_select_rs_format
+    output:
+       file("${prune}.prune.in") into  filers_matrel_mat_gem, filers_matrel, filers_matrel_multi, filers_matrel_mat_gcta
+     script:
+        base = bed.baseName
+        prune= "${base}-prune"
+        """
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores}
+        """
+   }
+ }else{
+
+ if(params.file_rs_buildrelat==""){
+   balise_filers_rel=0
+   filers_matrel_mat_gem=file('NO_FILE')
+   filers_matrel_mat_gcta=file('NO_FILE')
+
+   if(params.bolt_h2==1){
+      process buildBoltFileSnpRel{
+         memory params.bolt_mem_req
+         time   params.big_time
+         input:
+           set file(bed),file(plinksbim), file(fam) from ch_select_rs_format
+         output :
+           file(output) into filers_matrel,filers_matrel_multi
+         script :
+           output=plinksbim.baseName+".rs.choice"
+           """
+           shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
+           """
+      }
+
+  }
+
+  }else{
+        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_matrel=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_matrel_multi = Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_matrel_mat_gcta = Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+  }
+ }
+}
+
+
+
+println "\nTesting data : ${params.data}\n"
 /*
    @Input
 args: cofactor args separate by a comma
@@ -352,9 +420,9 @@ infoargs: type of cofactor separate by a comma : 0 for qualitative, 1 for quanti
 
 if(params.bolt_h2){
     println "bolt_h2"
-    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
     boltlmm_assoc_ch= Channel.create()
     Channel.from(file(bed),file(bim),file(fam)).buffer(size:3)
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
@@ -411,29 +479,6 @@ if(params.bolt_h2){
      rs_ch_exclude_bolt=file('NO_FILE')
      rs_ch_exclude_bolt_multi=file('NO_FILE')
   }
-  if(params.file_rs_buildrelat!=""){
-      println "snp used for rs :"+params.file_rs_buildrelat
-      filers_matrel=Channel.fromPath(params.file_rs_buildrelat)
-      BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
-      filers_matrel_multi=Channel.fromPath(params.file_rs_buildrelat)
-  }else{
-      println "CHoice of random Snps to build reladness"
-      BoltNbMaxSnps=1000000
-      process buildBoltFileSnpRel{
-         memory params.bolt_mem_req
-         time   params.big_time
-         input:
-           file(plinksbim) from bim_ch_bolt_snpchoice
-         output :
-           file(output) into (filers_matrel,filers_matrel_multi)
-         script :
-           output=plinksbim.baseName.replace('_','-')+".rs.choice"
-           """
-           shuf -n 950000 $plinksbim | awk '{print \$2}' > $output
-           """
-      }
-
-  }
 
 
   if(params.bolt_ld_score_file!=""){
@@ -482,13 +527,13 @@ if(params.bolt_h2){
       our_pheno3 = this_pheno.replaceAll(/\/np.\w+/,"").replaceAll(/-$/,"").replaceAll(/^[0-9]+@@@/,"")
       outReml = "$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
-      model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
       ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
       ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
-      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 $outReml
+      BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`
+      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov  $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 $outReml --modelSnps=$SnpChoiceMod --maxModelSnps=\$BoltNbMaxSnps
       """
   }
    process doh2Bolt_Stat{
@@ -529,13 +574,13 @@ if (params.bolt_h2_multi==1){
       base = plinksbed.baseName
       outReml_multi = "$base-all"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
-      model_snp  = "--modelSnps=$SnpChoiceMod --maxModelSnps=$BoltNbMaxSnps "
       ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
       ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
-      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} $phenonew --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov $model_snp $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 ${outReml_multi}
+      BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`
+      bolt.py bolt  --reml  --bfile=$base  --phenoFile=${phef} $phenonew --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt $missing_cov  $geneticmap $exclude_snp $ld_score_cmd ${params.bolt_otheropt} --out_bolt2 ${outReml_multi} --modelSnps=$SnpChoiceMod --maxModelSnps=\$BoltNbMaxSnps
       """
   }
 }
@@ -551,9 +596,9 @@ report_bolt=Channel.empty()
 //////
 
 if(params.gcta_h2==1){
-   gctabed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-   gctabim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-   gctafam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+   gctabed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+   gctabim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+   gctafam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
    h2gcta_assoc_ch= Channel.create()
    Channel
     .from(file(gctabed),file(gctabim),file(gctafam))
@@ -607,13 +652,15 @@ if(params.gcta_h2==1){
      memory params.gcta_mem_req
      input:
         set file(bed), file(bim), file(fam)  from plink_ch_gcta_grm
+        file file_rs from filers_matrel_mat_gcta
      publishDir "${params.output_dir}/gctagrm", overwrite:true, mode:'copy'
      output :
         set file("tmp.grm.bin"), file("tmp.grm.id"),  file("tmp.grm.N.bin") into gcta_grm
      script :
         plk=bed.baseName
+        rs_list = balise_filers_rel==1 ? " --extract  $file_rs " : ""
         """
-        ${params.gcta_bin} --bfile $plk --make-grm --out tmp --thread-num ${params.gcta_num_cores}
+        ${params.gcta_bin} --bfile $plk --make-grm --out tmp --thread-num ${params.gcta_num_cores} $rs_list
         """
    }
   }else{
@@ -656,7 +703,8 @@ if(params.gcta_h2==1){
         """
     }
 
-
+  }else{
+   report_gcta =Channel.empty()
   }
 
    // multi grm in the case
@@ -672,14 +720,16 @@ if(params.gcta_h2==1){
           memory params.gcta_mem_reqmgrm
           input :
             set file(bed),file(bim), file(fam) from plink_ch_gcta_multigrm 
-          publishDir "${params.mt_correlation.rutput_dir}/gcta/grlem/", overwrite:true, mode:'copy'
+            file file_rs from filers_matrel_mat_gcta
+          publishDir "${params.output_dir}/gcta/grlem/", overwrite:true, mode:'copy'
           output :
             file("$out"+".score.ld") into grlmscoreld
           script :
             plk=bed.baseName
             out="ldscore_"+params.gcta_h2_ldscore
+            rs_list = balise_filers_rel==1 ? " --extract  $file_rs " : ""
             """ 
-            ${params.gcta_bin} --bfile $plk --ld-score-region ${params.gcta_h2_ldscore} --out $out  --thread-num ${gcta_num_cores}
+            ${params.gcta_bin} --bfile $plk --ld-score-region ${params.gcta_h2_ldscore} --out $out  --thread-num ${gcta_num_cores} $rs_list
             """
        } 
 
@@ -723,7 +773,7 @@ if(params.gcta_h2==1){
             fileout="g"
             lfile2=linfo.flatten().join("\n")
             """
-             echo \"\"\"$lfile2 \"\"\"|grep \".log\"|sed 's/.log//g'> $fileout
+             echo \"\"\"$lfile2 \"\"\"|grep \".log\$\" |sed 's/.log\$//g'> $fileout
            """
      } 
    }
@@ -738,7 +788,7 @@ if(params.gcta_h2==1){
         set file(listfile),pheno, file(phef),file(covfile) from filemultigrmcta_gcta
     publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
      output :
-       file("$output"+".hsq")
+       set val(pheno), val(output), file("$output"+".hsq") into dogrelmstat_mgrm
      script :
         output=pheno.replace('_','-')+"_gcta"
         covargcta= (params.covariates=="")? "" : " --qcovar  $covfile "
@@ -750,6 +800,21 @@ if(params.gcta_h2==1){
         fi
         """
   }
+   process doGRLEM_GCTA_Stat_multi{
+       label 'R'
+       input :
+         set val(pheno), val(output), file(hsq) from dogrelmstat_mgrm
+       publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
+       output :
+         file("${output}_gcta.stat") into report_gcta_mgrm
+       script :
+        """
+        format_correlation.r  $hsq ${output}_gcta.stat gcta2 ${pheno} None
+        """
+    }
+
+  }else{
+  report_gcta_mgrm=Channel.empty()
   }
   listpheno=params.pheno.split(",")
   nbpheno=listpheno.size()
@@ -825,9 +890,9 @@ if(params.gcta_h2==1){
   }
 
 if(params.gemma_h2==1){
-    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
     gemma_assoc_ch= Channel.create()
     Channel.from(file(bed),file(bim),file(fam)).buffer(size:3)
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
@@ -837,13 +902,8 @@ if(params.gemma_h2==1){
     gem_ch_gemma = Channel.create()
     gemma_assoc_ch.separate (rel_ch_gemma, gem_ch_gemma) { a -> [ a, a] }
 
-  if(params.gemma_mat_rel==""){
-   if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_gem=file('NO_FILE')
-     }else{
-        filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
-   }
 
+  if(params.gemma_mat_rel==""){
   process getGemmaRel {
     label 'gemma'
     cpus params.gemma_num_cores
@@ -857,7 +917,7 @@ if(params.gemma_h2==1){
     script:
        base = plinks[0].baseName
        famfile=base+".fam"
-       rs_list = params.file_rs_buildrelat!="" ? " -snps $file_rs " : ""
+       rs_list = balise_filers_rel==1 ? " -snps $file_rs " : ""
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
@@ -924,13 +984,13 @@ if(params.gemma_h2==1){
   process doGemmah2_Stat {
       label 'R'
       input :
-         set val(our_pheno), val(out), val(gemtype), file(filelog) from gemmah2_stat
+         set val(our_pheno), val(out), val(gemtype), file(filelogh2g) from gemmah2_stat
       publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
       output :
         file("${out}_gemma.stat") into report_gemma
        script :
          """
-         format_correlation.r $filelog $out"_gemma.stat" gemma ${our_pheno} $gemtype
+         format_correlation.r $filelogh2g $out"_gemma.stat" gemma ${our_pheno} $gemtype
          """
   }
 
@@ -939,9 +999,9 @@ report_gemma=Channel.empty()
 }
 if(params.gemma_h2_pval==1){
 
-    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+    bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+    fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
     gemmapval_assoc_ch= Channel.create()
     Channel.from(file(bed),file(bim),file(fam)).buffer(size:3)
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
@@ -994,21 +1054,24 @@ process DoGemmah2Pval{
   process doGemmah2Pval_Stat {
       label 'R'
       input :
-         set val(gwas), val(out), val(gemtype), file(filelog) from gemmah2pval_stat
+         set val(gwas), val(out), val(gemtype), file(filelogh2g2) from gemmah2pval_stat
       publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
       output :
        file("${out}_gemmah2.stat") into report_gemmah2
        script :
       """
-      format_correlation.r $filelog $out"_gemmah2.stat" gemmah2 $gwas $gemtype
+      format_correlation.r $filelogh2g2 $out"_gemmah2.stat" gemmah2 $gwas $gemtype
       """
   }
 
 
 
+}else{
+report_gemmah2=Channel.empty()
+
 }
 
-report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).toList()
+report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).mix(report_gcta_mgrm.flatten()).toList()
 
 process MergeH2{
    label 'R'
@@ -1016,12 +1079,11 @@ process MergeH2{
        file(allfile) from report_ch    
    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
    output :       
-       file("{params.output}.*")
+       file("${params.output}.*")
    script :
        allfile=allfile.join(',')
        """
        merge_allfile.r $allfile ${params.output}
        """
-
 }
 

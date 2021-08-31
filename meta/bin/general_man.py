@@ -1,0 +1,1 @@
+../../assoc/bin/general_man.py

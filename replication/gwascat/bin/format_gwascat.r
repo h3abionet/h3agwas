@@ -1,0 +1,1 @@
+../../../utils/build_example_data/bin/format_gwascat.r

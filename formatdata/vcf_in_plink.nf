@@ -97,6 +97,7 @@ list_vcf2=Channel.fromPath(file(params.file_listvcf).readLines())
 
 if(params.do_stat){
 process computedstat{
+ label 'py3utils'
  memory params.plink_mem_req
   time   params.big_time
   input :
@@ -131,6 +132,7 @@ ref_ch=Channel.fromPath(params.reffasta)
 if(params.min_scoreinfo>0){
 list_vcf=ref_ch.combine(list_vcf)
 process formatvcfscore{
+  label 'py3utils'
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time
@@ -158,6 +160,7 @@ process formatvcfscore{
 
 }else{
 process formatvcf{
+  label 'py3utils'
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time
@@ -216,7 +219,6 @@ process TransformRsDup{
        plink -bfile $header --keep-allele-order --make-bed -out $newheader --exclude range $delrange
        """
 }
-///dataE/AWIGenGWAS/shared/imputed_data_plink/Build/genetic_map_hg19.txt
 if(params.genetic_maps!=""){
 GMMap=Channel.fromPath(params.genetic_maps)
 listchroplinkrsmap=GMMap.combine(listchroplinkrs)
@@ -225,7 +227,7 @@ process AddedCM{
     memory params.plink_mem_req
     time   params.big_time
     input :
-       set map,file(bedi),file(bimi),file(fami) from listchroplinkrsmap
+       set file(map),file(bedi),file(bimi),file(fami) from listchroplinkrsmap
     output :
        set file(bedf),file(bimf),file(famf) into listchroplinkrsf
        val(header) into plinkheadf

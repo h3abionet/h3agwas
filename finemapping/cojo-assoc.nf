@@ -71,6 +71,7 @@ params.cojo_slct_other=""
 params.cojo_actual_geno=0
 params.cojo_top_snps=0
 params.big_time='100h'
+params.cojo_top_snps_chro=0
 
 
 
@@ -110,9 +111,9 @@ println "Testing for gwas file : ${params.file_gwas}\n"
 
 
 
-bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
 
 raw_src_ch= Channel.create()
 Channel

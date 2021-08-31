@@ -7,19 +7,29 @@ import pandas as pd
 import argparse
 import numpy as np
 import os
+import scipy.stats as stats
+
 
 def extractinfobim(chro, begin, end,bimfile):
    readbim=open(bimfile) 
    listpos=[]
    listref=[]
    listalt=[]
+   listdup=set([])
    for line in readbim :
       splline=line.split()
       pos=int(splline[3])
-      if chro == splline[0] and pos>=begin and pos<=end :
-         listpos.append(pos)
-         listref.append(splline[4])
-         listalt.append(splline[5])
+      if chro == splline[0] and pos>=begin and pos<=end and (pos not in listdup):
+         if pos in listpos :
+           posindex=listpos.index(pos)
+           listpos.pop(posindex) 
+           listref.pop(posindex) 
+           listalt.pop(posindex) 
+           listdup.add(pos)
+         else : 
+          listpos.append(pos)
+          listref.append(splline[4])
+          listalt.append(splline[5])
    return (listpos, listref, listalt)
 
 def appendfreq(bfile, result, freq_header,rs_header, n_header, chr_header,bp_header, bin_plk, keep, threads) :
@@ -81,6 +91,7 @@ def parseArguments():
     parser.add_argument('--bin_plk',type=str,required=False,help="plink binary", default="plink")
     parser.add_argument('--bfile',type=str,required=False,help="bfile if need to compute frequency or N", default=None)
     parser.add_argument('--keep',type=str,required=False,help="file of data used for if need to compute frequency or N", default=None)
+    parser.add_argument('--z_pval',type=int,required=False,help="file of data used for if need to compute frequency or N", default=0)
     parser.add_argument('--threads',type=int,required=False,help="", default=1)
     parser.add_argument('--n',required=False, help="bim file ")
     args = parser.parse_args()
@@ -91,6 +102,7 @@ args = parseArguments()
 
 result = pd.read_csv(args.inp_resgwas,delim_whitespace=True, dtype={args.chro_header:str})
 result[args.chro_header]=result[args.chro_header].astype(str)
+result.drop_duplicates(subset=[args.chro_header, args.pos_header],keep=False,inplace=True)
 rs=args.rs
 freq_header=args.freq_header
 n_header=args.n_header
@@ -156,7 +168,17 @@ small.loc[bal,'allele2']=small.loc[bal,'allele1_tmp']
 small.loc[bal,'beta']= - small.loc[bal,'beta_tmp']
 small.loc[bal,'maf']= 1 - small.loc[bal,'maf_tmp']
 
-small['Z']=small['beta']/small['se']
+if args.z_pval==0 :
+  small['Z']=small['beta']/small['se']
+else :
+  tmpbeta=small['beta'].copy()
+  tmpbeta[tmpbeta>=0]=1
+  tmpbeta[tmpbeta<=0]=-1
+  small['Z']=stats.norm.ppf(1-small['p']/2)
+  small['Z']=small['Z'].abs()*tmpbeta
+  small['beta']=small['Z']*small['se']
+
+#small.to_csv('test_z', sep=' ', header=True, index=False,na_rep="NA")
 
 small[["rsid","chromosome","position","allele1","allele2","maf", "beta", "se"]].to_csv(out_file, sep=" ", header=True, index=False,na_rep="NA")
 small[["rsid","Z"]].to_csv(out_fileZ, sep=" ", header=False, index=False,na_rep="NA")

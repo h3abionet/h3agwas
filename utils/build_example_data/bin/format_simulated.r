@@ -36,7 +36,7 @@ q(status=2)
 
 allinfo$z.cat.new<-allinfo$z.cat
 allinfo$riskall<-sapply(strsplit(as.character(allinfo$risk_allele),split='-'),function(x)x[2])
-balise<-allinfo$riskall==bimfile$ref
+balise<-allinfo$riskall==allinfo$ref
 allinfo$z.cat.new[balise]<- -allinfo$z.cat.new[balise]
 allinfo$beta.cat[balise]<- -allinfo$beta.cat[balise]
 allinfo$A2<-allinfo$ref
@@ -62,6 +62,9 @@ names(dataformatplk)<-c("CHR", "SNP", "BP","A1", "A2", "FRQ", "BETA", "SE", "P")
 write.table(dataformatplk,file=paste(opt[['out']], ".assoc",sep=''),sep="\t", row.names=F,col.names=T,quote=F) 
 system(paste("plink -bfile ",opt[['bfile']]," --clump ", opt[['out']], ".assoc", " --clump-p1 ", opt[['clump_p1']], " --clump-p2 ", opt[['clump_p2']]," --clump-r2 ", opt[['clump_r2']], " --clump-kb ", opt[['clump_kb']], ' -out ', opt[['out']], '_clump' ,sep=''))
 Dataclump<-read.table(paste(opt[['out']], '_clump.clumped',sep=''), header=T)
+
 allinfo<-allinfo[allinfo$rs_bim %in% Dataclump$SNP ,]
-write.table(allinfo[,c('rs_bim', 'z.cat.new')], sep='\t', quote=F, file=opt[['out']], row.names=F, col.names=F)
+
+rsbest<-aggregate(z.cat.new~rs_bim, allinfo,function(x)x[which.max(abs(x))])
+write.table(rsbest, sep='\t', quote=F, file=opt[['out']], row.names=F, col.names=F)
 

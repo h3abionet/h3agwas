@@ -161,8 +161,16 @@ if (params.help) {
 
 
 def fileColExists = { fname, pname, cname ->
+  if (fname.contains("s3://")){
+    println "The file <$fname> is in S3 so we cannot do a pre-check";
+    return;
+  }
+  if (fname.contains("az://")){
+    println "The file <$fname> is in Azure so we cannot do a pre-check";
+    return;
+  }
   f = new File(fname)
-  if (! f.exists()) {
+  if (! f.exists() && ! fname.contains("s3://") && ! fname.contains("az://")) {
      error("\n\nThe file <${fname}> given for <${pname}> does not exist")
     } else {
       def line  
@@ -227,9 +235,9 @@ checker = { fn ->
 
 
 
-bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
-bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
-fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
 
 
 gemma_assoc_ch = Channel.create()
