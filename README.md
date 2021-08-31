@@ -618,6 +618,23 @@ Batch is beyond the scope of this document. You can look at [Amazon's
 documentation](https://docs.aws.amazon.com/batch/latest/userguide/create-job-queue.html)
 or the general documentation from BioNet.
 
+We recommend the following
+* Computing environment Managed
+* Additional service role
+  * Service role: AWSBatchServiceRole
+  * Instance role: ecsInstanceRole
+  * EC2 keypair -- not strictly needed but add your own key pair
+* Instance configuration
+  * spot
+  * spot fleet role: aws-ec2-spot-fleet-role
+  * Additional settings
+    * Do you need to specify your own AMI? 
+* Networking 
+  * need a VPC ID and subnet
+
+
+
+
 You also need to set up an S3 bucket for working space. Remember to set permissions on this bucket appropriately.
 
 ### Step 2
