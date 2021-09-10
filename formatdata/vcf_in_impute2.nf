@@ -32,6 +32,7 @@ params.file_listvcf=""
 params.min_scoreinfo=0.6
 params.max_plink_cores = 8
 params.bcftools_bin = "bcftools"
+params.score_imp="INFO"
 
 
 
