@@ -1,5 +1,5 @@
 
-<img src="auxfiles/H3ABioNetlogo2.jpg"/>
+<img src="helperfiles/H3ABioNetlogo2.jpg"/>
 
 # H3Agwas Pipeline Version 3
 
