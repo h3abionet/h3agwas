@@ -34,7 +34,7 @@ params.file_listvcf=""
 params.min_scoreinfo=0.6
 params.max_cores = 8
 params.genotype_field="GP"
-params.qctoolsv2_bin="qctool_v2"
+params.qctoolsv2_bin="qctool"
 params.bcftools_bin="bcftools"
 params.score_imp="INFO"
 

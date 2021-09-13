@@ -46,6 +46,7 @@ list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
 
 //echo "bcftools query -f '%CHROM %ID %POS %REF %ALT [ %GP]\\n' $FileVCF |awk '{if(\$2==\".\"){\$2=\$1\":\"\$3};\$1=\$2;print \$0}' |sed 's/,/ /g'|gzip > $Ent.impute2.gz" >> $bashFile
 process formatvcfinimpute2{
+  label 'py3utils'
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time

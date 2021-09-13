@@ -275,6 +275,7 @@ ch_bolt_snpchoice=Channel.create()
 fastgwa_assoc_ch = Channel.create()
 raw_src_ch= Channel.create()
 ch_select_rs_format=Channel.create()
+ch_format_ldscore=Channel.create()
 
 Channel
     .from(file(bed),file(bim),file(fam))
@@ -327,7 +328,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format, ch_format_ldscore) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a,a] }
 }
 
 
@@ -783,7 +784,23 @@ if (params.boltlmm == 1) {
   Impute2FID = file('NO_FILE2')
   }
   if(params.bolt_ld_score_file!=""){
-     Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
+     Bolt_ld_scoreI= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
+     process format_genetic_ldscore{
+       input :
+        file(ldscore) from Bolt_ld_scoreI
+        set file(bed), file(bim), file(fam) from ch_format_ldscore
+       output :
+         file(newldscore2) into Bolt_ld_score 
+       script :
+         plkhead=bed.baseName
+         newldscore2=ldscore.baseName+"_format.gzip"
+         """
+         zcat $ldscore| awk '{print \$2"\\t"\$3"\\t"\$3"\\t"\$1}' > $ldscore".tmp.bed" 
+         plink -bfile $plkhead --extract range $ldscore".tmp.bed" -out $plkhead".tmp" --make-bed
+         ldscore_format.py --ldscore $ldscore --plk_bim $plkhead".tmp.bim" --out $newldscore2
+         """
+
+     }
   }else{
      Bolt_ld_score = file('NO_FILE3')
   }
@@ -835,7 +852,7 @@ if (params.boltlmm == 1) {
       bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} \
      --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt \
     $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt} \
-      --maxModelSnps=\$BoltNbMaxSnps
+   
       """
   }
 
