@@ -50,4 +50,4 @@ if BaliseEr:
             Lire.close()
 else :
    if int(error)> 0:
-     sys.exit(error)
+     sys.exit(int(error))

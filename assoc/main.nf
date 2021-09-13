@@ -793,7 +793,7 @@ if (params.boltlmm == 1) {
          file(newldscore2) into Bolt_ld_score 
        script :
          plkhead=bed.baseName
-         newldscore2=ldscore.baseName+"_format.gzip"
+         newldscore2=ldscore.baseName+"_format.gz"
          """
          zcat $ldscore| awk '{print \$2"\\t"\$3"\\t"\$3"\\t"\$1}' > $ldscore".tmp.bed" 
          plink -bfile $plkhead --extract range $ldscore".tmp.bed" -out $plkhead".tmp" --make-bed
