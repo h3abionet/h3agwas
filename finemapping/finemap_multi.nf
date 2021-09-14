@@ -120,9 +120,7 @@ params.gwas_cat = ""
 
 params.prob_cred_set=0.95
 
-params.cut_maf=0.01
 params.plink_mem_req="6GB"
-
 params.other_mem_req="20GB"
 
 // gcta parameters
@@ -270,15 +268,16 @@ process ExtractPositionGwas{
   script :
     bp=pos.split('_')[1]
     chro=pos.split('_')[0]
-    begin_seq=bp-params.size_wind_kb*1000
-    end_seq=bp+params.size_wind_kb*1000
     freq= (params.head_freq=="") ? "":" --freq_header ${params.head_freq} "
     nheader= (params.head_n=="") ? "":" --n_header ${params.head_n}"
     nvalue= (params.n_pop=="") ? "":" --n ${params.n_pop}"
-    out=chro+"_"+begin_seq+"_"+end_seq
+    out=pos
     bfile=bed.baseName
+    around=params.size_wind_kb*1000 
     """
-    fine_extract_sig.py --inp_resgwas $filegwas --chro ${chro} --begin ${begin_seq}  --end ${end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq  --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nvalue --min_pval ${params.threshold_p} $nheader --z_pval ${params.used_pval_z}
+    end_seq=`expr $bp + $around`
+    begin_seq=`expr $bp - $around`
+    fine_extract_sig.py --inp_resgwas $filegwas --chro ${chro} --begin \$begin_seq  --end \$end_seq --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq  --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nvalue --min_pval ${params.threshold_p} $nheader --z_pval ${params.used_pval_z}
     """
 }
 
@@ -348,7 +347,7 @@ process ComputedFineMapSSS{
     set file("${out}.config"), file("${out}.cred${params.n_causal_snp}"), file("${out}.log_sss")
   script:
   fileconfig="config"
-  out=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_sss"
+  out=pos+"_sss"
   """
   echo "z;ld;snp;config;cred;log;n_samples" > $fileconfig
   echo "$filez;$ld;${out}.snp;${out}.config;${out}.cred;${out}.log;${params.n_pop}" >> $fileconfig
@@ -362,12 +361,12 @@ process ComputedCaviarBF{
   label 'finemapping'
   input :
      set val(pos),file(ld),file(filez) from ld_caviarbf_group
-  publishDir "${params.output_dir}/caviarbf", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/caviarbf", overwrite:true, mode:'copy'
   output :
    file("${output}.marginal") into res_caviarbf
    set file("$output"), file("${output}.statistics")
   script :
-   output=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_caviarbf"
+   output=pos+"_caviarbf"
    """
    ${params.caviarbf_bin} -z ${filez} -r $ld  -t 0 -a ${params.caviarbf_avalue} -c ${params.n_causal_snp} -o ${output} -n ${params.n_pop}
    nb=`cat ${filez}|wc -l `
@@ -376,6 +375,7 @@ process ComputedCaviarBF{
 }
 
 //NCausalSnp=Channel.from(1..params.n_causal_snp)
+if(params.paintor_bin!="0" & params.paintor_bin!=0){
 baliseannotpaint=0
 if(params.paintor_fileannot!=""){
 paintor_fileannot=Channel.fromPath(params.paintor_fileannot)
@@ -384,12 +384,11 @@ baliseannotpaint=1
 }else{
  if(params.paintor_listfileannot!=""){
   baliseannotpaint=1
-  paintor_listfileannot=Channel.fromPath(params.paintor_listfileannot)
+  paintor_gwas_annot2=paintor_gwas_annot.combine(Channel.fromPath(params.paintor_listfileannot))
   process paintor_selectannot{
    input :
-    file(listinfo) from paintor_listfileannot
-    set val(pos),file(list_loc) from paintor_gwas_annot
-   publishDir "${params.output_dir}/paintor/annot", overwrite:true, mode:'copy'
+    set val(pos),file(list_loc), file(listinfo) from paintor_gwas_annot2
+   publishDir "${params.output_dir}/$pos/paintor/annot", overwrite:true, mode:'copy'
    output :
     set val(pos),file(out) into (paintor_fileannot, paintor_fileannotplot, paintor_fileannot2)
    script :
@@ -401,12 +400,11 @@ baliseannotpaint=1
    annotate_locus_paint.py --input $listinfo  --locus $outtmp --out $out --chr chromosome --pos position
    """
   }
-  paintor_listfileannot2=Channel.fromPath(params.paintor_listfileannot)
   process paintor_extractannotname{
     input :
-       file(fileannot) from paintor_fileannot2
+       set val(pos),file(fileannot) from paintor_fileannot2
     output :
-       stdout into annotname
+       set val(pos),stdout into annotname
     """
     head -1 $fileannot | sed 's/ /,/g' 
     """ 
@@ -417,17 +415,18 @@ paintor_fileannotplot=file('NOFILE')
 annotname=Channel.from("N")
 }
 }
-ld_paintor_group=ld_paintor.join(paintor_gwas).join(paintor_fileannot).combine(annotname)
 
+
+ld_paintor_group=ld_paintor.join(paintor_gwas).join(paintor_fileannot).join(annotname) //.combine(annotname).combine(paintor_fileannot)
 process ComputedPaintor{
    label 'finemapping'
    memory params.fm_mem_req
    input :
-    set val(pos),file(ld),file(filez),file(paintor_fileannot), val(annot_name) from ld_paintor_group
+    set val(pos),file(ld),file(filez), file(fileannot), val(annot_name) from ld_paintor_group
   publishDir "${params.output_dir}/$pos/paintor/", overwrite:true, mode:'copy'
   output :
-      set file("${output}.results"), file("$BayesFactor") into res_paintor_ch
-      file(FileInfo) into infores_paintor_ch
+      set val(pos),file("${output}.results"), file("$BayesFactor") into res_paintor_ch
+      set val(pos),file(FileInfo) into infores_paintor_ch
       file("${output}*")
   script :
     ncausal=params.n_causal_snp
@@ -446,6 +445,30 @@ process ComputedPaintor{
     cp $fileannot $output".annotations"
     ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal -num_samples  ${params.n_pop} -Lname $BayesFactor $annot
     """
+}
+}else{
+ ld_paintor_group=ld_paintor.join(paintor_gwas)
+ process ComputedPaintor_null{
+  input :
+   set val(pos), file(ld),file(filez) from ld_paintor_group
+  output :
+     set val(pos),file("${output}.results"), file(BayesFactor) into res_paintor_ch
+     set val(pos),file(FileInfo) into infores_paintor_ch
+  script :
+     output=pos+"_paintor_null"
+     FileInfo=output+".info"
+     BayesFactor=output+".BayesFactor"
+     """
+     touch $output".results"
+     touch $BayesFactor
+     touch $FileInfo
+
+     """
+ }
+paintor_fileannot=file('NOFILE')
+paintor_fileannotplot=file('NOFILE')
+annotname=Channel.from("N")
+
 }
 //res_paintor_ch=res_paintor.collect()
 //infores_paintor_ch=infores_paintor.collect()
@@ -492,16 +515,18 @@ process MergeResult{
     label 'R'
     memory params.other_mem_req
     input :
-      set val(pos), file(paintor), file(infopaintor), file(pfileannot), file(cojo), file(caviarbf), file(fmsss), file(fmcond), file(datai), file(genes), file(gwascat) from mergeall
+      set val(pos), file(paintor), file(bayesfactor), file(infopaintor), file(pfileannot), file(cojo), file(caviarbf), file(fmsss), file(fmcond), file(datai), file(genes), file(gwascat) from mergeall
    publishDir "${params.output_dir}/$pos/", overwrite:true, mode:'copy'
     output :
        set file("${out}.pdf"), file("${out}.all.out"), file("${out}.all.out")
     script :
       out=params.output
       //infopaint=infopaintor.join(" ")
-      pfileannot= (baliseannotpaint==0) ? "":" --paintor_fileannot $pfileannot "
+      pfileannot= (baliseannotpaint=="0" | params.paintor_bin==0) ? "":" --paintor_fileannot $pfileannot "
+      paintor = (params.paintor_bin=="0") ? "" : "--listpaintor  infopaintor"
+      
       """
-       cat $infopaint > infopaint
+       cat $infopaint > infopaintor
        echo "sss $fmsss" > infofinemap 
        echo "cond $fmcond" >> infofinemap 
        merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot

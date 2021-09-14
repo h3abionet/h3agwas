@@ -19,6 +19,15 @@ The pipeline is run: `nextflow run finemapping`
 ## options
 
 The key options are:
+* finemapping :
+ * `n_causal_snp` : for finemapping causal snp number
+ * `chro` : chromosome to apply chromosome
+ * `begin_seq` : begin sequence to apply sequence
+ * `end_seq` : end sequence to apply sequence
+ * `prob_cred_set` :  prob of credible set [default : 0.95], for FINEMAP software
+ * `used_pval_z` : build pvalue using z (need to check) [defaul 0:no]
+* `threshold_p` : treshold to used [default : 5E10-8]
+
 * `input_dir`, `output_dir`: where input and output goes to and comes from;
 * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
 * `file_gwas` : file contains summary stat of gwas :
@@ -44,27 +53,80 @@ The key options are:
 * annotations parameter :
  * Todo
 * **binary** :
- * `finemap_bin` : finame binary 
- * `paintor_bin` : finame binary 
- * `plink_bin` : finame binary 
- * `gcta_bin` : finame binary 
- * `n_causal_snp` : for finemapping cond and xxx number causal max snps used
+ * `finemap_bin` : software binary 
+ * `paintor_bin` : software binary 
+ * `plink_bin` : software binary 
+ * `gcta_bin` : software binary 
 
 ### Installation
-need locuszoom, _R_ : (ggplot2), python3
+need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 
 ##For example
 
 TODO
 
-## Conditional & joint (COJO) analysis of GWAS summary statistic
+#  finemapping pipeline automated with selection of snps using plink : `finemapping/finemap_multi.nf`
+## algorithm :
+ * using clump plink to defined independant locus
+ * for each snps apply algorithms from pipeline `finemapping/main.bf`
+
+## options
+
+The key options are:
+* finemapping :
+ * `n_causal_snp` : for finemapping causal snp number
+ * ``
+ * `prob_cred_set` :  prob of credible set [default : 0.95], for FINEMAP software
+ * `used_pval_z` : build pvalue using z (need to check) [defaul 0:no]
+ * `threshold_p` : treshold to used [default : 5E10-8]
+ * `threshold_p2` :  Secondary significance threshold for clumped SNPs see [clump](https://zzz.bwh.harvard.edu/plink/clump.shtml)
+ * `size_wind_kb` : size windows used for clump and around each independant snps
+ * `clump_r2` : ld used for [clump](https://zzz.bwh.harvard.edu/plink/clump.shtml)
+
+* `input_dir`, `output_dir`: where input and output goes to and comes from;
+* `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+* `file_gwas` : file contains summary stat of gwas :
+ * `head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+ * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
+ * `head_rs` : rs header column [default : "SNP"]
+ * `head_beta` : beta header colum [default : "BETA"]
+ * `head_se`  : column for standard error of beta "SE"
+ * `head_A1` : column for allele 1 :[default : "ALLELE1" ]
+ * `head_A2` : column for allele 0 or 2 :[default : "ALLELE0" ]
+ * `head_freq` : freq header [ default : TODO],
+ * `head_chr` : freq header [ default : TODO],
+ * `head_bp` : freq header [ default : TODO],
+* `n_pop` : number individuals for data set pop [default : 10000]
+* `gwas_cat` : file of gwas catalog for plot
+  * `headgc_chr` : chromosome header of gwas catalog
+  * `headgc_bp` : position head of gwas catalog
+* cojo parameter :
+  * `gcta_mem_req`="6GB"
+  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ] (need to be implemented)
+  * `cojo_actual_geno` : If the individual-level genotype data of the discovery set are available (e.g. a single-cohort GWAS), you can use the discovery set as the reference sample. *option to avoid due to a various bug*  [default 0] (need to be implemented)
+  * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO) )(need to be implemented)
+* annotations parameter :
+ * Todo
+* **binary** :
+ * `finemap_bin` : software binary
+ * `paintor_bin` : software binary
+ * `plink_bin` : software binary
+### Installation
+need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
+
+##For example
+TODO
+
+
+
+# Conditional & joint (COJO) analysis of GWAS summary statistic
 
 this section describes a pipeline in devloment, objectives is doing a conditional and joint association using GWAS summary data and gcta
 see [cojo](https://cnsgenomics.com/software/gcta/#COJO)
 
 ### Installation
 need python3, gcta
-tested for singularity image: no
+tested for singularity image: yes
 
 ### Running
 The pipeline is run: `nextflow run assoc/annot-assoc.nf`
@@ -86,7 +148,6 @@ The key options are:
     * `head_se`  : column for standard error of beta "SE"
     * `head_A1` : column for A0 :[default : "ALLELE0" ]
     * `head_A2` : column for A1 :[default : "ALLELE1" ]
- * `prob_cred_set` :  prob of credible set [default : 0.95], for FINEMAP software
 
 Cojo parameter :
   * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ]
