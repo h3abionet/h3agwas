@@ -1,0 +1,1 @@
+../../replication/fullsumstat/bin/plink_format.py
