@@ -63,7 +63,12 @@ dev.off()
 t_col <- function(color, percent = 50, name = NULL) {
 #      color = color name, percent = % transparency, name = an optional name for the color
 ## Get RGB values for named color
+if(is.na(percent)){
+percent=0
+}
 rgb.val <- col2rgb(color)
+
+cat(rgb.val, (100 - percent) * 255 / 100,percent,'\n')
 ## Make new color using input color as base and alpha set by transparency
 t.col2 <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],max = 255,alpha = (100 - percent) * 255 / 100,names = name)
 ## Save the color

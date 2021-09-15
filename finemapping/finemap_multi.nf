@@ -363,7 +363,7 @@ process ComputedCaviarBF{
      set val(pos),file(ld),file(filez) from ld_caviarbf_group
   publishDir "${params.output_dir}/$pos/caviarbf", overwrite:true, mode:'copy'
   output :
-   file("${output}.marginal") into res_caviarbf
+   set val(pos), file("${output}.marginal") into res_caviarbf
    set file("$output"), file("${output}.statistics")
   script :
    output=pos+"_caviarbf"
@@ -425,9 +425,10 @@ process ComputedPaintor{
     set val(pos),file(ld),file(filez), file(fileannot), val(annot_name) from ld_paintor_group
   publishDir "${params.output_dir}/$pos/paintor/", overwrite:true, mode:'copy'
   output :
-      set val(pos),file("${output}.results"), file("$BayesFactor") into res_paintor_ch
+      set val(pos),file("${output}.results") into res_paintor_ch
       set val(pos),file(FileInfo) into infores_paintor_ch
       file("${output}*")
+      set val(pos), file(BayesFactor) into res_paintor_ch_bf
   script :
     ncausal=params.n_causal_snp
     output=pos+"_paintor_$ncausal" 
@@ -452,7 +453,7 @@ process ComputedPaintor{
   input :
    set val(pos), file(ld),file(filez) from ld_paintor_group
   output :
-     set val(pos),file("${output}.results"), file(BayesFactor) into res_paintor_ch
+     set val(pos),file("${output}.results") into res_paintor_ch
      set val(pos),file(FileInfo) into infores_paintor_ch
   script :
      output=pos+"_paintor_null"
@@ -482,7 +483,7 @@ process ComputedCojo{
      set val(pos),file(filez), file(bed),file(bim),file(fam) from gcta_gwas_join
    publishDir "${params.output_dir}/$pos/cojo_gcta", overwrite:true, mode:'copy'
    output :
-     file("${output}.jma.cojo")  into res_cojo
+     set val(pos), file("${output}.jma.cojo")  into res_cojo
      set file("${output}.cma.cojo"), file("${output}.ldr.cojo"), file("${output}.log")
    script :
     output=pos+"_cojo"
@@ -510,12 +511,12 @@ process GetGenesInfo{
 genes_file_ch=Channel.fromPath(params.genes_file)
 }
 
-mergeall=res_paintor_ch.join(infores_paintor_ch).join(paintor_fileannotplot).join(res_cojo).join(res_caviarbf).join(res_fmsss).join(res_fmcond).join(data_i).combine(genes_file_ch).combine(gwascat_ch)
+mergeall=res_paintor_ch.join(infores_paintor_ch).join(res_paintor_ch_bf).join(paintor_fileannotplot).join(res_cojo).join(res_caviarbf).join(res_fmsss).join(res_fmcond).join(data_i).combine(genes_file_ch).combine(gwascat_ch)
 process MergeResult{
     label 'R'
     memory params.other_mem_req
     input :
-      set val(pos), file(paintor), file(bayesfactor), file(infopaintor), file(pfileannot), file(cojo), file(caviarbf), file(fmsss), file(fmcond), file(datai), file(genes), file(gwascat) from mergeall
+      set val(pos), file(paintor),file(infopaintor), file(paintor_bf), file(pfileannot), file(cojo), file(caviarbf), file(fmsss), file(fmcond), file(datai), file(genes), file(gwascat) from mergeall
    publishDir "${params.output_dir}/$pos/", overwrite:true, mode:'copy'
     output :
        set file("${out}.pdf"), file("${out}.all.out"), file("${out}.all.out")
@@ -526,7 +527,7 @@ process MergeResult{
       paintor = (params.paintor_bin=="0") ? "" : "--listpaintor  infopaintor"
       
       """
-       cat $infopaint > infopaintor
+       cat $infopaintor > infopaintor
        echo "sss $fmsss" > infofinemap 
        echo "cond $fmcond" >> infofinemap 
        merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot
