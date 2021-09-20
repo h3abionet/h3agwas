@@ -133,7 +133,7 @@ headN<-'N_gwas'
 }
 datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
 datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
-datagwasf<-datagwas[datagwas[,headpval]<headpval,]
+#datagwasf<-datagwas[datagwas[,headpval]<headpval,]
 
 datalda1<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_A", "BP_A"));names(datalda1)[names(datalda1)=="CHR_B"]<-headchr;names(datalda1)[names(datalda1)=="BP_B"]<-headbp;names(datalda1)[names(datalda1)=="SNP_B"]<-'rs_gwas';names(datalda1)[names(datalda1)=="SNP_A"]<-'rs_cat'
 datalda2<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_B", "BP_B"));names(datalda2)[names(datalda2)=="CHR_A"]<-headchr;names(datalda2)[names(datalda2)=="BP_A"]<-headbp;names(datalda2)[names(datalda2)=="SNP_A"]<-'rs_gwas';names(datalda2)[names(datalda2)=="SNP_B"]<-'rs_cat'
@@ -178,6 +178,7 @@ for(cat in infocat)datalda1$info_gwascat<-paste(datalda1$info_gwascat,cat,':',da
 datagwassumm<-aggregate(as.formula(paste('info_gwas~',headbpcat, '+',headchrcat)), data=datalda1,function(x)paste(unique(x), collapse=';'))
 datagwascatsumm<-aggregate(as.formula(paste('info_gwascat~',headbpcat, '+',headchrcat)), data=datalda1, function(x)paste(unique(x), collapse=';'))
 datagwasminpval<-aggregate(as.formula(paste(headpval,'~',headbpcat, '+',headchrcat)), data=datalda1,min)
+datagwasminpval<-merge(datagwasminpval,datalda1, by=c(headchrcat,headbpcat,headpval),all=F)
 
 
 allresume<-merge(merge(datagwassumm,datagwascatsumm,all=T, by=c(headchrcat,headbpcat)),datagwasminpval, all=T, by=c(headchrcat,headbpcat))
@@ -185,9 +186,9 @@ names(allresume)[c(1,2)]<-c('chr_gwas', 'bp_gwas_cat')
 write.csv(allresume, file=paste(opt[['out']],'_resume.csv',sep=''),row.names=F)
 
 ###
-head(datalda1)
-print(range(datalda1$R2))
-cat(opt[['min_pvalue']])
+#head(datalda1)
+#print(range(datalda1$R2))
+#cat(opt[['min_pvalue']])
 datalda1sig<-datalda1[datalda1[,headpval]<opt[['min_pvalue']],]
 #datalda1sig<-datalda1
 #if(nrow(datalda1sig)>0){

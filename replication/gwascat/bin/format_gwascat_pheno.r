@@ -115,7 +115,7 @@ Data2Sub$risk.allele.af[balisebeta]<-as.numeric(as.character(Data2Sub[balisebeta
 Data2Sub$sd.cat<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96
 Data2Sub$sd.cat2<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96*sqrt(Data2Sub$nsample.cat)
 Data2Sub$z.cat.v1<-Data2Sub$beta.cat/(Data2Sub$sd.cat)
-Data2Sub$z.cat<-qnorm(Data2Sub$pvalue,lower.tail=FALSE)
+Data2Sub$z.cat<-qnorm(Data2Sub[,pValueHead],lower.tail=FALSE)
 Data2Sub$h2.cat=computedher(Data2Sub$beta.cat, Data2Sub$sd.cat, Data2Sub$risk.allele.af,Data2Sub$nsample.cat)
 Data2Sub$pvalue<-as.numeric(as.character(Data2Sub[,pValueHead]))
 #Data2Sub<-Data2Sub[!is.na(Data2Sub$h2.cat) & !is.na(Data2Sub[,pValueHead]),]

@@ -2,6 +2,7 @@
 
 
 ## What's new :
+* 2021-09-15 :  add for script in finemapping `finemap_multi.nf`, extract positions using plink, do define independant position in function of minimum p-value and for each independant position apply finemapping [finemapping](finemapping/README.md)
 * 2021-03-09 : add plot and merge for estimation of heritabilities
 * 2021-03-08 : re organise pipeline :
   * estimation of heritabilities assoc/esth2-assoc.nf move at heritabilites/main.nf
