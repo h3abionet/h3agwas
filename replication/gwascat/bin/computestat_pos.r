@@ -40,7 +40,7 @@ layout(mat = layout.matrix,
 #c(bottom, left, top, right)
 par(mar=c(5, 4, 1, 1))
 plot(c(0,1), c(0,1), type='n', cex=0.5, xlab=xlab, ylab=ylab, xlim=c(0,1), ylim=c(0,1), bty='n')
-points(dataall[,freq1], dataall[,freq2], pch=22, ,col=t_col("blue",95), bg=t_col("blue",95),cex=cex_pt)
+points(dataall[,freq1], dataall[,freq2], pch=22, ,col=t_col("blue",alpha_pt), bg=t_col("blue",alpha_pt),cex=cex_pt)
 abline(a=0,b=1, lty=2 ,col=t_col('red'), lwd=2)
 par(mar=c(0,4,1,0))
 plot(ht, col=t_col("orange"), xlab="", ylab="", xlim=c(0,1),  xaxt='n',main="")
@@ -50,16 +50,18 @@ rect(rep(0,length(ht2$counts)),(1:length(ht2$counts))/nbcat,
            ht2$counts,(1:length(ht2$counts))/nbcat-1/nbcat, col=t_col('red', perctrans), bg=t_col('red', perctrans))
 }
 
-
-
-plotZ<-function(dataall,Z1, Z2, xlab='Z (GWAS cat)', ylab='Z (AWIGEN)'){
+plotZ<-function(dataall,Z1, Z2, cex_pt=0.5,alpha_pt=10,xlab='Z (GWAS cat)', ylab='Z (AWIGEN)'){
+balise<-!is.na(dataall[,Z1]) & !is.na(dataall[,Z2])
+dataall<-dataall[balise,]
 r2<-cor(dataall[,Z1],dataall[,Z2], method='spearman')
 r2abs<-cor(abs(dataall[,Z1]), abs(dataall[,Z2]), method='spearman')
-plot(dataall[,Z1], dataall[,Z2], pch=22, cex=0.5,bg=t_col("blue") ,col=t_col("blue"), xlab=xlab, ylab=ylab)
+plot(dataall[,Z1], dataall[,Z2], pch=22, cex=cex_pt,bg=t_col("blue", alpha_pt) ,col=t_col("blue",alpha_pt), xlab=xlab, ylab=ylab)
 text(min(dataall[,Z1])-min(dataall[,Z1])*0.1,max(dataall[,Z2]), paste(paste("r2 :",round(r2,2)), paste("\n         r2 (abs) :",round(r2abs,2)), sep=""))
 abline(h=0, col='red', lty=2)
 abline(v=0, col='red', lty=2)
 }
+
+
 
 computedher<-function(beta, se, af,N){
 #https://journals.plos.org/plosone/article/file?type=supplementary&id=info:doi/10.1371/journal.pone.0120758.s001
@@ -182,7 +184,7 @@ MergeAll[!BaliseChange,'z_gwas_a1cat']<-MergeAll[!BaliseChange,headzcat]
 
 
 svg(paste(outhead,'_cmpz.svg', sep=''))
-plotZ(MergeAll[QC,],'z_gwas_a1cat', 'z.gwas', xlab='GWAS catalog', ylab='GWAS')
+plotZ(MergeAll[QC,],'z.gwas','z_gwas_a1cat', cex_pt=1.5,alpha_pt=0.15,ylab='GWAS catalog', xlab='GWAS')
 dev.off()
 
 svg(paste(outhead,'_qq.svg', sep=''))
