@@ -106,7 +106,7 @@ filegwascat<-opt[['gwascat']];filegwas=opt[['gwas']];fileclump=opt[['clump_file'
 
 
 datagwascat=read.csv(filegwascat)
-datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
+#datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-read.table(filegwas, header=T)
 checkhead(headaf, datagwas,'af');checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
 

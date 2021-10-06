@@ -112,6 +112,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--min_pval"), type="numeric", default=NULL,
               help="dataset file name", metavar="character"),
+  make_option(c("--a1_gwascat"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
   make_option(c("--out"), type="character", default="out.txt",
               help="output file name [default= %default]", metavar="character")
 );
@@ -131,7 +133,7 @@ opt = parse_args(opt_parser);
 
 
 headse=opt[['se_gwas']];headbp=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
-headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-opt[['a1_gwascat']];headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
 outhead=opt[['out']]
 wind=opt[['wind']]*1000
 
@@ -140,7 +142,7 @@ datagwascat=read.csv(opt[['gwascat']])
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat')
 #checkhead(opt[['wind']],datagwascat,'chro cat');
 
-datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
+#datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwascat$begin<-datagwascat[,headbpcat]-wind
 datagwascat$end<-datagwascat[,headbpcat]+wind
 datagwas<-read.table(opt[['gwas']], header=T)

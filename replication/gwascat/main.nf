@@ -95,6 +95,7 @@ params.clump_r2=0.1
 
 
 params.size_win_kb=250
+params.size_win_kb_clump=-1
 params.nb_cpu = 3
 
 params.gwas_cat=""
@@ -145,6 +146,13 @@ params.file_pheno=""
 params.list_chro="1-22"
 
 
+
+//params.size_win_kb=250
+//params.size_win_kb_clump=-1
+size_win_kb_ld=params.size_win_kb_ld
+if(size_win_kb_ld<0){
+size_win_kb_ld=params.size_win_kb
+}
 
 
 //params.info_gwascat="DISEASE.TRAIT,REPORTED.GENE.S.,MAPPED_GENE,INITIAL.SAMPLE.SIZE"
@@ -264,8 +272,9 @@ process extractgwas_fromgwascat{
     file("${params.output}_range.init") into (range_file_ch_clump,wind_file_ch, range_file_ch_ld, range_file_ch_ld2)
      file("${params.output}*")
    script :
+    wind=Math.max(size_win_kb_ld, params.size_win_kb)
     """
-    extract_posgwas.py --bed $pos --gwas $gwas --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --wind ${params.size_win_kb}  --pval_gwas ${params.head_pval} --rs_gwas ${params.head_rs}  --out ${params.output}
+    extract_posgwas.py --bed $pos --gwas $gwas --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --wind $wind  --pval_gwas ${params.head_pval} --rs_gwas ${params.head_rs}  --out ${params.output} 
     """
 }
 
@@ -343,7 +352,7 @@ process computedstat_pos{
     out=params.output+"_pos"
     af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
     """
-    computestat_pos.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out $af
+    computestat_pos.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out $af  --a1_gwascat ${params.head_riskall_gwascat}
     """
 }
 
@@ -362,7 +371,8 @@ process computedstat_win{
     out=params.output+"_wind"
     af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
     """
-    computestat_wind.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --min_pval ${params.threshold_pval_gwascat} --info_gwascat  \"$infogwascat\" --wind $params.size_win_kb
+    computestat_wind.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --min_pval ${params.threshold_pval_gwascat} --info_gwascat  \"$infogwascat\" --wind $params.size_win_kb --a1_gwascat ${params.head_riskall_gwascat}
+
     """
 }
 
@@ -381,7 +391,7 @@ process computed_ld{
     out=params.output+"_ld"
     plkf=bed.baseName
     """
-    plink -bfile $plkf --r2  --ld-window-kb $params.size_win_kb  --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max  --ld-window 20000
+    plink -bfile $plkf --r2  --ld-window-kb $size_win_kb_ld  --ld-window-r2 $params.clump_r2 -out $out --threads $max_plink_cores  --memory  $plink_mem_req_max  --ld-window 20000
     """
 
 }

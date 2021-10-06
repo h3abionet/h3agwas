@@ -108,6 +108,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--chr_gwascat"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
+  make_option(c("--a1_gwascat"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
   make_option(c("--p_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
   make_option(c("--out"), type="character", default="out.txt",
@@ -131,12 +133,12 @@ if(Test)opt=list(gwascat='meanMaxcIMT_eurld_all.csv',gwas='meanMaxcIMT_eurld_pos
 
 
 headse=opt[['se_gwas']];headps=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
-headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-opt[['a1_gwascat']];headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
 outhead=opt[['out']]
 
 
 datagwascat=read.csv(opt[['gwascat']])
-datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
+#datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-read.table(opt[['gwas']], header=T)
 checkhead(headaf, datagwas,'af');checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headps, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
 

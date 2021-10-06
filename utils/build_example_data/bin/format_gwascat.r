@@ -111,6 +111,7 @@ Data[,chrohead]<-gsub('chr', '',as.character(Data[,chrohead]))
 if(!is.null(opt[['chro']]))baliselistc<-Data[,chrohead] %in% lisc else baliselistc=T
 if(balisepheno)balisepheno<-tolower(as.character(Data[,phenhead])) %in% tolower(lisp) else balisepheno=T
 Data2<-Data[baliselistc & balisepheno,]
+Data2[,'risk.allele.cat']<-sapply(strsplit(as.character(Data2[,riskall]),split='-'),function(x)x[2])
 #c(2,3, 20,21,18,11)]
 if(nrow(Data2)==0){
 cat("no phenotype ",opt[['pheno']], opt[['file_pheno']]," found in file \n")
@@ -131,6 +132,7 @@ Data2Sub$beta.cat<-as.numeric(as.character(Data2Sub[,OrBetaHead]))
 balisebeta<-!is.na(Data2Sub$beta.cat) & Data2Sub$beta.cat>=1
 Data2Sub$lower.cat[balisebeta]<-log2(Data2Sub$lower.cat[balisebeta])
 Data2Sub$upper.cat[balisebeta]<-log2(Data2Sub$upper.cat[balisebeta])
+
 #Data2Sub<-Data2Sub[!is.na(Data2Sub$beta.cat) & !is.na(Data2Sub$lower.cat) & !is.na(Data2Sub$upper.cat) & !is.na(Data2Sub$nsample.cat) ,]
 
 Data2Sub$beta.cat[balisebeta & Data2Sub$beta.cat>=1]<-log2(Data2Sub$beta.cat[balisebeta & Data2Sub$beta.cat>=1])
@@ -148,7 +150,7 @@ Data2Sub$pvalue<-as.numeric(as.character(Data2Sub[,pValueHead]))
 
 write.csv(Data2Sub, file=paste(opt[['out']], '_all.csv',sep=''), row.names=F)
 
-Data2Sub<-Data2Sub[, c(chrohead,poshead,rsHead,riskall,'nsample.cat', 'beta.cat', 'sd.cat', 'z.cat', 'h2.cat', 'pvalue', 'risk.allele.af')]
+Data2Sub<-Data2Sub[, c(chrohead,poshead,rsHead,riskall,'nsample.cat', 'beta.cat', 'sd.cat', 'z.cat', 'h2.cat', 'pvalue', 'risk.allele.af', 'risk.allele.cat')]
 names(Data2Sub)[c(1,2, 3,4)]<-c("chro", "bp", 'rs', "risk_allele")
 Data2Sub<-Data2Sub[order(Data2Sub$chro, Data2Sub$bp),]
 
