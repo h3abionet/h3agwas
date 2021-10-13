@@ -114,6 +114,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--a1_gwascat"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
+  make_option(c("--merge_wind"), type="character", default=1,
+              help="dataset file name", metavar="character"),
   make_option(c("--out"), type="character", default="out.txt",
               help="output file name [default= %default]", metavar="character")
 );
@@ -162,6 +164,7 @@ datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,
 datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
 
 ##  merge windows
+if(opt[['merge_wind']]==1){
 NumWind<-1
 Cmt<-1
 for(chro in unique(datagwascat[,headchrcat])){
@@ -181,6 +184,11 @@ datagwascatchr$wind_num[wind]<-NumWind
 if(Cmt==1)datagwascatf<-datagwascatchr
 else datagwascatf<-rbind(datagwascatf ,datagwascatchr)
 Cmt<-Cmt+1
+}
+}else{
+datagwascatf<-datagwascat
+datagwascatf$wind_num<-1:nrow(datagwascatf)
+
 }
 MinWind<-aggregate(as.formula(paste('begin~wind_num+',headchrcat,sep='')), data=datagwascatf, FUN=min)
 MaxWind<-aggregate(as.formula(paste('end~wind_num+',headchrcat,sep='')), data=datagwascatf, FUN=max)

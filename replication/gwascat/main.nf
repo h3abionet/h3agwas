@@ -90,6 +90,8 @@ params.head_A2="ALLELE0"
 params.other_mem_req="10GB"
 params.other_cpus_req=5
 params.min_pval_clump =0.001
+// merge windows when take p-value
+params.merge_wind=1
 
 params.clump_r2=0.1
 
@@ -110,6 +112,8 @@ params.genes_file=""
 params.max_plink_cores = 4
 
 params.justpheno=0
+
+params.n_repet=10000
 
 max_plink_cores=params.max_plink_cores 
 plink_mem_req = params.plink_mem_req
@@ -241,9 +245,9 @@ process get_gwascat_hg19{
       file(filepheno) from file_pheno_ch
    output :
        file("${out}_range.bed") into gwascat_rangebed
-       file("${out}.pos") into (gwascat_pos_subplk, gwascat_pos_ld2, gwascat_pos)
+       file("${out}.pos") into (gwascat_pos_subplk, gwascat_pos_ld2, gwascat_pos, gwascat_poswindneutre)
        file("${out}_resume.csv") into gwascat_detail_statpos
-       file("${out}_all.csv") into (gwascat_all_statpos,gwascat_all_statld, gwascat_all_statclump,gwascat_all_statwind, gwascat_all_statld2)
+       file("${out}_all.csv") into (gwascat_all_statpos,gwascat_all_statld, gwascat_all_statclump,gwascat_all_statwind, gwascat_all_statld2,gwascat_all_statwindneutre)
        file("${out}*")
    script :
      chroparam= (params.list_chro=='') ? "" : " --chro ${listchro.join(',')}"
@@ -357,6 +361,27 @@ process computedstat_pos{
 }
 
 
+filegwas_chrextrneutre=Channel.fromPath(params.file_gwas,checkIfExists:true)
+process  computedstat_windneutre{
+   memory other_mem_req
+   cpus other_cpus_req
+   label 'R'
+   input :
+     file(pos) from gwascat_poswindneutre
+     file(gwas) from filegwas_chrextrneutre
+     file(gwascat) from  gwascat_all_statwindneutre
+   publishDir "${params.output_dir}/result/wind/neutral/",  overwrite:true, mode:'copy'
+   output :
+      file("$output")  into random_pvalwind
+   script :
+    outgwas='fileassoc_clean.assoc'
+    output="${params.output}_${params.size_win_kb}.pval"
+    """
+    extract_posgwasneutre.py --bed $pos --gwas $gwas --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --wind $params.size_win_kb --pval_gwas ${params.head_pval} --out $outgwas
+    computestat_windneutre.r   --gwas $outgwas --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp}  --p_gwas $params.head_pval  --out $output --wind $params.size_win_kb  --nrep ${params.n_repet} --cpus ${params.other_cpus_req}
+    """ 
+
+}
 process computedstat_win{
    memory other_mem_req
    cpus other_cpus_req
@@ -371,7 +396,7 @@ process computedstat_win{
     out=params.output+"_wind"
     af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
     """
-    computestat_wind.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --min_pval ${params.threshold_pval_gwascat} --info_gwascat  \"$infogwascat\" --wind $params.size_win_kb --a1_gwascat ${params.head_riskall_gwascat}
+    computestat_wind.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --min_pval ${params.threshold_pval_gwascat} --info_gwascat  \"$infogwascat\" --wind $params.size_win_kb --a1_gwascat ${params.head_riskall_gwascat} --merge_wind ${params.merge_wind}
 
     """
 }
