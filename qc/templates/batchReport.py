@@ -299,11 +299,11 @@ def showFigs(figs):
           if i%num_cols==1:
               inner=inner+"*-*-"
           if (i+1)%num_sub_figs_per_fig==0:
-              template= template + fig_template%(inner.replace('_',' '),caps[curr_cap])
+              template= template + fig_template%(inner,caps[curr_cap])
               inner=""
               curr_cap=curr_cap+1
        if (i+1)%num_sub_figs_per_fig !=0:
-           template= template + fig_template%(inner.replace('_',' '),caps[curr_cap])
+           template= template + fig_template%(inner,caps[curr_cap])
        else:
            curr_cap=curr_cap-1
        if curr_cap==0:
