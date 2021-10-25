@@ -160,4 +160,28 @@ Cojo parameter :
 
 
 
+# Conditional analysis of GWAS using gemma
+
+### Installation
+need python3, gemma, R
+tested for singularity image: no
+
+### algorithm
+* pipeline used :
+ * plink file and phenotype file 
+ * `pos_cond` : list position to be conditionned, transform in 0 (homozygote A1), 0.5 (heterozygote) and 1 (homozygote A2) and used as covariable
+ * `chro_cond` : chromosome to be conditionned 
+ * `pos_ref` : position de reference where will be extracted positions of interrest 
+* pipeline will run :
+ * for each `pos_cond`, run gemma on the region using as covariable `pos_cond`
+ * `pos_cond`, run gemma on the region using as covariable all `pos_cond` (call merge)
+ * run gemma on the region using just phenotype
+* output :
+ * each gemma output 
+ * plot of LD between ref and cond
+ * plot of p-value comparison of initial without conditional and conditional 
+
+### Running
+The pipeline is run: `nextflow run assoc/cond-assoc.nf`
+
 
