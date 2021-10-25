@@ -511,7 +511,7 @@ if (params.fastlmm == 1) {
       file(fam) from fam_ch_fast
     output:
       set file(phef), file(covfile) into fastlmm_data_ch
-      stdout into pheno_cols_ch_fastlmm
+      stdout into rs_list
     script:
       base = fam.baseName
       phef = "${base}_fastlmm_n.phe"
