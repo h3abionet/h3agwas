@@ -102,6 +102,7 @@ process computedstat{
   time   params.big_time
   input :
      file(vcf) from list_vcf2
+  publishDir "${params.output_dir}/vcf_filt", overwrite:true, mode:'copy'
   output :
      file("${Ent}") into listchrostat
   script :
