@@ -3,7 +3,8 @@
 
 # H3Agwas Pipeline Version 3
 
-[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu)
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F-green)](https://fair-software.eu)
+
 
  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5145/badge)](https://bestpractices.coreinfrastructure.org/projects/5145)
 
