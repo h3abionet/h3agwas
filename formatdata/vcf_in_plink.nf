@@ -102,7 +102,6 @@ process computedstat{
   time   params.big_time
   input :
      file(vcf) from list_vcf2
-  publishDir "${params.output_dir}/vcf_filt", overwrite:true, mode:'copy'
   output :
      file("${Ent}") into listchrostat
   script :
@@ -139,14 +138,16 @@ process formatvcfscore{
   time   params.big_time
   input :
      set file(ref),file(vcf) from list_vcf
+  publishDir "${params.output_dir}/vcf_filter", overwrite:true, mode:'copy', pattern: "*.vcf"
   output :
      set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
      file("${Ent}.bim") into listbimplink
+     file("${Ent}.vcf") 
   script :
     Ent=vcf.baseName
     """
-    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf | bcftools norm -Ou -m -any | bcftools norm -Ou -f $ref |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' |
-  plink --bcf /dev/stdin \
+    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf | bcftools norm -Ou -m -any | bcftools norm -Ou -f $ref |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' > $Ent".vcf"
+  cat $Ent".vcf" |plink --bcf /dev/stdin \
     --keep-allele-order \
     --vcf-idspace-to _ \
     --const-fid \

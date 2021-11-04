@@ -27,7 +27,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel", "saige"]
 
 
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -38,6 +38,8 @@ allowed_params+=ParamFast
 /*Gxe : */
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
+Saige_params=['pheno_bin', "list_vcf", "saige_num_cores", "saige_mem_req"]
+allowed_params+=Saige_params
 
 FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa', "gcta64_bin"]
 allowed_params+=FastGWA_params
@@ -64,6 +66,9 @@ params.chrom      = ""
 params.print_pca = 1
 params.file_rs_buildrelat = ""
 params.genetic_map_file = ""
+params.list_vcf=""
+params.vcf_field="DS"
+params.vcf_minmac=1
 outfname = params.output_testing
 
 
@@ -79,7 +84,7 @@ params.mperm = 00
 /* Adjust for multiple correcttion */
 params.adjust = 0
 
-supported_tests = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma", "gemma_gxe"]
+supported_tests_all = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma", "gemma_gxe", 'saige']
 
 
 params.assoc     = 0
@@ -89,6 +94,8 @@ params.model   =  0
 params.linear   = 0
 params.logistic = 0
 params.gemma = 0
+params.saige=0
+
 params.gemma_multi=0
 params.gemma_mem_req = "6GB"
 params.gemma_relopt = 1
@@ -96,6 +103,13 @@ params.gemma_lmmopt = 4
 params.gemma_mat_rel = ""
 params.gemma_num_cores = 8
 params.pheno = "_notgiven_"
+
+//
+params.saige_bin_fitmodel="/usr/local/bin/step1_fitNULLGLMM.R"
+params.saige_bin_spatest="/usr/local/bin/step2_SPAtests.R"
+params.saige_loco=1
+params.saige_mem_req='10GB'
+params.saige_num_cores=10
 
 if (params.pheno == "_notgiven_") {
   println "No phenotype given -- set params.pheno";
@@ -137,6 +151,7 @@ params.fastgwa=0
 params.fastgwa_mem_req="10G"
 params.fastgwa_num_cores=5
 params.grm_nbpart=100
+params.grm_maf = 0.01
 params.gcta64_bin = "gcta64"
 params.fastgwa_type="--fastGWA-mlm-exact"
 params.grm_cutoff =  0.05
@@ -144,6 +159,7 @@ params.covariates_type=""
 params.gcta_grmfile=""
 params.sample_snps_rel=0
 params.sample_snps_rel_paramplkl="100 20 0.1"
+params.pheno_bin=0
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -276,6 +292,7 @@ fastgwa_assoc_ch = Channel.create()
 raw_src_ch= Channel.create()
 ch_select_rs_format=Channel.create()
 ch_format_ldscore=Channel.create()
+ch_saige_heritability=Channel.create()
 
 Channel
     .from(file(bed),file(bim),file(fam))
@@ -289,14 +306,14 @@ println "Testing for phenotypes  : ${params.pheno}\n"
 println "Using covariates        : ${params.covariates}\n\n"
 
 if (params.gemma) println "Doing gemma testing"
+if (params.saige) println "Doing saige testing"
 if (params.assoc) println "Doing assoc testing"
 if (params.linear) println "Doing linear regression testing"
 if (params.logistic) println "Doing logistic regression testing"
 if (params.fastlmm == 1) println "Doing mixed model with fastlmm "
 if (params.boltlmm == 1) println "Doing mixed model with boltlmm "
-if (params.gemma) println "Doing gemma testing"
 if(params.gemma_gxe==1)println "Doing mixed model with gemma and gxe with "+params.gxe
-if(params.plink_gxe==1)println "Doing with plink gxe with "+params.gxe
+if(params.plink_gxe==1)println "Doing association with gxe and plink with "+params.gxe
 println "\n"
 
 if (params.thin)
@@ -315,7 +332,7 @@ if (thin+chrom) {
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
       /*JT Append initialisation boltlmm_assoc_ch */
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch, ch_bolt_snpchoice, ch_select_rs_format)
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch, ch_bolt_snpchoice, ch_select_rs_format, ch_saige_heritability)
     script:
        base = bed.baseName
        out  = base+"_t"
@@ -328,7 +345,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format, ch_format_ldscore) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a,a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format, ch_format_ldscore,ch_saige_heritability) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a,a,a] }
 }
 
 
@@ -392,7 +409,7 @@ pheno     = ""
 
 /*Case where we sample builrelatdness*/
 balise_filers_rel=1
-if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
+if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige>0){
  if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
   process select_rs_format{
      cpus max_plink_cores
@@ -401,7 +418,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
      input :
        set file(bed),file(bim), file(fam) from ch_select_rs_format
     output:
-       file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line
+       file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line, filers_her_saige
      script:
         base = bed.baseName
         prune= "${base}-prune"
@@ -441,6 +458,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa>0){
         //if(params.boltlmm==1)BoltNbMaxSnps=CountLinesFile(params.file_rs_buildrelat)
         filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
         filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_her_saige=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
   }
  }
 }
@@ -511,7 +529,7 @@ if (params.fastlmm == 1) {
       file(fam) from fam_ch_fast
     output:
       set file(phef), file(covfile) into fastlmm_data_ch
-      stdout into rs_list
+      stdout into pheno_cols_ch_fastlmm
     script:
       base = fam.baseName
       phef = "${base}_fastlmm_n.phe"
@@ -1425,7 +1443,7 @@ if(params.gcta_grmfile==""){
      base   = bed.baseName
      """
      hostname
-     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_num_cores} --out mgrm $rs_list
+     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_num_cores} --out mgrm $rs_list --maf  ${params.grm_maf}
      """
  }
 
@@ -1521,6 +1539,163 @@ report_fastgwa_ch=Channel.empty()
 
 
 
+if(params.saige==1){
+  if(params.list_vcf==""){
+    println "No list_vcf given for saige -- set params.list_vcf";
+    System.exit(-2);
+  }
+  process subplink_heritability_saige{
+    input :
+       file(rs) from filers_her_saige
+       file(plk) from ch_saige_heritability
+    output :
+       set file("${out}.bed"), file("${out}.bim"), file("${out}.fam")  into ch_plk_saige
+    script :
+       bfile=plk[1].baseName
+       out=bfile+'_subrs'
+       """
+       plink -bfile $bfile --extract $rs --make-bed -out $out --keep-allele-order
+       """
+  }
+  fam_ch_saige = Channel.create()
+  plk_ch_saige_her = Channel.create()
+  ch_plk_saige.separate (plk_ch_saige_her, fam_ch_saige) { a -> [ a, a[2]] }
+
+  data_ch_saige = Channel.fromPath(params.data,checkIfExists:true)
+  process  getSaigePheno {
+    input:
+      file(covariates) from data_ch_saige
+      file(fam) from fam_ch_saige
+    output:
+      file(phef) into saige_data_format_ch
+      stdout into pheno_cols_ch_saige
+    script:
+      covoption = (params.covariates=="") ? "" : " --cov_list ${params.covariates}"
+      base = fam.baseName
+      phef = "${base}_saige_n.phe"
+      """
+      all_covariate.py --data  $covariates --inp_fam  $fam $covoption \
+                          --pheno ${params.pheno} --phe_out ${phef}  --form_out 2
+      """
+  }
+
+  pheno_ch_saige = Channel.create()
+  check = Channel.create()
+  pheno_cols_ch_saige.flatMap { list_str -> list_str.split() }.tap ( check) .set { pheno_ch_saige}
+
+  process saige_computed_variance{ 
+   memory params.saige_mem_req
+   cpus params.saige_num_cores
+   label 'saige'
+   input :
+      set file(bed), file(bim), file(fam) from plk_ch_saige_her
+      file(pheno) from saige_data_format_ch
+   publishDir "${params.output_dir}/saige/varexp/", overwrite:true, mode:'copy'
+   each this_pheno from pheno_ch_saige
+   output :
+     set val(our_pheno) ,file("${output}_*markers.SAIGE.results.txt"), file("${output}.rda"), file("${output}.varianceRatio.txt"), val(plkf) into file_varexp 
+   script :
+     covoption = (params.covariates=="") ? "" : " --covarColList=${params.covariates}"
+     binpheno = (params.pheno_bin==1) ? " --traitType=binary " : " --traitType=quantitative --invNormalize=TRUE"
+     Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
+     plkf=bed.baseName
+     our_pheno    = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+     output=our_pheno+"_var"
+     """
+     Rscript ${params.saige_bin_fitmodel} \
+        --plinkFile=$plkf \
+        --phenoFile=$pheno \
+        --phenoCol=$our_pheno $covoption \
+        --sampleIDColinphenoFile=IID \
+        --outputPrefix=./$output \
+        --nThreads=${params.saige_num_cores} $Loco \
+        --minMAFforGRM=${params.grm_maf} $binpheno
+     """
+   
+  }
+  listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines())
+  process buildindex {
+    label 'saige'
+    input :
+       file(vcf) from listvcf_ch
+    output :
+        set file(vcf), file(vcfindex) into listvcf_ind_ch
+    script :
+       vcfindex=vcf+".csi"
+       """
+       hostname
+       tabix -C -p vcf $vcf
+       """
+  }
+  vcf_andvariance_ch=listvcf_ind_ch.combine(file_varexp) 
+  process doSaige{
+   memory params.saige_mem_req
+   cpus params.saige_num_cores
+   label 'saige'
+   input :
+       set file(vcf), file(vcfindex), val(our_pheno) ,file(best30), file(rda), file(varRatio), val(base) from vcf_andvariance_ch 
+   output :
+      set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
+   script :
+     output=vcf.baseName+".res"
+     """
+      Chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
+      Rscript  ${params.saige_bin_spatest} \
+        --vcfFile=$vcf\
+        --vcfFileIndex=$vcfindex \
+        --vcfField=${params.vcf_field} \
+        --minMAF=0.0000001\
+        --minMAC=${params.vcf_minmac} \
+        --chrom=\$Chro \
+        --GMMATmodelFile=$rda \
+        --varianceRatioFile=$varRatio \
+        --SAIGEOutputFile=$output \
+        --IsOutputAFinCaseCtrl=TRUE     \
+        --IsOutputNinCaseCtrl=TRUE      \
+        --IsOutputHetHomCountsinCaseCtrl=TRUE
+
+     """
+  }
+ ch_saige_res=ch_saige_bychro.groupTuple()
+ process doMergeSaige{
+          input :
+            set (val(this_pheno),file(list_file), base_list) from ch_saige_res
+         publishDir "${params.output_dir}/saige", overwrite:true, mode:'copy'
+         output :
+             set val(base), val(our_pheno2), file("$out") into saige_manhatten_ch
+         script :
+             base=base_list[0]
+             our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+             our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+             out = "$base-${our_pheno}.saige"
+             fnames = list_file.join(" ")
+             file1  = list_file[0]
+             """
+             head -1 $file1 > $out
+             cat $fnames | grep -v CHR >> $out
+             """
+ }
+  process showSaigeManhatten {
+    memory params.other_process_mem_req
+    publishDir params.output_dir, overwrite:true, mode:'copy'
+    input:
+      set val(base), val(this_pheno), file(assoc) from saige_manhatten_ch
+    output:
+      file("${out}*")  into report_saige_ch
+    script:
+      our_pheno = this_pheno.replaceAll("_","-")
+      out = "C058-saige-"+this_pheno
+      """
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNPID --pval_header p.value --beta_header BETA --info_prog SAIGE
+      """
+  }
+
+
+
+}else{
+ report_saige_ch=Channel.empty()
+}
+
 
 
 
@@ -1541,7 +1716,6 @@ if (workflow.repository)
 else
   wflowversion="A local copy of the workflow was used"
 
-
 report_ch = report_fastlmm_ch.flatten().mix(pheno_report_ch.flatten())
                                      .mix(report_pca_ch.flatten())
 				     .mix(report_plink_ch.flatten())
@@ -1549,6 +1723,7 @@ report_ch = report_fastlmm_ch.flatten().mix(pheno_report_ch.flatten())
 				     .mix(report_fastgwa_ch.flatten())
 				     .mix(report_gemma_ch_GxE.flatten())
 				     .mix(report_plink_gxe.flatten())
+				     .mix(report_saige_ch.flatten())
                                      .mix(report_gemma_ch.flatten()).toList()
 
 process doReport {

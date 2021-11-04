@@ -2,6 +2,7 @@
 
 
 ## What's new :
+* 2021-11-04 : association script include saige software
 * 2021-10-25 : new script to do a conditional analysis using gemma see [finemapping](finemapping/README.md)
 * 2021-09-15 :  add for script in finemapping `finemap_multi.nf`, extract positions using plink, do define independant position in function of minimum p-value and for each independant position apply finemapping [finemapping](finemapping/README.md)
 * 2021-03-09 : add plot and merge for estimation of heritabilities
