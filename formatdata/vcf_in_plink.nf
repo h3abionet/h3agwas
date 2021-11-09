@@ -138,15 +138,15 @@ process formatvcfscore{
   time   params.big_time
   input :
      set file(ref),file(vcf) from list_vcf
-  publishDir "${params.output_dir}/vcf_filter", overwrite:true, mode:'copy', pattern: "*.vcf"
+  publishDir "${params.output_dir}/bcf_filter", overwrite:true, mode:'copy', pattern: "*.bcf"
   output :
      set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
      file("${Ent}.bim") into listbimplink
-     file("${Ent}.vcf") 
+     set val(Ent), file("${Ent}.bcf") into bcf_ch
   script :
-    Ent=vcf.baseName
+    Ent=vcf.baseName.baseName
     """
-    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf | bcftools norm -Ou -m -any | bcftools norm -Ou -f $ref |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' > $Ent".vcf"
+    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf | bcftools norm -Ou -m -any | bcftools norm -Ou -f $ref |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' > $Ent".bcf"
   cat $Ent".vcf" |plink --bcf /dev/stdin \
     --keep-allele-order \
     --vcf-idspace-to _ \
@@ -157,6 +157,21 @@ process formatvcfscore{
     cp ${Ent}.bim ${Ent}.save.bim
     awk \'{if(\$2==\".\"){\$2=\$1\":\"\$4\"_\"\$5\"_\"\$6};\$2=substr(\$2,1,20);print \$0}\' ${Ent}.save.bim > ${Ent}.bim
     """
+}
+
+process convertbcf_invcf{
+  label 'py3utils'
+  time   params.big_time
+  publishDir "${params.output_dir}/vcf_filter", overwrite:true, mode:'copy', pattern: "*.vcf.gz"
+  input :
+      set val(Ent), file(bcf) from bcf_ch
+   output :
+      val(vcf) 
+   script :
+     vcf=Ent+".vcf.gz"
+     """
+     bcftools convert $bcf -O z > $vcf
+     """ 
 }
 
 

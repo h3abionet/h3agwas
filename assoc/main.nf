@@ -70,6 +70,7 @@ params.list_vcf=""
 params.vcf_field="DS"
 params.vcf_minmac=1
 outfname = params.output_testing
+params.cut_maf=0.01
 
 
 
@@ -158,7 +159,7 @@ params.grm_cutoff =  0.05
 params.covariates_type=""
 params.gcta_grmfile=""
 params.sample_snps_rel=0
-params.sample_snps_rel_paramplkl="100 20 0.1"
+params.sample_snps_rel_paramplkl="100 20 0.1 --maf 0.01"
 params.pheno_bin=0
 
 
@@ -863,13 +864,13 @@ if (params.boltlmm == 1) {
       ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
       ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
-      boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp  " : ""
+      boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp --impute2MinMAF ${params.cut_maf} " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
       BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`
       bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3} \
      --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt \
-    $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt} \
+    $ld_score_cmd  $missing_cov --lmmForceNonInf  $model_snp $exclude_snp $boltimpute $geneticmap ${params.bolt_otheropt} --maxModelSnps=\$BoltNbMaxSnps \
    
       """
   }
@@ -1019,7 +1020,7 @@ if (params.gemma == 1){
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001
+       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf}
        mv output ${dir_gemma}
        rm $rel_matrix
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
@@ -1087,7 +1088,7 @@ if (params.gemma == 1){
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 
+       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf}
        mv output ${dir_gemma}
        rm $rel_matrix
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
@@ -1180,7 +1181,7 @@ process doGemmaGxEChro{
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
+       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf} $gxe_opt_gemma
        mv output ${dir_gemma}
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
@@ -1253,7 +1254,7 @@ process doGemmaGxEChro{
        all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores} 
-       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf 0.0000001 $gxe_opt_gemma
+       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf} $gxe_opt_gemma
        mv output ${dir_gemma}
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
@@ -1513,7 +1514,7 @@ process FastGWARun{
      covqual_cov = (balqualcov) ? " --cov_type ${params.covariates_type} --covqual_file $covfilequal " : ""
      """
      all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
-     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa
+     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa --maf ${params.cut_maf}
      """
 }
   process showFastGWAManhatten {
@@ -1638,22 +1639,19 @@ if(params.saige==1){
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
    script :
      output=vcf.baseName+".res"
+     bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
      """
       Chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
       Rscript  ${params.saige_bin_spatest} \
         --vcfFile=$vcf\
         --vcfFileIndex=$vcfindex \
         --vcfField=${params.vcf_field} \
-        --minMAF=0.0000001\
+        --minMAF=${params.cut_maf}\
         --minMAC=${params.vcf_minmac} \
         --chrom=\$Chro \
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output \
-        --IsOutputAFinCaseCtrl=TRUE     \
-        --IsOutputNinCaseCtrl=TRUE      \
-        --IsOutputHetHomCountsinCaseCtrl=TRUE
-
+        --SAIGEOutputFile=$output ${bin_option_saige}
      """
   }
  ch_saige_res=ch_saige_bychro.groupTuple()

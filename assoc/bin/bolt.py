@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import time
 import sys 
 import re
 FileStder="tmp.stderr"
@@ -19,7 +20,7 @@ if "--reml" in " ".join(Args) :
           
 else :
    cmd=" ".join(sys.argv[1::])+" 2> "+ FileStder
-
+print(cmd)
 error=os.system(cmd)
 lireerror=open("tmp.stderr")
 
@@ -45,9 +46,20 @@ if BaliseEr:
        for Std in ListStd :
           if Std in argv :
             File=cmdspl[CmtArg+1]
-            Lire=open(File,'w')
-            Lire.write("\t".join(["SNP","CHR","BP","GENPOS","ALLELE1","ALLELE0","A1FREQ","F_MISS","BETA","SE","P_BOLT_LMM_INF","P_BOLT_LMM"])+"\n")
-            Lire.close()
+            WriteHead=open(File,'w')
+            WriteHead.write("\t".join(["SNP","CHR","BP","GENPOS","ALLELE1","ALLELE0","A1FREQ","F_MISS","BETA","SE","P_BOLT_LMM_INF","P_BOLT_LMM"])+"\n")
+            WriteHead.close()
 else :
+   for CmtArg in range(len(cmdspl)):
+    argv=cmdspl[CmtArg]
+    for Std in ListStd :
+      if Std in argv :
+         Read=open(cmdspl[CmtArg+1])
+         Head=Read.readline()
+         if len(Head)==0 :
+           print("error file empty "+cmdspl[CmtArg+1])
+           sys.exit(256) 
    if int(error)> 0:
+     print(error)
      sys.exit(int(error))
+
