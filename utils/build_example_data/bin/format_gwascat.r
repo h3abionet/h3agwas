@@ -113,6 +113,11 @@ if(balisepheno)balisepheno<-tolower(as.character(Data[,phenhead])) %in% tolower(
 Data2<-Data[baliselistc & balisepheno,]
 Data2[,'risk.allele.cat']<-sapply(strsplit(as.character(Data2[,riskall]),split='-'),function(x)x[2])
 #c(2,3, 20,21,18,11)]
+if(any(baliselistc)==F){
+cat('problem chromosome', opt[['chro']], ':', lisc)
+cat(unique(Data[,chrohead]))
+q(status=2)
+}
 if(nrow(Data2)==0){
 cat("no phenotype ",opt[['pheno']], opt[['file_pheno']]," found in file \n")
 q(status=2)

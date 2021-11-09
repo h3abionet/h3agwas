@@ -1,6 +1,6 @@
 <img src="../aux/H3ABioNetlogo2.jpg"/>
 
-#  finemapping pipeline: `finemapping/main.nf`
+#  finemapping a specific region using pipeline: `finemapping/finemap_region.nf`
 
 This workflow has been extensively expanded by Jean-Tristan Brandenburg
 
@@ -14,7 +14,7 @@ Our script, *finemapping* takes as input PLINK files, gwas file
 * pipeline discarded positions duplicated from genetics file and bed file
 ## Running
 
-The pipeline is run: `nextflow run finemapping`
+The pipeline is run: `nextflow run finemapping/finemap_region.nf`
 
 ## options
 
@@ -63,12 +63,11 @@ need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 
 ##For example
 
-TODO
 
-#  finemapping pipeline automated with selection of snps using plink : `finemapping/finemap_multi.nf`
+#  finemapping pipeline automated with selection of snps using plink : `finemapping/main.nf`
 ## algorithm :
  * using clump plink to defined independant locus
- * for each snps apply algorithms from pipeline `finemapping/main.bf`
+ * for each snps apply algorithms from pipeline `finemapping/finemap_region.nf`
 
 ## options
 

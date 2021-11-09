@@ -2,6 +2,8 @@
 library("optparse")
 library(data.table)
 PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL, listpval=c('bf_caviar', 'log10bf_fm', 'Posterior_Prob_paint'), listheadprint=c('caviar', 'fm', 'paint')){
+print('Plotrs')
+if(paintfile=='NOFILE')paintfile=NULL
 ColI="blue";ColInitial=t_col(ColI,30)
 ColGWASCat="red3";ColFineMap='black'
 
@@ -23,7 +25,7 @@ par(mar=c(0,4,0,1))
 plot(xlim, c(0,1), type='n',xaxt='n' ,yaxt='n', ylab='')
 if(nrow(datagwascatchro)>0){
 datagwascatchro$col<-'red'
-datagwascatchro$col[!(datagwascatchro$PosBegin37 %in%  datainworkplot$position)]<-'black'
+datagwascatchro$col[!(datagwascatchro[,headbpgc] %in%  datainworkplot$position)]<-'black'
 arrows(datagwascatchro$bp_cm,0.8,datagwascatchro$bp_cm,1,code=2,lwd=0.5, length=0.1, col=datagwascatchro$col)
 }
 listgen<-unique(DataGenes2$GENE);nbgenes=length(listgen)
@@ -178,13 +180,18 @@ if(Test==F){
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 }else{
-#opt=list('d'='rs7169818.all','b'='rs7169818_caviarbf', 'f'='rs7169818_sss.snp', 'paintor'='rs7169818_paintor_1/rs7169818.results','c'='~/Data/GWASCat/GWASCat_141019_ckd.tsv', 'g'='rs7169818.resgcta', 'l'='gencode.v19.genes', 'paintor_fileannot'='rs7169818.annot','paintor_annot'='listannot.paintor.rs7169818', 'o'='test')
-opt=list('datai'='rs7169818.all','caviarbf'='rs7169818_caviarbf', 'listfinemap'='infooutfinemap.rs7169818', listpaintor='infooutpaintor.rs7169818','gwascat'='~/Data/GWASCat/GWASCat_141019_ckd.tsv', 'cojo'='rs7169818.resgcta', 'list_genes'='gencode.v19.genes', 'paintor_fileannot'='rs7169818.annot','paintor_annot'='listannot.paintor.rs7169818', 'o'='test')
-}
+#opt=list('datai'='rs7169818.all','caviarbf'='rs7169818_caviarbf', 'listfinemap'='infooutfinemap.rs7169818', listpaintor='infooutpaintor.rs7169818','gwascat'='~/Data/GWASCat/GWASCat_141019_ckd.tsv', 'cojo'='rs7169818.resgcta', 'list_genes'='gencode.v19.genes', 'paintor_fileannot'='rs7169818.annot','paintor_annot'='listannot.paintor.rs7169818', 'o'='test')
+opt_parser = OptionParser(option_list=option_list);
+CmdL="--out out --listpaintor infopaintor --cojo 1_55496558_cojo.jma.cojo --datai 1_55496558.all --caviarbf 1_55496558_caviarbf.marginal --list_genes gencode.v19.genes --gwascat gwascat_format_all.csv --headbp_gc chromEnd --headchr_gc chrom --listfinemap infofinemap --paintor_fileannot NOFILE"
+commandArgsI=strsplit(CmdL, split=" ")[[1]]
+opt=parse_args(opt_parser,args=commandArgsI)
 
-datagwascat<-read.table(opt[['gwascat']],sep='\t', header=T)
-datagwascat$chropos<-paste(datagwascat$Chro37,datagwascat$PosBegin37)
-datagwascat$bp_cm<-datagwascat$PosBegin37/1000000
+}
+headbpgc<-opt[['headbp_gc']];headchrgc<-opt[['headchr_gc']]
+if(grep('\\.csv$', opt[['gwascat']])==1)datagwascat<-read.csv(opt[['gwascat']]) else datagwascat<-read.table(opt[['gwascat']],sep='\t', header=T)
+ 
+datagwascat$chropos<-paste(datagwascat[,headchrgc],datagwascat[,headbpgc])
+datagwascat$bp_cm<-datagwascat[,headbpgc]/1000000
 
 datai=read.table(opt[['datai']], header=T)
 datai$chropos<-paste(datai$chromosome, datai$position)
@@ -224,27 +231,21 @@ listheadplot<-c(listheadplot, infopaint[['listhead']])
 
 ## data for  gcta
 headgcta=opt[['cojo']]
-#datagcta<-read.table(paste(headgcta, '.cma.cojo',sep=''),header=T)
-#datagcta$logpC<- -log10(datagcta$pC)
-#datainwork<-merge(datainwork,  datagcta[,c('Chr', 'bp','bC','bC_se','pC', 'logpC')], by.x=c('chromosome', 'position') , by.y=c('Chr', 'bp'),all=T)
-## rs7169818.resgcta.jma.cojo
-#datagcta2<-read.table(paste(headgcta,'.jma.cojo',sep=''),header=T)
-#datagcta2<-read.table(paste(headgcta,'.jma.cojo',sep=''),header=T)
 datagcta2<-read.table(headgcta,header=T)
 datagcta2$logpJ<- -log10(datagcta2$pJ)
 datainwork<-merge(datainwork,datagcta2[,c('Chr','SNP','bp', 'bJ','bJ_se','pJ','LD_r', 'logpJ')], by=c('rsid','chromosome','position'), by.y=c('SNP','Chr','bp'), all=T)
 datainwork$IsSig[!is.na(datainwork$pJ)]<-T
 
 
-if(!is.null(opt[['paintor_fileannot']])){
-DataAnnot<-read.table(opt[['paintor_fileannot']], header=T)
-if(!is.null(opt[['paintor_annot']]))HeadAnnot<-readLines(opt[['paintor_annot']])
-else HeadAnnot = names(DataAnnot)
-HeadAnnot2<-gsub("-",".",HeadAnnot)
-DataAnnot$num<-1:nrow(DataAnnot)
-DataAnnot<-merge(datainwork[,c('num','rsid','chromosome','position')], DataAnnot[,c('num',HeadAnnot2)], by='num')
-DataAnnotPerc<-data.frame(num=DataAnnot[,c('num')], PercAnnot=apply(DataAnnot[,-c(1:4)],1, function(x)sum(x)/length(x)*100))
-datainwork=merge(datainwork,DataAnnotPerc, by='num', all=T)
+if(!is.null(opt[['paintor_fileannot']]) & opt[['paintor_fileannot']]!='NOFILE'){
+	DataAnnot<-read.table(opt[['paintor_fileannot']], header=T)
+	if(!is.null(opt[['paintor_annot']]) & opt[['paintor_annot']]!='NOFILE')HeadAnnot<-readLines(opt[['paintor_annot']])
+	else HeadAnnot = names(DataAnnot)
+	HeadAnnot2<-gsub("-",".",HeadAnnot)
+	DataAnnot$num<-1:nrow(DataAnnot)
+	DataAnnot<-merge(datainwork[,c('num','rsid','chromosome','position')], DataAnnot[,c('num',HeadAnnot2)], by='num')
+	DataAnnotPerc<-data.frame(num=DataAnnot[,c('num')], PercAnnot=apply(DataAnnot[,-c(1:4)],1, function(x)sum(x)/length(x)*100))
+	datainwork=merge(datainwork,DataAnnotPerc, by='num', all=T)
 }
 
 
@@ -255,7 +256,7 @@ DataGenes<-fread(opt[['list_genes']])
 DataGenes$begin_cm<-DataGenes$BEGIN/1000000
 DataGenes$end_cm<-DataGenes$END/1000000
 DataGenes2<-as.data.frame(DataGenes[as.character(DataGenes$CHR)==as.character(Chro) & ((DataGenes$begin_cm>=xlimcm[1] & DataGenes$begin_cm<=xlimcm[2]) | (DataGenes$end_cm>=xlimcm[1] & DataGenes$end_cm<=xlimcm[2]) | (xlimcm[1]>=DataGenes$begin_cm & xlimcm[1]<=DataGenes$end_cm) | (xlimcm[2]>=DataGenes$begin_cm & xlimcm[2]<=DataGenes$end_cm)),])
-datagwascatchro<-datagwascat[as.character(datagwascat$Chro37)==as.character(Chro) & datagwascat$bp_cm>=xlimcm[1] & datagwascat$bp_cm<=xlimcm[2],]
+datagwascatchro<-datagwascat[as.character(datagwascat[,headchrgc])==as.character(Chro) & datagwascat$bp_cm>=xlimcm[1] & datagwascat$bp_cm<=xlimcm[2],]
 
 FilePdf=paste(opt[['out']],'.pdf',sep='')
 PlotRes(datainwork,DataGenes2 , datagwascatchro,FilePdf,opt[['paintor_fileannot']], listpval=listheadplot, listheadprint=listheadprint)
@@ -273,7 +274,7 @@ datainwork$Gene[datainwork$Gene=='']<-NA
 
 if(nrow(datagwascatchro)>0){
 datagwascatchro$found<-T
-datagwascatchro$found[!(datagwascatchro$PosBegin37 %in%  datainwork$position)]<-F
+datagwascatchro$found[!(datagwascatchro[,headbpgc] %in%  datainwork$position)]<-F
 }
 write.table(datainwork, file=paste(opt[['out']],'.all.out', sep='') ,sep='\t', row.names=F, col.names=T, quote=F)
 write.table(datagwascatchro, file=paste(opt[['out']],'.gwascat.out', sep='') ,sep='\t', row.names=F, col.names=T, quote=F)

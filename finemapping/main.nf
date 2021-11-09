@@ -69,13 +69,13 @@ def helps = [ 'help' : 'help' ]
 
 allowed_params = ["input_dir","input_pat","output","output_dir","data","covariates", "work_dir", "scripts", "max_forks", "cut_maf", "phenotype", "accessKey", "access-key", "secretKey", "secret-key",  "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "batch", "batch_col" ,"samplesize", "manifest", "region", "AMI", "queue", "strandreport"]
 params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin"]
-params_mf=["n_pop","threshold_p", "n_causal_snp"]
+params_mf=["n_pop","threshold_p", "n_causal_snp", "prob_cred_set"]
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
-params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
+params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
 params_memcpu=["gcta_mem_req","plink_mem_req", "plink_cpus_req","other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req"]
 param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
-param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp"]
+param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro"]
 allowed_params+=params_mf
 allowed_params+=params_cojo
 allowed_params+=params_filegwas
@@ -158,21 +158,21 @@ params.modelsearch_caviarbf_bin="model_search"
 params.paintor_bin="PAINTOR"
 params.plink_bin="plink"
 
-
+listchro=getlistchro(params.list_chro)
 if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
 process GwasCatDl{
     label 'R'
     publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
     output :
-       file("${out}_resume.csv") into gwascat_ch
+       file("${out}_all.csv") into gwascat_ch
        file("${out}*")
     script :
       phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
       out="gwascat_format"
       """
       wget -c ${params.gwas_cat_ftp}
-      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${params.chro}
+      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${listchro.join(',')}
       """
 }
 headgc_chr="chrom"
@@ -236,7 +236,7 @@ process extract_sigpos{
   input :
    file(clump) from file_clump
   output :
-     stdout into postonalyse
+     stdout into (postonalyse, postonalyse2)
   script:
   """
    sed '1d' $clump| awk '{if(\$1!="")print \$1"_"\$4}' 
@@ -410,9 +410,17 @@ baliseannotpaint=1
     """ 
   }
 } else{
-paintor_fileannot=file('NOFILE')
-paintor_fileannotplot=file('NOFILE')
-annotname=Channel.from("N")
+println 'no file annot for paintor'
+postonalyse2.into{postonanalyse_tmp1; postonanalyse_tmp2;postonanalyse_tmp3}
+
+pos_tonalyse_ch_1=postonanalyse_tmp1.flatMap { list_str -> list_str.split() }
+paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath('NOFILE'))
+
+pos_tonalyse_ch_2=postonanalyse_tmp2.flatMap { list_str -> list_str.split() }
+paintor_fileannotplot=pos_tonalyse_ch_2.combine(Channel.fromPath('NOFILE'))
+
+pos_tonalyse_ch_3=postonanalyse_tmp3.flatMap { list_str -> list_str.split() }
+annotname=pos_tonalyse_ch_3.combine(Channel.value("N"))
 }
 }
 
@@ -442,8 +450,12 @@ process ComputedPaintor{
     echo $output > input.files
     cp $filez $output
     cp $ld $output".ld"
-    paint_annotation.py $fileannot $output 
+    if [ $fileannot == "NOFILE" ]
+    then
+    paint_annotation.py $fileannot $output  $output".annotations"
+    else 
     cp $fileannot $output".annotations"
+    fi
     ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal -num_samples  ${params.n_pop} -Lname $BayesFactor $annot
     """
 }
@@ -490,6 +502,11 @@ process ComputedCojo{
     plk=bed.baseName
     """ 
     ${params.gcta_bin} --bfile $plk  --cojo-slct --cojo-file $filez --out $output  --cojo-p ${params.threshold_p} --thread-num ${params.gcta_cpus_req}  --diff-freq 0.49
+    if [ ! -f $output".jma.cojo" ]
+    then 
+    echo -e  "Chr	SNP	bp	refA	freq	b	se	p	n	freq_geno	bJ	bJ_se	pJ	LD_r"	> $output".jma.cojo"
+    touch $output".cma.cojo" $output".ldr.cojo"
+    fi
     """
 
 }

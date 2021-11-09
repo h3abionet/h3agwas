@@ -144,7 +144,6 @@ params.paintor_listfileannot=""
 //params.paintor_annot=""
 
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
-params.list_chro="1-22"
 params.list_pheno=""
 
 
