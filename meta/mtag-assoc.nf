@@ -1,4 +1,6 @@
 #!/usr/bin/env nextflow
+import java.nio.file.Paths
+
 /*
  * Authors       :
  *      Jean-Tristan Brandenburg
@@ -62,6 +64,9 @@ params.mtag_mem_req="15G"
 params.bin_mtag="mtag.py"
 params.cut_maf = 0.001
 params.opt_mtag =""
+params.pheno="mtag"
+params.covariates=""
+params.output="output"
 
 
 params.help = false
@@ -225,7 +230,7 @@ process showMtag{
     output:
       file("${out}*")  into report_mtag
     script:
-      out = filegwas.baseName.replaceAll(/_/,'-')
+      out = filegwas.baseName.replaceAll(/_/,'-').replaceAll(/\./,'-')
       """
       general_man.py  --inp $filegwas --phenoname $out --out ${out} --chro_header CHR --pos_header BP --rs_header SNP --pval_header mtag_pval --beta_header mtag_beta --info_prog "Mtag : all file"
       """
@@ -260,21 +265,40 @@ process doMTAG2by2{
 }
 }
 
-report_ch = report_mtag.flatten()
+def getres(x) {
+  def  command1 = "$x"
+  def  command2 = "head -n 1"
+  def proc1 = command1.execute()
+  def proc2 = command2.execute()
+  def proc = proc1 | proc2
+  proc.waitFor()
+  res ="${proc.in.text}"
+  return res.trim()
+}
+
+nextflowversion =getres("nextflow -v")
+if (workflow.repository)
+  wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
+else
+  wflowversion="A local copy of the workflow was used"
+
+report_ch = report_mtag.flatten().toList()
+
 process doReport {
   label 'latex'
   input:
     file(reports) from report_ch
-  publishDir "{params.output_dir}/report", overwrite:true, mode:'copy'
+  publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${out}.pdf")
   script:
     out = params.output+"-report"
-    these_phenos     = params.pheno
-    these_covariates = params.covariates
+    these_phenos     = "mtag"
+    these_covariates = ""
     config = getConfig()
     images = workflow.container
     texf   = "${out}.tex"
     template "make_assoc_report.py"
+
 }
 
