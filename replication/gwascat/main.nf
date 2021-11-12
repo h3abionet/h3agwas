@@ -90,6 +90,7 @@ params.head_A2="ALLELE0"
 params.other_mem_req="10GB"
 params.other_cpus_req=5
 params.min_pval_clump =0.001
+params.size_win_kb_ld=-1
 // merge windows when take p-value
 params.merge_wind=1
 
