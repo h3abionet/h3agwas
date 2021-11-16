@@ -91,9 +91,9 @@ q(2)
 Test=F
 #--chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2
 opt_parser = OptionParser(option_list=option_list);
-if(Test)opt = parse_args(opt_parser, strsplit('--gwascat logacragesex_rank_AwigenLD_all.csv --gwas logacragesex_rank_AwigenLD_range.init --chr_gwas chr --ps_gwas ps --a1_gwas allele1 --a2_gwas allele0 --beta_gwas beta --se_gwas se --chr_gwascat chrom --bp_gwascat chromEnd --p_gwas p_wald --ps_gwascat chromEnd --chr_gwascat chrom --out logacragesex_rank_AwigenLD_wind --ldblock_file tmpout --min_pvalue 0.001 --min_r2 0.2 --info_gwascat pubMedID;author;trait;initSample', split=' ')[[1]])
-
 opt = parse_args(opt_parser)
+if(Test)opt = parse_args(opt_parser, strsplit('--gwascat DBP_AwigenLD_all.csv --gwas DBP_AwigenLD_range.init --chr_gwas CHR --ps_gwas BP --a1_gwas ALLELE1 --a2_gwas ALLELE0 --beta_gwas BETA --se_gwas SE --chr_gwascat chrom --bp_gwascat chromEnd --p_gwas P_BOLT_LMM --ps_gwascat chromEnd --chr_gwascat chrom --out DBP_AwigenLD_wind --ldblock_file tmpout --min_pvalue 0.01 --min_r2 0.5 --info_gwascat "pubMedID;author;trait;initSample', split=' ')[[1]])
+
 
 #/home/jeantristan/Travail/git/h3agwas/replication/gwascat/bin/computestat_ldv2.r  --gwascat meanMaxcIMT_eurld_all.csv --gwas meanMaxcIMT_eurld_range.init --chr_gwas CHR --ps_gwas BP --a1_gwas ALLELE1 --a2_gwas ALLELE0  --beta_gwas BETA --se_gwas SE  --chr_gwascat chrom --bp_gwascat chromEnd --p_gwas P_BOLT_LMM --ps_gwascat chromEnd --chr_gwascat chrom --out meanMaxcIMT_eurld_noext --ldblock_file meanMaxcIMT_eurld_ldinfo_ld.out --min_pvalue 1 --min_r2  0.5 --info_gwascat "pubMedID;author;trait;initSample"
 #if(Test)opt=list(gwascat='meanMaxcIMT_eurld_all.csv',gwas='meanMaxcIMT_eurld_range.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0',beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='out',ldblock_file='meanMaxcIMT_eurld_ldinfo_ld.out',min_pvalue='0.0001',min_r2=0.5,info_gwascat="pubMedID;author;trait;initSample")
@@ -152,8 +152,8 @@ if(!is.null(headaf)){
 
 #dataldallcat<-rbind(datalda1,datalda2)
 
-dataresall<-merge(data_resumld,datagwascat, all.x=T, by.x=c('CHR', 'BP'), by.y=c(headchrcat,headbpcat))
-dataresall<-as.data.frame(merge(dataresall, datagwas, all.x=T, by.x=c('CHR', 'BP'), by.y=c(headchr, headbp)))
+dataresall<-merge(data_resumld,datagwascat, all.x=T, by.x=c('CHR', 'BP'), by.y=c(headchrcat,headbpcat),allow.cartesian=TRUE)
+dataresall<-as.data.frame(merge(dataresall, datagwas, all.x=T, by.x=c('CHR', 'BP'), by.y=c(headchr, headbp), allow.cartesian=TRUE))
 
 
 write.table(dataresall, file=paste(opt[['out']],'_all.txt',sep=''), row.names=F, col.names=T,quote=F, sep='\t')
@@ -174,7 +174,7 @@ bpmin<-aggregate(as.formula(paste("BP~block")), data=dataresall, min)
 bpmax<-aggregate(as.formula(paste("BP~block")), data=dataresall, max)
 #wh.minpvaldata<-aggregate(as.formula(paste('cbind(',headbp,',',headpval,')',"~block")), data=dataresall,function(x)print(x))
 
-infobloc<-merge(merge(chro, bpmin, by='block'),bpmax, by='block')
+infobloc<-merge(merge(chro, bpmin, by='block',allow.cartesian=TRUE),bpmax, by='block',allow.cartesian=TRUE)
 
 minpvaldata<-aggregate(as.formula(paste(headpval,"~block")), data=dataresall, min);names(minpvaldata)<-c('block', 'min_pval')
 dataresalltmp<-merge(dataresall,minpvaldata, by='block')
