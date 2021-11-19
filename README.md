@@ -37,7 +37,7 @@ pipeline do different step of GWAS :
 
 
 ## What's new :
- * see [What's news](News.md)
+ * see [What's new](News.md)
 
 ## Background
 
@@ -53,7 +53,7 @@ We have moved all scripts from Python 2 to Python 3, so you will need to have Py
 _Please ignore the Wiki in this version which refers to version 1_
 
 
-## Questions and feeback
+## Questions and feedback
 
 Problems with the workflow should be raised as an [issue](https://github.com/h3abionet/h3agwas/issues) on this  GitHub repo. (If you think the probem is the workflow)
 
