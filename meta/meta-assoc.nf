@@ -66,6 +66,8 @@ params.plink_mem_req="10G"
 params.big_time = '1000h'
 params.file_config=''
 
+params.output_dir="output/"
+
 params.metasoft_pvalue_table="/opt/bin/HanEskinPvalueTable.txt"
 params.ma_metasoft_opt=""
 
