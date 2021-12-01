@@ -69,6 +69,7 @@ The key options are:
        * `ma_random_effect` : do mixed model (default 1)
        * `ma_mrmega_pc` : how many pcs used for mrmega (default : 4)
        * `ma_mrmega_opt` : append other option in MR-MEGA command line (default : null)
+    * `us_rs` : if you want chromosome and position are replaced using rs (warning you need to be sure that one chromosome position has same rs in each file), [default 0, yes : 1], otherwise they will used chromosome and position to replaced rs
 ### specificity 
 #### MR-MEGA
 MR-MEGA need chromosomes, positions and N (sample number) for each position, so in pipeline referent file (in file_config, 1 in IsRefFile) must be have chromosome and poosition

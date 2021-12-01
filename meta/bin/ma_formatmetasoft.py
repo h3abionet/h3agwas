@@ -35,7 +35,7 @@ fout=open(out+'.meta','w')
 #fmap=open(out+'.mmap','w')
 flog=open(out+'.log','w')
 fpivot=open(out+'.pivot','w')
-fpivot.write("rs\tA1\tA2\n")
+fpivot.write("rs\tA1\tA2\tCHR\tBP\n")
 
 
 def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBetHead, PosPHead,PosSError) :
@@ -99,7 +99,7 @@ for f in files:
     listrsfile=set([])
     study={}
     fin=open(f)
-    colnames=fin.readline().split()
+    colnames=fin.readline().replace('\n','').split()
     CompSE=False
     if SError not in colnames:
        CompSE=True
@@ -110,10 +110,12 @@ for f in files:
        print("no beta in "+ f+" : skip")
        continue
     newfileslist.append(os.path.basename(f))
-    PosA1Head=None
-    PosA2Head=None
+    PosA1Head=-1
+    PosA2Head=-1
     PosPHead=None
     PosSError=None
+    PosPosHead=-1
+    PosChroHead=-1
     if A1Head in colnames :
        PosA1Head=colnames.index(A1Head)
     if A2Head in colnames:
@@ -122,6 +124,10 @@ for f in files:
        PosPHead=colnames.index(PHead)
     if SError in  colnames:
        PosSError=colnames.index(SError)
+    if PsHead in colnames :
+       PosPosHead=colnames.index(PsHead)
+    if ChHead in colnames :
+       PosChroHead=colnames.index(ChHead)
     PosBetHead=colnames.index(BetHead)
     PosRsHead=colnames.index(rsHead)
     for line in fin:
@@ -130,18 +136,19 @@ for f in files:
         if rsid not in listrsall :
            listrsall.add(rsid)
            rsidschar[rsid]=rsid+" "+"NA NA "*CmtFile
-           if PosA2Head and PosA1Head:
+           if PosA2Head>=0 and PosA1Head>=0:
+             if PosPosHead>=0 and PosChroHead>=0 :
+               fpivot.write("\t".join([rsid,spll[PosA1Head],spll[PosA2Head], spll[PosChroHead],spll[PosPosHead]])+"\n")
+             else :  
+               fpivot.write("\t".join([rsid,spll[PosA1Head],spll[PosA2Head], 'NA', 'NA'])+"\n")
              rsidsinfo[rsid]=[0,spll[PosA1Head],spll[PosA2Head]]
         if rsid not in listrsfile :
-           if not spll[PosA1Head] or  not spll[PosA2Head]:
-              if PosA2Head and PosA1Head:
-                fpivot.write("\t".join([rsid,spll[PosA1Head],spll[PosA2Head]])+"\n")
-                rsidsinfo[rsid][0]=[rsidsinfo[rsid][0] , spll[PosA1Head],spll[PosA2Head]]
-           charInfo=GetInfoRsGWAS(rsid, spll,rsidsinfo[rsid][1], rsidsinfo[rsid][2],CompSE, PosA1Head, PosA2Head, PosBetHead, PosPHead,PosSError)
-           rsidschar[rsid]+=charInfo
-           if "NA" not in charInfo :
+           if rsid in rsidsinfo :
+             charInfo=GetInfoRsGWAS(rsid, spll,rsidsinfo[rsid][1], rsidsinfo[rsid][2],CompSE, PosA1Head, PosA2Head, PosBetHead, PosPHead,PosSError)
+             rsidschar[rsid]+=charInfo
+             if "NA" not in charInfo :
                rsidsinfo[rsid][0]+=1  
-           listrsfile.add(rsid)
+             listrsfile.add(rsid)
         else :
            print("rs "+ rsid +" multi times :skip "+f)
     toappend=[x for x in listrsall if x not in listrsfile]

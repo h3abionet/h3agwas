@@ -109,29 +109,39 @@ if(args.rs_ref) :
   else :
      baliserepchrpos=True
      ls_rs_dic={}
+     ls_chrps_dic={}
      ls_rs=set([])
      for l in open_rs :
         rsspl=l.replace('\n', '').split()
         ls_rs.add(rsspl[0])
         ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2]]
+        if rsspl[1] not in ls_chrps_dic :
+          ls_chrps_dic[rsspl[1]]={} 
+        ls_chrps_dic[rsspl[1]][rsspl[2]]=rsspl[0]
 
-## sear
-if baliserepchrpos :
-  if 'Pos' in l_newhead :
-     PosPos=l_newhead.index('Pos')
-     del l_oldhead[PosPos]
-     del l_newhead[PosPos]
-  
-  if 'Chro' in l_newhead :
-     PosPos=l_newhead.index('Chro')
-     del l_oldhead[PosPos]
-     del l_newhead[PosPos]
+     
 
   
 head_inp=read.readline().replace('\n','').split(sep)
 ps_rsId_inp=head_inp.index(rsId_inp)
 ps_head=GetPosHead(head_inp,l_oldhead)
 print(ps_head)
+## sear
+if baliserepchrpos :
+  if 'Pos' in l_newhead :
+     HeadPosI=l_newhead.index('Pos')
+     HeadPos=head_inp.index(l_oldhead[HeadPosI])
+     del l_oldhead[HeadPosI]
+     del l_newhead[HeadPosI]
+  else :
+    baliserepchrpos=False
+  if 'Chro' in l_newhead :
+     HeadChroI=l_newhead.index('Chro')
+     HeadChro=head_inp.index(l_oldhead[HeadChroI])
+     del l_oldhead[HeadChroI ]
+     del l_newhead[HeadChroI]
+  else :
+      baliserepchrpos=False
 
 balchangA1=False
 balchangA2=False
@@ -181,6 +191,7 @@ def checkfloat(tmp, listposfloat):
 write=open(args.out_file,'w')
 writeplk=open(args.out_file+'.plk','w')
 if baliserepchrpos :
+   print(baliserepchrpos)
    l_newhead+=["CHRO", "POS"]
    l_newheadplk+=["CHR", "BP"]
    headtmp=[x.upper() for x in l_newhead]
@@ -192,7 +203,9 @@ if baliserepchrpos :
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
-     if  spl[ps_rsId_inp] in ls_rs :
+     #if  spl[ps_rsId_inp] in ls_rs :
+     if  (spl[HeadChro] in ls_chrps_dic) and (spl[HeadPos] in ls_chrps_dic[spl[HeadChro]]):
+       spl[ps_rsId_inp]=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
        spl=checkfloat(spl, listposfloat)
        if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
@@ -200,6 +213,7 @@ if baliserepchrpos :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        tmp=[checknull(spl[x]) for x in ps_head]
        tmp+=ls_rs_dic[spl[ps_rsId_inp]]
+       tmp.append(ls_chrps_dic[spl[HeadChro]][spl[HeadPos]])
        if Ncount  :
          tmp.append(Ncount)
        write.write(sep_out.join(tmp)+"\n")

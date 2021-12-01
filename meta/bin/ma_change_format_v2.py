@@ -118,10 +118,10 @@ if(args.rs_ref) :
      for l in open_rs :
         rsspl=l.replace('\n', '').split()
         ls_rs.add(rsspl[0])
-        ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2]]
+        ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2], rsspl[3],rsspl[4]]
         if rsspl[1] not in ls_chrps_dic :
           ls_chrps_dic[rsspl[1]]={} 
-        ls_chrps_dic[rsspl[1]][rsspl[2]]=rsspl[0]
+        ls_chrps_dic[rsspl[1]][rsspl[2]]=rsspl
      if args.use_rs==1:
        ## will replace chro pos using rs
        balise_use_rs=True   
@@ -134,8 +134,6 @@ if(args.rs_ref) :
   
 head_inp=read.readline().replace('\n','').split(sep)
 ps_rsId_inp=head_inp.index(rsId_inp)
-ps_head=GetPosHead(head_inp,l_oldhead)
-print(ps_head)
 ## sear
 if balise_use_rs :
   if 'Pos' in l_newhead :
@@ -146,7 +144,7 @@ if balise_use_rs :
   if 'Chro' in l_newhead :
      HeadChroI=l_newhead.index('Chro')
      HeadChro=head_inp.index(l_oldhead[HeadChroI])
-     del l_oldhead[HeadChroI ]
+     del l_oldhead[HeadChroI]
      del l_newhead[HeadChroI]
 
 if balise_use_chrps :
@@ -160,7 +158,13 @@ if balise_use_chrps :
      HeadChro=head_inp.index(l_oldhead[HeadChroI])
   else :
     balise_use_chrps=False
+  if 'rsID' in l_newhead :
+    PosIndexI=l_newhead.index('rsID')
+    del l_oldhead[PosIndexI]
+    del l_newhead[PosIndexI]
+    print("deleted index")
 
+ps_head=GetPosHead(head_inp,l_oldhead)
 
 balchangA1=False
 balchangA2=False
@@ -174,8 +178,8 @@ if 'A2' in l_newhead :
   ps_A2_inp=head_inp.index(A2_inp)
   balchangA2=True
 listposfloat=[]
-headplk=['FREQ','BETA', 'SE', 'P', 'N']
-headlist=['freqA1', 'Beta', 'Se', 'Pval', 'N']
+headplk=['RSID','CHR','BP','FREQ','BETA', 'SE', 'P', 'N']
+headlist=['SNP','Chro','Pos','freqA1', 'Beta', 'Se', 'Pval', 'N']
 cmthead=0
 l_newheadplk=[x for x in l_newhead]
 for head in headlist:
@@ -190,10 +194,11 @@ for head in headlist:
 #print(l_newhead)
 
 l_newheadplk=[x.upper() for x in l_newheadplk]
-if 'RSID' in l_newheadplk :
- l_newheadplk[l_newheadplk.index('RSID')]='SNP'
-else :
-  exit
+if balise_use_rs and ('SNP' not in l_newheadplk):
+   sys.exit('not rsid found')
+
+if balise_use_chrps and ('CHR' not in l_newheadplk) and ('BP' not in l_newheadplk):
+    sys.exit('chr and position column')
 
 p_minf=float('-inf')
 p_pinf=float('inf')
@@ -209,6 +214,8 @@ def checkfloat(tmp, listposfloat):
 
 write=open(args.out_file,'w')
 writeplk=open(args.out_file+'.plk','w')
+writeinfo=open(args.out_file+'.info','w')
+## merge by rs
 if balise_use_rs :
    l_newhead+=["CHRO", "POS"]
    l_newheadplk+=["CHR", "BP"]
@@ -233,9 +240,15 @@ if balise_use_rs :
          tmp.append(Ncount)
        write.write(sep_out.join(tmp)+"\n")
        writeplk.write(sep_out.join(tmp)+"\n")
+## balise use chro and positoin
 elif balise_use_chrps :
+   print(balise_use_chrps)
+   l_newhead+=['rsID']
+   l_newheadplk+=['SNP']
    headtmp=[x.upper() for x in l_newhead]
    headtmpplk=[x.upper() for x in l_newheadplk]
+   #headtmpplk[HeadChro]= 'CHR'
+   #headtmpplk[HeadPos]= 'BP'
    if Ncount :
       headtmp.append('N')
       headtmpplk.append('N')
@@ -244,14 +257,24 @@ elif balise_use_chrps :
    for line in read :
      spl=line.replace('\n','').split(sep)
      if  (spl[HeadChro] in ls_chrps_dic) and (spl[HeadPos] in ls_chrps_dic[spl[HeadChro]]):
-       spl[ps_rsId_inp]=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
+       #spl[ps_rsId_inp]=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
        spl=checkfloat(spl, listposfloat)
        if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
        if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        tmp=[checknull(spl[x]) for x in ps_head]
-       tmp+=ls_rs_dic[spl[ps_rsId_inp]]
+       #tmp.append(ls_chrps_dic[spl[HeadChro]][spl[HeadPos]])
+       if spl[ps_A1_inp] > spl[ps_A2_inp] :
+         AA1=spl[ps_A1_inp] 
+         AA2=spl[ps_A2_inp] 
+       else :
+         AA1=spl[ps_A2_inp] 
+         AA2=spl[ps_A1_inp] 
+       newrs=spl[HeadChro]+'_'+spl[HeadPos]+'_'+AA1+'_'+AA2
+       tmp.append(newrs)
+       infors2="\t".join(ls_chrps_dic[spl[HeadChro]][spl[HeadPos]])+"\t"+newrs
+       writeinfo.write(infors2+'\n')
        if Ncount  :
          tmp.append(Ncount)
        write.write(sep_out.join(tmp)+"\n")

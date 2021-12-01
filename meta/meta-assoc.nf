@@ -65,6 +65,7 @@ params.metasoft_mem_req="20G"
 params.plink_mem_req="10G"
 params.big_time = '1000h'
 params.file_config=''
+params.use_rs=0
 
 params.output_dir="output/"
 
@@ -162,7 +163,7 @@ process ChangeFormatFile {
        newfile_assoc=file_assoc+".modif"
        newfile_assocplk=file_assoc+".modif.plk"
        """
-       ma_change_format.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file --rs_ref $file_ref --sep_out TAB
+       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file --rs_ref $file_ref --sep_out TAB --use_rs ${params.use_rs}
        """
 }
 
@@ -290,7 +291,7 @@ if(params.metal==1){
     script:
       out = "metal"
       """
-      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header MarkerName --pval_header "P-value" --beta_header "Effect" --info_prog "Metal"
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header MarkerName --pval_header "P-value" --beta_header "Zscore" --info_prog "Metal"
       """
   }
   report_ch = report_ch.flatten().mix(report_Metal.flatten())
@@ -306,7 +307,7 @@ if(params.metasoft==1){
     memory metasoft_mem_req
     label 'metaanalyse'
     input :
-      val(list_file) from liste_file_metasoft
+      file(list_file) from liste_file_metasoft
       //file(file_pvaltab) from filepvaltable
     publishDir "${params.output_dir}/metasoft", overwrite:true, mode:'copy'
     output :
@@ -318,7 +319,7 @@ if(params.metasoft==1){
       """
       ma_formatmetasoft.py $out $lfile
       java -jar ${params.metasoft_bin} -input $out".meta"  -output $out".res"   -log $out".log" -pvalue_table $file_pvaltab ${params.ma_metasoft_opt}
-      ma_trans_outsetasoft.py $out".res" $out".files"  $out".format.res"
+      ma_trans_outsetasoft.py $out".res" $out".files" $out".pivot"  $out".format.res"
       """
   }
   process showMetasoft {
@@ -333,7 +334,7 @@ if(params.metasoft==1){
     script:
       out = "metasoft"
       """
-      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header RSID --pval_header "PVALUE_RE" --beta_header "BETA_RE" --info_prog "MetaSoft (Han and Eskin Random Effects model)"
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header rs --pval_header "PVALUE_RE" --beta_header "BETA_RE" --info_prog "MetaSoft (Han and Eskin Random Effects model)"
       """
   }
   report_ch = report_ch.flatten().mix(report_Metasoft.flatten())
@@ -436,7 +437,5 @@ process doReport {
     texf   = "${out}.tex"
     template "make_assoc_report.py"
 }
-
-
 
 
