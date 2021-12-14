@@ -141,11 +141,11 @@ process GetRsFile{
     input :
        file(file_assoc_rs) from file_info_ref_rs
        val(info_rs) from info_ref_rs
+    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
     output  :
        file(file_rs) into file_rs_ref_chan
     script :
         file_rs = file_assoc_rs+".rs"
-       publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
         """
         ma_extract_rsid.py --input_file $file_assoc_rs --out_file $file_rs --info_file $info_rs 
         """
