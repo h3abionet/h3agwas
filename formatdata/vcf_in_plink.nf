@@ -144,10 +144,10 @@ process formatvcfscore{
      file("${Ent}.bim") into listbimplink
      set val(Ent), file("${Ent}.bcf") into bcf_ch
   script :
-    Ent=vcf.baseName.baseName
+    Ent=vcf.baseName.replaceAll(/.vcf$/, '')
     """
     bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf | bcftools norm -Ou -m -any | bcftools norm -Ou -f $ref |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' > $Ent".bcf"
-  cat $Ent".vcf" |plink --bcf /dev/stdin \
+  cat $Ent".bcf" |plink --bcf /dev/stdin \
     --keep-allele-order \
     --vcf-idspace-to _ \
     --const-fid \

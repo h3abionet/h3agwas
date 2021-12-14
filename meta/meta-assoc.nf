@@ -291,7 +291,7 @@ if(params.metal==1){
     script:
       out = "metal"
       """
-      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header MarkerName --pval_header "P-value" --beta_header "Zscore" --info_prog "Metal"
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header MarkerName --pval_header "P-value" --beta_header Zscore,Effect --info_prog "Metal"
       """
   }
   report_ch = report_ch.flatten().mix(report_Metal.flatten())

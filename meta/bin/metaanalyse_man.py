@@ -13,6 +13,9 @@ import numpy as np
 import pandas as pd
 import sys
 
+def intersection(lst1, lst2):
+    lst3 = [value for value in lst1 if value in lst2]
+    return lst3
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='Produces Manhatten, QQ plot and supporting tex file  for output from some tools')
@@ -31,7 +34,7 @@ inp     = args.inp
 out     = args.out
 RsEnt=args.rs_header
 PvalueEnt=args.pval_header
-BEnt=args.beta_header
+BEntTmp=args.beta_header.split(',')
 NameProg=args.info_prog
 
 out_qq  = "%s-qq.pdf"%out
@@ -83,6 +86,8 @@ def get10Best(result):
     return best
 
 result = pd.read_csv(inp,delim_whitespace=True, keep_default_na=True, na_values=["nan","nane-nan", "NA"])
+BEnt=intersection(result.columns,BEntTmp)[0]
+
 
 result[PvalueEnt] = result[PvalueEnt].astype(float)
 sort_p = -np.log10(result[PvalueEnt].sort_values())
