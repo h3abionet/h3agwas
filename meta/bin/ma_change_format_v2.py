@@ -121,7 +121,7 @@ if(args.rs_ref) :
         ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2], rsspl[3],rsspl[4]]
         if rsspl[1] not in ls_chrps_dic :
           ls_chrps_dic[rsspl[1]]={} 
-        ls_chrps_dic[rsspl[1]][rsspl[2]]=rsspl
+        ls_chrps_dic[rsspl[1]][rsspl[2]]=[rsspl,rsspl[5]]
      if args.use_rs==1:
        ## will replace chro pos using rs
        balise_use_rs=True   
@@ -257,6 +257,7 @@ elif balise_use_chrps :
    for line in read :
      spl=line.replace('\n','').split(sep)
      if  (spl[HeadChro] in ls_chrps_dic) and (spl[HeadPos] in ls_chrps_dic[spl[HeadChro]]):
+       desRS=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
        #spl[ps_rsId_inp]=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
        spl=checkfloat(spl, listposfloat)
        if balchangA1 :
@@ -272,13 +273,14 @@ elif balise_use_chrps :
          AA1=spl[ps_A2_inp] 
          AA2=spl[ps_A1_inp] 
        newrs=spl[HeadChro]+'_'+spl[HeadPos]+'_'+AA1+'_'+AA2
-       tmp.append(newrs)
-       infors2="\t".join(ls_chrps_dic[spl[HeadChro]][spl[HeadPos]])+"\t"+newrs
-       writeinfo.write(infors2+'\n')
-       if Ncount  :
-         tmp.append(Ncount)
-       write.write(sep_out.join(tmp)+"\n")
-       writeplk.write(sep_out.join(tmp)+"\n")
+       if newrs ==  desRS[1] :
+         tmp.append(newrs)
+         infors2="\t".join(desRS[0])+"\t"+newrs
+         writeinfo.write(infors2+'\n')
+         if Ncount  :
+           tmp.append(Ncount)
+         write.write(sep_out.join(tmp)+"\n")
+         writeplk.write(sep_out.join(tmp)+"\n")
 elif args.rs_ref :
    headtmp=[x.upper() for x in l_newhead]
    headtmpplk=[x.upper() for x in l_newheadplk]

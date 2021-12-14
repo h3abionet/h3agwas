@@ -143,7 +143,7 @@ process GetRsFile{
        val(info_rs) from info_ref_rs
     publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
     output  :
-       file(file_rs) into file_rs_ref_chan
+       file(file_rs) into file_rs_ref_chan, file_ref_rs_metal
     script :
         file_rs = file_assoc_rs+".rs"
         """
@@ -158,7 +158,7 @@ process ChangeFormatFile {
     input :
       set file(file_assoc), val(info_file), file(file_ref) from liste_filesi_ch
     output :
-      file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega)
+      path(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega)
       file(newfile_assocplk) into liste_file_plk
     script :
        newfile_assoc=file_assoc+".modif"
@@ -265,11 +265,14 @@ if(params.metal==1){
     label 'metaanalyse'
     memory ma_mem_req
     input :
-      val(list_file) from liste_file_metal
+      file(list_file) from liste_file_metal
+      file(file_ref_rs) from file_ref_rs_metal
+      
     publishDir "${params.output_dir}/metal", overwrite:true, mode:'copy'
     output :
       file("${out}1.stat") into res_metal
-      set file("${out}1.stat"), file("${out}1.stat.info")
+      tuple file("${out}1.stat"), file("${out}1.stat.info")
+      path("${out}_metal.format")
     script :
       out = "metal_res"
       lfile=list_file.join("\t")
@@ -280,6 +283,7 @@ if(params.metal==1){
       echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
       ma_get_configmetal.py --filelist fileListe  --output_configmetal $metal_config  $gc  $vw --out_file_metal $out
       ${params.metal_bin} $metal_config
+      merge_summarystat.py --input_file ${out}1.stat --info_file $file_ref_rs --out_file $out"_metal.format"
       """
   }
   process showMetal {
