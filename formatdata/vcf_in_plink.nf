@@ -128,9 +128,9 @@ process dostat{
 }
 }
 ref_ch=Channel.fromPath(params.reffasta)
+list_vcf=ref_ch.combine(list_vcf)
 
 if(params.min_scoreinfo>0){
-list_vcf=ref_ch.combine(list_vcf)
 process formatvcfscore{
   label 'py3utils'
   cpus params.max_plink_cores
@@ -182,7 +182,7 @@ process formatvcf{
   memory params.plink_mem_req
   time   params.big_time
   input :
-     file(vcf) from list_vcf
+     tuple path(ref),path(vcf) from list_vcf
   output :
      set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
      file("${Ent}.bim") into listbimplink
