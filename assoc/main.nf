@@ -55,6 +55,8 @@ params.each { parm ->
 def params_help = new LinkedHashMap(helps)
 
 
+dummy_dir="${workflow.projectDir}/../qc/input"
+
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"
@@ -432,9 +434,9 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige>0){
 /* n*/
  if(params.file_rs_buildrelat==""){
    balise_filers_rel=0
-   filers_matrel_mat_fast=file('NO_FILE')
-   filers_matrel_mat_GWA=file('NO_FILE')
-   filers_matrel_mat_gem=file('NO_FILE')
+   filers_matrel_mat_fast=file("${dummy_dir}/0") 
+   filers_matrel_mat_GWA=file("${dummy_dir}/0") 
+   filers_matrel_mat_gem=file("${dummy_dir}/0") 
    if(params.boltlmm==1){
       //BoltNbMaxSnps=1000000
       process buildBoltFileSnpRel{
@@ -793,14 +795,14 @@ if (params.boltlmm == 1) {
   type_lmm="--lmm"
 
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
-  else rs_ch_exclude_bolt=file('NO_FILE')
+  else rs_ch_exclude_bolt=file("${dummy_dir}/01") 
 
   if(params.bolt_impute2filelist!=""){
   Impute2FileList=Channel.fromPath(params.bolt_impute2filelist, checkIfExists:true)
   Impute2FID = Channel.fromPath(params.bolt_impute2fidiid, checkIfExists:true)
   }else{
-  Impute2FileList=file('NO_FILE1')
-  Impute2FID = file('NO_FILE2')
+  Impute2FileList=file("${dummy_dir}/02")
+  Impute2FID = file("${dummy_dir}/03")
   }
   if(params.bolt_ld_score_file!=""){
      Bolt_ld_scoreI= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
@@ -821,13 +823,13 @@ if (params.boltlmm == 1) {
 
      }
   }else{
-     Bolt_ld_score = file('NO_FILE3')
+     Bolt_ld_score = file("${dummy_dir}/04") 
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
      Bolt_genetic_map= Channel.fromPath(params.genetic_map_file, checkIfExists:true)
   }else{
-     Bolt_genetic_map = file('NO_FILE4')
+     Bolt_genetic_map = file("${dummy_dir}/05") 
   }
 
   process doBoltmm{
@@ -914,34 +916,35 @@ if (params.gemma+params.gemma_gxe>0) {
   gem_ch_gemma_gxe = Channel.create()
   gemma_assoc_ch.separate (rel_ch_gemma, gem_ch_gemma, gem_ch_gemma_gxe, bim_ch_fast_gem) { a -> [a, a, a,a[1]] }
   if(params.gemma_mat_rel==""){
-  process getGemmaRel {
-    label 'gemma'
-    cpus params.gemma_num_cores
-    memory params.gemma_mem_req
-    time params.big_time
-    input:
-       file plinks from rel_ch_gemma
-       file file_rs from filers_matrel_mat_gem
-    publishDir "${params.output_dir}/gemma/rel", overwrite:true, mode:'copy'
-    output:
-       file("output/${base}.*XX.txt") into (rel_mat_ch, rel_mat_ch_gxe)
-    script:
-       base = plinks[0].baseName
-       famfile=base+".fam"
-       rs_list = balise_filers_rel==1 ? " -snps $file_rs " : ""
-       """
-       export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
-       ${params.gemma_bin} -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
-       """
-  }
-  }else{
-   rel_mat_ch=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true) 
-   rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true) 
-  }
-}
+     process getGemmaRel {
+       label 'gemma'
+       cpus params.gemma_num_cores
+       memory params.gemma_mem_req
+       time params.big_time
+       input:
+	  file plinks from rel_ch_gemma
+	  file file_rs from filers_matrel_mat_gem
+       publishDir "${params.output_dir}/gemma/rel", overwrite:true, mode:'copy'
+       output:
+	  file("output/${base}.*XX.txt") into (rel_mat_ch, rel_mat_ch_gxe)
+       script:
+	  base = plinks[0].baseName
+	  famfile=base+".fam"
+	  rs_list = balise_filers_rel==1 ? " -snps $file_rs " : ""
+	  """
+	  export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
+	  cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
+	  ${params.gemma_bin} -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
+	  """
+     }
+     }else{
+      rel_mat_ch=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true) 
+      rel_mat_ch_gxe=Channel.fromPath(params.gemma_mat_rel, checkIfExists:true) 
+     }
 
-if(params.gemma_multi==1){
+   }
+
+   if(params.gemma_multi==1){
      process getListeChroGem{
         input :
           file(BimFile) from bim_ch_fast_gem
@@ -951,153 +954,161 @@ if(params.gemma_multi==1){
          """
          cat $BimFile|awk '{print \$1}'|uniq|sort|uniq
         """
-     }
-  check2 = Channel.create()
-  list_chro_gemma=chrolist_gem.flatMap { list_str -> list_str.split() }.tap ( check2)
-  check2 = Channel.create()
-  list_chro_gemma_gxe=chrolisti_gem_gxe.flatMap { list_str -> list_str.split() }.tap ( check2)
+      }
+
+
+      check2 = Channel.create()
+      list_chro_gemma=chrolist_gem.flatMap { list_str -> list_str.split() }.tap ( check2)
+      check2 = Channel.create()
+      list_chro_gemma_gxe=chrolisti_gem_gxe.flatMap { list_str -> list_str.split() }.tap ( check2)
 
 
 
-}
-if (params.gemma == 1){
-  ind_pheno_cols_ch = newNamePheno(params.pheno)
+   }
 
-  if (params.covariates)
-     covariate_option = "--cov_list ${params.covariates}"
-  else
-     covariate_option = ""
-   if(params.rs_list==""){
-        rsfile=file('NO_FILE5')
-     }else{
+   
+  if (params.gemma == 1){
+      ind_pheno_cols_ch = newNamePheno(params.pheno)
+
+      if (params.covariates)
+        covariate_option = "--cov_list ${params.covariates}"
+      else
+         covariate_option = ""
+      if(params.rs_list=="")
+        rsfile=file("${dummy_dir}/06")
+       else
         rsfile=file(params.rs_list)
+ 
+
+
+      if(params.gemma_multi==1){
+
+      check2 = Channel.create()
+
+  process doGemmaChro{
+       maxForks params.max_forks
+       label 'gemma'
+       cpus params.gemma_num_cores
+       memory params.gemma_mem_req
+       time   params.big_time
+       input:
+	 file(covariates) from data_ch
+	 file(rel) from rel_mat_ch
+	 file(plinks) from  gem_ch_gemma
+	 file(rsfilelist) from rsfile
+       each this_pheno from ind_pheno_cols_ch
+       each chro from list_chro_gemma
+       output:
+	 file("${dir_gemma}/${out}.log.txt")
+	 set  val(our_pheno),file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro
+       script:
+	  our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+	  our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+	  our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+	  data_nomissing     = "pheno-"+our_pheno+".pheno"
+	  list_ind_nomissing = "lind-"+our_pheno+".lind"
+	  rel_matrix         = "newrel-"+our_pheno+".rel"
+	  base               =  plinks[0].baseName
+	  inp_fam            =  base+".fam"
+	  newbase            =  base+"-"+our_pheno
+	  newfam             =  newbase+".fam"
+	  gemma_covariate    = "${newbase}.gemma_cov"
+	  phef               = "${newbase}_n.phe"
+	  covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
+	  rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
+	  out                = "$base-$our_pheno-$chro"
+	  dir_gemma          =  "gemma"
+	  """
+	  hostname
+	  list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
+				--lindout $list_ind_nomissing
+	  gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
+	  plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase  ${rs_plk_gem} --chr $chro
+	  all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
+			     --pheno $our_pheno2 --phe_out ${phef} --form_out 1
+	  export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
+	  ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf}
+	  mv output ${dir_gemma}
+	  rm $rel_matrix
+	  rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
+	  """
+     }
+
+
+     gemma_manhatten_ch_chro_merge=gemma_manhatten_ch_chro.groupTuple()
+
+     process doMergeGemma{
+	     input :
+	       set (val(this_pheno),file(list_file), base_list) from  gemma_manhatten_ch_chro_merge
+	    publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
+	    output :
+		set val(base), val(our_pheno2), file("$out") into gemma_manhatten_ch
+	    script :
+		base=base_list[0]
+		our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+		our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+		out = "$base-${our_pheno}.gemma"
+		fnames = list_file.join(" ")
+		file1  = list_file[0]
+		"""
+		head -1 $file1 > $out
+		cat $fnames | grep -v "p_wald" >> $out
+		"""
+	}
+
+     } else {
+
+     process doGemma{
+       maxForks params.max_forks
+       label 'gemma'
+       cpus params.gemma_num_cores
+       memory params.gemma_mem_req
+       time   params.big_time
+       input:
+	 file(covariates) from data_ch
+	 file(rel) from rel_mat_ch
+	 file(plinks) from  gem_ch_gemma
+	 file(rsfilelist) from rsfile
+       each this_pheno from ind_pheno_cols_ch
+       publishDir params.output_dir, overwrite:true, mode:'copy'
+       output:
+	 file("${dir_gemma}/${out}.log.txt")
+	 set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch
+       script:
+	  our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+	  our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+	  our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+	  data_nomissing     = "pheno-"+our_pheno+".pheno"
+	  list_ind_nomissing = "lind-"+our_pheno+".lind"
+	  rel_matrix         = "newrel-"+our_pheno+".rel"
+	  base               =  plinks[0].baseName
+	  inp_fam            =  base+".fam"
+	  newbase            =  base+"-"+our_pheno
+	  newfam             =  newbase+".fam"
+	  gemma_covariate    = "${newbase}.gemma_cov"
+	  phef               = "${newbase}_n.phe"
+	  covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
+	  rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
+	  out                = "$base-$our_pheno"
+	  dir_gemma          =  "gemma"
+	  """
+	  list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
+				--lindout $list_ind_nomissing
+	  gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
+	  plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase  ${rs_plk_gem}
+	  all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
+			     --pheno $our_pheno2 --phe_out ${phef} --form_out 1
+	  export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
+	  ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf}
+	  mv output ${dir_gemma}
+	  rm $rel_matrix
+	  rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
+	  """
+      }
    }
 
 
- if(params.gemma_multi==1){
-
-  check2 = Channel.create()
-
-  process doGemmaChro{
-    maxForks params.max_forks
-    label 'gemma'
-    cpus params.gemma_num_cores
-    memory params.gemma_mem_req
-    time   params.big_time
-    input:
-      file(covariates) from data_ch
-      file(rel) from rel_mat_ch
-      file(plinks) from  gem_ch_gemma
-      file(rsfilelist) from rsfile
-    each this_pheno from ind_pheno_cols_ch
-    each chro from list_chro_gemma
-    output:
-      file("${dir_gemma}/${out}.log.txt")
-      set  val(our_pheno),file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro
-    script:
-       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
-       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
-       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
-       data_nomissing     = "pheno-"+our_pheno+".pheno"
-       list_ind_nomissing = "lind-"+our_pheno+".lind"
-       rel_matrix         = "newrel-"+our_pheno+".rel"
-       base               =  plinks[0].baseName
-       inp_fam            =  base+".fam"
-       newbase            =  base+"-"+our_pheno
-       newfam             =  newbase+".fam"
-       gemma_covariate    = "${newbase}.gemma_cov"
-       phef               = "${newbase}_n.phe"
-       covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
-       rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
-       out                = "$base-$our_pheno-$chro"
-       dir_gemma          =  "gemma"
-       """
-       hostname
-       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
-                             --lindout $list_ind_nomissing
-       gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
-       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase  ${rs_plk_gem} --chr $chro
-       all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
-                          --pheno $our_pheno2 --phe_out ${phef} --form_out 1
-       export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf}
-       mv output ${dir_gemma}
-       rm $rel_matrix
-       rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
-       """
-}
-     gemma_manhatten_ch_chro_merge=gemma_manhatten_ch_chro.groupTuple()
-     process doMergeGemma{
-          input :
-            set (val(this_pheno),file(list_file), base_list) from  gemma_manhatten_ch_chro_merge
-         publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
-         output :
-             set val(base), val(our_pheno2), file("$out") into gemma_manhatten_ch
-         script :
-             base=base_list[0]
-             our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
-             our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
-             out = "$base-${our_pheno}.gemma"
-             fnames = list_file.join(" ")
-             file1  = list_file[0]
-             """
-             head -1 $file1 > $out
-             cat $fnames | grep -v "p_wald" >> $out
-             """
-     }
-
-  }else{
-  process doGemma{
-    maxForks params.max_forks
-    label 'gemma'
-    cpus params.gemma_num_cores
-    memory params.gemma_mem_req
-    time   params.big_time
-    input:
-      file(covariates) from data_ch
-      file(rel) from rel_mat_ch
-      file(plinks) from  gem_ch_gemma
-      file(rsfilelist) from rsfile
-    each this_pheno from ind_pheno_cols_ch
-    publishDir params.output_dir, overwrite:true, mode:'copy'
-    output:
-      file("${dir_gemma}/${out}.log.txt")
-      set val(newbase), val(our_pheno), file("${dir_gemma}/${out}.assoc.txt") into gemma_manhatten_ch
-    script:
-       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
-       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
-       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
-       data_nomissing     = "pheno-"+our_pheno+".pheno"
-       list_ind_nomissing = "lind-"+our_pheno+".lind"
-       rel_matrix         = "newrel-"+our_pheno+".rel"
-       base               =  plinks[0].baseName
-       inp_fam            =  base+".fam"
-       newbase            =  base+"-"+our_pheno
-       newfam             =  newbase+".fam"
-       gemma_covariate    = "${newbase}.gemma_cov"
-       phef               = "${newbase}_n.phe"
-       covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
-       rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
-       out                = "$base-$our_pheno"
-       dir_gemma          =  "gemma"
-       """
-       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $our_pheno3 --dataout $data_nomissing \
-                             --lindout $list_ind_nomissing
-       gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
-       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase  ${rs_plk_gem}
-       all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
-                          --pheno $our_pheno2 --phe_out ${phef} --form_out 1
-       export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf}
-       mv output ${dir_gemma}
-       rm $rel_matrix
-       rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
-       """
-  }
-  }
-
-
-  process showGemmaManhatten {
+   process showGemmaManhatten {
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     label 'bigMem'
@@ -1114,13 +1125,13 @@ if (params.gemma == 1){
   }
 
 
-} else {
-  report_gemma_ch = Channel.empty()
-}
+  } else {
+     report_gemma_ch = Channel.empty()
+  }
 
 
-if (params.gemma_gxe == 1){
-  data_ch_gxe = Channel.fromPath(params.data, checkIfExists:true)
+  if (params.gemma_gxe == 1){
+     data_ch_gxe = Channel.fromPath(params.data, checkIfExists:true)
    
   if (params.gemma_gxe) 
     gxe_option = "--gxe ${params.gxe}"
@@ -1131,64 +1142,66 @@ if (params.gemma_gxe == 1){
   else
      covariate_option = ""
    if(params.rs_list==""){
-        rsfile=file('NO_FILERS')
+        rsfile=file("${dummy_dir}/07") 
      }else{
         rsfile=file(params.rs_list)
    }
 
- if(params.gemma_multi==1){
-  ind_pheno_cols_ch_gxe_multi = newNamePheno(params.pheno)
-process doGemmaGxEChro{
-    maxForks params.max_forks
-    cpus params.gemma_num_cores
-    memory params.gemma_mem_req
-    time   params.big_time
-    input:
-      file(covariates) from data_ch_gxe
-      file(rel) from rel_mat_ch_gxe
-      file(plinks) from  gem_ch_gemma_gxe
-      file(rsfilelist) from rsfile
-    each this_pheno from ind_pheno_cols_ch_gxe_multi
-    each chro from list_chro_gemma_gxe
-    publishDir params.output_dir, overwrite:true, mode:'copy'
-    output:
-      file("${dir_gemma}/${out}.log.txt")
-      set val(our_pheno3), file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro_gxe
-    script:
-       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
-       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
-       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
-       data_nomissing     = "pheno-"+our_pheno+".pheno"
-       list_ind_nomissing = "lind-"+our_pheno+".lind"
-       rel_matrix         = "newrel-"+our_pheno+".rel"
-       base               =  plinks[0].baseName
-       inp_fam            =  base+".fam"
-       newbase            =  base+"-"+our_pheno
-       newfam             =  newbase+".fam"
-       gemma_covariate    = "${newbase}.gemma_cov"
-       gemma_gxe          = "${newbase}.gemma_gxe"
-       phef               = "${newbase}_n.phe"
-       covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
-       gxe_opt_gemma      =  (params.gemma_gxe) ? " -gxe $gemma_gxe " : ""
-       out                = "$base-$our_pheno-$chro"
-       dir_gemma          =  (params.gemma_gxe) ? "gemma_gxe" : "gemma"
-       rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
-       """
-       list_ind_nomissing.py --data $covariates --inp_fam $inp_fam --cov_list ${params.covariates},${params.gxe} --pheno $our_pheno3 --dataout $data_nomissing \
-                             --lindout $list_ind_nomissing
-       gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
-       plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase ${rs_plk_gem}  --chr $chro
-       all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
-                          --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
-       export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
-       ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf} $gxe_opt_gemma
-       mv output ${dir_gemma}
-       rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
-       """
-  }
+   if(params.gemma_multi==1){
+     ind_pheno_cols_ch_gxe_multi = newNamePheno(params.pheno)
+
+    process doGemmaGxEChro{
+       maxForks params.max_forks
+       cpus params.gemma_num_cores
+       memory params.gemma_mem_req
+       time   params.big_time
+       input:
+	 file(covariates) from data_ch_gxe
+	 file(rel) from rel_mat_ch_gxe
+	 file(plinks) from  gem_ch_gemma_gxe
+	 file(rsfilelist) from rsfile
+       each this_pheno from ind_pheno_cols_ch_gxe_multi
+       each chro from list_chro_gemma_gxe
+       publishDir params.output_dir, overwrite:true, mode:'copy'
+       output:
+	 file("${dir_gemma}/${out}.log.txt")
+	 set val(our_pheno3), file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro_gxe
+       script:
+	  our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+	  our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+	  our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+	  data_nomissing     = "pheno-"+our_pheno+".pheno"
+	  list_ind_nomissing = "lind-"+our_pheno+".lind"
+	  rel_matrix         = "newrel-"+our_pheno+".rel"
+	  base               =  plinks[0].baseName
+	  inp_fam            =  base+".fam"
+	  newbase            =  base+"-"+our_pheno
+	  newfam             =  newbase+".fam"
+	  gemma_covariate    = "${newbase}.gemma_cov"
+	  gemma_gxe          = "${newbase}.gemma_gxe"
+	  phef               = "${newbase}_n.phe"
+	  covar_opt_gemma    =  (params.covariates) ?  " -c $gemma_covariate " : ""
+	  gxe_opt_gemma      =  (params.gemma_gxe) ? " -gxe $gemma_gxe " : ""
+	  out                = "$base-$our_pheno-$chro"
+	  dir_gemma          =  (params.gemma_gxe) ? "gemma_gxe" : "gemma"
+	  rs_plk_gem         =  (params.rs_list) ?  " --extract  $rsfilelist" : ""
+	  """
+	  list_ind_nomissing.py --data $covariates --inp_fam $inp_fam --cov_list ${params.covariates},${params.gxe} --pheno $our_pheno3 --dataout $data_nomissing \
+				--lindout $list_ind_nomissing
+	  gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
+	  plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase ${rs_plk_gem}  --chr $chro
+	  all_covariate.py --data  $data_nomissing --inp_fam  ${newbase}.fam $covariate_option --cov_out $gemma_covariate \
+			     --pheno $our_pheno2 --phe_out ${phef} --form_out 1 --gxe_out $gemma_gxe $gxe_option
+	  export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
+	  ${params.gemma_bin} -bfile $newbase ${covar_opt_gemma}  -k $rel_matrix -lmm 1  -n 1 -p $phef -o $out -maf ${params.cut_maf} $gxe_opt_gemma
+	  mv output ${dir_gemma}
+	  rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
+	  """
+     }
 
 
      gemma_manhatten_ch_chro_gxe_merge=gemma_manhatten_ch_chro_gxe.groupTuple()
+
      process doMergeGemmaGxE{
           input :
             set (val(this_pheno),file(list_file), base_list) from  gemma_manhatten_ch_chro_gxe_merge
@@ -1208,7 +1221,7 @@ process doGemmaGxEChro{
              cat $fnames | grep -v "p_wald" >> $out
              """
      }
-  }else{
+   } else {
 
    ind_pheno_cols_ch = newNamePheno(params.pheno)
 
@@ -1259,7 +1272,8 @@ process doGemmaGxEChro{
        rm ${newbase}.bed ${newbase}.bim ${newbase}.fam
        """
   } 
-}
+   }
+   
   gemma_manhatten_ch_gxe_freq= gemma_manhatten_ch_gxe_i.combine(Channel.fromPath(params.data, checkIfExists:true)).combine(assoc_ch_gxe_freq)
   process AddedFreqGxEGemma{
     cpus params.gemma_num_cores
@@ -1296,9 +1310,9 @@ process doGemmaGxEChro{
   }
 
     
-} else {
-  report_gemma_ch_GxE=Channel.empty()
-} 
+  } else {
+    report_gemma_ch_GxE=Channel.empty()
+  } 
 
 
 if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
@@ -1357,21 +1371,23 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
       """
   }
 
-report_plink_ch=report_plink.groupTuple()
+  report_plink_ch=report_plink.groupTuple()
 
 } else {
   report_plink_ch = Channel.empty()
 }
 
+
+
+
 if (params.plink_gxe==1) {
   data_ch_plk_gxe = Channel.fromPath(params.data, checkIfExists:true)
   pheno_label_ch_gxe = Channel.from(params.pheno.split(","))
-   if(params.rs_list==""){
-        rsfile_plkgxe=file('NO_FILERS')
-     }else{
-        rsfile_plkgxe=file(params.rs_list, checkIfExists=true)
-   }
-
+  
+  if (params.rs_list=="")
+    rsfile_plkgxe=file("${dummy_dir}/08")
+  else
+    rsfile_plkgxe=file(params.rs_list, checkIfExists=true)
 
   process computePlinkGxE {
     cpus num_assoc_cores
@@ -1401,9 +1417,9 @@ if (params.plink_gxe==1) {
 
 
        """
- }
+   }
 
-  process showPlinkManhattenGxE {
+   process showPlinkManhattenGxE {
     label 'gcta'
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
@@ -1424,100 +1440,101 @@ if (params.plink_gxe==1) {
 
 if(params.fastgwa==1){
 
-if(params.gcta_grmfile==""){
- process FastGWADoGRM{
-    cpus params.fastgwa_num_cores
-    maxForks params.max_forks
-    label 'gcta'
-    memory params.fastgwa_mem_req
-    input :
-     set file(bed),file(bim),file(fam) from grlm_assoc_ch
-     file file_rs from filers_matrel_mat_GWA
-   each mpart from 1..params.grm_nbpart
-   output : 
-    file("mgrm.part_*.grm.id") into idgrm
-    file("mgrm.part_*.grm.bin") into bingrm
-    file("mgrm.part_*.grm.N.bin") into nbingrm
-   script :
-     rs_list = balise_filers_rel==1 ? " --extract  $file_rs " : ""
+   if(params.gcta_grmfile==""){
+    process FastGWADoGRM{
+       cpus params.fastgwa_num_cores
+       maxForks params.max_forks
+       label 'gcta'
+       memory params.fastgwa_mem_req
+       input :
+	set file(bed),file(bim),file(fam) from grlm_assoc_ch
+	file file_rs from filers_matrel_mat_GWA
+      each mpart from 1..params.grm_nbpart
+      output : 
+       file("mgrm.part_*.grm.id") into idgrm
+       file("mgrm.part_*.grm.bin") into bingrm
+       file("mgrm.part_*.grm.N.bin") into nbingrm
+      script :
+	rs_list = balise_filers_rel==1 ? " --extract  $file_rs " : ""
 
-     base   = bed.baseName
-     """
-     hostname
-     ${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_num_cores} --out mgrm $rs_list --maf  ${params.grm_maf}
-     """
- }
-
-
-  idgrm_c=idgrm.collect()
-  bingrm_c=bingrm.collect()
-  nbingrm_c=nbingrm.collect()
-  process MergFastGWADoGRM{
-    label 'gcta'
-    memory params.fastgwa_mem_req
-    cpus params.fastgwa_num_cores
-    input :
-      file(idgrmallf) from idgrm_c
-      file(bingrmallf) from bingrm_c
-      file(nbingrmallf) from nbingrm_c
-    publishDir "${params.output_dir}/fastgwa/grm/", overwrite:true, mode:'copy'
-    output :
-      set val(head),file('test_sp_grm.grm.id'), file('test_sp_grm.grm.sp') into grm_all
-    script :
-      head='test_sp_grm' 
-      """
-      cat mgrm.part_*_*.grm.id > test_grm.grm.id
-      cat mgrm.part_*_*.grm.bin > test_grm.grm.bin
-      cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
-      ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_num_cores}
-      """
-  }
-}else{
-  grm_all=Channel.from("${params.gcta_grmfile}").combine(Channel.fromPath("${params.gcta_grmfile}.grm.id", checkIfExists:true).combine(Channel.fromPath("${params.gcta_grmfile}.grm.sp", checkIfExists:true)))
-}
-data_ch_fastgwa= Channel.fromPath(params.data, checkIfExists:true)
+	base   = bed.baseName
+	"""
+	hostname
+	${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_num_cores} --out mgrm $rs_list --maf  ${params.grm_maf}
+	"""
+    }
 
 
-pheno_spl_gcta=params.pheno.split(',')
+     idgrm_c=idgrm.collect()
+     bingrm_c=bingrm.collect()
+     nbingrm_c=nbingrm.collect()
+     process MergFastGWADoGRM{
+       label 'gcta'
+       memory params.fastgwa_mem_req
+       cpus params.fastgwa_num_cores
+       input :
+	 file(idgrmallf) from idgrm_c
+	 file(bingrmallf) from bingrm_c
+	 file(nbingrmallf) from nbingrm_c
+       publishDir "${params.output_dir}/fastgwa/grm/", overwrite:true, mode:'copy'
+       output :
+	 set val(head),file('test_sp_grm.grm.id'), file('test_sp_grm.grm.sp') into grm_all
+       script :
+	 head='test_sp_grm' 
+	 """
+	 cat mgrm.part_*_*.grm.id > test_grm.grm.id
+	 cat mgrm.part_*_*.grm.bin > test_grm.grm.bin
+	 cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
+	 ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_num_cores}
+	 """
+     }
+   }else{
+     grm_all=Channel.from("${params.gcta_grmfile}").combine(Channel.fromPath("${params.gcta_grmfile}.grm.id", checkIfExists:true).combine(Channel.fromPath("${params.gcta_grmfile}.grm.sp", checkIfExists:true)))
+   }
+   data_ch_fastgwa= Channel.fromPath(params.data, checkIfExists:true)
 
-  if (params.covariates)
-     covariate_option = "--cov_list ${params.covariates}"
-  else
+
+   pheno_spl_gcta=params.pheno.split(',')
+
+    if (params.covariates)
+      covariate_option = "--cov_list ${params.covariates}"
+   else
      covariate_option = ""
 
-balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
-balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
-process FastGWARun{
-    maxForks params.max_forks
-    label 'gcta'
-    memory params.fastgwa_mem_req
-    cpus params.fastgwa_num_cores
-    input :
-       set val(head),file(alldigrm), file(allbingrm) from grm_all
-       set file(bed),file(bim),file(fam) from fastgwa_assoc_ch 
-       file(covariates) from data_ch_fastgwa
-    publishDir "${params.output_dir}/fastgwa/", overwrite:true, mode:'copy'
-    each this_pheno from pheno_spl_gcta
-    output :
-       set val(base), val(this_pheno), file("${out}.fastGWA") into fastgwa_manhatten_ch
-    script :
-     base=bed.baseName
-     phef = "${base}_fastgwa_n.phe"
-     covfilequant= "${base}_fastgwa_n.cov"
-     covfilequal = "${base}_fastgwa_n.covqual"
-     covquant_fastgwa = (balquantcov) ?  " --qcovar $covfilequant " : ""
-     our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
-     our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
-     our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
-     out                = "$base-$our_pheno"
-     covqual_fastgwa = (balqualcov) ? " --covar $covfilequal " : ""
-     covqual_cov = (balqualcov) ? " --cov_type ${params.covariates_type} --covqual_file $covfilequal " : ""
-     """
-     all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
-     ${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa --maf ${params.cut_maf}
-     """
-}
-  process showFastGWAManhatten {
+   balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
+   balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
+   process FastGWARun{
+       maxForks params.max_forks
+       label 'gcta'
+       memory params.fastgwa_mem_req
+       cpus params.fastgwa_num_cores
+       input :
+	  set val(head),file(alldigrm), file(allbingrm) from grm_all
+	  set file(bed),file(bim),file(fam) from fastgwa_assoc_ch 
+	  file(covariates) from data_ch_fastgwa
+       publishDir "${params.output_dir}/fastgwa/", overwrite:true, mode:'copy'
+       each this_pheno from pheno_spl_gcta
+       output :
+	  set val(base), val(this_pheno), file("${out}.fastGWA") into fastgwa_manhatten_ch
+       script :
+	base=bed.baseName
+	phef = "${base}_fastgwa_n.phe"
+	covfilequant= "${base}_fastgwa_n.cov"
+	covfilequal = "${base}_fastgwa_n.covqual"
+	covquant_fastgwa = (balquantcov) ?  " --qcovar $covfilequant " : ""
+	our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
+	our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
+	our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+	out                = "$base-$our_pheno"
+	covqual_fastgwa = (balqualcov) ? " --covar $covfilequal " : ""
+	covqual_cov = (balqualcov) ? " --cov_type ${params.covariates_type} --covqual_file $covfilequal " : ""
+	"""
+	all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
+	${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa --maf ${params.cut_maf}
+	"""
+   }
+
+   process showFastGWAManhatten {
    label 'py3fast'
    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
@@ -1535,7 +1552,7 @@ process FastGWARun{
   }
 
 }else{
-report_fastgwa_ch=Channel.empty()
+   report_fastgwa_ch=Channel.empty()
 }
 
 

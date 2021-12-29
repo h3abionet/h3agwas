@@ -220,6 +220,7 @@ def getSubChannel = { parm, parm_name, col_name ->
     filename = "emptyZ0${parm_name}.txt";
     new File(filename).createNewFile()  
     new_ch = Channel.fromPath(filename);
+    
   } else {
     if (! file(parm).exists()) {
      error("\n\nThe file <$parm> given for <params.${parm_name}> does not exist")
@@ -532,7 +533,7 @@ process identifyIndivDiscSexinfo {
      """
      plink --bfile $base  --hardy --missing  --out $base
      echo 'FID IID STATUS' > $sexcheck_report
-     echo 'No sex information available to check'  > $logfile
+     echo 'No sex information'  > $logfile
      """
 }
 
@@ -626,9 +627,13 @@ process removeQCPhase1 {
      # remove really realy bad SNPs and really bad individuals
      plink $K --autosome --bfile $base $sexinfo --mind 0.1 --geno 0.1 --make-bed --out temp1
      plink $K --bfile temp1  $sexinfo --mind $params.cut_mind --make-bed --out temp2
+     /bin/rm temp1*
      plink $K --bfile temp2  $sexinfo --geno $params.cut_geno --make-bed --out temp3
+     /bin/rm temp2*
      plink $K --bfile temp3  $sexinfo --maf $params.cut_maf --make-bed --out temp4
-     plink $K --bfile temp4  $sexinfo --hwe $params.cut_hwe --make-bed  --out $output 
+     /bin/rm temp3*
+     plink $K --bfile temp4  $sexinfo --hwe $params.cut_hwe --make-bed  --out $output
+     /bin/rm temp4*
      cat *log > logfile
      touch tmp.irem
      cat *.irem > ${output}.irem
@@ -654,6 +659,7 @@ process compPCA {
      """
      plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
      plink --bfile ${base} --extract check.prune.in --make-bed --out $prune
+     /bin/rm check*
      plink --bfile ${prune} --pca --out $prune 
      """
 }
@@ -717,7 +723,7 @@ if (params.high_ld_regions_fname != "") {
       outf   =  base.replace(".","_")
       """
        plink --bfile $base --threads $max_plink_cores --autosome $sexinfo  --indep-pairwise 60 5 0.2 --out ibd
-       plink --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
+       #plink --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --out ibd_prune
        plink --bfile $base --threads $max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
        echo NO_LD
        """
@@ -992,7 +998,7 @@ process generateHwePlot {
 
 // Generate MD5 sums of output files
 process outMD5 {
-
+  memory other_mem_req
   input:
      tuple file(bed), file(bim), file(fam), file(log) from qc4B_ch
   output:

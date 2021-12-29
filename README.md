@@ -875,8 +875,19 @@ batches['ID'] = batches['Institute Sample Label'].apply(lambda x:x[18:])
 
 In our example, we assumed the ID can found in the column "Institute Sample Label" but from the position 18 (indexed from 0) in the string. Change as appropriate for you
 
+# 8 Troubleshooting
 
-# 8. Acknowledgement, Copyright and general
+## 8.1 Resource allocation problems
+
+If you get an error like this
+
+```
+Process `doGemmaChro (18)` terminated with an error exit status (137)
+```
+
+the typical reason is that you have not allocated enough memory for the process and the operating system has killed the process.
+
+# 9. Acknowledgement, Copyright and general
 
 ## Citing this workflow
 

@@ -28,6 +28,7 @@ Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  T
 * `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id).  Provide either absolute file path or relative to where you are running. In a previous version this was relative to input_dir, which is not right.
 See [https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)](https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)) for a discussion.
 
+* `output_dir`: the directory which the output should go to. The default is `output`.
 * `output`: the base name of the output files. *This cannot be the same as the input!!!*
 
 ## 2 Overview of the workflow
