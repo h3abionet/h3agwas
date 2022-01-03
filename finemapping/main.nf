@@ -68,9 +68,9 @@ def checkColumnHeader(fname, columns) {
 def helps = [ 'help' : 'help' ]
 
 allowed_params = ["input_dir","input_pat","output","output_dir","data","covariates", "work_dir", "scripts", "max_forks", "cut_maf", "phenotype", "accessKey", "access-key", "secretKey", "secret-key",  "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "batch", "batch_col" ,"samplesize", "manifest", "region", "AMI", "queue", "strandreport"]
-params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin"]
+params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp", "list_pheno"]
 params_mf=["n_pop","threshold_p", "n_causal_snp", "prob_cred_set"]
-params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
+params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno", "threshold_p2", "clump_r2", "size_wind_kb"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
 params_memcpu=["gcta_mem_req","plink_mem_req", "plink_cpus_req","other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req"]
@@ -88,6 +88,9 @@ allowed_params+=param_data
 
 
 def params_help = new LinkedHashMap(helps)
+
+dummy_dir="${workflow.projectDir}/../qc/input"
+
 
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
@@ -414,10 +417,10 @@ println 'no file annot for paintor'
 postonalyse2.into{postonanalyse_tmp1; postonanalyse_tmp2;postonanalyse_tmp3}
 
 pos_tonalyse_ch_1=postonanalyse_tmp1.flatMap { list_str -> list_str.split() }
-paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath('NOFILE'))
+paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath("${dummy_dir}/0"))
 
 pos_tonalyse_ch_2=postonanalyse_tmp2.flatMap { list_str -> list_str.split() }
-paintor_fileannotplot=pos_tonalyse_ch_2.combine(Channel.fromPath('NOFILE'))
+paintor_fileannotplot=pos_tonalyse_ch_2.combine(Channel.fromPath("${dummy_dir}/0"))
 
 pos_tonalyse_ch_3=postonanalyse_tmp3.flatMap { list_str -> list_str.split() }
 annotname=pos_tonalyse_ch_3.combine(Channel.value("N"))
@@ -450,7 +453,7 @@ process ComputedPaintor{
     echo $output > input.files
     cp $filez $output
     cp $ld $output".ld"
-    if [ $fileannot == "NOFILE" ]
+    if [ $fileannot == "0" ]
     then
     paint_annotation.py $fileannot $output  $output".annotations"
     else 
@@ -475,11 +478,10 @@ process ComputedPaintor{
      touch $output".results"
      touch $BayesFactor
      touch $FileInfo
-
      """
  }
-paintor_fileannot=file('NOFILE')
-paintor_fileannotplot=file('NOFILE')
+paintor_fileannot=file("${dummy_dir}/0")
+paintor_fileannotplot=file("${dummy_dir}/0")
 annotname=Channel.from("N")
 
 }

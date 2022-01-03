@@ -26,7 +26,7 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_me
 // define param for
 //annotation_model=["gemma","boltlmm", "plink", "head", "linear", "logistic", "fisher", "fastlmm", ""]
 //allowed_params+=annotation_model
-annotation_param=[ "file_gwas","gcta_bin","cojo_p","cojo_p","gcta_mem_req","cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
+annotation_param=[ "file_gwas","gcta_bin","cojo_p","threshold_p","gcta_mem_req","cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 allowed_params+=annotation_param
 allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2", "head_n"]
 allowed_params+=allowed_params_head
@@ -60,7 +60,8 @@ params.head_beta="BETA"
 params.head_se="SE"
 params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
-params.cojo_p=1e-7
+params.cojo_p=""
+params.threshold_p=""
 params.cojo_wind=10000
 params.cut_maf=0.01
 params.gcta_mem_req="15GB"
@@ -72,7 +73,17 @@ params.cojo_actual_geno=0
 params.cojo_top_snps=0
 params.big_time='100h'
 params.cojo_top_snps_chro=0
+params.data=""
+params.pheno=""
 
+if(params.cojo_p=="" & params.threshold_p==""){
+cojo_p=1e-7
+println "default parameters used for p : 1e-7"
+}else{
+if(params.cojo_p==""){
+cojo_p=params.threshold_p
+}
+}
 
 
 gcta_mem_req=params.gcta_mem_req
@@ -222,7 +233,7 @@ process SLCTAnalyse{
       cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
       """
       export OMP_NUM_THREADS=${params.gcta_cpus_req}
-      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --cojo-p ${params.cojo_p} --maf ${params.cut_maf} ${headkeep} --cojo-slct ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu --thread-num ${params.gcta_cpus_req} &> $out".out"
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas_chro} --cojo-p ${cojo_p} --maf ${params.cut_maf} ${headkeep} --cojo-slct ${params.cojo_slct_other} --cojo-wind ${params.cojo_wind} $cojoactu --thread-num ${params.gcta_cpus_req} &> $out".out"
       gcta_manage_error.py --file_err $out".out"
       if [ ! -f ${out}.jma.cojo ]
       then 

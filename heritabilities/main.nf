@@ -181,6 +181,8 @@ checker = { fn ->
        error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
 
+dummy_dir="${workflow.projectDir}/../qc/input"
+
 
 println "Testing for gwas file : ${params.file_gwas}\n"
 
@@ -344,8 +346,8 @@ if(params.bolt_h2 || param.params.gcta_h2 || params.gemma_h2){
 
  if(params.file_rs_buildrelat==""){
    balise_filers_rel=0
-   filers_matrel_mat_gem=file('NO_FILE')
-   filers_matrel_mat_gcta=file('NO_FILE')
+   filers_matrel_mat_gem=file("${dummy_dir}/0")
+   filers_matrel_mat_gcta=file("${dummy_dir}/0")
 
    if(params.bolt_h2==1){
       process buildBoltFileSnpRel{
@@ -476,8 +478,8 @@ if(params.bolt_h2){
        rs_ch_exclude_bolt_multi=Channel.fromPath(params.exclude_snps)
   }else{
      println "no snp exclude"
-     rs_ch_exclude_bolt=file('NO_FILE')
-     rs_ch_exclude_bolt_multi=file('NO_FILE')
+     rs_ch_exclude_bolt=file("${dummy_dir}/0")
+     rs_ch_exclude_bolt_multi=file("${dummy_dir}/0")
   }
 
 
@@ -487,8 +489,8 @@ if(params.bolt_h2){
      Bolt_ld_score_multi= Channel.fromPath(params.bolt_ld_score_file)
   }else{
      println "no ld files used for bolt "
-     Bolt_ld_score = file('NO_FILE3')
-     Bolt_ld_score_multi = file('NO_FILE3')
+     Bolt_ld_score = file("${dummy_dir}/3")
+     Bolt_ld_score_multi = file("${dummy_dir}/3")
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
@@ -497,8 +499,8 @@ if(params.bolt_h2){
      Bolt_genetic_map_multi= Channel.fromPath(params.genetic_map_file)
   }else{
      println "no genetic maps used "
-     Bolt_genetic_map = file('NO_FILE4')
-     Bolt_genetic_map_multi = file('NO_FILE4')
+     Bolt_genetic_map = file("${dummy_dir}/4")
+     Bolt_genetic_map_multi = file("${dummy_dir}/4")
   }
 
 

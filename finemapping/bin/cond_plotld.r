@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-library(gaston)
+#library(gaston)
 library("optparse")
 snp.sq <- function(i, j, ld, write.ld.val, color, polygon.par, cex.ld) {
   if(i == j) return(); # pas de plot d'un SNP avec lui même

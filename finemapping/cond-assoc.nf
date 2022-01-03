@@ -40,6 +40,8 @@ params.gemma_num_cores=6
 params.gemma_mem_req="10GB"
 params.gemma_bin = "gemma"
 
+dummy_dir="${workflow.projectDir}/../qc/input"
+
 def fileColExists = { fname, pname, cname ->
   if (fname.contains("s3://")){
     println "The file <$fname> is in S3 so we cannot do a pre-check";
@@ -146,6 +148,7 @@ process extract_region{
 
 pheno_file_ch = Channel.fromPath(params.data, checkIfExists:true)
 process add_condpheno{
+    label 'R'
     input:
       set file(bed), file(bim), file(fam) from pheno_assoc_ch
       file(filepheno) from pheno_file_ch
@@ -187,7 +190,7 @@ if(params.gemma_mat_rel==""){
     }
    }else{
      if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_gem=file('NOFILE') 
+        filers_matrel_mat_gem=file("${dummy_dir}/0") 
      }else{
         filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
      }
@@ -221,9 +224,9 @@ if(params.gemma_mat_rel==""){
    rel_mat_ch=Channel.fromPath(params.gemma_mat_rel)
   }
    if(params.rs_list==""){
-        rsfile=file('NO_FILE5')
-        rsfilecond=file('NO_FILE5')
-        rsfilecondall=file('NO_FILE5')
+        rsfile=file("${dummy_dir}/0")
+        rsfilecond=file("${dummy_dir}/0")
+        rsfilecondall=file("${dummy_dir}/0")
      }else{
         rsfile=file(params.rs_list)
         rsfilecond=file(params.rs_list)
@@ -410,6 +413,7 @@ process computed_ld{
 }
 
 process plot_ld{
+   label 'R'
   input : 
      file(ld2) from ld_res_sq
      set file(bim), file(bed), file(fam) from plk_pos_ch
@@ -426,6 +430,7 @@ process plot_ld{
 
 combine_gemm_ch=gemma_outcond_ch.collect()
 process plot_res{
+   label 'R'
    input :
       file(ld) from ld_res_notsq
       file(gemmai) from gemma_out_ch

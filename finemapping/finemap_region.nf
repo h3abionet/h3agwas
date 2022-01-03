@@ -71,11 +71,12 @@ allowed_params = ["input_dir","input_pat","output","output_dir","data","covariat
 params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin"]
 params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"]
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
-params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
+params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z", "prob_cred_set"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req"]
+params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "gcta_opt_multigrm_cor", "gcta_opt_grm_cor"]
 param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
-param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp"]
+param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "gwas_cat_ftp", "list_pheno"]
+
 allowed_params+=params_mf
 allowed_params+=params_cojo
 allowed_params+=params_filegwas
@@ -88,6 +89,7 @@ allowed_params+=param_data
 
 
 def params_help = new LinkedHashMap(helps)
+dummy_dir="${workflow.projectDir}/../qc/input"
 
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
@@ -168,7 +170,7 @@ process GwasCatDl{
     label 'R'
     publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
     output :
-       file("${out}_resume.csv") into gwascat_ch
+       file("${out}_all.csv") into gwascat_ch
        file("${out}*")
     script :
       phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
@@ -373,8 +375,8 @@ baliseannotpaint=1
     """ 
   }
 } else{
-paintor_fileannot=file('NOFILE')
-paintor_fileannotplot=file('NOFILE')
+paintor_fileannot=file("${dummy_dir}/0")
+paintor_fileannotplot=file("${dummy_dir}/0")
 annotname=Channel.from("N")
 }
 }
@@ -404,8 +406,12 @@ process ComputedPaintor{
     echo $output > input.files
     cp $filez $output
     cp $ld $output".ld"
-    paint_annotation.py $fileannot $output 
+    if [ $fileannot == "0" ]
+    then
+    paint_annotation.py $fileannot $output  $output".annotations"
+    else
     cp $fileannot $output".annotations"
+    fi
     ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal -num_samples  ${params.n_pop} -Lname $BayesFactor $annot
     """
 }
@@ -472,7 +478,8 @@ process MergeResult{
     script :
       out=params.output
       infopaint=infopaintor.join(" ")
-      pfileannot= (baliseannotpaint==0) ? "":" --paintor_fileannot $pfileannot "
+      //pfileannot= (baliseannotpaint==0) ? "":" --paintor_fileannot $pfileannot "
+      pfileannot= " --paintor_fileannot $pfileannot "
       """
        cat $infopaint > infopaint
        echo "sss $fmsss" > infofinemap 

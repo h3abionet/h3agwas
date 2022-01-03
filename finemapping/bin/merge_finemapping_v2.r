@@ -3,7 +3,7 @@ library("optparse")
 library(data.table)
 PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL, listpval=c('bf_caviar', 'log10bf_fm', 'Posterior_Prob_paint'), listheadprint=c('caviar', 'fm', 'paint')){
 print('Plotrs')
-if(paintfile=='NOFILE')paintfile=NULL
+if(paintfile %in% c('NOFILE',"0","1","2", "3","4","5"))paintfile=NULL
 ColI="blue";ColInitial=t_col(ColI,30)
 ColGWASCat="red3";ColFineMap='black'
 
@@ -70,7 +70,6 @@ percent=0
 }
 rgb.val <- col2rgb(color)
 
-cat(rgb.val, (100 - percent) * 255 / 100,percent,'\n')
 ## Make new color using input color as base and alpha set by transparency
 t.col2 <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],max = 255,alpha = (100 - percent) * 255 / 100,names = name)
 ## Save the color
@@ -237,9 +236,9 @@ datainwork<-merge(datainwork,datagcta2[,c('Chr','SNP','bp', 'bJ','bJ_se','pJ','L
 datainwork$IsSig[!is.na(datainwork$pJ)]<-T
 
 
-if(!is.null(opt[['paintor_fileannot']]) & opt[['paintor_fileannot']]!='NOFILE'){
+if(!is.null(opt[['paintor_fileannot']]) & !(opt[['paintor_fileannot']] %in% c('NOFILE', "0","1"))){
 	DataAnnot<-read.table(opt[['paintor_fileannot']], header=T)
-	if(!is.null(opt[['paintor_annot']]) & opt[['paintor_annot']]!='NOFILE')HeadAnnot<-readLines(opt[['paintor_annot']])
+	if(!is.null(opt[['paintor_annot']]) | !(opt[['paintor_annot']] %in% c('NOFILE',"0", "1")))HeadAnnot<-readLines(opt[['paintor_annot']])
 	else HeadAnnot = names(DataAnnot)
 	HeadAnnot2<-gsub("-",".",HeadAnnot)
 	DataAnnot$num<-1:nrow(DataAnnot)

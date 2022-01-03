@@ -1,0 +1,1 @@
+../../assoc/bin/all_covariate.py
