@@ -200,6 +200,7 @@ params.pheno.split(",").each { p ->
 }
 
 
+dummy_dir="${workflow.projectDir}/../../qc/input"
 
 
 //---- Modification of variables for pipeline -------------------------------//
@@ -378,7 +379,7 @@ if (params.data != "") {
 
 if (params.gemma+params.gemma_gxe>0) {
    if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_gem=file('NO_FILE')
+        filers_matrel_mat_gem=file("${dummy_dir}/0")
      }else{
         filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
    }
@@ -421,7 +422,7 @@ if (params.gemma == 1){
      covariate_option = ""
   ind_pheno_cols_ch = newNamePheno(params.pheno)
    if(params.rs_list==""){
-        rsfile=file('NO_FILE5')
+        rsfile=file("${dummy_dir}/2")
      }else{
         rsfile=file(params.rs_list)
    }
