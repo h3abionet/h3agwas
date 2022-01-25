@@ -944,7 +944,7 @@ if (params.gemma+params.gemma_gxe>0) {
 
    }
 
-   if(params.gemma_multi==1){
+   if(params.gemma==1 & params.gemma_multi==1){
      process getListeChroGem{
         input :
           file(BimFile) from bim_ch_fast_gem
@@ -967,7 +967,7 @@ if (params.gemma+params.gemma_gxe>0) {
    }
 
    
-  if (params.gemma == 1){
+  if (params.gemma==1 & params.gemma == 1){
       ind_pheno_cols_ch = newNamePheno(params.pheno)
 
       if (params.covariates)
