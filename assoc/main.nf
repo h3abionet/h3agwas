@@ -56,7 +56,7 @@ def params_help = new LinkedHashMap(helps)
 
 
 filescript=file(workflow.scriptFile)
-#projectdir="${filescript.getParent()}"
+//projectdir="${filescript.getParent()}"
 dummy_dir="${workflow.projectDir}/../qc/input"
 
 params.queue      = 'batch'
