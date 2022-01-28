@@ -125,6 +125,8 @@ params.headgc_chr=""
 params.headgc_bp=""
 params.gwas_cat = ""
 
+params.file_gwas=""
+
 params.prob_cred_set=0.95
 
 params.plink_mem_req="6GB"
@@ -192,6 +194,10 @@ headgc_bp=params.headgc_bp
 
 }
 
+if(params.file_gwas==""){
+    println "\nfile_gwas not initialised\n";
+    System.exit(2)
+}
 
 
 params.each { parm ->
@@ -421,7 +427,7 @@ println 'no file annot for paintor'
 postonalyse2.into{postonanalyse_tmp1; postonanalyse_tmp2;postonanalyse_tmp3}
 
 pos_tonalyse_ch_1=postonanalyse_tmp1.flatMap { list_str -> list_str.split() }
-paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath("${dummy_dir}/0", checkIfExists:true)))
+paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath("${dummy_dir}/0", checkIfExists:true))
 
 pos_tonalyse_ch_2=postonanalyse_tmp2.flatMap { list_str -> list_str.split() }
 paintor_fileannotplot=pos_tonalyse_ch_2.combine(Channel.fromPath("${dummy_dir}/0"))
