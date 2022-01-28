@@ -182,7 +182,9 @@ max_plink_cores = params.max_plink_cores
 
 params.help = false
 
-data_ch = Channel.fromPath(params.data, checkIfExists:true)
+data_ch_pheno = Channel.fromPath(params.data, checkIfExists:true)
+data_ch_show = Channel.fromPath(params.data, checkIfExists:true)
+data_ch_gemma = Channel.fromPath(params.data, checkIfExists:true)
 
 if (params.help) {
     params.each {
@@ -481,7 +483,7 @@ if (params.data != "") {
   
   process extractPheno {
     input:
-     file(data) from data_ch
+     file(data) from data_ch_pheno
     output:
      file(phenof) into pheno_ch
     script:
@@ -498,7 +500,7 @@ if (params.data != "") {
   process showPhenoDistrib {
     // not sure difference between container and label
     input:
-    file(data) from data_ch
+    file(data) from data_ch_show
     output:
       file ("B050*") into pheno_report_ch
     script:
@@ -994,7 +996,7 @@ if (params.gemma+params.gemma_gxe>0) {
        memory params.gemma_mem_req
        time   params.big_time
        input:
-	 file(covariates) from data_ch
+	 file(covariates) from data_ch_gemma
 	 file(rel) from rel_mat_ch
 	 file(plinks) from  gem_ch_gemma
 	 file(rsfilelist) from rsfile
@@ -1067,7 +1069,7 @@ if (params.gemma+params.gemma_gxe>0) {
        memory params.gemma_mem_req
        time   params.big_time
        input:
-	 file(covariates) from data_ch
+	 file(covariates) from data_ch_gemma
 	 file(rel) from rel_mat_ch
 	 file(plinks) from  gem_ch_gemma
 	 file(rsfilelist) from rsfile
