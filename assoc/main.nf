@@ -182,7 +182,7 @@ max_plink_cores = params.max_plink_cores
 
 params.help = false
 
-data_ch = file(params.data)
+data_ch = Channel.fromPath(params.data, checkIfExists:true)
 
 if (params.help) {
     params.each {
