@@ -56,8 +56,8 @@ def params_help = new LinkedHashMap(helps)
 
 
 filescript=file(workflow.scriptFile)
-//projectdir="${filescript.getParent()}"
-dummy_dir="${workflow.projectDir}/../qc/input"
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../qc/input"
 
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
