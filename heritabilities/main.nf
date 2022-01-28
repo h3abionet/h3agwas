@@ -181,7 +181,7 @@ checker = { fn ->
        error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
 
-dummy_dir="${workflow.projectDir}/../qc/input"
+dummy_dir="${workflow.projectDir}/qc/input"
 
 
 println "Testing for gwas file : ${params.file_gwas}\n"

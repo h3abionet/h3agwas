@@ -40,7 +40,7 @@ params.gemma_num_cores=6
 params.gemma_mem_req="10GB"
 params.gemma_bin = "gemma"
 
-dummy_dir="${workflow.projectDir}/../qc/input"
+dummy_dir="${workflow.projectDir}/qc/input"
 
 def fileColExists = { fname, pname, cname ->
   if (fname.contains("s3://")){

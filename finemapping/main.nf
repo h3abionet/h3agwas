@@ -89,7 +89,7 @@ allowed_params+=param_data
 
 def params_help = new LinkedHashMap(helps)
 
-dummy_dir="${workflow.projectDir}/../qc/input"
+dummy_dir="${workflow.projectDir}/qc/input"
 
 
 params.queue      = 'batch'
@@ -417,7 +417,7 @@ println 'no file annot for paintor'
 postonalyse2.into{postonanalyse_tmp1; postonanalyse_tmp2;postonanalyse_tmp3}
 
 pos_tonalyse_ch_1=postonanalyse_tmp1.flatMap { list_str -> list_str.split() }
-paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath("${dummy_dir}/0"))
+paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath("${dummy_dir}/0", checkIfExists:true)))
 
 pos_tonalyse_ch_2=postonanalyse_tmp2.flatMap { list_str -> list_str.split() }
 paintor_fileannotplot=pos_tonalyse_ch_2.combine(Channel.fromPath("${dummy_dir}/0"))

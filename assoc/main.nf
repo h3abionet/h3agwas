@@ -55,7 +55,8 @@ params.each { parm ->
 def params_help = new LinkedHashMap(helps)
 
 
-dummy_dir="${workflow.projectDir}/../qc/input"
+println "${workflow.projectDir}"
+dummy_dir="${workflow.projectDir}/qc/input"
 
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
@@ -1617,7 +1618,7 @@ if(params.saige==1){
      binpheno = (params.pheno_bin==1) ? " --traitType=binary " : " --traitType=quantitative --invNormalize=TRUE"
      Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
      plkf=bed.baseName
-     our_pheno    = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
+     our_pheno    = this_pheno.replaceAll(/|\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
      output=our_pheno+"_var"
      """
      Rscript ${params.saige_bin_fitmodel} \

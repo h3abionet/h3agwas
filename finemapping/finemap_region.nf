@@ -89,7 +89,7 @@ allowed_params+=param_data
 
 
 def params_help = new LinkedHashMap(helps)
-dummy_dir="${workflow.projectDir}/../qc/input"
+dummy_dir="${workflow.projectDir}/qc/input"
 
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"

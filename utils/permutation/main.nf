@@ -200,7 +200,7 @@ params.pheno.split(",").each { p ->
 }
 
 
-dummy_dir="${workflow.projectDir}/../../qc/input"
+dummy_dir="${workflow.projectDir}/qc/input"
 
 
 //---- Modification of variables for pipeline -------------------------------//
