@@ -55,8 +55,9 @@ params.each { parm ->
 def params_help = new LinkedHashMap(helps)
 
 
-println "${workflow.projectDir}"
-dummy_dir="${workflow.projectDir}/qc/input"
+filescript=file(workflow.scriptFile)
+#projectdir="${filescript.getParent()}"
+dummy_dir="${workflow.projectDir}/../qc/input"
 
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
@@ -435,9 +436,9 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige>0){
 /* n*/
  if(params.file_rs_buildrelat==""){
    balise_filers_rel=0
-   filers_matrel_mat_fast=file("${dummy_dir}/0") 
-   filers_matrel_mat_GWA=file("${dummy_dir}/0") 
-   filers_matrel_mat_gem=file("${dummy_dir}/0") 
+   filers_matrel_mat_fast=Channel.fromPath("${dummy_dir}/0",checkIfExists:true) 
+   filers_matrel_mat_GWA=Channel.fromPath("${dummy_dir}/0") 
+   filers_matrel_mat_gem=channel.fromPath("${dummy_dir}/0") 
    if(params.boltlmm==1){
       //BoltNbMaxSnps=1000000
       process buildBoltFileSnpRel{
@@ -796,14 +797,14 @@ if (params.boltlmm == 1) {
   type_lmm="--lmm"
 
   if(params.exclude_snps)rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps, checkIfExists:true)
-  else rs_ch_exclude_bolt=file("${dummy_dir}/01") 
+  else rs_ch_exclude_bolt=Channel.fromPath("${dummy_dir}/01", checkIfExists:true) 
 
   if(params.bolt_impute2filelist!=""){
   Impute2FileList=Channel.fromPath(params.bolt_impute2filelist, checkIfExists:true)
   Impute2FID = Channel.fromPath(params.bolt_impute2fidiid, checkIfExists:true)
   }else{
-  Impute2FileList=file("${dummy_dir}/02")
-  Impute2FID = file("${dummy_dir}/03")
+  Impute2FileList=Channel.fromPath("${dummy_dir}/02", checkIfExists:true)
+  Impute2FID = Channel.fromPath("${dummy_dir}/03", checkIfExists:true)
   }
   if(params.bolt_ld_score_file!=""){
      Bolt_ld_scoreI= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
@@ -824,13 +825,13 @@ if (params.boltlmm == 1) {
 
      }
   }else{
-     Bolt_ld_score = file("${dummy_dir}/04") 
+     Bolt_ld_score = Channel.fromPath("${dummy_dir}/04",checkIfExists:true) 
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
      Bolt_genetic_map= Channel.fromPath(params.genetic_map_file, checkIfExists:true)
   }else{
-     Bolt_genetic_map = file("${dummy_dir}/05") 
+     Bolt_genetic_map = Channel.fromPath("${dummy_dir}/05",checkIfExists:true) 
   }
 
   process doBoltmm{
@@ -976,9 +977,9 @@ if (params.gemma+params.gemma_gxe>0) {
       else
          covariate_option = ""
       if(params.rs_list=="")
-        rsfile=file("${dummy_dir}/06")
+        rsfile=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
        else
-        rsfile=file(params.rs_list)
+        rsfile=Channel.fromPath(params.rs_list, checkIfExists:true)
  
 
 
@@ -1143,9 +1144,9 @@ if (params.gemma+params.gemma_gxe>0) {
   else
      covariate_option = ""
    if(params.rs_list==""){
-        rsfile=file("${dummy_dir}/07") 
+        rsfile=Channel.fromPath("${dummy_dir}/07",checkIfExists:true) 
      }else{
-        rsfile=file(params.rs_list)
+        rsfile=Channel.fromPath(params.rs_list,checkIfExists:true)
    }
 
    if(params.gemma_multi==1){
@@ -1386,7 +1387,7 @@ if (params.plink_gxe==1) {
   pheno_label_ch_gxe = Channel.from(params.pheno.split(","))
   
   if (params.rs_list=="")
-    rsfile_plkgxe=file("${dummy_dir}/08")
+    rsfile_plkgxe=Channel.fromPath("${dummy_dir}/08", checkIfExists:true)
   else
     rsfile_plkgxe=file(params.rs_list, checkIfExists=true)
 
