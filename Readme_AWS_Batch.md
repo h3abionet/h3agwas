@@ -66,23 +66,6 @@ Read
 *  https://www.nextflow.io/docs/latest/awscloud.html#awscloud-batch  (up to point 5 -- from "Configuration" on is meant for developers of pipelines and not users).
 
 
-### 2.3.1 Create a role that set up permissions
-
-Go to IAM to set up a policy that allows the AWS service to call Batch on your behalf and to access Amazon S3
-* Pick Roles
-* Choose Create Roles
-* Pick S3 and then the S3 Batch Operations use case
-* Next: Permissions
-  * Type in AmazonS3FullAccess in the filter and tick
-  * Choose Next:Tags
-* Choose Next: Review
-  * Give a meaninful name (e.g. GWASBatchRole)
-  * Choose "Create Role"
-* Then click on that role to see the Summary
-  * Choose _Attach policies_
-  * In the filter, choose "AWSBatchServiceRole" and select it (tick it)
-  * Choose _Attach Policy"
-
 
 ### 2.3.1 Setting up an environment
 You should be able to follow the default settings unless you need a launch template
