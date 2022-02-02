@@ -620,64 +620,8 @@ The _scott.aws_ file is not shared or put under git control. The _nextflow.confi
 
 AWS Batch is a service layered on top of EC2 by Amazon which may make it easier and / or cheaper than using EC2. My personal view is that if you are only our pipeline on Amazon and you have reasonable Linux experience then the EC2 implementation above is probably easier. However, if you use or plan to use AWS Batch for other services then, AWS Batch is a definite option.
 
+See our [batch documentation](https://github.com/h3abionet/h3agwas/blob/master/Readme_AWS_Batch.md)
 
-### Step 1
-
-Create an AWS Batch queue and computing environment.  Setting up AWS
-Batch is beyond the scope of this document. You can look at [Amazon's
-documentation](https://docs.aws.amazon.com/batch/latest/userguide/create-job-queue.html)
-or the general documentation from BioNet.
-
-We recommend the following
-* Computing environment Managed
-* Additional service role
-  * Service role: AWSBatchServiceRole
-  * Instance role: ecsInstanceRole
-  * EC2 keypair -- not strictly needed but add your own key pair
-* Instance configuration
-  * spot
-  * spot fleet role: aws-ec2-spot-fleet-role
-  * Additional settings
-    * Do you need to specify your own AMI? 
-* Networking 
-  * need a VPC ID and subnet
-
-
-
-
-You also need to set up an S3 bucket for working space. Remember to set permissions on this bucket appropriately.
-
-### Step 2
-
-Create a nextflow config file with your personal information (this should not be put under git !). Set the `process.queue` to the name of the queue you created in the previous step and replace the `accessKey`, `secretKey` and `region` parameters with your values.
-
-```
-
-process.queue = 'queue_name'
-
-aws {
-    accessKey ='accessKey'
-    secretKey = 'WHATEVERYOURSECRETKEYISGOESHERE'
-    region    ='eu-west-1'
-}
-
-```
-
-You can call your config file whatever you want, but for sake of the documentation below I'm assuming you called in `aws.config`.
-
-### Step 3
-
-
-
-Set up your other config files as required. Note that data you wish to process  can either be local or in an S3 bucket.
-
-### Step 4
-
-Run the job (in this example the _qc_ worfklow).  You need to specify the s3 bucket to be used and also the `awsbatch` profile
-
-```
-nextflow run -c aws.config -c job.config qc  -bucket-dir s3://my-bucket/some/path  -profile awsbatch
-```
 
 ## 5.8 Running on Azure Batch
 
