@@ -147,11 +147,6 @@ Data2Sub$sd.cat2<-(Data2Sub$upper.cat - Data2Sub$beta.cat)/1.96*sqrt(Data2Sub$ns
 Data2Sub$z.cat<-Data2Sub$beta.cat/(Data2Sub$sd.cat)
 Data2Sub$h2.cat=computedher(Data2Sub$beta.cat, Data2Sub$sd.cat, Data2Sub$risk.allele.af,Data2Sub$nsample.cat)
 Data2Sub$pvalue<-as.numeric(as.character(Data2Sub[,pValueHead]))
-#Data2Sub<-Data2Sub[!is.na(Data2Sub$h2.cat) & !is.na(Data2Sub[,pValueHead]),]
-#Data2Sub<-Data2Sub[order(Data2Sub$h2.cat),]
-#Data2Sub$order<-1:nrow(Data2Sub)
-#Good<-aggregate(as.formula(paste("order~",chrohead,"+",poshead,sep="")), data=Data2Sub, min)$order
-#Data2Sub<-Data2Sub[Data2Sub$order %in% Good,]
 
 write.csv(Data2Sub, file=paste(opt[['out']], '_all.csv',sep=''), row.names=F)
 
