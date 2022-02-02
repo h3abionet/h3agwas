@@ -14,7 +14,7 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("-k", "--clump_kb"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
-  make_option(c("-i", "--increase"), type="integer", default=1,
+  make_option(c("-i", "--nb_snp"), type="integer", default=-1,
               help="dataset file name", metavar="character"),
   make_option(c("-o", "--out"), type="character", default="out.txt",
               help="output file name [default= %default]", metavar="character")
@@ -68,6 +68,10 @@ Dataclump<-read.table(paste(opt[['out']], '_clump.clumped',sep=''), header=T)
 allinfo<-allinfo[allinfo$rs_bim %in% Dataclump$SNP ,]
 
 rsbest<-aggregate(z.cat.new~rs_bim, allinfo,function(x)x[which.max(abs(x))])
-rsbest$z.cat.new<-rsbest$z.cat.new*opt[['increase']]
+#rsbest$z.cat.new<-rsbest$z.cat.new*opt[['increase']]
+nb_snp=opt[['nb_snp']]
+if(nb_snp>0 & nb_snp<=nrow(rsbest))rsbest<-rsbest[sample(1:nrow(rsbest), nb_snp),]
+
+write.table(allinfo[allinfo$rs_bim %in% rsbest$rs_bim,], sep='\t', quote=F, file=paste(opt[['out']],'.infors',sep=''), row.names=F, col.names=F)
 write.table(rsbest, sep='\t', quote=F, file=opt[['out']], row.names=F, col.names=F)
 

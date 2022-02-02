@@ -60,7 +60,7 @@ params.clump_p1=0.0001
 params.clump_p2=0.01
 params.clump_r2=0.50
 params.clump_kb=250
-params.increase_zval=1
+params.nb_snp=-1
 
 params.nb_cpus=4
 
@@ -153,7 +153,7 @@ process format_simulated{
      plk=bed.baseName
      outeffect=params.output+".effect.rs"
      """
-     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb} --increase ${params.increase_zval}
+     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb} --nb_snp ${params.nb_snp}
      """
 }
 

@@ -58,6 +58,7 @@ params.sex_info="gender,1:male,2:female,IID:sample"
 params.simu_k=0.1
 params.simu_cc_p=0.5
 params.sex_error=0.05
+params.nb_locus=-1
 
 
 params.clump_p1=0.0001 
@@ -305,7 +306,7 @@ process format_simulated{
      plk=bed.baseName
      outeffect=params.output+".effect.rs"
      """
-     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb}
+     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb} --nb_locus ${params.nb_locus}
      """
 }
 

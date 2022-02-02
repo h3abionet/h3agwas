@@ -1703,7 +1703,7 @@ if(params.saige==1){
       file("${out}*")  into report_saige_ch
     script:
       our_pheno = this_pheno.replaceAll("_","-")
-      out = "C058-saige-"+this_pheno
+      out = "C058-saige-"+our_pheno
       """
       general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNPID --pval_header p.value --beta_header BETA --info_prog SAIGE
       """
