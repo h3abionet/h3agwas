@@ -101,6 +101,7 @@ def configfile_analysis(file){
    lines.remove(0)
    PosCmp=-1
    CmtL=0
+   listnum=[]
    for(line in lines){
        def splLine=line.split(sep)
        def cmtelem=0
@@ -119,9 +120,10 @@ def configfile_analysis(file){
             cmtelem+=1
        }       
        resInfo.add(SubRes.join(','))
+       listnum.add(CmtL)
        CmtL+=1
    }
- return([resFile,resInfo, NumRef])
+ return([resFile,resInfo, NumRef, listnum])
 }
 if(params.file_config==''){
 println "not file config defined\n exit"
@@ -150,19 +152,19 @@ process GetRsFile{
         ma_extract_rsid.py --input_file $file_assoc_rs --out_file $file_rs --info_file $info_rs 
         """
 }
-liste_filesi_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).combine(file_rs_ref_chan)
+liste_filesi_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[3])).combine(file_rs_ref_chan)
 
 
 process ChangeFormatFile {
     memory ma_mem_req
     input :
-      set file(file_assoc), val(info_file), file(file_ref) from liste_filesi_ch
+      set file(file_assoc), val(info_file), val(num),file(file_ref) from liste_filesi_ch
     output :
       path(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega)
       file(newfile_assocplk) into liste_file_plk
     script :
-       newfile_assoc=file_assoc+".modif"
-       newfile_assocplk=file_assoc+".modif.plk"
+       newfile_assoc="${file_assoc}_${num}.modif"
+       newfile_assocplk="${file_assoc}_${num}.modif.plk"
        """
        ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file --rs_ref $file_ref --sep_out TAB --use_rs ${params.use_rs}
        """
