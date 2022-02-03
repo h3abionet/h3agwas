@@ -524,6 +524,7 @@ process ComputedCojo{
 }
 if(params.genes_file==""){
 process GetGenesInfo{
+   memory '20GB'
    label 'R'
    output :
       file(out) into genes_file_ch

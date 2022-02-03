@@ -11,7 +11,7 @@
  *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2018
+ *  2015-2022
  *
  *
  * Description  : Nextflow pipeline for Wits GWAS and metanalysis.
@@ -160,7 +160,7 @@ process ChangeFormatFile {
     input :
       set file(file_assoc), val(info_file), val(num),file(file_ref) from liste_filesi_ch
     output :
-      path(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega)
+      file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega)
       file(newfile_assocplk) into liste_file_plk
     script :
        newfile_assoc="${file_assoc}_${num}.modif"
@@ -184,7 +184,7 @@ if(params.gwama==1){
      memory gwama_mem_req
      time params.big_time
     input :
-      val(list_file) from liste_file_gwama
+      file(list_file) from liste_file_gwama
     publishDir "${params.output_dir}/gwama", overwrite:true, mode:'copy'
     output :
       //file("${out}*")
@@ -224,7 +224,7 @@ if(params.mrmega==1){
     memory params.mrmega_mem_req
     time params.big_time
     input :
-      val(list_file) from liste_file_mrmega
+      file(list_file) from liste_file_mrmega
     publishDir "${params.output_dir}/mrmega", overwrite:true, mode:'copy'
     output :
       //file("${out}*")
@@ -236,7 +236,6 @@ if(params.mrmega==1){
       gc =  (params.ma_genomic_cont==1) ? "--gc " : ""
       lfile=list_file.join(" ")
       """
-      #echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
       ma_printlistbonfile.py fileListe $lfile
       ${params.mrmega_bin}  --filelist fileListe -o $out $gc --qt --name_marker RSID --name_chr CHRO --name_pos POS --name_strand  DIRECTION --name_n N --name_eaf FREQA1 --name_beta BETA --name_se SE --name_ea A1 --name_nea A2 --pc ${params.ma_mrmega_pc} ${params.ma_mrmega_opt} --no_std_names
       """
@@ -274,7 +273,7 @@ if(params.metal==1){
     output :
       file("${out}1.stat") into res_metal
       tuple file("${out}1.stat"), file("${out}1.stat.info")
-      path("${out}_metal.format")
+      file("${out}_metal.format")
     script :
       out = "metal_res"
       lfile=list_file.join("\t")

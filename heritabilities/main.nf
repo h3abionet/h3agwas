@@ -181,7 +181,10 @@ checker = { fn ->
        error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
 
-dummy_dir="${workflow.projectDir}/qc/input"
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../qc/input"
+
 
 
 println "Testing for gwas file : ${params.file_gwas}\n"
@@ -318,7 +321,7 @@ if(params.ldsc_h2_multi==1){
 
 
 balise_filers_rel=1
-if(params.bolt_h2 || param.params.gcta_h2 || params.gemma_h2){
+if(params.bolt_h2 || params.gcta_h2 || params.gemma_h2){
  bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
  bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
  fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
@@ -339,7 +342,7 @@ if(params.bolt_h2 || param.params.gcta_h2 || params.gemma_h2){
         base = bed.baseName
         prune= "${base}-prune"
         """
-        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores}
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} --autosome
         """
    }
  }else{
@@ -626,6 +629,35 @@ if(params.gcta_h2==1){
      covariate_option = "--cov_list ${params.covariates}"
   else
      covariate_option = ""
+ /* case for gcta of correlation */
+ if(params.gcta_h2_multi==1){
+    listpheno=params.pheno.split(",")
+    nbpheno=listpheno.size()
+    if(nbpheno<2){
+        error("\n\n------\npheno number < 2\n\n---\n")
+    }
+  process  getGctaPhenosCovarMulti {
+    input:
+      file(covariates) from data_h2gcta1_multi
+      file(fam) from fam_ch_gcta_mult
+    output:
+      set file(phef), file(covfile) into newdata_ch_gcta_multgrm_multi
+    script:
+      base = fam.baseName
+      phef = "all_gcta_n.phe"
+      covfile = "all_gcta_n.cov"
+      """
+      all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option \
+                          --pheno ${params.pheno} --phe_out ${phef} --form_out 4 --cov_out $covfile
+      """
+  }
+   list_Cor=[]
+   for (i = 0; i <(nbpheno-1); i++){
+    for( j = i+1; j<nbpheno; j++){
+      list_Cor.add([i, j])
+    }
+   }
+ }
 
   process  getGctaPhenosCovar {
     input:
@@ -657,7 +689,7 @@ if(params.gcta_h2==1){
         file file_rs from filers_matrel_mat_gcta
      publishDir "${params.output_dir}/gctagrm", overwrite:true, mode:'copy'
      output :
-        set file("tmp.grm.bin"), file("tmp.grm.id"),  file("tmp.grm.N.bin") into gcta_grm
+        set file("tmp.grm.bin"), file("tmp.grm.id"),  file("tmp.grm.N.bin") into gcta_grm, gcta_grm2
      script :
         plk=bed.baseName
         rs_list = balise_filers_rel==1 ? " --extract  $file_rs " : ""
@@ -701,12 +733,40 @@ if(params.gcta_h2==1){
          file("${output}_gcta.stat") into report_gcta
        script :
         """
-        format_correlation.r  $hsq ${output}_gcta.stat gcta ${pheno} None
+        format_correlation.r  $hsq ${output}_gcta.stat gcta2 ${pheno} None
+        """
+    }
+    if(params.gcta_h2_multi==1){
+     process doGRMCor{
+      label 'gcta'
+      cpus params.gcta_num_cores
+      time params.big_time
+      memory params.gcta_mem_req
+      input :
+       set file(phef), file(covfile) from newdata_ch_gcta_multgrm_multi
+       set file(grm1),file(grm2), file(grm3) from gcta_grm2
+      publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
+      each poss from list_Cor
+      output:
+       file("$output"+".hsq")
+      script :
+        pos=poss[0]
+        pos2=poss[1]
+        output=listpheno[pos].replace('_','-')+"_"+listpheno[pos2].replace('_','-')
+        cov = (params.covariates!="") ?  " --qcovar $covfile " : ""
+        pos=pos+1
+        pos2=pos2+1
+        """
+        ${params.gcta_bin} --reml --grm tmp --pheno $phef --thread-num ${params.gcta_num_cores}  --out $output  --reml-bivar $pos $pos2  --reml-alg ${params.gcta_reml_alg}  ${params.gcta_opt_multigrm_cor} $cov  &> outmultgrlm
+        if [ ! -f $output".hsq" ]
+        then
+        cat outmultgrlm > $output".hsq"
+        fi
         """
     }
 
-  }else{
-   report_gcta =Channel.empty()
+  }
+
   }
 
    // multi grm in the case
@@ -808,56 +868,27 @@ if(params.gcta_h2==1){
          set val(pheno), val(output), file(hsq) from dogrelmstat_mgrm
        publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
        output :
-         file("${output}_gcta.stat") into report_gcta_mgrm
+         file("${output}_gcta.stat") into report_gcta
        script :
         """
         format_correlation.r  $hsq ${output}_gcta.stat gcta2 ${pheno} None
         """
     }
 
-  }else{
-  report_gcta_mgrm=Channel.empty()
-  }
-  listpheno=params.pheno.split(",")
-  nbpheno=listpheno.size()
-  if(params.gcta_h2_multi==1){
-    if(nbpheno<2){
-        error("\n\n------\npheno number < 2\n\n---\n")
-    }  
-  process  getGctaPhenosCovarMulti {
-    input:
-      file(covariates) from data_h2gcta1_multi
-      file(fam) from fam_ch_gcta_mult
-    output:
-      set file(phef), file(covfile) into newdata_ch_gcta_multgrm_multi
-    script:
-      base = fam.baseName
-      phef = "all_gcta_n.phe"
-      covfile = "all_gcta_n.cov"
-      """
-      all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option \
-                          --pheno ${params.pheno} --phe_out ${phef} --form_out 4 --cov_out $covfile
-      """
-  }
-   list_Cor=[]
-   for (i = 0; i <(nbpheno-1); i++){
-   for( j = i+1; j<nbpheno; j++){
-      list_Cor.add([i, j])
-   }
-   }
-   process doMultiGRMCor{
-     label 'gcta'
-     cpus params.gcta_num_cores
-     time params.big_time
-     memory params.gcta_mem_req
-     input :
+    if(params.gcta_h2_multi==1 ){
+     process doMultiGRMCor{
+      label 'gcta'
+      cpus params.gcta_num_cores
+      time params.big_time
+      memory params.gcta_mem_req
+      input :
        set file(phef), file(covfile) from newdata_ch_gcta_multgrm_multi
        file(filemult) from filemultigrmcta_gcta_cor
-    publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
-     each poss from list_Cor
-     output:
+      publishDir "${params.output_dir}/gcta", overwrite:true, mode:'copy'
+      each poss from list_Cor
+      output:
        file("$output"+".hsq")
-     script :
+      script :
         pos=poss[0]
         pos2=poss[1]
         output=listpheno[pos].replace('_','-')+"_"+listpheno[pos2].replace('_','-')
@@ -872,9 +903,13 @@ if(params.gcta_h2==1){
         fi
         """ 
     }
+   }
+ }
 
-  }
+}else{
 
+report_gcta=Channel.empty()
+newdata_ch_gcta_multgrm_multi=Channel.empty()
 }
 
 //////
@@ -1073,7 +1108,7 @@ report_gemmah2=Channel.empty()
 
 }
 
-report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).mix(report_gcta_mgrm.flatten()).toList()
+report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).toList()
 
 process MergeH2{
    label 'R'
