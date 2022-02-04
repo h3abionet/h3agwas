@@ -444,6 +444,7 @@ process ComputedCojo{
 if(params.genes_file==""){
 process GetGenesInfo{
    label 'R'
+   memory '20GB'
    output :
       file(out) into genes_file_ch
    publishDir "${params.output_dir}/data/", overwrite:true, mode:'copy'
