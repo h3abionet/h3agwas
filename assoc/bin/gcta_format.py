@@ -122,8 +122,9 @@ if pval_head :
 if IsN :
    Head.append(n_head)
    NewHead.append("N")
-
-print(result)
+result['z']=result[beta_head]/result[se_head]
+NewHead.append('z')
+Head.append('z')
 result=result[Head]
 result.columns=NewHead
 

@@ -183,7 +183,6 @@ process getListInd2{
    """
 
 }
-//filekeepcojo=filekeepformat=file('NO_FILEINDKEEP')
 }
 
 

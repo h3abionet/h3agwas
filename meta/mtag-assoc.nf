@@ -201,7 +201,7 @@ process doMTAG{
    Ninfo=head_N!="" ? " --n_name ${head_N} " : " --n_value ${params.list_N}" 
    ////--info_min $info_min
    """
-   ${params.bin_mtag} --sumstats $fnames --out ./$out --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps   ${params.opt_mtag} --force
+   ${params.bin_mtag} --sumstats $fnames --out ./$out --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p  --bpos_name bp --incld_ambig_snps   ${params.opt_mtag} --force
    """
 }
 
@@ -260,7 +260,7 @@ process doMTAG2by2{
         file2=listfile[poss[1]]
         output=""+file1+"_"+file2
         """
-        ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --use_beta_se --bpos_name bp --incld_ambig_snps ${params.opt_mtag} --force
+        ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --bpos_name bp --incld_ambig_snps ${params.opt_mtag} --force --z_name z
         """
 }
 }
