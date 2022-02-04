@@ -1,3 +1,4 @@
+#!/usr/bin/env nextflow
 
 /*
  * Authors       :
@@ -7,7 +8,7 @@
  *      jean-tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2019
+ *  2015-2022
  *
  *
  * Description  : Nextflow pipeline to transform vcf file in plink and other format

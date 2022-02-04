@@ -1,3 +1,5 @@
+#!/usr/bin/env nextflow
+
 /*
  * Authors       :
  *
@@ -179,19 +181,16 @@ process convertInVcf {
     file(fast) from hgrefconv
    publishDir "${params.output_dir}/vcf/", overwrite:true, mode:'copy'
    output :
-    file("reportfixref")
+    file("${out}.rep")
     file("${out}.vcf.gz")  into (vcfi, vcfi2)
    script:
      base=bed.baseName
      out="${params.output}"
      """
-     ulimit -u 5000
-     mkdir -p tmp
-     plink --bfile ${base}  --recode vcf --out ${out}_tmpplk --keep-allele-order --snps-only --threads ${params.max_plink_cores}  --memory  $plink_mem_req_max
-     ${params.bin_bcftools} sort  ${out}_tmpplk.vcf -O z > ${out}_tmp.vcf.gz -T tmp/ --max-mem $bcftools_mem_req_max
-     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Ob -o ${out}.vcf.gz -- -f hg19.fa.gz -m flip -d
-
-     rm -rf tmp
+     plink  --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
+     ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort - -O z > ${out}_tmp.vcf.gz
+     rm -f ${out}.vcf.gz
+     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
      """
  }
 }else{

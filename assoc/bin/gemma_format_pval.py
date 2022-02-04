@@ -77,8 +77,8 @@ if args.n_header==None :
 if args.chr :
    result=result[result[args.chro_header]==args.chr]
 
-result[[beta_head]]=result[beta_head]/result[se_head]
-result=result[[rs_head,n_head,beta_head,a1_head,a2_head]]
+result['Z']=result[beta_head]/result[se_head]
+result=result[[rs_head,n_head,'Z',a1_head,a2_head]]
 result.columns=["SNP","N","Z","INC_ALLELE","DEC_ALLELE"]
 
 result.to_csv(args.out,sep=" ",header=True,index=False,na_rep="NA")

@@ -7,7 +7,7 @@
  *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2019
+ *  2015-2022
  *
  *
  * Description : pipeline to do a finemapping 
@@ -89,7 +89,10 @@ allowed_params+=param_data
 
 
 def params_help = new LinkedHashMap(helps)
-dummy_dir="${workflow.projectDir}/qc/input"
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../qc/input"
+
 
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"

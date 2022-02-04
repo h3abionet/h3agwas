@@ -49,6 +49,7 @@ else :
 (chrolist,chrodic)=read_chrbp(args.file_chrbp)
 print("nb pos to found "+str(len(chrolist))+'\n')
 write=open(args.out_file, 'w')
+write2=open(args.out_file+'.init', 'w')
 ##
 poschro=args.chro_ps
 posbp=args.bp_ps
@@ -60,6 +61,7 @@ if args.chr :
   chro=args.chr
   for line in read :
      if line[0]=='#' :
+        write2.write(line)
         continue
      spl=line.split()
      if chro!=spl[poschro] :
@@ -69,6 +71,7 @@ if args.chr :
        spla1=spl[posa1].split(',')
        spla2=spl[posa2].split(',')
        if ((chrodic[infopos][0] in spla1) and (chrodic[infopos][1] in spla2)) or  ((chrodic[infopos][0] in spla2) and (chrodic[infopos][1] in spla1)) :
+          write2.write(line)
           write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs] +" "+spl[posa1]+'\n')
           chrolist.remove(infopos)
      #if len(chrolist)==0 :
@@ -76,6 +79,7 @@ if args.chr :
 else :
   for line in read :
      if line[0]=='#' :
+        write2.write(line)
         continue
      spl=line.split()
      infopos=spl[poschro]+" "+spl[posbp]
@@ -83,6 +87,7 @@ else :
        spla1=spl[posa1].split(',')
        spla2=spl[posa2].split(',')
        if (chrodic[infopos][0] in spla1 and chrodic[infopos][1] in spla2) or  (chrodic[infopos][0] in spla2 and chrodic[infopos][1] in spla1) :
+         write2.write(line)
          write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs]+" "+spl[posa1]+'\n')
          chrolist.remove(infopos)
      #if len(chrolist)==0 :

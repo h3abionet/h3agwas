@@ -66,6 +66,7 @@ params.genetic_maps=""
 params.do_stat=true
 params.unzip_zip=0
 params.unzip_password=""
+params.reffasta=""
 
 
 
@@ -75,7 +76,7 @@ error('params.file_listvcf : file contains list vcf not found')
 /*read file to have list of channel for each vcf*/
 
 if(params.unzip_zip){
-list_vcf_unz=Channel.fromPath(file(params.file_listvcf).readLines())
+list_vcf_unz=Channel.fromPath(file(params.file_listvcf).readLines(), checkIfExists:true)
 process UnzipFile{
   input :
      file(vcfzip) from list_vcf_unz  
@@ -91,7 +92,7 @@ process UnzipFile{
 }
 
 }else{
-list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
+list_vcf=Channel.fromPath(file(params.file_listvcf).readLines(), checkIfExists:true)
 list_vcf2=Channel.fromPath(file(params.file_listvcf).readLines())
 }
 
@@ -127,7 +128,7 @@ process dostat{
   """
 }
 }
-ref_ch=Channel.fromPath(params.reffasta)
+ref_ch=Channel.fromPath(params.reffasta, checkIfExists:true)
 list_vcf=ref_ch.combine(list_vcf)
 
 if(params.min_scoreinfo>0){
@@ -237,7 +238,7 @@ process TransformRsDup{
        """
 }
 if(params.genetic_maps!=""){
-GMMap=Channel.fromPath(params.genetic_maps)
+GMMap=Channel.fromPath(params.genetic_maps, checkIfExists:true)
 listchroplinkrsmap=GMMap.combine(listchroplinkrs)
 process AddedCM{
     cpus params.max_plink_cores

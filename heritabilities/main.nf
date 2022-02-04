@@ -481,8 +481,8 @@ if(params.bolt_h2){
        rs_ch_exclude_bolt_multi=Channel.fromPath(params.exclude_snps)
   }else{
      println "no snp exclude"
-     rs_ch_exclude_bolt=file("${dummy_dir}/0")
-     rs_ch_exclude_bolt_multi=file("${dummy_dir}/0")
+     rs_ch_exclude_bolt=file("${dummy_dir}/00")
+     rs_ch_exclude_bolt_multi=file("${dummy_dir}/00")
   }
 
 
@@ -492,8 +492,8 @@ if(params.bolt_h2){
      Bolt_ld_score_multi= Channel.fromPath(params.bolt_ld_score_file)
   }else{
      println "no ld files used for bolt "
-     Bolt_ld_score = file("${dummy_dir}/3")
-     Bolt_ld_score_multi = file("${dummy_dir}/3")
+     Bolt_ld_score = file("${dummy_dir}/03")
+     Bolt_ld_score_multi = file("${dummy_dir}/03")
   }
 //genetic_map_file
   if(params.genetic_map_file!=""){
@@ -502,8 +502,8 @@ if(params.bolt_h2){
      Bolt_genetic_map_multi= Channel.fromPath(params.genetic_map_file)
   }else{
      println "no genetic maps used "
-     Bolt_genetic_map = file("${dummy_dir}/4")
-     Bolt_genetic_map_multi = file("${dummy_dir}/4")
+     Bolt_genetic_map = file("${dummy_dir}/04")
+     Bolt_genetic_map_multi = file("${dummy_dir}/04")
   }
 
 

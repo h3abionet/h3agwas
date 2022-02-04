@@ -36,11 +36,25 @@ params.pos_ref = -1
 params.file_rs_buildrelat = ""
 params.rs_list=""
 params.sample_snps_rel=0
-params.gemma_num_cores=6
-params.gemma_mem_req="10GB"
+params.gemma_num_cores=4
+params.gemma_mem_req="4GB"
 params.gemma_bin = "gemma"
+params.gemma_mat_rel=""
+params.gemma_relopt = 1
+params.max_plink_cores=5
+params.plink_mem_req = '6GB' // how much plink needs for this
+params.sample_snps_rel_paramplkl="100 20 0.1 --maf 0.01"
 
-dummy_dir="${workflow.projectDir}/qc/input"
+
+
+
+max_plink_cores = params.max_plink_cores
+plink_mem_req = params.plink_mem_req
+
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../qc/input"
+
 
 def fileColExists = { fname, pname, cname ->
   if (fname.contains("s3://")){
@@ -188,11 +202,14 @@ if(params.gemma_mat_rel==""){
         plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores}
         """
     }
+    balise_filers_rel=1
    }else{
      if(params.file_rs_buildrelat==""){
         filers_matrel_mat_gem=file("${dummy_dir}/0") 
+        balise_filers_rel=0
      }else{
         filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
+        balise_filers_rel=1
      }
    }
     process getGemmaRel {

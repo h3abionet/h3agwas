@@ -1,4 +1,4 @@
-
+#!/usr/bin/env nextflow
 /*
  * Authors       :
  *
@@ -7,7 +7,7 @@
  *      jean-tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2019
+ *  2015-2022
  *
  *
  * Description  : Nextflow pipeline to transform vcf file in plink and other format
@@ -27,12 +27,12 @@ def helps = [ 'help' : 'help' ]
 allowed_params = ['file_listvcf', 'min_scoreinfo', "output_dir", "max_plink_cores"]
 
 params.plink_mem_req = '10GB' // how much plink needs for this
-params.output_dir="impute2/"
+params.output_dir="bimbam/"
 params.file_listvcf=""
 params.min_scoreinfo=0.6
 params.max_plink_cores = 8
 params.genotype_field="GP"
-params.qctoolsv2_bin="qctool_v2"
+params.qctoolsv2_bin="qctool"
 params.bcftools_bin="bcftools"
 params.score_imp="INFO"
 
@@ -54,6 +54,7 @@ cmp -s ${PATH_ASSOC}/chr${i}.vcf.count ${PATH_ASSOC}/chr${i}.bimbam.count && ech
 */
 
 process formatvcfinbimbam{
+  label 'py3utils'
   cpus params.max_plink_cores
   memory params.plink_mem_req
   time   params.big_time
