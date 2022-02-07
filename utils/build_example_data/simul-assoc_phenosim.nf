@@ -268,6 +268,7 @@ else LQTL=params.ph_list_qtl
 ph_quant_trait_param="-n ${params.ph_nb_qtl} -v $LQTL"
 }
 process SimulPheno{
+   label 'py2image'
    memory params.ph_mem_req
    time params.big_time
    input :
@@ -319,6 +320,7 @@ if(params.ph_normalise && params.data){
 }
 if(params.gemma==1){
   process getGemmaRel {
+    label 'gemma'
     cpus params.num_cores
     memory params.mem_req
     time params.big_time
@@ -342,6 +344,7 @@ if(params.gemma==1){
   else
      covariate_option = ""
   process doGemma{
+    label 'gemma'
     cpus params.num_cores
     memory params.mem_req
     time params.big_time
@@ -379,7 +382,7 @@ if(params.gemma==1){
   res_stat_gemmac=res_stat_gem.collect()
   process doMergeStatGemma{
     input :
-     val(liste_file) from res_stat_gemmac
+     file(liste_file) from res_stat_gemmac
     publishDir "${params.output_dir}/gemma", overwrite:true, mode:'copy'
     output :
      file(output_gemma)
@@ -444,6 +447,7 @@ if(params.boltlmm==1){
      covariate_option = ""
 
   process doBoltlmmm{
+    label 'bolt'
     cpus params.num_cores
     memory params.mem_req
     time params.big_time
@@ -484,7 +488,7 @@ if(params.boltlmm==1){
    res_stat_boltc=res_stat_bolt.collect()
   process doMergeStatBolt{
     input :
-      val(liste_file) from res_stat_boltc
+      file(liste_file) from res_stat_boltc
     publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
     output :
        file(output_bolt) 

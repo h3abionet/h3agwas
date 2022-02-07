@@ -11,8 +11,8 @@ The pipeline is run: `nextflow run utils/build_example_data/main.nassocf`
 The key options are:
 * `output_dir` : output direction
 * `output` : [default "out"]
-* `pos_allgeno` : position extracted from all genotype 
-* `list_chro`  : list chro extracted fromm 1000 genome
+* `pos_allgeno` : file contains chromosome and position that will be extracted from vcf file, each lines is chromosome and position [need, no default]
+* `list_chro`  : list chro extracted fromm 1000 genome [1-22,X : from  1 to 22 and X chromosome]
 
 * information relative of gwas catalog to extract:
 // * `gwas_cat` : file of gwas catalog, for the moment just [uscs format](http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz) is allowed (not inplemented)

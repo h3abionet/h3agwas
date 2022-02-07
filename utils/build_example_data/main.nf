@@ -38,12 +38,12 @@ def getlistchro(listchro){
 
 
 
-params.list_chro="1-22,X"
+params.list_chro="1-22"
 params.list_chro_pheno=""
 params.output="data"
 params.output_dir="allgeno_data/"
 params.pos_allgeno=""
-params.nb_cpus=10
+params.nb_cpus=5
 params.maf = 0.05
 params.thin = 0.01
 params.simu_hsq=0.3
@@ -58,7 +58,7 @@ params.sex_info="gender,1:male,2:female,IID:sample"
 params.simu_k=0.1
 params.simu_cc_p=0.5
 params.sex_error=0.05
-params.nb_locus=-1
+params.nb_snp=-1
 
 
 params.clump_p1=0.0001 
@@ -78,6 +78,11 @@ listchro_pheno=getlistchro(list_chro_pheno)
 listchro_ch=Channel.from(listchro)
 listchro_ch2=Channel.from(listchro)
 
+if(params.pos_allgeno==""){
+println "args params.pos_allgeno null"
+System.exit(0)
+
+}
 
 listchro_ch=listchro_ch.combine(Channel.fromPath(params.pos_allgeno, checkIfExists:true))
 
@@ -85,7 +90,7 @@ listchro_ch=listchro_ch.combine(Channel.fromPath(params.pos_allgeno, checkIfExis
 
 
 process Dl1000G{
-   label 'Utils'
+   label 'py3utils'
    cpus params.nb_cpus
    input :
       tuple val(chro), file(pos_geno) from listchro_ch 
@@ -214,7 +219,7 @@ process getchr_gc{
     newlistchro_ch_gwascat= newlistchro_ch_gwascat.combine(gwascat_pos)
 
 process Dl1000G_GC{
-   label 'Utils'
+   label 'py3utils'
    input :
       tuple val(chro), file(pos_geno) from newlistchro_ch_gwascat
    output :
@@ -306,7 +311,7 @@ process format_simulated{
      plk=bed.baseName
      outeffect=params.output+".effect.rs"
      """
-     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb} --nb_locus ${params.nb_locus}
+     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb} --nb_snp ${params.nb_snp}
      """
 }
 

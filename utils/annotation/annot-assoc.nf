@@ -77,7 +77,7 @@ params.cut_maf = 0.01
 params.loczm_bin  = ""
 params.loczm_pop = "AFR"
 params.loczm_build = "hg19"
-params.loczm_source ="1000G_March2012"
+params.loczm_source ="1000G_Nov2014"
 params.loczm_gwascat = ""
 params.data=""
 params.pheno=""
@@ -87,7 +87,13 @@ params.list_file_annot=""
 params.info_file_annot=""
 
 if(params.list_rs==""){
-error("list_rs null")
+error("params : list_rs not initialise, must be rs contains in bed / gwas file")
+}
+if(params.data==""){
+error("params : data not initialise, must be data file ")
+}
+if(params.pheno==""){
+error("params : pheno not initialise, must be column of data file")
 }
 
 
@@ -172,6 +178,9 @@ head_A1=params.head_A1
 head_A2=params.head_A2
 }
 
+if(params.loczm_bin==""){
+error("\n\n------params loczm_bin must be initialise \n\n\n---\n")
+}
 
 
 
@@ -241,7 +250,6 @@ process ExtractAllRs{
 
 listdb=Channel.from(params.list_db_anovar.split(','))
 process getannovar_db {
-  label 'Annovar'
   input : 
       val(db) from listdb
   publishDir "${params.output_dir}/dbzip/", overwrite:true, mode:'copy'
@@ -328,12 +336,13 @@ process PlotLocusZoom{
        set val(rs), file(filegwas),file(lz_dir) from locuszoom_ch
     publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
     output :
-       file("out_$rsnameout/*.svg")
-       set val(rs), file("out_$rsnameout/*.pdf") into report_lz_ch
+       file("out_*/*.svg")
+       set val(rs), file("out_*/*.pdf") into report_lz_ch
     script :
        rsnameout=rs.replace(':',"_")
        """
-       ${lz_dir}/bin/locuszoom --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date 
+       rs2=`echo $rs | awk -F':' '{if(NF==1){print \$0;}else{print \$1\":\"\$2;}}'` 
+       ${lz_dir}/bin/locuszoom --epacts  $filegwas --delim tab --refsnp  \$rs2 --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date 
        """
 }
 

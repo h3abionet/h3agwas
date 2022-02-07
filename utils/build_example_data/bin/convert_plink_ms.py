@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
 def ReadBim(FileBim):
     LireBim=open(FileBim)
@@ -32,8 +32,7 @@ for Ligne in Lire:
    CmtInd+=1
 Lire.close()
 
-NbSnp/=2
-print CmtInd, NbSnp, len(ListeAltRef)
+NbSnp=int(NbSnp/2)
 Ecrire=open(NomFileOut,'w')
 EcrireNewPed=open(NomFileOutPed,'w')
 ListeNbSnp=range(0,NbSnp)

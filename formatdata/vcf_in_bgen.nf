@@ -33,7 +33,7 @@ params.file_listvcf=""
 params.min_scoreinfo=0.6
 params.max_plink_cores = 8
 params.genotype_field="GP"
-params.qctoolsv2_bin="qctool_v2"
+params.qctoolsv2_bin="qctool"
 params.bcftools_bin="bcftools"
 params.score_imp="INFO"
 
@@ -53,7 +53,7 @@ process formatvcfinbgen{
      file(vcf) from list_vcf
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
-     file("${Ent}.bimbam")
+     file("${Ent}.bgen")
   script :
     Ent=vcf.baseName
     """

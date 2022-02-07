@@ -39,7 +39,7 @@ params.poshead_rs_inforef=2
 params.poshead_bp_inforef=3
 params.file_ref_gzip=""
 params.link_rs_info="ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/All_20180423.vcf.gz"
-params.bin_crossmap="CrossMap.py"
+params.bin_crossmap="/usr/local/bin/CrossMap.py"
 params.data_crossmap=''
 params.link_data_crossmap='http://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz'
 
@@ -78,6 +78,7 @@ file_rsinfo_ch=Channel.fromPath(params.file_ref_gzip)
 }
 
 process ExtractInfo{
+   label 'R'
    input :
        file(fileconvert) from file_convert_ch_ext
    output :
@@ -121,6 +122,7 @@ CrossMap_data_ch=Channel.fromPath(params.data_crossmap)
 }
 
 process CrossMapLaunch{
+   label 'py3utils'
    input :
       file(CrossMapRef) from CrossMap_data_ch
       file(posI) from pos_convert
@@ -136,6 +138,7 @@ process CrossMapLaunch{
 }
 
 process MergeRes{
+   label 'R'
    input :
     file(crossmap) from result_crossmap
     file(outinfors) from outinfors_ch

@@ -1,4 +1,5 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
+
 stat_box_data <- function(x) {
   upper_limit=min(x, na.rm=T) - .05*min(x, na.rm=T)
   return( 
@@ -14,7 +15,7 @@ stat_box_data <- function(x) {
 }
 ListPackNeed=c("ggpubr", "optparse", "gridExtra")
 ListPackNeedIn<-ListPackNeed[!ListPackNeed %in% rownames(installed.packages())]
-for(pack in ListPackNeedIn)if(pack %in% rownames(installed.packages()) == FALSE) {install.packages(pack, lib= Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')}
+#for(pack in ListPackNeedIn)if(pack %in% rownames(installed.packages()) == FALSE) {install.packages(pack, lib= Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')}
 library("ggpubr")
 library("optparse")
 require(gridExtra)

@@ -127,6 +127,9 @@ process ExtractChroGWAS{
       extractandformat_gwas.py --input_file $gwas --out_file ${gwas_out} --chr $chro --info_file $infofile
       """
 }
+if(params.file_ref_gzip==""){
+error('params.file_ref_gzip : file contains information for rs notnot found')
+}
 gwas_format_chro_rs=gwas_format_chro.combine(Channel.fromPath(params.file_ref_gzip))
 
 process ExtractRsIDChro{
