@@ -141,7 +141,7 @@ plk_chro_flt=plk_chro_cl.collect()
 process mergePlinkFile{
    cpus params.nb_cpus
    input :
-      val(allfile) from plk_chro_flt
+      file(allfile) from plk_chro_flt
    output :
      tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch_befsex
    script : 
@@ -272,7 +272,7 @@ plk_chro_flt_gc=plk_chro_cl_gc.collect()
 process mergePlinkFile_GC{
    cpus params.nb_cpus
    input :
-      val(allfile) from plk_chro_flt_gc
+      file(allfile) from plk_chro_flt_gc
    publishDir "${params.output_dir}/simul_pheno/datai/",  overwrite:true, mode:'copy'
    output :
      tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch_gc

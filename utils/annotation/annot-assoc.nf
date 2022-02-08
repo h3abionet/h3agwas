@@ -11,7 +11,7 @@
  *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
- *  2015-2018
+ *  2015-2022
  *
  *
  * Description : pipeline annotation 
@@ -219,7 +219,14 @@ process ExtractInfoRs{
 }
 
 if(params.list_file_annot!=""){
-fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot,checkIfExists:true))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot,checkIfExists:true)))
+fileannot_ch = infors_rs
+listfile=[]
+file(params.list_file_annot).readLines().each{listfile.add(it.split()[1])}
+listdb=Channel.from(list_rs).combine(Channel.fromPath(listfile, checkIfExists:true).collect().toList())
+infodb=Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot,checkIfExists:true))
+infofilechr=Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot,checkIfExists:true))
+
+
 }else{
 
 gwas_ch_annovar = Channel.fromPath(params.file_gwas,checkIfExists:true)
@@ -307,16 +314,21 @@ process merge_annovar{
    input :
     file(listfile) from db_format_ch
    output:
-    set file(file_annot), file(info_file_annot) into fileannot_ch  
+    file(listfile) into listdb
+    file(info_file_annot) into infodb
+    file("annot") into infofilechr
    script :
       file_annot="annot"
       info_file_annot="annot.info"
       """
-      ls -l ${params.output_dir}/db_annov/*_merge.annov | awk -F"[_/]" '{\${NF-1}"\t"\$0}'> $file_annot  
+      ls  *_merge.annov | awk -F"[_]" '{print \$1"\\t"\$0}'> annot
       touch $info_file_annot
       """
 }
-//fileannot_ch = infors_rs.join(Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot))).join(Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot)))
+listdb = Channel.from(list_rs).combine(infors_rs)
+infodb = Channel.from(list_rs).cross(infodb)
+infofilechr = Channel.from(list_rs).combine(infofilechr)
+
 }
 
 
@@ -342,15 +354,21 @@ process PlotLocusZoom{
        rsnameout=rs.replace(':',"_")
        """
        rs2=`echo $rs | awk -F':' '{if(NF==1){print \$0;}else{print \$1\":\"\$2;}}'` 
+       chmod +x locuszoom/bin/locuszoom
        ${lz_dir}/bin/locuszoom --epacts  $filegwas --delim tab --refsnp  \$rs2 --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date 
        """
 }
 
+
+//println list_rs.size()
 process ExtractAnnotation{
       label 'latex'
       memory plink_mem_req
       input :
-        set val(rs),file(file_rs),file(annot_file), file(annot_info) from fileannot_ch
+        tuple val(rs),path(file_rs) from fileannot_ch
+        tuple val(rs), file(listfile) from listdb 
+        tuple val(rs), file(infoannot) from infodb
+        tuple val(rs),file(filechro) from infofilechr
       publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
       output :
         file("${out}*")
@@ -360,7 +378,7 @@ process ExtractAnnotation{
          out="annot-"+rs.replace(':','_')
          rsnameout=rs.replace(':',"_")
          """  
-         an_extract_annot.py --list_file_annot $annot_file --info_pos $file_rs --out $out --info_file_annot $annot_info
+         an_extract_annot.py --list_file_annot $filechro --info_pos $file_rs --out $out --info_file_annot $infoannot
          pdflatex $out
          pdflatex $out
          """

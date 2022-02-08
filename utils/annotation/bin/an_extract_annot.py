@@ -2,6 +2,7 @@
 import matplotlib
 matplotlib.use('pdf')
 import matplotlib.pyplot as plt
+import os
 import sys
 import pandas as pd
 import argparse
@@ -133,7 +134,7 @@ latex_tex = r"""
 if FileAnnot==None :
    print("doesn't find chromosome or All in "+ args.info_pos+"\n")
    sys.exit(1)
-(InfoAnnotPos, balisefind, head)=GetAnnotation(FileAnnot,infopos, args.out+".annot")
+(InfoAnnotPos, balisefind, head)=GetAnnotation(os.path.basename(FileAnnot),infopos, args.out+".annot")
 print(balisefind)
 out_tex=args.out+".tex"
 

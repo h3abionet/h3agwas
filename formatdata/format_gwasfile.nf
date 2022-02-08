@@ -42,7 +42,7 @@ allowed_params+=allowed_header
 allowed_params+=allowed_headnewernew
 
 
-params.mem_req = '10GB' // how much plink needs for this
+params.mem_req = '2GB' // how much plink needs for this
 params.file_gwas=""
 params.output_dir="out"
 params.output="output"
