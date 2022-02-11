@@ -120,7 +120,7 @@ checkhead<-function(head,Data, type){
 if(length(which(head %in% names(Data)))==0){
 print(names(Data))
 print(paste('not found ', head,'for',type ,'data'))
-q(2)
+q('n',2)
 }
 }
 
@@ -140,7 +140,7 @@ outhead=opt[['out']]
 datagwascat=read.csv(opt[['gwascat']])
 #datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-read.table(opt[['gwas']], header=T)
-checkhead(headaf, datagwas,'af');checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headps, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
+checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headps, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');
 
@@ -153,11 +153,21 @@ if(is.null(opt[['N_value']]))Nval<-10000 else Nval=opt[['N_value']]
 datagwas[,'N_gwas']<-Nval
 headN<-'N_gwas'
 }
+
+baliseh2=F
+if(!is.null(headaf)){
+checkhead(headaf, datagwas,'af');
 datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
 datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
+}else{
+cat('no frequencie\n')
+datagwas$h2.gwas<-NA
+datagwas$z.gwas<-NA
+baliseh2=T
 
-cat(c(headchr,headps,'\n'))
-cat(c(headchrcat,headbpcat))
+}
+
+
 names(datagwas)
 names(datagwascat)
 MergeAll<-merge(datagwas, datagwascat,by.x=c(headchr,headps), by.y=c(headchrcat,headbpcat))
@@ -172,11 +182,14 @@ MergeAll[,'af_gwas_a1cat']<-NA
 MergeAll[BaliseChange,'af_gwas_a1cat']<- 1 - MergeAll[BaliseChange,headafcat]
 MergeAll[!BaliseChange,'af_gwas_a1cat']<-  MergeAll[!BaliseChange,headafcat]
 
-svg(paste(outhead,'_cmpfrequencies.svg', sep=''))
-cat('af ',headaf, 'afreq \n')
+pdf(paste(outhead,'_cmpfrequencies.pdf', sep=''))
+if(!is.null(headaf)){
 plotfreq(MergeAll[QC,],headaf, 'af_gwas_a1cat',cex_pt=1.5,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
+}else{
+plot(1:10, 1:10, type='n')
+text(2,5, 'no frequencie to plot')
+}
 dev.off()
-
 QC<-!is.na(MergeAll[,heada1]) & !is.na(MergeAll[,heada2]) & !is.na(MergeAll[,heada1cat]) & !is.na(MergeAll[,headzcat]) & (MergeAll[,heada1] == MergeAll[,heada1cat] | MergeAll[,heada2] == MergeAll[,heada1cat])
 
 BaliseChange<-QC & MergeAll[,heada1]!=MergeAll[,heada1cat]
@@ -185,11 +198,16 @@ MergeAll[BaliseChange,'z_gwas_a1cat']<- - MergeAll[BaliseChange,headzcat]
 MergeAll[!BaliseChange,'z_gwas_a1cat']<-MergeAll[!BaliseChange,headzcat]
 
 
-svg(paste(outhead,'_cmpz.svg', sep=''))
+pdf(paste(outhead,'_cmpz.pdf', sep=''))
+if(!is.null(headaf)){
 plotZ(MergeAll[QC,],'z.gwas','z_gwas_a1cat', cex_pt=1.5,alpha_pt=0.15,ylab='GWAS catalog', xlab='GWAS')
+}else{
+plot(1:10, 1:10, type='n')
+text(2,5, 'no frequencie to compute z ')
+}
 dev.off()
 
-svg(paste(outhead,'_qq.svg', sep=''))
+pdf(paste(outhead,'_qq.pdf', sep=''))
 qq(MergeAll[,headpval])
 dev.off()
 

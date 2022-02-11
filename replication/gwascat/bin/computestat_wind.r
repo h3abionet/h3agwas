@@ -51,6 +51,7 @@ rect(rep(0,length(ht2$counts)),(1:length(ht2$counts))/nbcat,
 
 
 plotZ<-function(dataall,Z1, Z2, xlab='Z (GWAS cat)', ylab='Z (AWIGEN)'){
+datagwas$z.gwas<-NA
 r2<-cor(dataall[,Z1],dataall[,Z2], method='spearman')
 r2abs<-cor(abs(dataall[,Z1]), abs(dataall[,Z2]), method='spearman')
 plot(dataall[,Z1], dataall[,Z2], pch=22, cex=0.5,bg=t_col("blue") ,col=t_col("blue"), xlab=xlab, ylab=ylab)
@@ -108,7 +109,7 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--p_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
-  make_option(c("--wind"), type="numeric", default=NULL,
+  make_option(c("--wind"), type="numeric", default=50,
               help="dataset file name", metavar="character"),
   make_option(c("--min_pval"), type="numeric", default=NULL,
               help="dataset file name", metavar="character"),
@@ -124,7 +125,7 @@ checkhead<-function(head,Data, type){
 if(length(which(head %in% names(Data)))==0){
 print(names(Data))
 print(paste('not found ', head,'for',type ,'data'))
-q(2)
+q('no',2)
 }
 }
 
@@ -148,7 +149,7 @@ checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro
 datagwascat$begin<-datagwascat[,headbpcat]-wind
 datagwascat$end<-datagwascat[,headbpcat]+wind
 datagwas<-read.table(opt[['gwas']], header=T)
-checkhead(headaf, datagwas,'af');checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
+checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
 
 
 
@@ -160,8 +161,18 @@ if(is.null(opt[['N_value']]))Nval<-10000 else Nval=opt[['N_value']]
 datagwas[,'N_gwas']<-Nval
 headN<-'N_gwas'
 }
+baliseh2=F
+if(!is.null(headaf)){
+checkhead(headaf, datagwas,'af');
 datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
 datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
+}else{
+cat('no frequencie\n')
+datagwas$h2.gwas<-NA
+datagwas$z.gwas<-NA
+baliseh2=T
+
+}
 
 ##  merge windows
 if(opt[['merge_wind']]==1){

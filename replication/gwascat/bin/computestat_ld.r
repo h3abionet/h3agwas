@@ -103,7 +103,7 @@ outhead=opt[['out']]
 datagwascat=read.csv(opt[['gwascat']])
 #datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-read.table(opt[['gwas']], header=T)
-checkhead(headaf, datagwas,'af');checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
+checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');
 
@@ -131,9 +131,21 @@ if(is.null(opt[['N_value']]))Nval<-10000 else Nval=opt[['N_value']]
 datagwas[,'N_gwas']<-Nval
 headN<-'N_gwas'
 }
+
+baliseh2=F
+if(!is.null(headaf)){
+checkhead(headaf, datagwas,'af');
 datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
 datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
-#datagwasf<-datagwas[datagwas[,headpval]<headpval,]
+}else{
+cat('no frequencie\n')
+datagwas$h2.gwas<-NA
+datagwas$z.gwas<-NA
+baliseh2=T
+
+}
+
+
 
 datalda1<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_A", "BP_A"));names(datalda1)[names(datalda1)=="CHR_B"]<-headchr;names(datalda1)[names(datalda1)=="BP_B"]<-headbp;names(datalda1)[names(datalda1)=="SNP_B"]<-'rs_gwas';names(datalda1)[names(datalda1)=="SNP_A"]<-'rs_cat'
 datalda2<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_B", "BP_B"));names(datalda2)[names(datalda2)=="CHR_A"]<-headchr;names(datalda2)[names(datalda2)=="BP_A"]<-headbp;names(datalda2)[names(datalda2)=="SNP_A"]<-'rs_gwas';names(datalda2)[names(datalda2)=="SNP_B"]<-'rs_cat'

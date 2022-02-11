@@ -3,9 +3,7 @@
 # Converts PLINK covariate and fam file into a covariate file for Gemma
 
 import sys
-import pandas as pd
 import argparse
-import numpy as np
 def readbed(filebed, wind):
   readbed=open(filebed)
   dicpos={}

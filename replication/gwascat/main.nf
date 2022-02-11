@@ -119,7 +119,7 @@ params.n_repet=10000
 max_plink_cores=params.max_plink_cores 
 plink_mem_req = params.plink_mem_req
 
-plink_mem_req_max=plink_mem_req.replace('GB','000').replace('KB','').replace(' ','')
+plink_mem_req_max=plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
 other_mem_req=params.other_mem_req
 other_cpus_req=params.other_cpus_req
 
@@ -351,7 +351,7 @@ process computedstat_pos{
         file(gwascat)  from gwascat_all_statpos
    publishDir "${params.output_dir}/result/exact_rep",  overwrite:true, mode:'copy'
    output :
-      set file("${out}.csv"), file("${out}_cmpfrequencies.svg"), file("${out}_cmpz.svg") 
+      set file("${out}.csv"), file("${out}_cmpfrequencies.pdf"), file("${out}_cmpz.pdf") 
       file("$out*") 
    script :
     out=params.output+"_pos"
@@ -509,6 +509,7 @@ process build_ldwind{
 
 /*
 process computed_ld2_stat{
+   label 'R'
    memory other_mem_req
    cpus other_cpus_req
    input :
@@ -524,6 +525,7 @@ process computed_ld2_stat{
 }
 
 process computed_ldext_stat{
+   label 'R'
    memory other_mem_req
    cpus other_cpus_req
    input :
@@ -553,7 +555,8 @@ process computed_ldext_stat{
 
 
 */
-process computed_ldwind_stat{
+ process computed_ldwind_stat{
+ label 'R'
  input :
       set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ld_wind_ch
  publishDir "${params.output_dir}/result/ldwind/wind",  overwrite:true, mode:'copy'
@@ -570,7 +573,7 @@ process computed_ldwind_stat{
 
  
 process computed_ldwindext_stat{
- 
+ label 'R'
  input :
       set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ldext_wind_ch
  publishDir "${params.output_dir}/result/ldwind/windext",  overwrite:true, mode:'copy'

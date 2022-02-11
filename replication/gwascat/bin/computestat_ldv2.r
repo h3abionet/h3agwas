@@ -145,6 +145,10 @@ headN<-'N_gwas'
 if(!is.null(headaf)){
  datagwas$h2.gwas<-computedher(datagwas[[headbeta]], datagwas[[headse]], datagwas[[headaf]],datagwas[[headN]])
  datagwas$z.gwas<-datagwas[[headbeta]]/datagwas[[headse]]
+}else{
+datagwas$h2.gwas<-NA
+datagwas$z.gwas<-NA
+
 }
 
 #datalda1<-merge(datagwascat, datald, by.x=c(headchrcat,headbpcat), by.y=c("CHR_A", "BP_A"));names(datalda1)[names(datalda1)=="CHR_B"]<-headchr;names(datalda1)[names(datalda1)=="BP_B"]<-headbp;names(datalda1)[names(datalda1)=="SNP_B"]<-'rs_gwas';names(datalda1)[names(datalda1)=="SNP_A"]<-'rs_cat'

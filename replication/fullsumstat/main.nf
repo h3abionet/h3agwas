@@ -21,15 +21,16 @@ import java.nio.file.Paths
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "min_pval_clump", "size_win_kb"]
-allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances","instance-type", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts"]
-allowed_params_head_sumstat1 = ["file_gwas_sumstat1","head_pval_sumstat1", "head_freq_sumstat1", "head_bp_sumstat1", "head_chr_sumstat1", "head_rs_sumstat1", "head_beta_sumstat1", "head_se_sumstat1", "head_a1_sumstat1", "head_a2_sumstat1", "head_n_sumstat1", "n_count1"]
-allowed_params_head_sumstat2 = ["file_gwas_sumstat2","head_pval_sumstat2", "head_freq_sumstat2", "head_bp_sumstat2", "head_chr_sumstat2", "head_rs_sumstat2", "head_beta_sumstat2", "head_se_sumstat2", "head_a1_sumstat2", "head_a2_sumstat2", "head_n_sumstat2", 'n_count2']
+allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "min_pval_clump", "size_win_kb","secret-key", "region", "AMI", "instanceType","bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "plink_mem_req", "plink_mem_req"]
+allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts", "max_plink_cores"]
+allowed_params_head_sumstat1 = ["file_gwas_sumstat1","head_pval_sumstat1", "head_freq_sumstat1", "head_bp_sumstat1", "head_chr_sumstat1", "head_rs_sumstat1", "head_beta_sumstat1", "head_se_sumstat1", "head_A1_sumstat1", "head_A2_sumstat1", "head_n_sumstat1", "n_count1"]
+allowed_params_head_sumstat2 = ["file_gwas_sumstat2","head_pval_sumstat2", "head_freq_sumstat2", "head_bp_sumstat2", "head_chr_sumstat2", "head_rs_sumstat2", "head_beta_sumstat2", "head_se_sumstat2", "head_A1_sumstat2", "head_A2_sumstat2", "head_n_sumstat2", 'n_count2']
 allowed_params_clump= []
 
 
 allowed_params+=allowed_params_head_sumstat1
 allowed_params+=allowed_params_head_sumstat2
+allowed_params+=allowed_params_other
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
     println "\nUnknown parameter : Check parameter <$parm>\n";
@@ -71,8 +72,8 @@ params.head_chr_sumstat1 = "CHR"
 params.head_rs_sumstat1 = "SNP"
 params.head_beta_sumstat1=""
 params.head_se_sumstat1=""
-params.head_a1_sumstat1="ALLELE1"
-params.head_a2_sumstat1="ALLELE0"
+params.head_A1_sumstat1="ALLELE1"
+params.head_A2_sumstat1="ALLELE0"
 params.head_n_sumstat1=""
 params.head_ncount_sumstat1=""
 
@@ -85,15 +86,14 @@ params.head_chr_sumstat2 = ""
 params.head_rs_sumstat2 = ""
 params.head_beta_sumstat2=""
 params.head_se_sumstat2=""
-params.head_a1_sumstat2=""
-params.head_a2_sumstat2=""
+params.head_A1_sumstat2=""
+params.head_A2_sumstat2=""
 params.head_n_sumstat2=""
 params.head_ncount_sumstat2=""
 
 
 
 
-params.other_mem_req="10GB"
 params.input_pat=""
 params.input_dir=""
 
@@ -117,8 +117,7 @@ params.max_plink_cores = 4
 max_plink_cores=params.max_plink_cores 
 plink_mem_req = params.plink_mem_req
 
-plink_mem_req_max=plink_mem_req.replace('GB','000').replace('KB','').replace(' ','')
-other_mem_req=params.other_mem_req
+plink_mem_req_max=plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('Mb','').replace('MB','')
 other_cpus_req=params.other_cpus_req
 
 
@@ -143,6 +142,12 @@ process extract_possumstat2{
     """ 
 }
 
+if(params.file_gwas_sumstat1==""){
+error("\n\n------\nError in your config\nFile file_gwas_sumstat1 not defined\n\n---\n")
+}
+if(params.file_gwas_sumstat2==""){
+error("\n\n------\nError in your config\nFile file_gwas_sumstat2 not defined\n\n---\n")
+}
 filegwas_sum1=Channel.fromPath(params.file_gwas_sumstat1,checkIfExists:true)
 
 process extractgwas_forplink{
@@ -154,7 +159,7 @@ process extractgwas_forplink{
    script :
     out=filegwas+".assoc"
     """
-    plink_format.py --inp_asso $filegwas --chro_header ${params.head_chr_sumstat1} --bp_header ${params.head_bp_sumstat1} --a1_header ${params.head_a1_sumstat1} --a2_header ${params.head_a2_sumstat1}   --pval_header ${params.head_pval_sumstat1} --beta_header ${params.head_beta_sumstat1}  --out ${out} --rs_header ${params.head_rs_sumstat1} --se_header ${params.head_se_sumstat1}
+    plink_format.py --inp_asso $filegwas --chro_header ${params.head_chr_sumstat1} --bp_header ${params.head_bp_sumstat1} --a1_header ${params.head_A1_sumstat1} --a2_header ${params.head_A2_sumstat1}   --pval_header ${params.head_pval_sumstat1} --beta_header ${params.head_beta_sumstat1}  --out ${out} --rs_header ${params.head_rs_sumstat1} --se_header ${params.head_se_sumstat1}
     """
 }
 
@@ -200,6 +205,7 @@ filegwas_sum2_stat=Channel.fromPath(params.file_gwas_sumstat2,checkIfExists:true
 
 
 process computed_stat{
+  label 'R'
   input :
     file(clump) from clumped_sumstat1 
     file(sumstat1) from filegwas_sum1_stat
@@ -216,14 +222,15 @@ process computed_stat{
  """ 
 #
  extract_pvalue.r \
- --gwas_ref $sumstat1 --gwas_ref_chr ${params.head_chr_sumstat1} --gwas_ref_bp ${params.head_bp_sumstat1} --gwas_ref_a1 ${params.head_a1_sumstat1} --gwas_ref_a2 ${params.head_a2_sumstat1} --gwas_ref_beta ${params.head_beta_sumstat1} --gwas_ref_se ${params.head_se_sumstat1} --gwas_ref_p ${params.head_pval_sumstat1} --gwas_ref_af ${params.head_freq_sumstat1} \
- --gwas_cmp $sumstat2 --gwas_cmp_chr ${params.head_chr_sumstat2} --gwas_cmp_bp ${params.head_bp_sumstat2} --gwas_cmp_a1 ${params.head_a1_sumstat2} --gwas_cmp_a2 ${params.head_a2_sumstat2} --gwas_cmp_beta ${params.head_beta_sumstat2} --gwas_cmp_se ${params.head_se_sumstat2} --gwas_cmp_p ${params.head_pval_sumstat2} --gwas_cmp_af ${params.head_freq_sumstat2} \
+ --gwas_ref $sumstat1 --gwas_ref_chr ${params.head_chr_sumstat1} --gwas_ref_bp ${params.head_bp_sumstat1} --gwas_ref_a1 ${params.head_A1_sumstat1} --gwas_ref_a2 ${params.head_A2_sumstat1} --gwas_ref_beta ${params.head_beta_sumstat1} --gwas_ref_se ${params.head_se_sumstat1} --gwas_ref_p ${params.head_pval_sumstat1} --gwas_ref_af ${params.head_freq_sumstat1} \
+ --gwas_cmp $sumstat2 --gwas_cmp_chr ${params.head_chr_sumstat2} --gwas_cmp_bp ${params.head_bp_sumstat2} --gwas_cmp_a1 ${params.head_A1_sumstat2} --gwas_cmp_a2 ${params.head_A2_sumstat2} --gwas_cmp_beta ${params.head_beta_sumstat2} --gwas_cmp_se ${params.head_se_sumstat2} --gwas_cmp_p ${params.head_pval_sumstat2} --gwas_cmp_af ${params.head_freq_sumstat2} \
  --file_clump $clump --out $out $n_ref $n_cmp
   """
 }
 
 
 process do_metal{
+  label 'metaanalyse'
   input :
     set file(sumstat1), file(sumstat2) from metalanalyse_ch
   publishDir "${params.output_dir}/tmp/metal",  overwrite:true, mode:'copy'
@@ -242,6 +249,7 @@ process do_metal{
 }
 
 process merge_res{
+  label 'R'
   input  :
      file(metal) from metal_res_ch
      file(fileres) from resume_all

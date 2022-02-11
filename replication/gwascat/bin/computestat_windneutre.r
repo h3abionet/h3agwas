@@ -22,7 +22,7 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--wind"), type="numeric", default=NULL,
               help="dataset file name", metavar="character"),
-  make_option(c("--nrep"), type="character", default=NULL,
+  make_option(c("--nrep"), type="integer", default=NULL,
               help="dataset file name", metavar="integer"),
   make_option(c("--cpus"), type="character", default=NULL,
               help="dataset file name", metavar="integer"),
@@ -44,6 +44,7 @@ datagwas<-fread(opt[['gwas']], header=T)
 checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
 
 
+nrep=min(nrep, nrow(datagwas)-1)
 listtmp<-sample(1:nrow(datagwas), nrep)
 resumeres<-mclapply(listtmp, function(x){
 infopos<-as.data.frame(datagwas[x,]);bp<-infopos[,headbp];chr<-infopos[,headchr];begin<-bp-around;end<-bp+around
