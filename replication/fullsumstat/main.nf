@@ -59,6 +59,12 @@ params.n_count1=""
 
 params.head_n_sumstat2=""
 params.n_count2=""
+if(params.head_n_sumstat1=="" & params.n_count1==""){
+error(' head_n_sumstat1 not initialise and n_count1 not intitialise')
+}
+if(params.head_n_sumstat2=="" & params.n_count2==""){
+error(' head_n_sumstat2 not initialise and n_count2 not intitialise')
+}
 
 params.mem_req="8G"
 params.big_time="1000H"
@@ -74,7 +80,6 @@ params.head_beta_sumstat1=""
 params.head_se_sumstat1=""
 params.head_A1_sumstat1="ALLELE1"
 params.head_A2_sumstat1="ALLELE0"
-params.head_n_sumstat1=""
 params.head_ncount_sumstat1=""
 
 
@@ -88,7 +93,6 @@ params.head_beta_sumstat2=""
 params.head_se_sumstat2=""
 params.head_A1_sumstat2=""
 params.head_A2_sumstat2=""
-params.head_n_sumstat2=""
 params.head_ncount_sumstat2=""
 
 
@@ -217,8 +221,8 @@ process computed_stat{
     set file('sumstat_ref.metal'), file('sumstat_cmp.metal') into metalanalyse_ch
  script :
    out=params.output+"_stat" 
-   n_ref=(params.head_n_sumstat1!="") ? " --gwas_ref_n ${params.head_n_sumstat1} " :  " --gwas_ref_ncount ${params.head_ncount_sumstat1}"
-   n_cmp=(params.head_n_sumstat2!="") ? " --gwas_cmp_n ${params.head_n_sumstat2} " :  " --gwas_cmp_ncount ${params.head_ncount_sumstat2}"
+   n_ref=(params.head_n_sumstat1!="") ? " --gwas_ref_n ${params.head_n_sumstat1} " :  " --gwas_ref_ncount ${params.n_count1}"
+   n_cmp=(params.head_n_sumstat2!="") ? " --gwas_cmp_n ${params.head_n_sumstat2} " :  " --gwas_cmp_ncount ${params.n_count2}"
  """ 
 #
  extract_pvalue.r \
@@ -235,7 +239,7 @@ process do_metal{
     set file(sumstat1), file(sumstat2) from metalanalyse_ch
   publishDir "${params.output_dir}/tmp/metal",  overwrite:true, mode:'copy'
   output :
-     file("${out}1.stat") into metal_res_ch
+     file("${out}_1.stat") into metal_res_ch
      file("${metal_config}")
   script :
       metal_config="metal_config.config"

@@ -551,11 +551,6 @@ def getres(x) {
   return res.trim()
 }
 
-nextflowversion =getres("nextflow -v")
-if (workflow.repository)
-  wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
-else
-  wflowversion="A local copy of the workflow was used"
 
 
 

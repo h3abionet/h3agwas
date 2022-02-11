@@ -87,7 +87,7 @@ param_Metal+=["",""]
 if args.genomic_control[0]=="T" :
       param_Metal.append("GENOMICCONTROL " + args.genomic_control)
 if args.inv_var_weigth!='o':
-     param_Metal.append("OUTFILE "+args.out_file_metal+".stat")
+     param_Metal.append("OUTFILE "+args.out_file_metal+"_ .stat")
      param_Metal.append("ANALYZE\n")
 param_Metal.append("QUIT\n")
 
