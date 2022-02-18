@@ -225,10 +225,10 @@ if(Cmtwindcat==1)newwindcat<-windcat
 else newwindcat <-rbind(newwindcat,windcat)
 }
 
-Allwingwasca<-merge(datagwascatf[,names(datagwascatf)!=c("begin","end")],merge(newwindcat,datagwas[!is.na(datagwas$wind_num) ,],by='wind_num'),by=c('wind_num'))
+Allwingwasca<-merge(datagwascatf[,!(names(datagwascatf) %in% c("begin","end"))],merge(newwindcat,datagwas[!is.na(datagwas$wind_num) ,],by='wind_num'),by=c('wind_num'))
 
 #write.csv(Allwingwasca,file=paste(opt[['out']],'_resume_allwind.csv',sep=''))
-best_windcat<-merge(datagwascatf[,names(datagwascatf)!=c("begin","end")],merge(newwindcat,datagwas[!is.na(datagwas$wind_num) ,],by.x=c(headchrcat,'min_bp_gwas','wind_num'), by.y=c(headchr, headbp,'wind_num')),by=c('wind_num'))
+best_windcat<-merge(datagwascatf[,!(names(datagwascatf) %in% c("begin","end"))],merge(newwindcat,datagwas[!is.na(datagwas$wind_num) ,],by.x=c(headchrcat,'min_bp_gwas','wind_num'), by.y=c(headchr, headbp,'wind_num')),by=c('wind_num'))
 write.csv(best_windcat,file=paste(opt[['out']],'_bestgwaswind.csv',sep=''))
 
 infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]

@@ -200,7 +200,12 @@ params.pheno.split(",").each { p ->
 }
 
 
-dummy_dir="${workflow.projectDir}/qc/input"
+
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../../qc/input"
+
+
 
 
 //---- Modification of variables for pipeline -------------------------------//
@@ -345,20 +350,6 @@ if (params.data != "") {
 
 
   
-  process extractPheno {
-    input:
-     file(data) from data_ch
-    output:
-     file(phenof) into pheno_ch
-    script:
-     phenof = "pheno.phe"
-     all_phenos = params.covariates.length()>0 ? params.pheno+","+params.covariates : params.pheno
-     """
-     extractPheno.py $data ${all_phenos} $phenof
-     """
-  }
-
-
   pheno_label_ch = Channel.from(params.pheno.split(","))
 
   process showPhenoDistrib {
@@ -379,7 +370,7 @@ if (params.data != "") {
 
 if (params.gemma+params.gemma_gxe>0) {
    if(params.file_rs_buildrelat==""){
-        filers_matrel_mat_gem=file("${dummy_dir}/0")
+        filers_matrel_mat_gem=file("${dummy_dir}/00")
      }else{
         filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat)
    }
@@ -422,7 +413,7 @@ if (params.gemma == 1){
      covariate_option = ""
   ind_pheno_cols_ch = newNamePheno(params.pheno)
    if(params.rs_list==""){
-        rsfile=file("${dummy_dir}/2")
+        rsfile=file("${dummy_dir}/01")
      }else{
         rsfile=file(params.rs_list)
    }
@@ -522,7 +513,7 @@ gemma_merge=gemma_manhatten_ch2.join(gemma_permres.groupTuple())
 
 process ComputePval{
    input :
-     set val(pheno), file(gemmai), val(listgemperm) from gemma_merge
+     set val(pheno), file(gemmai), path(listgemperm) from gemma_merge
    publishDir params.output_dir, overwrite:true, mode:'copy'
    output :
      file("$out")
