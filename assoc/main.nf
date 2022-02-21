@@ -1729,7 +1729,8 @@ def getres(x) {
   return res.trim()
 }
 
-nextflowversion =getres("nextflow -v")
+//nextflowversion =getres("nextflow -v")
+nextflowversion =nextflow.version
 if (workflow.repository)
   wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
 else
