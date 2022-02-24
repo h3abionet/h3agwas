@@ -27,7 +27,7 @@ import java.nio.file.Paths
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel", "saige"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel", "saige", "gemma_bin"]
 
 
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -416,7 +416,7 @@ pheno     = ""
 
 /*Case where we sample builrelatdness*/
 balise_filers_rel=1
-if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige>0){
+if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params.gemma_gxe>0){
  if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
   process select_rs_format{
      cpus max_plink_cores
@@ -948,7 +948,7 @@ if (params.gemma+params.gemma_gxe>0) {
 
    }
 
-   if(params.gemma==1 & params.gemma_multi==1){
+   if(params.gemma+params.gemma_gxe>0 & params.gemma_multi==1){
      process getListeChroGem{
         input :
           file(BimFile) from bim_ch_fast_gem
@@ -1166,7 +1166,7 @@ if (params.gemma+params.gemma_gxe>0) {
 	 file(rsfilelist) from rsfile
        each this_pheno from ind_pheno_cols_ch_gxe_multi
        each chro from list_chro_gemma_gxe
-       publishDir params.output_dir, overwrite:true, mode:'copy'
+       publishDir '${params.output_dir}/chro/', overwrite:true, mode:'copy'
        output:
 	 file("${dir_gemma}/${out}.log.txt")
 	 set val(our_pheno3), file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro_gxe
@@ -1294,7 +1294,7 @@ if (params.gemma+params.gemma_gxe>0) {
        our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
        gemmaresfreq=gemmares+'.withfreq' 
        """
-       added_freq_gxe.py --bfile $base --file_gxe $gemmares --pheno_file $data_ch --pheno ${our_pheno3} --pheno_gxe ${params.gxe} --out $gemmaresfreq  --plk_cores ${params.gemma_num_cores}
+       added_freq_gxe.py --bfile $base --file_gxe $gemmares --pheno_file $data_file --pheno ${our_pheno3} --pheno_gxe ${params.gxe} --out $gemmaresfreq  --plk_cores ${params.gemma_num_cores}
        """
   } 
 

@@ -126,6 +126,6 @@ freq2=freq2.rename(index=str, columns={"MAF": "Freq_2", "NCHROBS": "N_2", "CHR":
 gxeAll=pd.merge(gxeAll,freq2,how="left",on=[args.gwas_chr, args.gwas_rs])
 del freq2
 
-gxeAll.to_csv(out, sep='\t', na_rep='NA', header=True, index=False, mode='w', encoding=None, compression=None,line_terminator='\n', chunksize=None, tupleize_cols=None, date_format=None, doublequote=True, escapechar=None, decimal='.')
+gxeAll.to_csv(out, sep='\t', na_rep='NA', header=True, index=False, mode='w')
 
 
