@@ -1166,7 +1166,6 @@ if (params.gemma+params.gemma_gxe>0) {
 	 file(rsfilelist) from rsfile
        each this_pheno from ind_pheno_cols_ch_gxe_multi
        each chro from list_chro_gemma_gxe
-       publishDir "${params.output_dir}/chro/", overwrite:true, mode:'copy'
        output:
 	 file("${dir_gemma}/${out}.log.txt")
 	 set val(our_pheno3), file("${dir_gemma}/${out}.assoc.txt"), val(base) into gemma_manhatten_ch_chro_gxe
