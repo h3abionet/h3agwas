@@ -180,7 +180,7 @@ process ChangeFormatFile {
        newfile_assoc="${file_assoc}_${num}.modif"
        newfile_assocplk="${file_assoc}_${num}.modif.plk"
        """
-       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file  --sep_out TAB --use_rs ${params.use_rs}
+       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file  --sep_out TAB --use_rs ${params.use_rs} --rs_ref $file_ref
        """
 }
 

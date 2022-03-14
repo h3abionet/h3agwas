@@ -12,7 +12,7 @@ def formatrs(chro, bp,a1,a2) :
   else :
      AA1=a2
      AA2=a1
-  newrs=chro+'_'+bp+'_'+a1+'_'+a2
+  newrs=chro+'_'+bp+'_'+AA1+'_'+AA2
   return(newrs)
 
 
@@ -282,7 +282,7 @@ elif balise_use_chrps :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        tmp=[checknull(spl[x]) for x in ps_head]
        #tmp.append(ls_chrps_dic[spl[HeadChro]][spl[HeadPos]])
-       newrs=formatr(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
+       newrs=formatrs(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
        if newrs ==  desRS[1] :
          tmp.append(newrs)
          infors2="\t".join(desRS[0])+"\t"+newrs
@@ -333,7 +333,7 @@ else :
      if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
      if use_chrbp :
-        newrs=formatr(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
+        newrs=formatrs(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
         spl
      tmp=[checknull(spl[x]) for x in ps_head]
      if Ncount :
