@@ -5,6 +5,18 @@ import os
 import argparse
 import math
 
+def formatrs(chro, bp,a1,a2) :
+  if a1 > a2 :
+     AA1=a1
+     AA2=a2
+  else :
+     AA1=a2
+     AA2=a1
+  newrs=chro+'_'+bp+'_'+a1+'_'+a2
+  return(newrs)
+
+
+
 def GetSep(Sep):
    ListOfSep=["\t"," ",","]
    if len(Sep)>2 :
@@ -121,7 +133,7 @@ if(args.rs_ref) :
         ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2], rsspl[3],rsspl[4]]
         if rsspl[1] not in ls_chrps_dic :
           ls_chrps_dic[rsspl[1]]={} 
-        ls_chrps_dic[rsspl[1]][rsspl[2]]=[rsspl,rsspl[5]]
+        ls_chrps_dic[rsspl[1]][int(rsspl[2])]=[rsspl,rsspl[5]]
      if args.use_rs==1:
        ## will replace chro pos using rs
        balise_use_rs=True   
@@ -200,6 +212,10 @@ if balise_use_rs and ('SNP' not in l_newheadplk):
 if balise_use_chrps and ('CHR' not in l_newheadplk) and ('BP' not in l_newheadplk):
     sys.exit('chr and position column')
 
+use_chrbp=False
+if ('CHR' not in l_newheadplk) and ('BP' in l_newheadplk): 
+  use_chrbp=True
+  
 p_minf=float('-inf')
 p_pinf=float('inf')
 def checkfloat(tmp, listposfloat):
@@ -242,7 +258,6 @@ if balise_use_rs :
        writeplk.write(sep_out.join(tmp)+"\n")
 ## balise use chro and positoin
 elif balise_use_chrps :
-   print(balise_use_chrps)
    l_newhead+=['rsID']
    l_newheadplk+=['SNP']
    headtmp=[x.upper() for x in l_newhead]
@@ -256,8 +271,9 @@ elif balise_use_chrps :
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
-     if  (spl[HeadChro] in ls_chrps_dic) and (spl[HeadPos] in ls_chrps_dic[spl[HeadChro]]):
-       desRS=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
+     bp=int(spl[HeadPos])
+     if  (spl[HeadChro] in ls_chrps_dic) and bp in ls_chrps_dic[spl[HeadChro]]:
+       desRS=ls_chrps_dic[spl[HeadChro]][bp]
        #spl[ps_rsId_inp]=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
        spl=checkfloat(spl, listposfloat)
        if balchangA1 :
@@ -266,13 +282,7 @@ elif balise_use_chrps :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        tmp=[checknull(spl[x]) for x in ps_head]
        #tmp.append(ls_chrps_dic[spl[HeadChro]][spl[HeadPos]])
-       if spl[ps_A1_inp] > spl[ps_A2_inp] :
-         AA1=spl[ps_A1_inp] 
-         AA2=spl[ps_A2_inp] 
-       else :
-         AA1=spl[ps_A2_inp] 
-         AA2=spl[ps_A1_inp] 
-       newrs=spl[HeadChro]+'_'+spl[HeadPos]+'_'+AA1+'_'+AA2
+       newrs=formatr(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
        if newrs ==  desRS[1] :
          tmp.append(newrs)
          infors2="\t".join(desRS[0])+"\t"+newrs
@@ -281,6 +291,11 @@ elif balise_use_chrps :
            tmp.append(Ncount)
          write.write(sep_out.join(tmp)+"\n")
          writeplk.write(sep_out.join(tmp)+"\n")
+       else :
+           print(newrs)
+           print(desRS)
+     else :
+        print(spl[HeadChro], bp)
 elif args.rs_ref :
    headtmp=[x.upper() for x in l_newhead]
    headtmpplk=[x.upper() for x in l_newheadplk]
@@ -317,6 +332,9 @@ else :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
      if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
+     if use_chrbp :
+        newrs=formatr(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
+        spl
      tmp=[checknull(spl[x]) for x in ps_head]
      if Ncount :
           tmp.append(Ncount)

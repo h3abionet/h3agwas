@@ -4,10 +4,6 @@
  *
  *
  *      Scott Hazelhurst
- *      Shaun Aron
- *      Rob Clucas
- *      Eugene de Beste
- *      Lerato Magosi
  *      Jean-Tristan Brandenburg
  *
  *  On behalf of the H3ABionet Consortium
@@ -75,6 +71,7 @@ params.ma_metasoft_opt=""
 params.ma_mrmega_opt=""
 
 params.covariates=""
+ma_mem_req_utils="10GB"
 report_ch = Channel.empty()
 
 gwama_mem_req=params.gwama_mem_req
@@ -138,23 +135,40 @@ exit(0)
 }
 info_ref_rs=Channel.from(info_file[1][NumRef])
 file_info_ref_rs=Channel.fromPath(info_file[0][NumRef],checkIfExists:true)
-process GetRsFile{
+liste_filesforref_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[3]))
+process extract_rs_file{
     memory ma_mem_req
     input :
-       file(file_assoc_rs) from file_info_ref_rs
-       val(info_rs) from info_ref_rs
+      set file(file_assoc), val(info_file), val(num) from liste_filesforref_ch
     publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
     output  :
-       file(file_rs) into file_rs_ref_chan, file_ref_rs_metal
+       //file(file_rs) into file_rs_ref_chan, file_ref_rs_metal
+       file(file_rs) into file_rs_formerge
     script :
-        file_rs = file_assoc_rs+".rs"
+        file_rs = num+"_"+file_assoc+".rs"
         """
-        ma_extract_rsid.py --input_file $file_assoc_rs --out_file $file_rs --info_file $info_rs 
+        ma_extract_rsid.py --input_file $file_assoc --out_file $file_rs --info_file $info_file
         """
+}
+file_rs_formerge_m=file_rs_formerge.collect()
+
+process extract_allrs{
+    memory ma_mem_req_utils
+   input :
+     path(filers)  from file_rs_formerge_m
+   output :
+     path(listrs) into file_rs_ref_chan, file_ref_rs_metal
+   script :
+      listrs="all_rs"
+      listfilers=filers.join(",")
+      """  
+      merge_rs.py --list_file $listfilers --out $listrs --use_rs ${params.use_rs}
+      """
 }
 liste_filesi_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[3])).combine(file_rs_ref_chan)
 
 
+/*deletedd file_ref*/
 process ChangeFormatFile {
     memory ma_mem_req
     input :
@@ -166,7 +180,7 @@ process ChangeFormatFile {
        newfile_assoc="${file_assoc}_${num}.modif"
        newfile_assocplk="${file_assoc}_${num}.modif.plk"
        """
-       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file --rs_ref $file_ref --sep_out TAB --use_rs ${params.use_rs}
+       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file  --sep_out TAB --use_rs ${params.use_rs}
        """
 }
 
