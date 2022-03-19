@@ -4,13 +4,10 @@ import os
 import math
 
 ''' 
-Produces Manhatten, QQ plot and supporting tex file  for output from some tools
+generate frequency and N for GxE 
 '''
 
 import argparse
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sys

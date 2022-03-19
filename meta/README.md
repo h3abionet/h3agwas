@@ -6,7 +6,7 @@
 This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 
 ### Installation
-need python3, METAL, GWAMA, MR-MEGA and MetaSoft
+need python3, METAL (last version : https://github.com/statgen/METAL), GWAMA, MR-MEGA and MetaSoft (one version is available on utils/bin/)
 
 ### Running
 The pipeline is run: `nextflow run meta-assoc.nf`
@@ -44,7 +44,6 @@ The key options are:
            * TAB : for tabulation
            * WHI : for white space
        * `File` : gwas file with full path
-       * `IsRefFile` : you need to define a reference file to define what rs should be considered in other files
        * if one of the column is missing in your GWAS file, replace by _NA_
   * optional option :
      * memorie usage :
@@ -53,12 +52,12 @@ The key options are:
        * metasoft_mem_req : metasoft memories ["20G"]
        * ma_mem_req : request for extraction of data, change format and plot of manhathan ["10G"]
        * mrmega_mem_req : mr mega memorie ["20GB"]
-     *cpu memorie :
+     * cpu memorie :
         * max_plink_cores : [default 4]
         * other used 1 cpus
      * binaries :
        * `metal_bin` : binarie for metal (default : _metal_ )
-       * `gwama_bin` :  binarie for gwam ( default : _GWAMA__ )
+       * `gwama_bin` :  binarie for gwama ( default : _GWAMA__ )
        * `metasoft_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
        * `mrmega_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
        * `plink_bin` : binarie for java of metasoft ( default _Metasoft.jar_)
@@ -66,6 +65,7 @@ The key options are:
        * `ma_metasoft_opt` : append other option in metasoft command line(default : null)
        * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
        * `ma_inv_var_weigth`: do a invert variance weight usefull for metal (default, 0)
+       * `ma_overlap_sample`: do you have sample overlap? used by metal(default, 0)
        * `ma_random_effect` : do mixed model (default 1)
        * `ma_mrmega_pc` : how many pcs used for mrmega (default : 4)
        * `ma_mrmega_opt` : append other option in MR-MEGA command line (default : null)

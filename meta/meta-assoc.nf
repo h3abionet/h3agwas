@@ -62,6 +62,7 @@ params.plink_mem_req="10G"
 params.big_time = '1000h'
 params.file_config=''
 params.use_rs=0
+params.ma_overlap_sample=0
 
 params.output_dir="output/"
 
@@ -99,6 +100,7 @@ def configfile_analysis(file){
    PosCmp=-1
    CmtL=0
    listnum=[]
+   NumRef=-1
    for(line in lines){
        def splLine=line.split(sep)
        def cmtelem=0
@@ -129,12 +131,6 @@ exit(1)
 checkexi=Channel.fromPath(params.file_config,checkIfExists:true)
 info_file=configfile_analysis(params.file_config)
 pos_file_ref=info_file[2]
-if(pos_file_ref==-1){
-println "not file reference foud see in config file column IsRefFile"
-exit(0)
-}
-info_ref_rs=Channel.from(info_file[1][NumRef])
-file_info_ref_rs=Channel.fromPath(info_file[0][NumRef],checkIfExists:true)
 liste_filesforref_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[3]))
 process extract_rs_file{
     memory ma_mem_req
@@ -294,9 +290,10 @@ if(params.metal==1){
       metal_config="metal_config.config"
       gc =  (params.ma_genomic_cont==1) ? " --genomic_control T " : "--genomic_control F"
       vw =  (params.ma_inv_var_weigth==1) ? " --inv_var_weigth T " : "--inv_var_weigth F"
+      sov=(params.ma_overlap_sample==1) ? " --overlap T " : " --overlap F "
       """
       echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
-      ma_get_configmetal.py --filelist fileListe  --output_configmetal $metal_config  $gc  $vw --out_file_metal $out
+      ma_get_configmetal.py --filelist fileListe  --output_configmetal $metal_config  $gc  $vw --out_file_metal $out $sov
       ${params.metal_bin} $metal_config
       merge_summarystat.py --input_file ${out}1.stat --info_file $file_ref_rs --out_file $out"_metal.format"
       """
