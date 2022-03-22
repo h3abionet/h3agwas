@@ -58,29 +58,7 @@ option_list = list(
  
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
-#bin 	590	smallint(5) unsigned 	range 	Indexing field to speed chromosome range queries.
-#chrom 	chr1	varchar(255) 	values 	Reference sequence chromosome or scaffold
-#chromStart 	768252	int(10) unsigned 	range 	Start position in chromosome
-#chromEnd 	768253	int(10) unsigned 	range 	End position in chromosome
-#name 	rs2977608	varchar(255) 	values 	ID of SNP associated with trait
-#pubMedID 	31969693	int(10) unsigned 	range 	PubMed ID of publication of the study
-#author 	Coleman JRI	varchar(255) 	values 	First author of publication
-#pubDate 	2020-01-23	varchar(255) 	values 	Date of publication
-#journal 	Mol Psychiatry	varchar(255) 	values 	Journal of publication
-#title 	Genome-wide gene-environmen...	varchar(1024) 	values 	Title of publication
-#trait 	Major depressive disorder	varchar(255) 	values 	Disease or trait assessed in study
-#initSample 	29,475 European ancestry ca...	longblob 	  	Initial sample size
-#replSample 	NA	longblob 	  	Replication sample size
-#region 	1p36.33	varchar(255) 	values 	Chromosome band / region of SNP
-#genes 	NR	longblob 	  	Reported Gene(s)
-#riskAllele 	rs2977608-A	longblob 	  	Strongest SNP-Risk Allele
-#riskAlFreq 	0.259029	varchar(255) 	values 	Risk Allele Frequency
-#pValue 	8E-6	varchar(255) 	values 	p-Value
-#pValueDesc 	 	varchar(255) 	values 	p-Value Description
-#orOrBeta 	1.0729614	varchar(255) 	values 	Odds ratio or beta
-#ci95 	[1.04-1.1]	varchar(255) 	values 	95% Confidence Interval
-#platform 	Affymetrix [7791636] (imputed)	varchar(255) 	values 	Platform and [SNPs passing QC]
-#cnv 	N	enum('Y', 'N') 	values 	Y if Copy Number Variant
+
 balisepheno=F
 if(!is.null(opt[['pheno']])){
 lisp<-opt[['pheno']]
@@ -93,7 +71,8 @@ balisepheno=T
 }
 
 lisc<-unlist(strsplit(opt[['chro']],','))
-Data<-read.csv(opt[['file']], header=F, sep='\t')
+filegc<-opt[['file']]
+
 
 #lisp="Type 2 diabetes";lisc=c("22","21")
 format=opt[['format']]
@@ -102,10 +81,8 @@ Data<-read.csv(opt[['file']], header=F, sep='\t')
 chrohead="chrom";phenhead="trait";poshead="chromEnd";OrBetaHead="orOrBeta";headCi95="ci95";pValueHead="pValue";nvalueHead="initSample";freqHead="riskAlFreq";rsHead="name";riskall="riskAllele"
 names(Data)<-c("bin", "chrom", "chromStart", "chromEnd", "name", "pubMedID", "author", "pubDate", "journal", "title", "trait", "initSample","replSample","region", "genes", "riskAllele", "riskAlFreq", "pValue", "pValueDesc", "orOrBeta", "ci95","platform", "cnv")
 }else{
+if(length(grep('.csv$', filegc))>0)Data<-read.csv(opt[['file']], header=T) else  Data<-read.csv(opt[['file']], header=T, sep="\t")
 chrohead=opt[['chro_head']];phenhead=opt[['pheno_head']];poshead=opt[['bp_head']];OrBetaHead=opt[['beta_head']];headCi95=opt[['ci_head']];pValueHead=opt[['p_head']];nvalueHead=opt[['n_head']];freqHead=opt[['freq_head']];rsHead=opt[['rs_head']];riskall=opt[['riskall_head']]
-if(opt[['typeformat']]=='csv')Data<-read.csv(opt[['file']])
-else Data<-read.table(opt[['file']], header=T, sep='\t')
-
 }
 Data[,chrohead]<-gsub('chr', '',as.character(Data[,chrohead]))
 if(!is.null(opt[['chro']]))baliselistc<-Data[,chrohead] %in% lisc else baliselistc=T

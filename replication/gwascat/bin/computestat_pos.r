@@ -19,6 +19,11 @@ t.col <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],
 invisible(t.col)
 }
 
+gopt<-function(x){
+gsub('-','.',opt[[x]])
+}
+
+
 #plotfreq(MergeAll[QC,],headaf, 'af_gwas_a1cat',cex_pt=90,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
 #dataall<-MergeAll;freq1<-headaf;freq2<-'af_gwas_a1cat';cex_pt=90
 plotfreq<-function(dataall,freq1, freq2,cex_pt,alpha_pt,xlab='GWAS frequencies', ylab='GWAS cat frequencies'){
@@ -100,6 +105,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--se_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
+  make_option(c("--z_gwas"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
   make_option(c("--af_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
   make_option(c("--N_gwas"), type="character", default=NULL,
@@ -132,15 +139,23 @@ Test=F
 if(Test)opt=list(gwascat='meanMaxcIMT_eurld_all.csv',gwas='meanMaxcIMT_eurld_pos.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0' ,beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='meanMaxcIMT_eurld_pos')
 
 
-headse=opt[['se_gwas']];headps=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
-headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-opt[['a1_gwascat']];headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+headse=gopt('se_gwas');headps=gopt('ps_gwas');headchr=gopt('chr_gwas');headbeta=gopt('beta_gwas');heada1=gopt('a1_gwas');heada2=gopt('a2_gwas');headpval=gopt('p_gwas');headaf<-gopt('af_gwas');headbeta=gopt('beta_gwas');headz=gopt('z_gwas')
+headchrcat=gopt('chr_gwascat');headbpcat=gopt('ps_gwascat');heada1catrs<-gopt('a1_gwascat');headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+
 outhead=opt[['out']]
 
 
 datagwascat=read.csv(opt[['gwascat']])
 #datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-read.table(opt[['gwas']], header=T)
-checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headps, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
+checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headps, datagwas,'bp');checkhead(headchr, datagwas, 'chr');
+
+if(!is.null(headbeta) & !is.null(headse)){
+checkhead(headbeta, datagwas, 'beta');checkhead(headse, datagwas,'se')
+}
+if(!is.null(headbeta)){
+checkhead(headz, datagwas, 'z_gwas')
+}
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');
 
@@ -155,7 +170,7 @@ headN<-'N_gwas'
 }
 
 baliseh2=F
-if(!is.null(headaf)){
+if(!is.null(headaf) & !is.null(headbeta)){
 checkhead(headaf, datagwas,'af');
 datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
 datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]

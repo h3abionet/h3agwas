@@ -95,6 +95,7 @@ params.size_win_kb_ld=-1
 params.merge_wind=1
 
 params.clump_r2=0.1
+params.head_z=""
 
 
 params.size_win_kb=250
@@ -166,7 +167,7 @@ params.threshold_pval_gwascat=1
 
 if(params.gwas_cat==""){
 process dl_gwascat_hg19{
-   publishDir "${params.output_dir}/gwascat/init",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/gwascat/init",  mode:'copy'
    output :
       file("$out") into gwascat_init_ch
    script :
@@ -196,7 +197,7 @@ infogwascat=params.head_info_gwascat
 if(params.justpheno==1){
 process get_gwascat_hg19_pheno{
    label 'R'
-   publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/gwascat",  mode:'copy'
    input :
       file(gwascat) from gwascat_init_ch
    output :
@@ -211,16 +212,12 @@ process get_gwascat_hg19_pheno{
 
 }else{
 
-if(params.head_beta==""){
 if(params.input_dir=="" || params.input_pat==""){
 println "params input_dir directory of your bedfile or/and input_pat pattern of your bedfile not define"
 System.exit(-1)
 }
-println "beta header of your gwas file must be provide : --head_beta"
-System.exit(-1)
-}
-if(params.head_se==""){
-println "se header of your gwas file must be provide : --head_se"
+if((params.head_beta=="" || params.head_se=="") & params.head_z==""){
+println "beta,se header or z of your gwas file must be provide : --head_beta, --head_se, --head_z"
 System.exit(-1)
 }
 if(params.head_rs==""){
@@ -240,7 +237,7 @@ file_pheno_ch=file('nofile')
 }
 process get_gwascat_hg19{
    label 'R'
-   publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/gwascat",  mode:'copy'
    input :
       file(gwascat) from gwascat_init_ch
       file(filepheno) from file_pheno_ch
@@ -269,7 +266,7 @@ process extractgwas_fromgwascat{
    input : 
      file(pos) from gwascat_pos
      file(gwas) from filegwas_chrextr
-   publishDir "${params.output_dir}/gwas_sub",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/gwas_sub",  mode:'copy'
    output :
      file("${params.output}_range.assoc") into (clump_file_ch,ld_file_ch)
      file("${params.output}_range.bed") into gwas_rangebed_subplk
@@ -308,7 +305,7 @@ process sub_plk{
       file(filegwascat) from gwascat_pos_subplk
       file(filegwas) from gwas_rangebed_subplk
       set file(bed), file(bim), file(fam) from raw_src_ch
-    publishDir "${params.output_dir}/sub_plk/",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/sub_plk/",  mode:'copy'
     output :
        set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into (plk_ch_clump, plk_ch_ld, plk_ch_clumpstat)
     script :
@@ -329,7 +326,7 @@ process clump_aroundgwascat{
    input :
       file(assocclump) from clump_file_ch
       set file(bed), file(bim), file(fam) from plk_ch_clump
-   publishDir "${params.output_dir}/result/clump/tmp",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/result/clump/tmp",  mode:'copy'
    output :
       file("${out}.clumped") into clump_res_ch
       file("$out*")   
@@ -349,15 +346,16 @@ process computedstat_pos{
    input :
         file(assocpos) from pos_file_ch
         file(gwascat)  from gwascat_all_statpos
-   publishDir "${params.output_dir}/result/exact_rep",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/result/exact_rep",  mode:'copy'
    output :
       set file("${out}.csv"), file("${out}_cmpfrequencies.pdf"), file("${out}_cmpz.pdf") 
       file("$out*") 
    script :
     out=params.output+"_pos"
     af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
+    beta=(params.head_beta=="")? " --z_gwas $params.head_z " : " --beta_gwas ${params.head_beta} --se_gwas ${params.head_se} "
     """
-    computestat_pos.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out $af  --a1_gwascat ${params.head_riskall_gwascat}
+    computestat_pos.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}   $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out $af  --a1_gwascat ${params.head_riskall_gwascat}
     """
 }
 
@@ -371,7 +369,7 @@ process  computedstat_windneutre{
      file(pos) from gwascat_poswindneutre
      file(gwas) from filegwas_chrextrneutre
      file(gwascat) from  gwascat_all_statwindneutre
-   publishDir "${params.output_dir}/result/wind/neutral/",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/result/wind/neutral/",  mode:'copy'
    output :
       file("$output")  into random_pvalwind
    script :
@@ -390,14 +388,14 @@ process computedstat_win{
    input :
         file(assocpos) from wind_file_ch
         file(gwascat)  from gwascat_all_statwind
-   publishDir "${params.output_dir}/result/wind",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/result/wind",  mode:'copy'
    output :
       file("${out}*")
    script :
     out=params.output+"_wind"
     af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
     """
-    computestat_wind.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --min_pval ${params.threshold_pval_gwascat} --info_gwascat  \"$infogwascat\" --wind $params.size_win_kb --a1_gwascat ${params.head_riskall_gwascat} --merge_wind ${params.merge_wind}
+    computestat_wind.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}   $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --min_pval ${params.threshold_pval_gwascat} --info_gwascat  \"$infogwascat\" --wind $params.size_win_kb --a1_gwascat ${params.head_riskall_gwascat} --merge_wind ${params.merge_wind}
 
     """
 }
@@ -409,7 +407,7 @@ process computed_ld{
     memory plink_mem_req
   input :
       set file(bed), file(bim), file(fam) from plk_ch_ld
-    publishDir "${params.output_dir}/result/ld/tmp",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ld/tmp",  mode:'copy'
     output :
        file("${out}.ld") into (ld_res_ch,ld2_res_ch)
        file("$out*") 
@@ -431,14 +429,15 @@ process computed_ld_stat{
       file(fileld) from  ld_res_ch
       file(gwascat) from gwascat_all_statld
       file(assocpos) from range_file_ch_ld
-    publishDir "${params.output_dir}/result/ld/",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ld/",  mode:'copy'
     output :
        file("$out*")
     script :      
       out=params.output+"_ld"
       af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
+      beta=(params.head_beta=="")? " --z_gwas $params.head_z " : " --beta_gwas ${params.head_beta} --se_gwas ${params.head_se} "
       """
-      computestat_ld.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ld_file $fileld --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\"
+      computestat_ld.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}   $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --ld_file $fileld --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\" $beta
       """
 }
 
@@ -452,14 +451,15 @@ process computed_clump_stat{
       file(assocpos) from range_file_ch_clump
       set file(bed), file(bim), file(fam) from plk_ch_clumpstat
 
-    publishDir "${params.output_dir}/result/clump/",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/clump/",  mode:'copy'
     output :
        file("$out*")
     script :
       out=params.output+"_ld"
       af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
+      beta=(params.head_beta=="")? " --z_gwas $params.head_z " : " --beta_gwas ${params.head_beta} --se_gwas ${params.head_se} "
       """
-      computestat_clump.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --beta_gwas ${params.head_beta} --se_gwas ${params.head_se}  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --clump_file $fileclum --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\" --bim $bim
+      computestat_clump.r  --gwascat $gwascat --gwas $assocpos --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  $beta  $af --chr_gwascat ${gwascathead_chr} --bp_gwascat ${gwascathead_bp} --p_gwas $params.head_pval --ps_gwascat $gwascathead_bp --chr_gwascat $gwascathead_chr --out $out --clump_file $fileclum --min_pvalue ${params.min_pval_clump} --min_r2  ${params.clump_r2} --info_gwascat \"$infogwascat\" --bim $bim
       """
 
 }
@@ -472,7 +472,7 @@ process computed_clump_stat{
       file(gwascatbed) from gwascat_pos_ld2
       file(gwascat) from gwascat_all_statld2
       file(assocpos) from range_file_ch_ld2
-    publishDir "${params.output_dir}/result/ld2/",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ld2/",  mode:'copy'
     output :
        file("$out")
     script :
@@ -494,7 +494,7 @@ process build_ldwind{
       file(gwascatbed) from gwascat_pos_ld2
       file(gwascat) from gwascat_all_statld2
       file(assocpos) from range_file_ch_ld2
-    publishDir "${params.output_dir}/result/ldwind/tmp",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ldwind/tmp",  mode:'copy'
     output :
       set file(gwascat), file(assocpos),file(fileld), file("${out}_ldext.out") into ldext_ch 
       set file(gwascat), file(assocpos),file(fileld), file("${out}_ldext_wind.out") into ldext_wind_ch 
@@ -514,7 +514,7 @@ process computed_ld2_stat{
    cpus other_cpus_req
    input :
      set file(gwascat), file(assocpos),file(fileld), file(out_ldblock) from ld_v2_ch  
-    publishDir "${params.output_dir}/result/ldwind/noext",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ldwind/noext",  mode:'copy'
     output :
        file("$out*")
    script :
@@ -530,7 +530,7 @@ process computed_ldext_stat{
    cpus other_cpus_req
    input :
      set file(gwascat), file(assocpos),file(fileld), file(out_ldblock) from ldext_ch
-    publishDir "${params.output_dir}/result/ldwind/ext",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/result/ldwind/ext",  mode:'copy'
     output :
        file("$out*")
    script :
@@ -559,7 +559,7 @@ process computed_ldext_stat{
  label 'R'
  input :
       set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ld_wind_ch
- publishDir "${params.output_dir}/result/ldwind/wind",  overwrite:true, mode:'copy'
+ publishDir "${params.output_dir}/result/ldwind/wind",  mode:'copy'
  output:
    file("$out*")
  script :
@@ -576,7 +576,7 @@ process computed_ldwindext_stat{
  label 'R'
  input :
       set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ldext_wind_ch
- publishDir "${params.output_dir}/result/ldwind/windext",  overwrite:true, mode:'copy'
+ publishDir "${params.output_dir}/result/ldwind/windext",  mode:'copy'
  output:
    file("$out*")
  script :

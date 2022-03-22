@@ -2,6 +2,10 @@
 library(data.table)
 library("optparse")
 library("qqman")
+gopt<-function(x){
+gsub('-','.',opt[[x]])
+}
+
 t_col <- function(color, percent = 50, name = NULL) {
   #      color = color name
   #    percent = % transparency
@@ -63,6 +67,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--se_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
+  make_option(c("--z_gwas"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
   make_option(c("--af_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
   make_option(c("--N_gwas"), type="character", default=NULL,
@@ -96,19 +102,18 @@ opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 #opt=list(gwascat='out_all.csv',gwas='out_range.init',chr_gwas='chr',ps_gwas='ps',a1_gwas='allele1',a2_gwas='allele0',beta_gwas='beta',se_gwas='se',af_gwas='af',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='p_wald',ps_gwascat='chromEnd',chr_gwascat='chrom','out'='out_ld',clump_file='out.clumped',min_pvalue=0.1,min_r2=0.1,info_gwascat="pubMedID;author;trait;initSample",bim='all_imputed_map_qc.bim')
 
-headse=opt[['se_gwas']];headbp=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
-headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+headse=gopt('se_gwas');headbp=gopt('ps_gwas');headchr=gopt('chr_gwas');headbeta=gopt('beta_gwas');heada1=gopt('a1_gwas');heada2=gopt('a2_gwas');headpval=gopt('p_gwas');headaf<-gopt('af_gwas');headbeta=gopt('beta_gwas');headz=gopt('z_gwas')
+headchrcat=gopt('chr_gwascat');headbpcat=gopt('ps_gwascat');heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+
 outhead=opt[['out']]
 
 filegwascat<-opt[['gwascat']];filegwas=opt[['gwas']];fileclump=opt[['clump_file']];filebim=opt[['bim']]
-#filegwascat<-"out_all.csv";filegwas="out_pos.init";fileclump="out.clumped";filebim="all_imputed_map_qc.bim"
 
 
 
 datagwascat=read.csv(filegwascat)
-#datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-read.table(filegwas, header=T)
-checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
+checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');
 
@@ -130,9 +135,8 @@ datagwas[,'N_gwas']<-Nval
 headN<-'N_gwas'
 }
 
-
-aliseh2=F
-if(!is.null(headaf)){
+baliseh2=F
+if(!is.null(headaf) & !is.null(headbeta)){
 checkhead(headaf, datagwas,'af');
 datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
 datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
@@ -160,7 +164,9 @@ resclumpgwascat<-merge(resclump,datagwascat,by.x='rs_wind',by.y="rs_bim")
 resall<-merge(resclumpgwas,resclumpgwascat,by=c('rsclump'), all=T,suffixes = c("_gwas","_gwascat"))
 write.csv(resall,file=paste(opt[['out']],'_detailall.csv',sep=''), row.names=F)
 balise<-!is.na(resall$rs_wind_gwas)
-resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp],'-beta:',resall[balise,headbeta], ',se:',resall[balise,headse],',pval:',resall[balise,headpval],sep='')
+if(!is.null(headbeta))resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp],'-beta:',resall[balise,headbeta], ',se:',resall[balise,headse],',pval:',resall[balise,headpval],sep='') else{
+resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp],'-beta:',resall[balise,headz]',pval:',resall[balise,headpval],sep='')
+}
 
 resall$info_gwascat<-""
 infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]

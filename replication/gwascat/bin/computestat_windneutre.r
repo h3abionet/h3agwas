@@ -10,6 +10,11 @@ q(2)
 }
 }
 
+gopt<-function(x){
+gsub('-','.',opt[[x]])
+}
+
+
 
 option_list = list(
   make_option(c( "--gwas"), type="character", default=NULL,
@@ -33,8 +38,10 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
-headse=opt[['se_gwas']];headbp=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headpval=opt[['p_gwas']]
-headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];
+headse=gopt('se_gwas');headbp=gopt('ps_gwas');headchr=gopt('chr_gwas');headpval=gopt('p_gwas')
+headchrcat=gopt('chr_gwascat');headbpcat=gopt('ps_gwascat');
+
+
 outhead=opt[['out']]
 around=opt[['wind']]*1000
 nrep=opt[['nrep']]

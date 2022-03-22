@@ -20,6 +20,11 @@ t.col <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],
 invisible(t.col)
 }
 
+gopt<-function(x){
+gsub('-','.',opt[[x]])
+}
+
+
 
 
 computedher<-function(beta, se, af,N){
@@ -101,9 +106,9 @@ if(Test)opt = parse_args(opt_parser, strsplit('--gwascat DBP_AwigenLD_all.csv --
 
 
 
-headse=opt[['se_gwas']];headbp=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
-headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
-outhead=opt[['out']]
+headse=gopt('se_gwas');headbp=gopt('ps_gwas');headchr=gopt('chr_gwas');headbeta=gopt('beta_gwas');heada1=gopt('a1_gwas');heada2=gopt('a2_gwas');headpval=gopt('p_gwas');headaf<-gopt('af_gwas');headbeta=gopt('beta_gwas')
+headchrcat=opt[['chr_gwascat');headbpcat=opt[['ps_gwascat');heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+outhead=opt[['out')
 
 version<-2
 

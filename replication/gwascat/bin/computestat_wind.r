@@ -1,6 +1,9 @@
 #!/usr/bin/env Rscript
 library("optparse")
 library("qqman")
+gopt<-function(x){
+gsub('-','.',opt[[x]])
+}
 t_col <- function(color, percent = 50, name = NULL) {
   #      color = color name
   #    percent = % transparency
@@ -60,19 +63,6 @@ abline(h=0, col='red', lty=2)
 abline(v=0, col='red', lty=2)
 }
 
-computedher<-function(beta, se, af,N){
-#https://journals.plos.org/plosone/article/file?type=supplementary&id=info:doi/10.1371/journal.pone.0120758.s001
-maf<-af
-maf[!is.na(af) & af>0.5]<- 1 - maf[!is.na(af) & af>0.5]
-ba<-!is.na(beta) & !is.na(se) & !is.na(maf) & !is.na(N)
-a<-rep(NA, length(beta))
-b<-rep(NA, length(beta))
-a<-2*(beta[ba]**2)*(maf[ba]*(1-maf[ba]))
-b<-2*(se[ba]**2)*N[ba]*maf[ba]*(1-maf[ba])
-res<-rep(NA, length(beta))
-res[ba]<-a[ba]/(a[ba]+b[ba])
-res
-}
 
 
 
@@ -92,10 +82,6 @@ option_list = list(
   make_option(c("--a1_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
   make_option(c("--a2_gwas"), type="character", default=NULL,
-              help="dataset file name", metavar="character"),
-  make_option(c("--beta_gwas"), type="character", default=NULL,
-              help="dataset file name", metavar="character"),
-  make_option(c("--se_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
   make_option(c("--af_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
@@ -135,8 +121,8 @@ opt = parse_args(opt_parser);
 #opt=list(gwascat='out_all.csv',gwas='out_range.init',chr_gwas='chr',ps_gwas='ps',a1_gwas='allele1',a2_gwas='allele0',beta_gwas='beta',se_gwas='se',af_gwas='af',chr_gwascat='chrom',bp_gwascat='ps',p_gwas='p_wald',ps_gwascat='chromEnd',chr_gwascat='chrom',out='out_pos', wind=25, min_pval=0.01,info_gwascat="pubMedID;author;trait;initSample")
 
 
-headse=opt[['se_gwas']];headbp=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
-headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-opt[['a1_gwascat']];headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+headse=gopt('se_gwas');headbp=gopt('ps_gwas');headchr=gopt('chr_gwas');heada1=gopt('a1_gwas');heada2=gopt('a2_gwas');headpval=gopt('p_gwas');headaf<-gopt('af_gwas')
+headchrcat=gopt('chr_gwascat');headbpcat=gopt('ps_gwascat');heada1catrs<-gopt('a1_gwascat');headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
 outhead=opt[['out']]
 wind=opt[['wind']]*1000
 
@@ -149,7 +135,7 @@ checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro
 datagwascat$begin<-datagwascat[,headbpcat]-wind
 datagwascat$end<-datagwascat[,headbpcat]+wind
 datagwas<-read.table(opt[['gwas']], header=T)
-checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
+checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
 
 
 
@@ -162,17 +148,6 @@ datagwas[,'N_gwas']<-Nval
 headN<-'N_gwas'
 }
 baliseh2=F
-if(!is.null(headaf)){
-checkhead(headaf, datagwas,'af');
-datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
-datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
-}else{
-cat('no frequencie\n')
-datagwas$h2.gwas<-NA
-datagwas$z.gwas<-NA
-baliseh2=T
-
-}
 
 ##  merge windows
 if(opt[['merge_wind']]==1){
@@ -212,15 +187,12 @@ datagwas[,headchr]<-as.character(datagwas[,headchr])
 datagwas$wind_num<-NA
 for(Cmtwindcat in 1:nrow(AllWind)){
 windcat=AllWind[Cmtwindcat,]
-balise=datagwas[,headchr]==windcat[,headchrcat] & datagwas[,headbp] >=windcat$begin & datagwas[,headbp] <=windcat$end
+balise=datagwas[,headchr]==windcat[,headchrcat] & datagwas[,headbp] >=windcat$begin & datagwas[,headbp] <=windcat$end 
 datagwas$wind_num[balise]<-windcat$wind_num
 windcat$nbpos<-length(which(balise))
 windcat$nbpos_sig<-length(which(balise & datagwas[,headpval]<opt[['min_pval']]))
 PosMostSig<-which(min(datagwas[balise,headpval])==datagwas[,headpval] & balise)[1]
 windcat$min_bp_gwas<-datagwas[PosMostSig,headbp]
-#windcat$min_pval_gwas<-windcat[PosMostSig,headpval]
-#windcat$min_beta_gwas<-windcat[PosMostSig,headbeta]
-#windcat$min_se_gwas<-windcat[PosMostSig,headse]
 if(Cmtwindcat==1)newwindcat<-windcat
 else newwindcat <-rbind(newwindcat,windcat)
 }

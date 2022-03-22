@@ -20,21 +20,12 @@ t.col <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],
 invisible(t.col)
 }
 
-
-
-computedher<-function(beta, se, af,N){
-#https://journals.plos.org/plosone/article/file?type=supplementary&id=info:doi/10.1371/journal.pone.0120758.s001
-maf<-af
-maf[!is.na(af) & af>0.5]<- 1 - maf[!is.na(af) & af>0.5]
-ba<-!is.na(beta) & !is.na(se) & !is.na(maf) & !is.na(N)
-a<-rep(NA, length(beta))
-b<-rep(NA, length(beta))
-a<-2*(beta[ba]**2)*(maf[ba]*(1-maf[ba]))
-b<-2*(se[ba]**2)*N[ba]*maf[ba]*(1-maf[ba])
-res<-rep(NA, length(beta))
-res[ba]<-a[ba]/(a[ba]+b[ba])
-res
+gopt<-function(x){
+gsub('-','.',opt[[x]])
 }
+
+
+
 
 
 
@@ -57,13 +48,15 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--a2_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
+  make_option(c("--af_gwas"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
+  make_option(c("--N_gwas"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
   make_option(c("--beta_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
   make_option(c("--se_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
-  make_option(c("--af_gwas"), type="character", default=NULL,
-              help="dataset file name", metavar="character"),
-  make_option(c("--N_gwas"), type="character", default=NULL,
+  make_option(c("--z_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
   make_option(c("--ps_gwascat"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
@@ -95,15 +88,16 @@ opt = parse_args(opt_parser);
 if(Test)opt=list(gwascat='Diastolic_AwigenLD_all.csv',gwas='Diastolic_AwigenLD_range.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0',beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='Diastolic_AwigenLD_ld',ld_file='Diastolic_AwigenLD_ld.ld',min_pvalue='0.001',min_r2=0.2,info_gwascat="pubMedID;author;trait;initSample")
 
 
-headse=opt[['se_gwas']];headbp=opt[['ps_gwas']];headchr=opt[['chr_gwas']];headbeta=opt[['beta_gwas']];heada1=opt[['a1_gwas']];heada2=opt[['a2_gwas']];headpval=opt[['p_gwas']];headaf<-opt[['af_gwas']];headbeta=opt[['beta_gwas']]
-headchrcat=opt[['chr_gwascat']];headbpcat=opt[['ps_gwascat']];heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
+headbp=gopt('ps_gwas');headchr=gopt('chr_gwas');heada1=gopt('a1_gwas');heada2=gopt('a2_gwas');headpval=gopt('p_gwas');headaf<-gopt('af_gwas')
+headchrcat=gopt('chr_gwascat');headbpcat=gopt('ps_gwascat');heada1catrs<-"riskAllele";headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
 outhead=opt[['out']]
+headbeta=gopt('beta_gwas');headse=gopt('se_gwas');headz=gopt('z_gwas')
 
 
 datagwascat=read.csv(opt[['gwascat']])
 #datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-read.table(opt[['gwas']], header=T)
-checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr');checkhead(headbeta, datagwas, 'beta')
+checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');
 
@@ -132,18 +126,6 @@ datagwas[,'N_gwas']<-Nval
 headN<-'N_gwas'
 }
 
-baliseh2=F
-if(!is.null(headaf)){
-checkhead(headaf, datagwas,'af');
-datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
-datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
-}else{
-cat('no frequencie\n')
-datagwas$h2.gwas<-NA
-datagwas$z.gwas<-NA
-baliseh2=T
-
-}
 
 
 
@@ -184,7 +166,8 @@ write.table(datalda1, file=paste(opt[['out']],'_all.txt',sep=''), row.names=F, c
 
 infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]
 
-datalda1$info_gwas<-paste(datalda1[,headchr],':',datalda1[,headbp],'-beta:',datalda1[,headbeta], ',se:',datalda1[,headse],',pval:',datalda1[,headpval],',R2:', datalda1[,'R2'],sep='')
+if(!is.null(headbp))datalda1$info_gwas<-paste(datalda1[,headchr],':',datalda1[,headbp],'-beta:',datalda1[,headbeta], ',se:',datalda1[,headse],',pval:',datalda1[,headpval],',R2:', datalda1[,'R2'],sep='')
+if(!is.null(headz))datalda1$info_gwas<-paste(datalda1[,headchr],':',datalda1[,headbp],'-z:',datalda1[,headz], ',pval:',datalda1[,headpval],',R2:', datalda1[,'R2'],sep='')
 datalda1$info_gwascat<-""
 for(cat in infocat)datalda1$info_gwascat<-paste(datalda1$info_gwascat,cat,':',datalda1[,cat],',',sep='')
 datagwassumm<-aggregate(as.formula(paste('info_gwas~',headbpcat, '+',headchrcat)), data=datalda1,function(x)paste(unique(x), collapse=';'))
@@ -198,17 +181,7 @@ names(allresume)[c(1,2)]<-c('chr_gwas', 'bp_gwas_cat')
 write.csv(allresume, file=paste(opt[['out']],'_resume.csv',sep=''),row.names=F)
 
 ###
-#head(datalda1)
-#print(range(datalda1$R2))
-#cat(opt[['min_pvalue']])
 datalda1sig<-datalda1[datalda1[,headpval]<opt[['min_pvalue']],]
-#datalda1sig<-datalda1
-#if(nrow(datalda1sig)>0){
-#datalda1sig$info_gwas<-paste(datalda1sig[,headchr],':',datalda1sig[,headbp],'-beta:',datalda1sig[,headbeta], ',se:',datalda1sig[,headse],',pval:',datalda1sig[,headpval],',R2:', datalda1sig[,'R2'],sep='')
-#}else{
-#}
-#datalda1sig$info_gwascat<-""
-#for(cat in infocat)datalda1sig$info_gwascat<-paste(datalda1sig$info_gwascat,cat,':',datalda1sig[,cat],',',sep='')
 if(nrow(datalda1sig)>0){
 datagwasminpval<-aggregate(as.formula(paste(headpval,'~',headbpcat, '+',headchrcat)), data=datalda1sig,min)
 datagwassumm<-aggregate(as.formula(paste('info_gwas~',headbpcat, '+',headchrcat)), data=datalda1sig,function(x)paste(unique(x), collapse=';'))
