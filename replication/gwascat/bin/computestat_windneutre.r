@@ -47,7 +47,7 @@ around=opt[['wind']]*1000
 nrep=opt[['nrep']]
 
 
-datagwas<-fread(opt[['gwas']], header=T)
+datagwas<-fread(opt[['gwas']], header=T);names(datagwas)<-gsub('-','.', names(datagwas))
 checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
 
 

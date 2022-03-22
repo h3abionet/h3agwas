@@ -20,12 +20,11 @@ invisible(t.col)
 }
 
 gopt<-function(x){
+if(is.null(opt[[x]]))return(NULL)
 gsub('-','.',opt[[x]])
 }
 
 
-#plotfreq(MergeAll[QC,],headaf, 'af_gwas_a1cat',cex_pt=90,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
-#dataall<-MergeAll;freq1<-headaf;freq2<-'af_gwas_a1cat';cex_pt=90
 plotfreq<-function(dataall,freq1, freq2,cex_pt,alpha_pt,xlab='GWAS frequencies', ylab='GWAS cat frequencies'){
 nbcat=20
 height=1
@@ -127,7 +126,7 @@ checkhead<-function(head,Data, type){
 if(length(which(head %in% names(Data)))==0){
 print(names(Data))
 print(paste('not found ', head,'for',type ,'data'))
-q('n',2)
+q('no',2)
 }
 }
 
@@ -139,7 +138,7 @@ Test=F
 if(Test)opt=list(gwascat='meanMaxcIMT_eurld_all.csv',gwas='meanMaxcIMT_eurld_pos.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='ALLELE1',a2_gwas='ALLELE0' ,beta_gwas='BETA',se_gwas='SE',af_gwas='A1FREQ',chr_gwascat='chrom',bp_gwascat='chromEnd',p_gwas='P_BOLT_LMM',ps_gwascat='chromEnd',chr_gwascat='chrom',out='meanMaxcIMT_eurld_pos')
 
 
-headse=gopt('se_gwas');headps=gopt('ps_gwas');headchr=gopt('chr_gwas');headbeta=gopt('beta_gwas');heada1=gopt('a1_gwas');heada2=gopt('a2_gwas');headpval=gopt('p_gwas');headaf<-gopt('af_gwas');headbeta=gopt('beta_gwas');headz=gopt('z_gwas')
+headse=gopt('se_gwas');headps=gopt('ps_gwas');headchr=gopt('chr_gwas');heada1=gopt('a1_gwas');heada2=gopt('a2_gwas');headpval=gopt('p_gwas');headaf<-gopt('af_gwas');headbeta=gopt('beta_gwas');headz=gopt('z_gwas')
 headchrcat=gopt('chr_gwascat');headbpcat=gopt('ps_gwascat');heada1catrs<-gopt('a1_gwascat');headzcat="z.cat";headafcat<-'risk.allele.af';heada1cat<-'risk.allele.cat'
 
 outhead=opt[['out']]
@@ -148,13 +147,18 @@ outhead=opt[['out']]
 datagwascat=read.csv(opt[['gwascat']])
 #datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwas<-read.table(opt[['gwas']], header=T)
-checkhead(headpval, datagwas,'pval');checkhead(headse, datagwas,'se');checkhead(headps, datagwas,'bp');checkhead(headchr, datagwas, 'chr');
+checkhead(headpval, datagwas,'pval');checkhead(headps, datagwas,'bp');checkhead(headchr, datagwas, 'chr');
 
+if(!is.null(headaf)){
+checkhead(headaf, datagwas,'af')
+}
 if(!is.null(headbeta) & !is.null(headse)){
+print('beta, se not null')
 checkhead(headbeta, datagwas, 'beta');checkhead(headse, datagwas,'se')
 }
-if(!is.null(headbeta)){
+if(!is.null(headz)){
 checkhead(headz, datagwas, 'z_gwas')
+datagwas$z.gwas<-datagwas[[headz]]
 }
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');
@@ -169,36 +173,32 @@ datagwas[,'N_gwas']<-Nval
 headN<-'N_gwas'
 }
 
-baliseh2=F
+if(!is.null(headbeta))datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
 if(!is.null(headaf) & !is.null(headbeta)){
-checkhead(headaf, datagwas,'af');
 datagwas$h2.gwas<-computedher(datagwas[,headbeta], datagwas[,headse], datagwas[,headaf],datagwas[,headN])
-datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
 }else{
-cat('no frequencie\n')
 datagwas$h2.gwas<-NA
-datagwas$z.gwas<-NA
-baliseh2=T
-
 }
 
 
-names(datagwas)
-names(datagwascat)
 MergeAll<-merge(datagwas, datagwascat,by.x=c(headchr,headps), by.y=c(headchrcat,headbpcat))
 
 MergeAll[,heada1cat]<-as.character(MergeAll[,heada1cat])
 MergeAll[,heada1]<-as.character(MergeAll[,heada1])
 
-QC<-!is.na(MergeAll[,heada1]) & !is.na(MergeAll[,heada2]) & !is.na(MergeAll[,heada1cat]) & !is.na(MergeAll[,headafcat]) & (MergeAll[,heada1] == MergeAll[,heada1cat] | MergeAll[,heada2] == MergeAll[,heada1cat])
-#print(table(MergeAll[,heada1] , MergeAll[,heada1cat]))
+QC<-!is.na(MergeAll[,heada1]) & !is.na(MergeAll[,heada2]) & !is.na(MergeAll[,heada1cat]) & !is.na(MergeAll[,headafcat]) & (MergeAll[,heada1] == MergeAll[,heada1cat] | MergeAll[,heada2] == MergeAll[,heada1cat]) 
 BaliseChange<-QC & MergeAll[,heada1]!=MergeAll[,heada1cat]
+
 MergeAll[,'af_gwas_a1cat']<-NA
 MergeAll[BaliseChange,'af_gwas_a1cat']<- 1 - MergeAll[BaliseChange,headafcat]
 MergeAll[!BaliseChange,'af_gwas_a1cat']<-  MergeAll[!BaliseChange,headafcat]
 
+
 pdf(paste(outhead,'_cmpfrequencies.pdf', sep=''))
 if(!is.null(headaf)){
+QC<-!is.na(MergeAll[,headaf]) & !is.na(MergeAll[,'af_gwas_a1cat'])
+print(MergeAll[,headaf])
+print(MergeAll[,'af_gwas_a1cat'])
 plotfreq(MergeAll[QC,],headaf, 'af_gwas_a1cat',cex_pt=1.5,alpha_pt=0.15,xlab='GWAS', ylab='GWAS Catalog')
 }else{
 plot(1:10, 1:10, type='n')
@@ -215,6 +215,8 @@ MergeAll[!BaliseChange,'z_gwas_a1cat']<-MergeAll[!BaliseChange,headzcat]
 
 pdf(paste(outhead,'_cmpz.pdf', sep=''))
 if(!is.null(headaf)){
+print(head(MergeAll))
+QC<-!is.na(MergeAll[,'z.gwas']) & !is.na(MergeAll[,'z_gwas_a1cat'])
 plotZ(MergeAll[QC,],'z.gwas','z_gwas_a1cat', cex_pt=1.5,alpha_pt=0.15,ylab='GWAS catalog', xlab='GWAS')
 }else{
 plot(1:10, 1:10, type='n')

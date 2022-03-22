@@ -3,6 +3,7 @@ library(data.table)
 library("optparse")
 library("qqman")
 gopt<-function(x){
+if(is.null(opt[[x]]))return(opt[[x]])
 gsub('-','.',opt[[x]])
 }
 
@@ -143,9 +144,11 @@ datagwas$z.gwas<-datagwas[,headbeta]/datagwas[,headse]
 }else{
 cat('no frequencie\n')
 datagwas$h2.gwas<-NA
-datagwas$z.gwas<-NA
 baliseh2=T
+}
 
+if(!is.null(headz)){
+datagwas$z.gwas<-datagwas[,headz]
 }
 
 datagwasf<-datagwas[datagwas[,headpval]<headpval,]
@@ -164,8 +167,9 @@ resclumpgwascat<-merge(resclump,datagwascat,by.x='rs_wind',by.y="rs_bim")
 resall<-merge(resclumpgwas,resclumpgwascat,by=c('rsclump'), all=T,suffixes = c("_gwas","_gwascat"))
 write.csv(resall,file=paste(opt[['out']],'_detailall.csv',sep=''), row.names=F)
 balise<-!is.na(resall$rs_wind_gwas)
-if(!is.null(headbeta))resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp],'-beta:',resall[balise,headbeta], ',se:',resall[balise,headse],',pval:',resall[balise,headpval],sep='') else{
-resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp],'-beta:',resall[balise,headz]',pval:',resall[balise,headpval],sep='')
+if(!is.null(headbeta)){
+resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp],'-beta:',resall[balise,headbeta], ',se:',resall[balise,headse],',pval:',resall[balise,headpval],sep='') }else{
+resall$info_gwas[balise]<-paste(resall[balise,headchr],':',resall[balise,headbp],'-z:',resall[balise,headz],',pval:',resall[balise,headpval],sep='')
 }
 
 resall$info_gwascat<-""

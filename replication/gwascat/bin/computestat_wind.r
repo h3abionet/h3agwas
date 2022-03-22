@@ -85,6 +85,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--af_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
+  make_option(c("--z_gwas"), type="character", default=NULL,
+              help="dataset file name", metavar="character"),
   make_option(c("--N_gwas"), type="character", default=NULL,
               help="dataset file name", metavar="character"),
   make_option(c("--info_gwascat"), type="character", default=NULL,
