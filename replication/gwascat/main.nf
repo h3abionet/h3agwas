@@ -96,6 +96,7 @@ params.merge_wind=1
 
 params.clump_r2=0.1
 params.head_z=""
+params.random_statneutre=0
 
 
 params.size_win_kb=250
@@ -361,6 +362,7 @@ process computedstat_pos{
 
 
 filegwas_chrextrneutre=Channel.fromPath(params.file_gwas,checkIfExists:true)
+if(params.random_statneutre==1){
 process  computedstat_windneutre{
    memory other_mem_req
    cpus other_cpus_req
@@ -380,6 +382,7 @@ process  computedstat_windneutre{
     computestat_windneutre.r   --gwas $outgwas --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp}  --p_gwas $params.head_pval  --out $output --wind $params.size_win_kb  --nrep ${params.n_repet} --cpus ${params.other_cpus_req}
     """ 
 
+}
 }
 process computedstat_win{
    memory other_mem_req
