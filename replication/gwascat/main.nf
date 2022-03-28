@@ -252,7 +252,7 @@ process get_gwascat_hg19{
      chroparam= (params.list_chro=='') ? "" : " --chro ${listchro.join(',')}"
      phenoparam= (params.pheno=='') ? "" : " --pheno \"${params.pheno}\" "
      phenoparam= (params.file_pheno=='') ? " $phenoparam " : " --file_pheno $filepheno "
-     out=params.output
+     out=params.output+'_gwascat'
    """
    format_gwascat.r --file $gwascat $chroparam $phenoparam --out $out --wind ${params.size_win_kb}  --chro_head ${params.head_chro_gwascat} --bp_head ${params.head_bp_gwascat} --pheno_head ${params.head_pheno_gwascat} --beta_head ${params.head_beta_gwascat} --ci_head ${params.head_ci_gwascat} --p_head ${params.head_pval_gwascat}  --n_head ${params.head_n_gwascat} --freq_head ${params.head_af_gwascat} --rs_head ${params.head_rs_gwascat} --riskall_head ${params.head_riskall_gwascat} --format $format
 
@@ -269,15 +269,16 @@ process extractgwas_fromgwascat{
      file(gwas) from filegwas_chrextr
    publishDir "${params.output_dir}/gwas_sub",  mode:'copy'
    output :
-     file("${params.output}_range.assoc") into (clump_file_ch,ld_file_ch)
-     file("${params.output}_range.bed") into gwas_rangebed_subplk
-     file("${params.output}_pos.init") into (pos_file_ch)
-    file("${params.output}_range.init") into (range_file_ch_clump,wind_file_ch, range_file_ch_ld, range_file_ch_ld2)
-     file("${params.output}*")
+     file("${output}_range.assoc") into (clump_file_ch,ld_file_ch)
+     file("${output}_range.bed") into gwas_rangebed_subplk
+     file("${output}_pos.init") into (pos_file_ch)
+    file("${output}_range.init") into (range_file_ch_clump,wind_file_ch, range_file_ch_ld, range_file_ch_ld2)
+     file("${output}*")
    script :
     wind=Math.max(size_win_kb_ld, params.size_win_kb)
+    output=params.output+'_gwas'
     """
-    extract_posgwas.py --bed $pos --gwas $gwas --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --wind $wind  --pval_gwas ${params.head_pval} --rs_gwas ${params.head_rs}  --out ${params.output} 
+    extract_posgwas.py --bed $pos --gwas $gwas --chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2}  --wind $wind  --pval_gwas ${params.head_pval} --rs_gwas ${params.head_rs}  --out ${params.output}'_gwas'
     """
 }
 
@@ -303,7 +304,7 @@ process sub_plk{
     cpus max_plink_cores
     memory plink_mem_req
   input :
-      file(filegwascat) from gwascat_pos_subplk
+      file(filegwascat) from gwascat_rangebed
       file(filegwas) from gwas_rangebed_subplk
       set file(bed), file(bim), file(fam) from raw_src_ch
     publishDir "${params.output_dir}/sub_plk/",  mode:'copy'
@@ -313,8 +314,8 @@ process sub_plk{
     out=params.output+"_subplk"
     plkf=bed.baseName
     """
-    awk '{print \$1"\t"\$2"\t"\$2"\t"\$1":"\$2}' $filegwascat > range.bed
-    awk '{print \$1"\t"\$2"\t"\$2"\t"\$1":"\$2}' $filegwas >> range.bed
+    awk '{if(\$2<1){\$2=1};print \$1"\t"\$2"\t"\$3"\t"\$1":"\$2":"\$3}' $filegwascat > range.bed
+    awk '{if(\$2<1){\$2=1};;print \$1"\t"\$2"\t"\$3"\t"\$1":"\$2":"\$3}' $filegwas >> range.bed
     plink -bfile $plkf --extract range  range.bed -out $out --make-bed --keep-allele-order --threads $max_plink_cores  --memory  $plink_mem_req_max
     """
 
