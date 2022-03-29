@@ -172,7 +172,7 @@ if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
 process GwasCatDl{
     label 'R'
-    publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/gwascat",  mode:'copy'
     output :
        file("${out}_all.csv") into gwascat_ch
        file("${out}*")
@@ -234,7 +234,7 @@ process clump_data{
  input :
      set file(bed),file(bim),file(fam) from gwas_plk_clump
      file(gwasfile) from gwas_file_clump
- publishDir "${params.output_dir}/clump/", overwrite:true, mode:'copy'
+ publishDir "${params.output_dir}/clump/",  mode:'copy'
  output :
     file("${output}.clumped") into file_clump 
  script :
@@ -277,7 +277,7 @@ process ExtractPositionGwas{
     set val(pos),file("${out}.range") into range_plink
     set val(pos), file("${out}.all") into data_i
     set val(pos), file("${out}.pos") into paintor_gwas_annot
-  publishDir "${params.output_dir}/$pos/file_format/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/file_format/", mode:'copy'
   script :
     bp=pos.split('_')[1]
     chro=pos.split('_')[0]
@@ -332,7 +332,7 @@ process ComputedFineMapCond{
   memory params.fm_mem_req
   input :
     set val(pos),file(ld),file(filez) from ld_fmcond_group
-  publishDir "${params.output_dir}/$pos/fm_cond", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/fm_cond",  mode:'copy'
   output :
     set val(pos), file("${out}.snp") into res_fmcond
     set file("${out}.config"), file("${out}.cred"), file("${out}.log_cond")
@@ -354,7 +354,7 @@ process ComputedFineMapSSS{
   cpus params.fm_cpus_req
   input :
      set val(pos),file(ld),file(filez) from ld_fmss_group
-  publishDir "${params.output_dir}/$pos/fm_sss", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/fm_sss",  mode:'copy'
   output :
     set val(pos),file("${out}.snp") into res_fmsss
     set file("${out}.config"), file("${out}.cred${params.n_causal_snp}"), file("${out}.log_sss")
@@ -374,7 +374,7 @@ process ComputedCaviarBF{
   label 'finemapping'
   input :
      set val(pos),file(ld),file(filez) from ld_caviarbf_group
-  publishDir "${params.output_dir}/$pos/caviarbf", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/caviarbf",  mode:'copy'
   output :
    set val(pos), file("${output}.marginal") into res_caviarbf
    set file("$output"), file("${output}.statistics")
@@ -401,7 +401,7 @@ baliseannotpaint=1
   process paintor_selectannot{
    input :
     set val(pos),file(list_loc), file(listinfo) from paintor_gwas_annot2
-   publishDir "${params.output_dir}/$pos/paintor/annot", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/$pos/paintor/annot", mode:'copy'
    output :
     set val(pos),file(out) into (paintor_fileannot, paintor_fileannotplot, paintor_fileannot2)
    script :
@@ -444,7 +444,7 @@ process ComputedPaintor{
    memory params.fm_mem_req
    input :
     set val(pos),file(ld),file(filez), file(fileannot), val(annot_name) from ld_paintor_group
-  publishDir "${params.output_dir}/$pos/paintor/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/paintor/",  mode:'copy'
   output :
       set val(pos),file("${output}.results") into res_paintor_ch
       set val(pos),file(FileInfo) into infores_paintor_ch
@@ -505,7 +505,7 @@ process ComputedCojo{
    cpus params.gcta_cpus_req
    input :
      set val(pos),file(filez), file(bed),file(bim),file(fam) from gcta_gwas_join
-   publishDir "${params.output_dir}/$pos/cojo_gcta", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/$pos/cojo_gcta",  mode:'copy'
    output :
      set val(pos), file("${output}.jma.cojo")  into res_cojo
      set file("${output}.cma.cojo"), file("${output}.ldr.cojo"), file("${output}.log")
@@ -528,7 +528,7 @@ process GetGenesInfo{
    label 'R'
    output :
       file(out) into genes_file_ch
-   publishDir "${params.output_dir}/data/", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/data/", mode:'copy'
    script :
      out="gencode.v19.genes"
      """
@@ -547,7 +547,7 @@ process MergeResult{
     memory params.other_mem_req
     input :
       set val(pos), file(paintor),file(infopaintor), file(paintor_bf), file(pfileannot), file(cojo), file(caviarbf), file(fmsss), file(fmcond), file(datai), file(genes), file(gwascat) from mergeall
-   publishDir "${params.output_dir}/$pos/", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/$pos/",  mode:'copy'
     output :
        set file("${out}.pdf"), file("${out}.all.out"), file("${out}.all.out")
     script :

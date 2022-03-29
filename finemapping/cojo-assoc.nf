@@ -244,7 +244,7 @@ res_chro_slct_merg=res_chro_slct.collect()
 process SLCTMerge{
    input :
       file(list_file) from res_chro_slct_merg
-   publishDir "${params.output_dir}/slct", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/slct",  mode:'copy'
    output :
       file("$out") into res_slct
    script : 
@@ -285,7 +285,7 @@ res_chro_top_merg=res_chro_top.collect()
 process TopMerge{
    input :
       file(list_file) from res_chro_top_merg
-   publishDir "${params.output_dir}/top", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/top",  mode:'copy'
    output :
       file("$out") into res_top
    script :

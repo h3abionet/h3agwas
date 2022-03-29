@@ -220,7 +220,7 @@ if(params.gemma_mat_rel==""){
       input:
         file plinks from rel_ch_gemma
         file file_rs from filers_matrel_mat_gem
-      publishDir "${params.output_dir}/gemma/rel", overwrite:true, mode:'copy'
+      publishDir "${params.output_dir}/gemma/rel",  mode:'copy'
       output:
          file("output/${base}.*XX.txt") into rel_mat_ch, rel_matcondall_ch, rel_matcond_ch
       script:
@@ -262,7 +262,7 @@ if(params.gemma_mat_rel==""){
       file(plinks) from  gemmacond_assoc_ch
       file(rsfilelist) from rsfilecond
     each rsname from rsname_ch_f
-    publishDir "${params.output_dir}/$out", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/$out",  mode:'copy'
     output:
       file("${dir_gemma}/${out}.log.txt")
       file("${dir_gemma}/${out}.assoc.txt") into gemma_outcond_ch
@@ -313,7 +313,7 @@ if(params.gemma_mat_rel==""){
       file(plinks) from  gemmacondall_assoc_ch
       file(rsfilelist) from rsfilecondall
       val(listrs) from rsname_ch2
-    publishDir "${params.output_dir}/$out", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/$out",  mode:'copy'
     output:
       file("${dir_gemma}/${out}.log.txt")
       file("${dir_gemma}/${out}.assoc.txt") into gemma_outcondall_ch
@@ -367,7 +367,7 @@ if(params.gemma_mat_rel==""){
       file(rel) from rel_mat_ch
       file(plinks) from  gemma_assoc_ch
       file(rsfilelist) from rsfile
-    publishDir "${params.output_dir}/initial/", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/initial/",  mode:'copy'
     output:
       file("${dir_gemma}/${out}.log.txt")
       file("${dir_gemma}/${out}.assoc.txt") into gemma_out_ch
@@ -412,7 +412,7 @@ process computed_ld{
       file(ld) into ld_res_notsq
       file(ld2) into ld_res_sq
       set file("${newbase}.bim"), file("${newbase}.bed"),file("${newbase}.fam")  into plk_pos_ch
-    publishDir "${params.output_dir}/ld/", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/ld/",  mode:'copy'
     script :
        listpos= (params.pos_ref<1) ?"${params.pos_cond} "  : "${params.pos_cond},${params.pos_ref}"
        chr=params.chro_cond
@@ -436,7 +436,7 @@ process plot_ld{
      set file(bim), file(bed), file(fam) from plk_pos_ch
   output :
      file(fileout) into plot_ld
-  publishDir "${params.output_dir}/res/fig/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/res/fig/",  mode:'copy'
   script :
       fileout=params.output+'_ld.pdf'
       posref= (params.pos_ref<1) ?""  : " --pos_ref  ${params.pos_ref}"
@@ -453,7 +453,7 @@ process plot_res{
       file(gemmai) from gemma_out_ch
       file(gemmamerge) from gemma_outcondall_ch
       file(allgemmars) from combine_gemm_ch
-   publishDir "${params.output_dir}/res/fig/", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/res/fig/",  mode:'copy'
    output :
       file("${out}*")
    script :
