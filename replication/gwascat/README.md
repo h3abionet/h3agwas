@@ -99,6 +99,26 @@ z values defined as beta / se
 
 
 
+### process 
 
+ * process dl\_gwascat\_hg19 : optional if gwascat is not give as parameter
+ * process formatgwascat\_pheno : format gwas catalog, if just\_pheno
+ * process   formatgwascat : format gwast catalog
+ * process extractgwas\_fromgwascat : extract position from gwas present in positoins of gwas catalog 
+  * file description 
+  * sub\_plk : sub plink, extracted positions from 1) gwas 2)gwas catalog
+process update_rs{
+process clump_aroundgwascat{
+process computedstat_pos{
+process  computedstat_windneutre{
+process computedstat_win{
+process computed_ld{
+process computed_ld_stat{
+process computed_clump_stat{
+process build_ldwind{
+process computed_ld2_stat{
+process computed_ldext_stat{
+ process computed_ldwind_stat{
+process computed_ldwindext_stat{
 
 

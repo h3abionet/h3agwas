@@ -38,7 +38,7 @@ allowed_params+=ParamFast
 /*Gxe : */
 GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
-Saige_params=['pheno_bin', "list_vcf", "saige_num_cores", "saige_mem_req"]
+Saige_params=['pheno_bin', "list_vcf", "saige_num_cores", "saige_mem_req", "vcf_field"]
 allowed_params+=Saige_params
 
 FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa', "gcta64_bin"]
@@ -402,9 +402,9 @@ else {
 
 
 
-
-num_assoc_cores = params.mperm == 0 ? 1 : Math.min(10,params.max_plink_cores)
-
+//scott, why are you limited at one core when you don't have permutation?
+//num_assoc_cores = params.mperm == 0 ? 1 : Math.min(10,params.max_plink_cores)
+num_assoc_cores = params.max_plink_cores
 supported_tests = ["assoc","fisher","model","cmh","linear","logistic"]
 
 requested_tests = supported_tests.findAll { entry -> params.get(entry) }
@@ -416,7 +416,7 @@ pheno     = ""
 
 /*Case where we sample builrelatdness*/
 balise_filers_rel=1
-if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params.gemma_gxe>0){
+if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params.gemma_gxe+params.saige>0){
  if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
   process select_rs_format{
      cpus max_plink_cores
@@ -441,6 +441,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params
    filers_matrel_mat_fast=Channel.fromPath("${dummy_dir}/0",checkIfExists:true) 
    filers_matrel_mat_GWA=Channel.fromPath("${dummy_dir}/0") 
    filers_matrel_mat_gem=channel.fromPath("${dummy_dir}/0") 
+   filers_her_saige=channel.fromPath("${dummy_dir}/00")
    if(params.boltlmm==1){
       //BoltNbMaxSnps=1000000
       process buildBoltFileSnpRel{
@@ -1565,7 +1566,8 @@ if(params.saige==1){
     println "No list_vcf given for saige -- set params.list_vcf";
     System.exit(-2);
   }
-  process subplink_heritability_saige{
+  if(balise_filers_rel==1){
+    process subplink_heritability_saige{
     input :
        file(rs) from filers_her_saige
        file(plk) from ch_saige_heritability
@@ -1577,7 +1579,18 @@ if(params.saige==1){
        """
        plink -bfile $bfile --extract $rs --make-bed -out $out --keep-allele-order
        """
+    }
+   }else{
+   ch_plk_saige=Channel.create()
+    Channel
+    .from(file(bed),file(bim),file(fam))
+    .buffer(size:3)
+    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
+    .set { ch_plk_saige}
+
   }
+
+
   fam_ch_saige = Channel.create()
   plk_ch_saige_her = Channel.create()
   ch_plk_saige.separate (plk_ch_saige_her, fam_ch_saige) { a -> [ a, a[2]] }
@@ -1634,7 +1647,7 @@ if(params.saige==1){
      """
    
   }
-  listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines())
+  listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines(), checkIfExists:true)
   process buildindex {
     label 'saige'
     input :

@@ -68,48 +68,55 @@ pvalgwas=gwasspl.index(args.pval_gwas)
 if args.af_gwas :
    headmaf="FRQ"
    headmafpos=gwasspl.index(args.af_gwas)
-   ListParam=[chrgwas,rsgwas, posgwas, a1gwas, a2gwas,headmafpos,pvalgwas]
-   ListHeadPlk=["CHR","SNP", "BP", "A1", "A2", headmafchr,"P"]
+   ListParam=[chrgwas,rsgwas, posgwas, a1gwas, a2gwas,headmafpos,pvalgwas, len(gwasspl)]
+   ListHeadPlk=["CHR","SNP2", "BP", "A1", "A2", headmafchr,"P", "SNP"]
 else :
-   ListParam=[chrgwas,rsgwas, posgwas, a1gwas, a2gwas,pvalgwas]
-   ListHeadPlk=["CHR","SNP", "BP", "A1", "A2", "P"]
+   ListParam=[chrgwas,rsgwas, posgwas, a1gwas, a2gwas,pvalgwas, len(gwasspl)]
+   ListHeadPlk=["CHR","SNP2", "BP", "A1", "A2", "P","SNP"]
 
 
 
 
-writepos=open(args.out+'_pos.init','w')
 writerange=open(args.out+'_range.init','w')
-
-writepos_plk=open(args.out+'_pos.assoc','w')
 writerange_plk=open(args.out+'_range.assoc','w')
-
 writerange_bed=open(args.out+'_range.bed','w')
+
+writepos_bed=open(args.out+'_pos.bed','w')
+writepos=open(args.out+'_pos.init','w')
+writepos_plk=open(args.out+'_pos.assoc','w')
 
 #writeall_plk=open(args.out+'_all.assoc','w')
 
-writepos.write(gwashead+'\n')
-writerange.write(gwashead+'\n')
+writepos.write(gwashead+'\tSNPplk'+'\n')
+writerange.write(gwashead+'\tSNPplk'+'\n')
 
-#dataformatplk<-allinfo[,c('chro','rs_bim', 'bp','A1', 'A2', 'risk.allele.af', 'beta.cat', 'sd.cat', 'pvalue')]
-#names(dataformatplk)<-c("CHR", "SNP", "BP","A1", "A2", "FRQ", "BETA", "SE", "P")
 
 writepos_plk.write("\t".join(ListHeadPlk)+'\n')
 writerange_plk.write("\t".join(ListHeadPlk)+'\n')
-#writeall_plk.write("\t".join(ListHeadPlk)+'\n')
+
 for line in read_gwas :
   line=line.replace('\n','')
   spl=line.replace('\n','').split()
   chro=spl[chrgwas]
   pos=int(spl[posgwas])
-  plkchar="\t".join([spl[x] for x in ListParam])
-  #writeall_plk.write(plkchar)
   if checkrange(chro, pos, inforange) :
-     writerange.write(line+'\n')
+     newrs=chro+"_"+str(pos)+"_"
+     a1=spl[a1gwas].upper()
+     a2=spl[a2gwas].upper()
+     if a1 > a2 :
+       newrs+=a1+"_"+a2
+     else :
+       newrs+=a2+"_"+a1
+     spl.append(newrs)
+     plkchar="\t".join([spl[x] for x in ListParam])
+     newline="\t".join(spl)
+     writerange.write(newline+'\n')
      writerange_plk.write(plkchar+'\n')
-     writerange_bed.write(chro+"\t"+str(pos)+"\t"+str(pos)+'\n')
+     writerange_bed.write(chro+"\t"+str(pos)+"\t"+str(pos)+'\t'+spl[rsgwas]+'\n')
      if checkpos(chro, pos, infopos):
-         writepos.write(line+'\n')
+         writepos.write(newline+'\n')
          writepos_plk.write(plkchar+'\n')
+         writepos_bed.write(chro+"\t"+str(pos)+"\t"+str(pos)+'\t'+spl[rsgwas]+'\n')
 
 writepos.close()
 writerange.close()

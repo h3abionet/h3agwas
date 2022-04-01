@@ -196,7 +196,7 @@ infogwascat=params.head_info_gwascat
 
 
 if(params.justpheno==1){
-process get_gwascat_hg19_pheno{
+process formatgwascat_pheno{
    label 'R'
    publishDir "${params.output_dir}/gwascat",  mode:'copy'
    input :
@@ -236,7 +236,7 @@ file_pheno_ch=file(params.file_pheno, checkIfExists:true)
 }else{
 file_pheno_ch=file('nofile')
 }
-process get_gwascat_hg19{
+process formatgwascat{
    label 'R'
    publishDir "${params.output_dir}/gwascat",  mode:'copy'
    input :
@@ -271,6 +271,7 @@ process extractgwas_fromgwascat{
    output :
      file("${output}_range.assoc") into (clump_file_ch,ld_file_ch)
      file("${output}_range.bed") into gwas_rangebed_subplk
+     file("${output}_pos.bed") into gwas_rangepos_subplk
      file("${output}_pos.init") into (pos_file_ch)
     file("${output}_range.init") into (range_file_ch_clump,wind_file_ch, range_file_ch_ld, range_file_ch_ld2)
      file("${output}*")
@@ -291,7 +292,7 @@ Channel
     .from(file(bed),file(bim),file(fam))
     .buffer(size:3)
     .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
-    .set {raw_src_ch}
+    .set{raw_src_ch}
 
 plk_ch_clump  = Channel.create()
 plk_ch_ld  = Channel.create()
@@ -304,12 +305,12 @@ process sub_plk{
     cpus max_plink_cores
     memory plink_mem_req
   input :
-      file(filegwascat) from gwascat_rangebed
-      file(filegwas) from gwas_rangebed_subplk
-      set file(bed), file(bim), file(fam) from raw_src_ch
+      path(filegwascat) from gwascat_rangebed
+      path(filegwas) from gwas_rangebed_subplk
+      tuple path(bed), path(bim), path(fam) from raw_src_ch
     publishDir "${params.output_dir}/sub_plk/",  mode:'copy'
     output :
-       set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into (plk_ch_clump, plk_ch_ld, plk_ch_clumpstat)
+       tuple path("${out}.bed"), path("${out}.bim"), path("${out}.fam") into ch_subplk
     script :
     out=params.output+"_subplk"
     plkf=bed.baseName
@@ -318,6 +319,23 @@ process sub_plk{
     awk '{if(\$2<1){\$2=1};;print \$1"\t"\$2"\t"\$3"\t"\$1":"\$2":"\$3}' $filegwas >> range.bed
     plink -bfile $plkf --extract range  range.bed -out $out --make-bed --keep-allele-order --threads $max_plink_cores  --memory  $plink_mem_req_max
     """
+}
+
+process update_rs{
+   cpus max_plink_cores
+   memory plink_mem_req
+   input :
+     tuple path(bed), path(bim), path(fam) from ch_subplk 
+   publishDir "${params.output_dir}/sub_plk/",  mode:'copy'
+   output :
+     tuple path("${out}.bed"), path("${out}.bim"), path("${out}.fam") into (plk_ch_clump, plk_ch_ld, plk_ch_clumpstat)
+   script :
+      out=bed.baseName+"_idup"
+      plk=bed.baseName
+      """
+      update_rs.py --bim $bim --out rstoupdate      
+      plink -bfile $plk --make-bed --keep-allele-order -out $out --update-name rstoupdate 2 1
+      """
 
 }
 
@@ -326,12 +344,12 @@ process clump_aroundgwascat{
     cpus max_plink_cores
     memory plink_mem_req
    input :
-      file(assocclump) from clump_file_ch
-      set file(bed), file(bim), file(fam) from plk_ch_clump
+      path(assocclump) from clump_file_ch
+      tuple path(bed), path(bim), path(fam) from plk_ch_clump
    publishDir "${params.output_dir}/result/clump/tmp",  mode:'copy'
    output :
-      file("${out}.clumped") into clump_res_ch
-      file("$out*")   
+      path("${out}.clumped") into clump_res_ch
+      path("$out*")   
    script :
       bfile=bed.baseName
       out=params.output
@@ -346,12 +364,12 @@ process computedstat_pos{
    cpus other_cpus_req
    label 'R'
    input :
-        file(assocpos) from pos_file_ch
-        file(gwascat)  from gwascat_all_statpos
+        path(assocpos) from pos_file_ch
+        path(gwascat)  from gwascat_all_statpos
    publishDir "${params.output_dir}/result/exact_rep",  mode:'copy'
    output :
-      set file("${out}.csv"), file("${out}_cmpfrequencies.pdf"), file("${out}_cmpz.pdf") 
-      file("$out*") 
+      tuple path("${out}.csv"), path("${out}_cmpfrequencies.pdf"), path("${out}_cmpz.pdf") 
+      path("$out*") 
    script :
     out=params.output+"_pos"
     af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
@@ -369,12 +387,12 @@ process  computedstat_windneutre{
    cpus other_cpus_req
    label 'R'
    input :
-     file(pos) from gwascat_poswindneutre
-     file(gwas) from filegwas_chrextrneutre
-     file(gwascat) from  gwascat_all_statwindneutre
+     path(pos) from gwascat_poswindneutre
+     path(gwas) from filegwas_chrextrneutre
+     path(gwascat) from  gwascat_all_statwindneutre
    publishDir "${params.output_dir}/result/wind/neutral/",  mode:'copy'
    output :
-      file("$output")  into random_pvalwind
+      path("$output")  into random_pvalwind
    script :
     outgwas='fileassoc_clean.assoc'
     output="${params.output}_${params.size_win_kb}.pval"
@@ -390,11 +408,11 @@ process computedstat_win{
    cpus other_cpus_req
    label 'R'
    input :
-        file(assocpos) from wind_file_ch
-        file(gwascat)  from gwascat_all_statwind
+        path(assocpos) from wind_file_ch
+        path(gwascat)  from gwascat_all_statwind
    publishDir "${params.output_dir}/result/wind",  mode:'copy'
    output :
-      file("${out}*")
+      path("${out}*")
    script :
     out=params.output+"_wind"
     af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
@@ -411,11 +429,11 @@ process computed_ld{
     cpus max_plink_cores
     memory plink_mem_req
   input :
-      set file(bed), file(bim), file(fam) from plk_ch_ld
+      tuple path(bed), path(bim), path(fam) from plk_ch_ld
     publishDir "${params.output_dir}/result/ld/tmp",  mode:'copy'
     output :
-       file("${out}.ld") into (ld_res_ch,ld2_res_ch)
-       file("$out*") 
+       path("${out}.ld") into (ld_res_ch,ld2_res_ch)
+       path("$out*") 
     script :
     out=params.output+"_ld"
     plkf=bed.baseName
@@ -431,12 +449,12 @@ process computed_ld_stat{
     cpus other_cpus_req
     label 'R'
     input :
-      file(fileld) from  ld_res_ch
-      file(gwascat) from gwascat_all_statld
-      file(assocpos) from range_file_ch_ld
+      path(fileld) from  ld_res_ch
+      path(gwascat) from gwascat_all_statld
+      path(assocpos) from range_file_ch_ld
     publishDir "${params.output_dir}/result/ld/",  mode:'copy'
     output :
-       file("$out*")
+       path("$out*")
     script :      
       out=params.output+"_ld"
       af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
@@ -451,14 +469,14 @@ process computed_clump_stat{
     cpus other_cpus_req
     label 'R'
     input :
-      file(fileclum) from  clump_res_ch
-      file(gwascat) from gwascat_all_statclump
-      file(assocpos) from range_file_ch_clump
-      set file(bed), file(bim), file(fam) from plk_ch_clumpstat
+      path(fileclum) from  clump_res_ch
+      path(gwascat) from gwascat_all_statclump
+      path(assocpos) from range_file_ch_clump
+      tuple path(bed), path(bim), path(fam) from plk_ch_clumpstat
 
     publishDir "${params.output_dir}/result/clump/",  mode:'copy'
     output :
-       file("$out*")
+       path("$out*")
     script :
       out=params.output+"_ld"
       af= (params.head_freq=='') ? "" : " --af_gwas ${params.head_freq} "
@@ -473,13 +491,13 @@ process computed_clump_stat{
     cpus other_cpus_req
     label 'R'
     input :
-      file(fileld) from  ld2_res_ch
-      file(gwascatbed) from gwascat_pos_ld2
-      file(gwascat) from gwascat_all_statld2
-      file(assocpos) from range_file_ch_ld2
+      path(fileld) from  ld2_res_ch
+      path(gwascatbed) from gwascat_pos_ld2
+      path(gwascat) from gwascat_all_statld2
+      path(assocpos) from range_file_ch_ld2
     publishDir "${params.output_dir}/result/ld2/",  mode:'copy'
     output :
-       file("$out")
+       path("$out")
     script :
       out_ldblock=params.output+"_ld2.tmp_pos"
       out=params.output+"_ld2"
@@ -496,16 +514,16 @@ process build_ldwind{
     memory other_mem_req
     cpus other_cpus_req
     input :
-      file(fileld) from  ld2_res_ch
-      file(gwascatbed) from gwascat_pos_ld2
-      file(gwascat) from gwascat_all_statld2
-      file(assocpos) from range_file_ch_ld2
+      path(fileld) from  ld2_res_ch
+      path(gwascatbed) from gwascat_pos_ld2
+      path(gwascat) from gwascat_all_statld2
+      path(assocpos) from range_file_ch_ld2
     publishDir "${params.output_dir}/result/ldwind/tmp",  mode:'copy'
     output :
-      set file(gwascat), file(assocpos),file(fileld), file("${out}_ldext.out") into ldext_ch 
-      set file(gwascat), file(assocpos),file(fileld), file("${out}_ldext_wind.out") into ldext_wind_ch 
-      set file(gwascat), file(assocpos),file(fileld), file("${out}_ld.out") into ld_v2_ch
-      set file(gwascat), file(assocpos),file(fileld), file("${out}_ld_wind.out") into ld_wind_ch 
+      tuple path(gwascat), path(assocpos),path(fileld), path("${out}_ldext.out") into ldext_ch 
+      tuple path(gwascat), path(assocpos),path(fileld), path("${out}_ldext_wind.out") into ldext_wind_ch 
+      tuple path(gwascat), path(assocpos),path(fileld), path("${out}_ld.out") into ld_v2_ch
+      tuple path(gwascat), path(assocpos),path(fileld), path("${out}_ld_wind.out") into ld_wind_ch 
     script :
       out=params.output+"_ldinfo"
       """
@@ -519,10 +537,10 @@ process computed_ld2_stat{
    memory other_mem_req
    cpus other_cpus_req
    input :
-     set file(gwascat), file(assocpos),file(fileld), file(out_ldblock) from ld_v2_ch  
+     tuple path(gwascat), path(assocpos),path(fileld), path(out_ldblock) from ld_v2_ch  
     publishDir "${params.output_dir}/result/ldwind/noext",  mode:'copy'
     output :
-       file("$out*")
+       path("$out*")
    script :
     out=params.output+"_noext"
     beta=(params.head_beta=="")? " --z_gwas $params.head_z " : " --beta_gwas ${params.head_beta} --se_gwas ${params.head_se} "
@@ -536,10 +554,10 @@ process computed_ldext_stat{
    memory other_mem_req
    cpus other_cpus_req
    input :
-     set file(gwascat), file(assocpos),file(fileld), file(out_ldblock) from ldext_ch
+     tuple path(gwascat), path(assocpos),path(fileld), path(out_ldblock) from ldext_ch
     publishDir "${params.output_dir}/result/ldwind/ext",  mode:'copy'
     output :
-       file("$out*")
+       path("$out*")
    script :
     out=params.output+"_ext"
     beta=(params.head_beta=="")? " --z_gwas $params.head_z " : " --beta_gwas ${params.head_beta} --se_gwas ${params.head_se} "
@@ -566,10 +584,10 @@ process computed_ldext_stat{
  process computed_ldwind_stat{
  label 'R'
  input :
-      set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ld_wind_ch
+      tuple path(gwascat), path(assocpos),path(fileld), path(out_ldwind) from ld_wind_ch
  publishDir "${params.output_dir}/result/ldwind/wind",  mode:'copy'
  output:
-   file("$out*")
+   path("$out*")
  script :
   out_ldblock="tmpout"
   out=params.output+"_wind"
@@ -584,10 +602,10 @@ process computed_ldext_stat{
 process computed_ldwindext_stat{
  label 'R'
  input :
-      set file(gwascat), file(assocpos),file(fileld), file(out_ldwind) from ldext_wind_ch
+      tuple path(gwascat), path(assocpos),path(fileld), path(out_ldwind) from ldext_wind_ch
  publishDir "${params.output_dir}/result/ldwind/windext",  mode:'copy'
  output:
-   file("$out*")
+   path("$out*")
  script :
   out_ldblock="tmpout"
   out=params.output+"_wind"
