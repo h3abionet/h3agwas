@@ -1596,10 +1596,29 @@ if(params.saige==1){
   ch_plk_saige.separate (plk_ch_saige_her, fam_ch_saige) { a -> [ a, a[2]] }
 
   data_ch_saige = Channel.fromPath(params.data,checkIfExists:true)
+  firstvcf_ch=Channel.fromPath(file(params.list_vcf).readLines()[0], checkIfExists:true)
+  process checkidd_saige{
+    label 'R'
+    input :
+      path(covariates) from data_ch_saige
+      path(vcf) from  firstvcf_ch
+      tuple path(bed), path(bim), path(fam) from plk_ch_saige_her
+    output :
+      tuple path("${bfileupdate}.bed"), path("${bfileupdate}.bim"), path("${bfileupdate}.fam") into plk_ch_saige_her_idupd
+      tuple path(covariates_form),path("${bfileupdate}.fam") into data_ch_saige_form
+    script :
+      covariates_form=covariates.baseName+'_saige.ind'
+      bfile=bed.baseName
+      bfileupdate=bfile+'_idsaige'
+      """
+      zcat $vcf |head -1000 |grep "#"| awk '{for(Cmt=10;Cmt<=NF;Cmt++)print \$Cmt}' > fileind
+      format_saige_pheno.r --data $covariates --ind_vcf fileind --out ${covariates_form}
+      plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid"
+      """
+  }
   process  getSaigePheno {
     input:
-      file(covariates) from data_ch_saige
-      file(fam) from fam_ch_saige
+      tuple path(covariates), path(fam) from data_ch_saige_form
     output:
       file(phef) into saige_data_format_ch
       stdout into pheno_cols_ch_saige
@@ -1622,8 +1641,8 @@ if(params.saige==1){
    cpus params.saige_num_cores
    label 'saige'
    input :
-      set file(bed), file(bim), file(fam) from plk_ch_saige_her
-      file(pheno) from saige_data_format_ch
+      tuple path(bed), path(bim), path(fam) from plk_ch_saige_her_idupd
+      path(pheno) from saige_data_format_ch
    publishDir "${params.output_dir}/saige/varexp/", overwrite:true, mode:'copy'
    each this_pheno from pheno_ch_saige
    output :

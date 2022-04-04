@@ -99,8 +99,6 @@ process extractpositionfasta{
     """
     extract_ref_bimf.py --bim $bim --fasta $fasta --out tmp
     """
-
-
 }
 
 process convertrsname{
@@ -231,7 +229,7 @@ process convertInVcfChro{
      plink  --chr $chro --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
      ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort - -O z > ${out}_tmp.vcf.gz
      rm -f ${out}.vcf.gz
-     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Ob -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
+     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
      """
 }
 
