@@ -343,7 +343,7 @@ loczm_dir=file(params.loczm_bin).getParent().getParent()
 locuszoom_ch=locuszoom_ch.combine(Channel.fromPath(loczm_dir,type:'dir'))
 process PlotLocusZoom{
     label 'py2R'
-    memory plink_mem_req
+    memory params.plink_mem_req
     input : 
        set val(rs), file(filegwas),file(lz_dir) from locuszoom_ch
     publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'

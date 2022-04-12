@@ -267,7 +267,7 @@ pos_tonalyse_ch=postonalyse.flatMap { list_str -> list_str.split() }
 process ExtractPositionGwas{
   memory params.other_mem_req
   input :
-     file(filegwas) from gwas_file
+     tuple file(filegwas) from gwas_file
      set file(bed),file(bim),file(fam) from gwas_extract_plk
   each  pos from pos_tonalyse_ch
   output :
