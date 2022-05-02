@@ -29,6 +29,7 @@ def parseArguments():
     parser.add_argument('--bp_header',type=str,help="bp header")
     parser.add_argument('--beta_header',type=str,required=False,help="beta header in inp files")
     parser.add_argument('--chr_pos',type=str,required=False,help="beta header in inp files")
+    parser.add_argument('--maf',type=float,required=False,help="beta header in inp files")
     parser.add_argument('--bim',type=str,required=False,help="beta header in inp files")
     args = parser.parse_args()
     return args
@@ -76,15 +77,19 @@ else :
 
 IsFreq=False
 IsN=False
-if freq_head :
-  IsFreq=True
+      
 if n_head :
   IsN=True
 
 ## first step : if
 result = pd.read_csv(inp,delim_whitespace=True)
 result[chro_head] = result[chro_head].astype(str)
-
+if freq_head :
+  IsFreq=True
+  if args.maf :
+       maf=args.maf
+       result=result[(result[freq_head]>maf) & (result[freq_head]<(1-maf))]
+     
 if args.chr :
    result=result[result[chro_head]==args.chr]
 
