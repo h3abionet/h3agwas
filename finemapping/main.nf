@@ -247,7 +247,6 @@ process clump_data{
    output="clump_output"
    plkfile=bed.baseName
    """
-   #plink_format.py --inp_asso $gwasfile --chro_header  ${params.head_chr} --bp_header ${params.head_bp} --a1_header ${params.head_A1} --a2_header ${params.head_A2}  --pval_header ${params.head_pval} --beta_header ${params.head_beta}  --out $output --rs_header ${params.head_rs} --se_header  ${params.head_se}
    formatsumstat_inplink.py --inp_asso $gwasfile --chro_header  ${params.head_chr} --bp_header ${params.head_bp} --a1_header ${params.head_A1} --a2_header ${params.head_A2}  --pval_header ${params.head_pval} --beta_header ${params.head_beta}  --out $output --rs_header ${params.head_rs} --se_header  ${params.head_se} --bim $bim
  ${params.plink_bin} -bfile $plkfile  -out $output --keep-allele-order --threads ${params.plink_cpus_req}   --clump $output --clump-p1 ${params.threshold_p} --clump-p2 ${params.threshold_p2} --clump-r2 ${params.clump_r2} --clump-kb ${params.size_wind_kb}
   """
