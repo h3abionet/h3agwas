@@ -83,6 +83,9 @@ params.head_bp = "BP"
 params.head_chr = "CHR"
 params.head_rs = "SNP"
 params.data = ""
+params.pheno=""
+params.pheno_gc=""
+params.covariates=""
 params.head_beta=""
 params.head_se=""
 params.head_A1="ALLELE1"
@@ -90,7 +93,6 @@ params.head_A2="ALLELE0"
 params.other_mem_req="10GB"
 params.other_cpus_req=5
 params.min_pval_clump =0.001
-params.size_win_kb_ld=-1
 // merge windows when take p-value
 params.merge_wind=1
 
@@ -100,6 +102,7 @@ params.random_statneutre=0
 
 
 params.size_win_kb=250
+params.size_win_kb_ld=-1
 params.size_win_kb_clump=-1
 params.nb_cpu = 3
 
@@ -114,7 +117,7 @@ params.plink_bin='plink'
 params.genes_file=""
 params.max_plink_cores = 4
 
-params.justpheno=0
+params.justpheno_gc=0
 
 params.n_repet=10000
 
@@ -148,10 +151,15 @@ params.gwascat_format="USCS"
 
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 
-params.pheno=""
 params.file_pheno=""
 params.list_chro="1-22"
 
+
+filescript=file(workflow.scriptFile)
+
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../../qc/input"
 
 
 //params.size_win_kb=250
@@ -250,7 +258,7 @@ process formatgwascat{
        file("${out}*")
    script :
      chroparam= (params.list_chro=='') ? "" : " --chro ${listchro.join(',')}"
-     phenoparam= (params.pheno=='') ? "" : " --pheno \"${params.pheno}\" "
+     phenoparam= (params.pheno_gc=='') ? "" : " --pheno \"${params.pheno_gc}\" "
      phenoparam= (params.file_pheno=='') ? " $phenoparam " : " --file_pheno $filepheno "
      out=params.output+'_gwascat'
    """
@@ -299,7 +307,25 @@ plk_ch_ld  = Channel.create()
 plk_ch_clumpstat  = Channel.create()
 
     /*JT : append boltlmm_assoc_ch and a]*/
-
+if(params.data!=""){
+ data_ch=Channel.fromPath(params.data, checkIfExists:true)
+ process extract_indplk{
+   label 'R'
+   input :
+     path(data) from data_ch
+   output :
+     path(fileindplk) into ind_pk
+   script :
+    pheno=(params.pheno=="") ? "" : "  --pheno ${params.pheno} "
+    cov=(params.covariates=="") ? "" : " --cov ${params.covariates}"
+    fileindplk="indclean.plk" 
+    """
+    extract_indplink.r --data $data $pheno --out $fileindplk  $cov
+    """
+ }
+}else{
+ ind_pk=Channel.fromPath("${dummy_dir}/00")
+}
 
 process sub_plk{
     cpus max_plink_cores
@@ -307,6 +333,7 @@ process sub_plk{
   input :
       path(filegwascat) from gwascat_rangebed
       path(filegwas) from gwas_rangebed_subplk
+      path(data) from ind_pk
       tuple path(bed), path(bim), path(fam) from raw_src_ch
     publishDir "${params.output_dir}/sub_plk/",  mode:'copy'
     output :
@@ -314,10 +341,11 @@ process sub_plk{
     script :
     out=params.output+"_subplk"
     plkf=bed.baseName
+    keep=(params.data=="") ? "" : " --keep $data"
     """
     awk '{if(\$2<1){\$2=1};print \$1"\t"\$2"\t"\$3"\t"\$1":"\$2":"\$3}' $filegwascat > range.bed
     awk '{if(\$2<1){\$2=1};;print \$1"\t"\$2"\t"\$3"\t"\$1":"\$2":"\$3}' $filegwas >> range.bed
-    plink -bfile $plkf --extract range  range.bed -out $out --make-bed --keep-allele-order --threads $max_plink_cores  --memory  $plink_mem_req_max
+    plink -bfile $plkf --extract range  range.bed -out $out --make-bed --keep-allele-order --threads $max_plink_cores  --memory  $plink_mem_req_max $keep
     """
 }
 

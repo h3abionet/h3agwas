@@ -14,6 +14,11 @@
  *
  */
 
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+
 def getlistchro(listchro){
  newlistchro=[]
  for(x in listchro.split(',')) {
@@ -443,8 +448,9 @@ process ComputedCojo{
 }
 if(params.genes_file==""){
 process GetGenesInfo{
-   label 'R'
-   memory '20GB'
+   memory { strmem(params.other_mem_req) + 1.GB * (task.attempt -1) }
+   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+   maxRetries 10
    output :
       file(out) into genes_file_ch
    publishDir "${params.output_dir}/data/",  mode:'copy'
@@ -453,7 +459,7 @@ process GetGenesInfo{
      """
      wget -c ${params.genes_file_ftp}
      zcat `basename ${params.genes_file_ftp}` > file_genes
-     change_genes.r file_genes
+     change_genes_gencode.py file_genes
      """
 }
 }else{
