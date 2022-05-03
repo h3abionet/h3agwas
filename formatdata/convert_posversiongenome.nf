@@ -54,7 +54,7 @@ process DlGwasCT{
       fileconverti="gwas_catalog_i.tsv"
       fileconvert="gwas_catalog.tsv"
       """
-      wget -O $fileconverti ${params.link_gwas_cat}
+      wget -O $fileconverti ${params.link_gwas_cat} --no-check-certificate
       check_colfile.py $fileconverti $fileconvert
       """
 }
@@ -69,7 +69,7 @@ process DlInfoRs{
    script :
       file_rsinfo="All_rs.vcf.gz"
       """
-      wget -O $file_rsinfo ${params.link_rs_info}
+      wget -O $file_rsinfo ${params.link_rs_info} --no-check-certificate
       """
 }
 
@@ -114,7 +114,7 @@ process DlDataCrossMap{
    script :
     fileout=params.link_data_crossmap.split('/').last()
     """
-    wget -c ${params.link_data_crossmap} 
+    wget -c ${params.link_data_crossmap}  --no-check-certificate
     """
 }
 }else{

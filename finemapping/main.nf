@@ -186,7 +186,7 @@ process GwasCatDl{
       phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
       out="gwascat_format"
       """
-      wget -c ${params.gwas_cat_ftp}
+      wget -c ${params.gwas_cat_ftp} --no-check-certificate
       format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${listchro.join(',')}
       """
 }
@@ -540,7 +540,7 @@ process GetGenesInfo{
    script :
      out="gencode.v19.genes"
      """
-     wget -c ${params.genes_file_ftp}
+     wget -c ${params.genes_file_ftp} --no-check-certificate
      zcat `basename ${params.genes_file_ftp}` > file_genes
      change_genes_gencode.py file_genes
      """

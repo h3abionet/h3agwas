@@ -117,7 +117,7 @@ process GwasCatDl{
     script :
       out="gwascat_format"
       """
-      wget -c ${params.gwas_cat_ftp}
+      wget -c ${params.gwas_cat_ftp} --no-check-certificate
       format_gwascat.r --file `basename ${params.gwas_cat_ftp}` --pheno \"${params.list_pheno}\" --out $out  --chro ${listchro.join(',')}
       """
 }

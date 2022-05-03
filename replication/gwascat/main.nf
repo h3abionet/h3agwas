@@ -182,7 +182,7 @@ process dl_gwascat_hg19{
    script :
      out=params.gwas_cat_ftp.split('/')[-1]
    """
-   wget -c ${params.gwas_cat_ftp}
+   wget -c ${params.gwas_cat_ftp} --no-check-certificate
    """
 
 }
