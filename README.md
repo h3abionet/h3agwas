@@ -17,6 +17,8 @@ The major change from Version 2 to Version 3 is the reorganisation of the repo s
 This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/main.nf`
 
 
+***Preprint manuscript can be found on [biorxiv](https://www.biorxiv.org/content/10.1101/2022.05.02.490206v1)***
+
 ## Brief introduction
 
 In addition to this README we have a detailed tutorial and videos 

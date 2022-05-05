@@ -4,19 +4,26 @@ authors:
 - family-names: "Brandenburg"
   given-names: "Jean-Tristan"
   orcid: https://orcid.org/0000-0003-0197-2648
+- family-names: "Clark"
+  given-names: "Lindsay"
+  orcid: https://orcid.org 0000-0002-3881-9252
+- family-names: "Botha"
+  given-names: "Gerrit"
+  orcid: 
+- family-names: "Panji"
+  given-names: "Sumir"
+  orcid:  https://orcid.org/0000-0003-0447-0598
+- family-names: "Baichoo"
+  given-names: "Shakuntala"
+  orcid:  https://orcid.org/0000-0002-9335-1939
+- family-names: "Fields"
+  given-names: "Christopher J."
+  orcid:  https://orcid.org/ 0000-0002-0581-149X
 - family-names: "Hazelhurst"
   given-names: Scott
   orcid: https://orcid.org/0000-0002-0581-149X
-- family-names: Magosi
-  given-names: Lerato
-- family-names: Clark
-  given-names: Lindsay
-- family-names: "De Beste"
-  given-names: Eugene
-- family-names: Clucas
-  given-names: Rob
-title: "H3AGWAS: Pan-African Bioinformatics Network for H3Africa Genome Wide Association Study Workflow"
-doi: doi.org/10.25375/uct.14405990.v2
+title: "H3AGWAS : A portable workflow for Genome Wide Association Studies"
+doi: https://doi.org/10.1101/2022.05.02.490206 
 version: 3.0
 date-released: 2019-12-18
 url: "https://github.com/h3abionet/h3agwas"
