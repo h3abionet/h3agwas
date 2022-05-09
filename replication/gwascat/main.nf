@@ -151,7 +151,7 @@ params.gwascat_format="USCS"
 
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 
-params.file_pheno=""
+params.file_pheno_gc=""
 params.list_chro="1-22"
 
 
@@ -239,17 +239,17 @@ System.exit(-1)
 }
 
 listchro=getlistchro(params.list_chro)
-if(params.file_pheno!=''){
-file_pheno_ch=file(params.file_pheno, checkIfExists:true)
+if(params.file_pheno_gc!=''){
+file_pheno_gc_ch=file(params.file_pheno_gc, checkIfExists:true)
 }else{
-file_pheno_ch=file('nofile')
+file_pheno_gc_ch=file('nofile')
 }
 process formatgwascat{
    label 'R'
    publishDir "${params.output_dir}/gwascat",  mode:'copy'
    input :
       file(gwascat) from gwascat_init_ch
-      file(filepheno) from file_pheno_ch
+      file(filepheno) from file_pheno_gc_ch
    output :
        file("${out}_range.bed") into gwascat_rangebed
        file("${out}.pos") into (gwascat_pos_subplk, gwascat_pos_ld2, gwascat_pos, gwascat_poswindneutre)
@@ -259,7 +259,7 @@ process formatgwascat{
    script :
      chroparam= (params.list_chro=='') ? "" : " --chro ${listchro.join(',')}"
      phenoparam= (params.pheno_gc=='') ? "" : " --pheno \"${params.pheno_gc}\" "
-     phenoparam= (params.file_pheno=='') ? " $phenoparam " : " --file_pheno $filepheno "
+     phenoparam= (params.file_pheno_gc=='') ? " $phenoparam " : " --file_pheno_gc $filepheno "
      out=params.output+'_gwascat'
    """
    format_gwascat.r --file $gwascat $chroparam $phenoparam --out $out --wind ${params.size_win_kb}  --chro_head ${params.head_chro_gwascat} --bp_head ${params.head_bp_gwascat} --pheno_head ${params.head_pheno_gwascat} --beta_head ${params.head_beta_gwascat} --ci_head ${params.head_ci_gwascat} --p_head ${params.head_pval_gwascat}  --n_head ${params.head_n_gwascat} --freq_head ${params.head_af_gwascat} --rs_head ${params.head_rs_gwascat} --riskall_head ${params.head_riskall_gwascat} --format $format

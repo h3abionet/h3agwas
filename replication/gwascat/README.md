@@ -16,8 +16,8 @@ script using gwas catalog to compared gwas summary statistics to compared gwas s
   * `head_A1` ["ALLELE1"]
   * `head_A0` ["ALLELE0"]
  *  gwas catalog : algorithm download version of gwas catalog from ucsc, separate by comma
-  * `pheno` : un phenotype
-  * `file_pheno` : file containing list of phenotype extracted from gwas catalog
+  * `pheno_gc` : phenotype from gwas catalog
+  * `file_pheno_gc` : file containing list of phenotype extracted from gwas catalog
   * `list_chro` : list chro to analyse, separate by x-y (x to y) and comma [1-22]
  * `clump_r2` : min pvalue used for clump and ld 
  * `size_win_kb` : size in kb to analyse used in clump, ld and windows analyse
@@ -28,11 +28,11 @@ script using gwas catalog to compared gwas summary statistics to compared gwas s
 ### list of phenotypes available
 to obtain list of phenotype without run algorinm
 """
-nextflow run h3abionet/h3agwas/replication/gwascat/main.nf --justpheno 1 --output_dir gwascatpheno/ --output gwascatpheno -resume -profile slurm
+nextflow run h3abionet/h3agwas/replication/gwascat/main.nf --justpheno_gc 1 --output_dir gwascatpheno/ --output gwascatpheno -resume -profile slurm
 """
 
 ### GWAS catalog :
-extract from gwas catalog postiion and chromosome relative to `file_pheno` or `pheno` and `list_chro`. computed heritabilite, beta and se for input
+extract from gwas catalog postiion and chromosome relative to `file_pheno_gc` or `pheno_gc` and `list_chro`. computed heritabilite, beta and se for input
 OR transformed using log2 and defined if column contains information higher than 1
 
 
@@ -101,24 +101,21 @@ z values defined as beta / se
 
 ### process 
 
- * process dl\_gwascat\_hg19 : optional if gwascat is not give as parameter
- * process formatgwascat\_pheno : format gwas catalog, if just\_pheno
- * process   formatgwascat : format gwast catalog
- * process extractgwas\_fromgwascat : extract position from gwas present in positoins of gwas catalog 
+* process dl\_gwascat\_hg19 : optional if gwascat is not give as parameter
+* process formatgwascat\_pheno : format gwas catalog, if just\_pheno
+* process   formatgwascat : format gwast catalog
+* process extractgwas\_fromgwascat : extract position from gwas present in positoins of gwas catalog 
   * file description 
   * sub\_plk : sub plink, extracted positions from 1) gwas 2)gwas catalog
-process update_rs{
-process clump_aroundgwascat{
-process computedstat_pos{
-process  computedstat_windneutre{
-process computedstat_win{
-process computed_ld{
-process computed_ld_stat{
-process computed_clump_stat{
-process build_ldwind{
-process computed_ld2_stat{
-process computed_ldext_stat{
- process computed_ldwind_stat{
-process computed_ldwindext_stat{
+* process update\_rs : process to format plink file with specifi rs
+* process clump\_aroundgwascat : clump around each gwas cat 
+* process computedstat\_pos : exraction of position from gwas catalog on summary statistics 
+* process  computedstat\_windneutre : 
+* process computedstat\_win : computed statistcs by windows
+* process computed\_ld :extraction of positions from gwas catalog and summary statistics in LD
+* process computed\_ld\_stat :  computed statistics from ` computed\_ld`
+* process computed\_clump\_stat : computed statistics using clump function from plink
+* process build\_ldwind
+* process computed\_ldwind\_stat
 
 
