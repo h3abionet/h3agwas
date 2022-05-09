@@ -40,6 +40,13 @@ def getlistchro(listchro){
 }
 
 
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+
+
+
 def helps = [ 'help' : 'help' ]
 allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "min_pval_clump", "size_win_kb"]
 allowed_params_blocks = ["haploblocks", "plkref_haploblocks", "plk_othopt_haploblocks"]
@@ -203,7 +210,7 @@ infogwascat=params.head_info_gwascat
 
 
 
-if(params.justpheno==1){
+if(params.justpheno_gc==1){
 process formatgwascat_pheno{
    label 'R'
    publishDir "${params.output_dir}/gwascat",  mode:'copy'
@@ -240,9 +247,9 @@ System.exit(-1)
 
 listchro=getlistchro(params.list_chro)
 if(params.file_pheno_gc!=''){
-file_pheno_gc_ch=file(params.file_pheno_gc, checkIfExists:true)
+file_pheno_gc_ch=channel.fromPath(params.file_pheno_gc, checkIfExists:true)
 }else{
-file_pheno_gc_ch=file('nofile')
+file_pheno_gc_ch=channel.fromPath('${dummy_dir}/00', checkIfExists:true)
 }
 process formatgwascat{
    label 'R'
@@ -259,7 +266,7 @@ process formatgwascat{
    script :
      chroparam= (params.list_chro=='') ? "" : " --chro ${listchro.join(',')}"
      phenoparam= (params.pheno_gc=='') ? "" : " --pheno \"${params.pheno_gc}\" "
-     phenoparam= (params.file_pheno_gc=='') ? " $phenoparam " : " --file_pheno_gc $filepheno "
+     phenoparam= (params.file_pheno_gc=='') ? " $phenoparam " : " --file_pheno $filepheno "
      out=params.output+'_gwascat'
    """
    format_gwascat.r --file $gwascat $chroparam $phenoparam --out $out --wind ${params.size_win_kb}  --chro_head ${params.head_chro_gwascat} --bp_head ${params.head_bp_gwascat} --pheno_head ${params.head_pheno_gwascat} --beta_head ${params.head_beta_gwascat} --ci_head ${params.head_ci_gwascat} --p_head ${params.head_pval_gwascat}  --n_head ${params.head_n_gwascat} --freq_head ${params.head_af_gwascat} --rs_head ${params.head_rs_gwascat} --riskall_head ${params.head_riskall_gwascat} --format $format
@@ -351,7 +358,9 @@ process sub_plk{
 
 process update_rs{
    cpus max_plink_cores
-   memory plink_mem_req
+   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+   errorStrategy { task.exitStatus in 137..143 ? 'retry' : 'terminate' }
+   maxRetries 10
    input :
      tuple path(bed), path(bim), path(fam) from ch_subplk 
    publishDir "${params.output_dir}/sub_plk/",  mode:'copy'
@@ -360,17 +369,20 @@ process update_rs{
    script :
       out=bed.baseName+"_idup"
       plk=bed.baseName
+       plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
       """
       update_rs.py --bim $bim --out rstoupdate      
-      plink -bfile $plk --make-bed --keep-allele-order -out $out --update-name rstoupdate 2 1
+      plink -bfile $plk --make-bed --keep-allele-order -out $out --update-name rstoupdate 2 1 --threads ${max_plink_cores}  --memory  $plink_mem_req_max  `cat postodel.cmd`
       """
 
 }
 
 
 process clump_aroundgwascat{
-    cpus max_plink_cores
-    memory plink_mem_req
+   cpus max_plink_cores
+   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+   errorStrategy { task.exitStatus in 137..143 ? 'retry' : 'terminate' }
+   maxRetries 10
    input :
       path(assocclump) from clump_file_ch
       tuple path(bed), path(bim), path(fam) from plk_ch_clump
@@ -381,6 +393,7 @@ process clump_aroundgwascat{
    script :
       bfile=bed.baseName
       out=params.output
+      plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
       """ 
       plink -bfile $bfile  --clump $assocclump -clump-p1 $params.min_pval_clump --clump-p2 1 --clump-kb ${params.size_win_kb} --clump-r2 $params.clump_r2 -out $out --threads $max_plink_cores --memory $plink_mem_req_max
       """
@@ -454,8 +467,10 @@ process computedstat_win{
 
 
 process computed_ld{
-    cpus max_plink_cores
-    memory plink_mem_req
+  cpus max_plink_cores
+  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  errorStrategy { task.exitStatus in 137..143 ? 'retry' : 'terminate' }
+  maxRetries 10
   input :
       tuple path(bed), path(bim), path(fam) from plk_ch_ld
     publishDir "${params.output_dir}/result/ld/tmp",  mode:'copy'
