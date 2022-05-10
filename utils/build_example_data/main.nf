@@ -180,7 +180,7 @@ process addSexFile{
      out=params.output
      basename=bed.baseName
      """
-     wget -c ${params.sex_info_file}
+     wget -c ${params.sex_info_file} --no-check-certificate
      format_sex_forplk.r --file ${params.sex_info_file} --info ${params.sex_info} --out ${out}_sex --error ${params.sex_error}
      plink --bfile $basename --keep-allele-order --threads ${params.nb_cpus} --make-bed --out $out  --update-sex ${out}_sex
      """
@@ -196,7 +196,7 @@ process GwasCatDl{
     script :
       out="gwascat_format"
       """
-      wget -c ${params.gwas_cat_ftp} 
+      wget -c ${params.gwas_cat_ftp}  --no-check-certificate
       format_gwascat.r --file `basename ${params.gwas_cat_ftp}` --pheno \"${params.list_pheno}\" --out $out  --chro ${listchro.join(',')}
       """
 }

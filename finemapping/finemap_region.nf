@@ -14,6 +14,11 @@
  *
  */
 
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+
 def getlistchro(listchro){
  newlistchro=[]
  for(x in listchro.split(',')) {
@@ -171,7 +176,7 @@ if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
 process GwasCatDl{
     label 'R'
-    publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/gwascat",   mode:'copy'
     output :
        file("${out}_all.csv") into gwascat_ch
        file("${out}*")
@@ -179,7 +184,7 @@ process GwasCatDl{
       phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
       out="gwascat_format"
       """
-      wget -c ${params.gwas_cat_ftp}
+      wget -c ${params.gwas_cat_ftp} --no-check-certificate
       format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${params.chro}
       """
 }
@@ -238,7 +243,7 @@ process ExtractPositionGwas{
     file("${out}.range") into range_plink
     file("${out}.all") into data_i
     file("${out}.pos") into paintor_gwas_annot
-  publishDir "${params.output_dir}/file_format/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/file_format/",  mode:'copy'
   script :
     freq= (params.head_freq=="") ? "":" --freq_header ${params.head_freq} "
     nheader= (params.head_n=="") ? "":" --n_header ${params.head_n}"
@@ -287,7 +292,7 @@ process ComputedFineMapCond{
   input :
     file(ld) from ld_fmcond 
     file(filez) from finemap_gwas_cond
-  publishDir "${params.output_dir}/fm_cond", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/fm_cond",  mode:'copy'
   output :
     file("${out}.snp") into res_fmcond
     set file("${out}.config"), file("${out}.cred"), file("${out}.log_cond")
@@ -308,7 +313,7 @@ process ComputedFineMapSSS{
   input :
     file(ld) from ld_fmsss
     file(filez) from finemap_gwas_sss
-  publishDir "${params.output_dir}/fm_sss", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/fm_sss",  mode:'copy'
   output :
     file("${out}.snp") into res_fmsss
     set file("${out}.config"), file("${out}.cred${params.n_causal_snp}"), file("${out}.log_sss")
@@ -328,7 +333,7 @@ process ComputedCaviarBF{
   input :
     file(filez) from caviarbf_gwas
     file(ld) from ld_caviarbf
-  publishDir "${params.output_dir}/caviarbf", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/caviarbf",  mode:'copy'
   output :
    file("${output}.marginal") into res_caviarbf
    set file("$output"), file("${output}.statistics")
@@ -355,7 +360,7 @@ baliseannotpaint=1
    input :
     file(listinfo) from paintor_listfileannot
     file(list_loc) from paintor_gwas_annot
-   publishDir "${params.output_dir}/paintor/annot", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/paintor/annot",  mode:'copy'
    output :
     file(out) into (paintor_fileannot, paintor_fileannotplot, paintor_fileannot2)
    script :
@@ -392,7 +397,7 @@ process ComputedPaintor{
     file(fileannot) from paintor_fileannot
     val(annot_name) from annotname
   each ncausal from NCausalSnp
-  publishDir "${params.output_dir}/paintor/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/paintor/",  mode:'copy'
   output :
       set file("${output}.results"), file("$BayesFactor") into res_paintor
       file(FileInfo) into infores_paintor
@@ -429,7 +434,7 @@ process ComputedCojo{
    input :
      set  file(bed),file(bim),file(fam) from subplink_gcta
      file(filez) from gcta_gwas
-   publishDir "${params.output_dir}/cojo_gcta", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/cojo_gcta",  mode:'copy'
    output :
      file("${output}.jma.cojo")  into res_cojo
      set file("${output}.cma.cojo"), file("${output}.ldr.cojo"), file("${output}.log")
@@ -443,17 +448,18 @@ process ComputedCojo{
 }
 if(params.genes_file==""){
 process GetGenesInfo{
-   label 'R'
-   memory '20GB'
+   memory { strmem(params.other_mem_req) + 1.GB * (task.attempt -1) }
+   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+   maxRetries 10
    output :
       file(out) into genes_file_ch
-   publishDir "${params.output_dir}/data/", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/data/",  mode:'copy'
    script :
      out="gencode.v19.genes"
      """
-     wget -c ${params.genes_file_ftp}
+     wget -c ${params.genes_file_ftp} --no-check-certificate
      zcat `basename ${params.genes_file_ftp}` > file_genes
-     change_genes.r file_genes
+     change_genes_gencode.py file_genes
      """
 }
 }else{
@@ -476,7 +482,7 @@ process MergeResult{
       file(genes) from  genes_file_ch
       file(gwascat) from gwascat_ch
       file(pfileannot) from paintor_fileannotplot
-   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/",  mode:'copy'
     output :
        set file("${out}.pdf"), file("${out}.all.out"), file("${out}.all.out")
     script :

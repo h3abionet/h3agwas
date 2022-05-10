@@ -255,10 +255,10 @@ process ExtractAllRs{
   chrolist=chrolist.flatMap { list_str -> list_str.split() }
 
 
-listdb=Channel.from(params.list_db_anovar.split(','))
+listdb2=Channel.from(params.list_db_anovar.split(','))
 process getannovar_db {
   input : 
-      val(db) from listdb
+      val(db) from listdb2
   publishDir "${params.output_dir}/dbzip/", overwrite:true, mode:'copy'
   output:
     file("humandb/${params.ref_annovar}_*.txt") into db_annovar
@@ -343,7 +343,7 @@ loczm_dir=file(params.loczm_bin).getParent().getParent()
 locuszoom_ch=locuszoom_ch.combine(Channel.fromPath(loczm_dir,type:'dir'))
 process PlotLocusZoom{
     label 'py2R'
-    memory plink_mem_req
+    memory params.plink_mem_req
     input : 
        set val(rs), file(filegwas),file(lz_dir) from locuszoom_ch
     publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
@@ -354,7 +354,6 @@ process PlotLocusZoom{
        rsnameout=rs.replace(':',"_")
        """
        rs2=`echo $rs | awk -F':' '{if(NF==1){print \$0;}else{print \$1\":\"\$2;}}'` 
-       chmod +x locuszoom/bin/locuszoom
        ${lz_dir}/bin/locuszoom --epacts  $filegwas --delim tab --refsnp  \$rs2 --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date 
        """
 }
@@ -371,9 +370,9 @@ process ExtractAnnotation{
         tuple val(rs),file(filechro) from infofilechr
       publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
       output :
-        file("${out}*")
-        file("*${rsnameout}*")
-        set val(rs), file("${out}.pdf") into report_info_rs
+        path("${out}*")
+        path("*${rsnameout}*")
+        tuple val(rs), path("${out}.pdf") into report_info_rs
       script :    
          out="annot-"+rs.replace(':','_')
          rsnameout=rs.replace(':',"_")
@@ -406,10 +405,10 @@ process PlotByGenotype{
     label 'R'
     memory plink_mem_req
     input :
-        set val(rs),file(file_rs), file(bed), file(bim), file(fam), file(data)  from fileplotgeno_ch
+        set val(rs),path(file_rs), path(bed), path(bim), path(fam), paht(data)  from fileplotgeno_ch
     publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
     output :
-       set rs, file(outpdf) into report_plot_rs_ch
+       set val(rs), path(outpdf) into report_plot_rs_ch
     script :
         rsnameout=rs.replace(':',"_")
         plinkbase=bed.baseName
@@ -427,10 +426,10 @@ process WriteReportRsFile{
     label 'latex'
     memory plink_mem_req
     input :
-       set val(rs), file(locuszoom), file(gwasres),file(annotpdf) ,file(plotgeno) from all_info_rs_ch 
+       tuple val(rs), path(locuszoom), path(gwasres),path(annotpdf) ,path(plotgeno) from all_info_rs_ch 
     publishDir "${params.output_dir}/$rsnnameout", overwrite:true, mode:'copy'
     output :
-       file(out)
+       paht(out)
     script :
        rsnnameout=rs.replace(':',"_")
        outtex=rsnnameout+".tex"

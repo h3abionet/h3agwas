@@ -54,6 +54,7 @@ params.poshead_a2_inforef=4
 params.bin_bcftools="bcftools"
 params.bin_samtools="samtools"
 params.bcftools_mem_req="30GB"
+params.tmpdir="tmp/"
 
 params.plink_mem_req="10GB"
 params.max_plink_cores="5"
@@ -99,8 +100,6 @@ process extractpositionfasta{
     """
     extract_ref_bimf.py --bim $bim --fasta $fasta --out tmp
     """
-
-
 }
 
 process convertrsname{
@@ -187,8 +186,9 @@ process convertInVcf {
      base=bed.baseName
      out="${params.output}"
      """
+     mkdir -p ${params.tmpdir}
      plink  --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
-     ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort - -O z > ${out}_tmp.vcf.gz
+     ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort - -O z -T ${params.tmpdir} > ${out}_tmp.vcf.gz  
      rm -f ${out}.vcf.gz
      ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
      """
@@ -228,10 +228,11 @@ process convertInVcfChro{
      base=bed.baseName
      out="${params.output}"+"_"+chro
      """
+     mkdir -p ${params.tmpdir}
      plink  --chr $chro --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
-     ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort - -O z > ${out}_tmp.vcf.gz
+     ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort -T ${params.tmpdir} - -O z > ${out}_tmp.vcf.gz
      rm -f ${out}.vcf.gz
-     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Ob -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
+     ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
      """
 }
 

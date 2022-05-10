@@ -14,6 +14,11 @@
  *
  */
 
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+
 def getlistchro(listchro){
  newlistchro=[]
  for(x in listchro.split(',')) {
@@ -48,6 +53,7 @@ nullfile = [false,"False","false", "FALSE",0,"","0","null",null]
 def checkColumnHeader(fname, columns) {
   if (workflow.profile == "awsbatch") return;
   if (fname.toString().contains("s3://")) return;
+  if (fname.toString().contains("az://")) return;
   if (nullfile.contains(fname)) return;
   new File(fname).withReader { line = it.readLine().tokenize() }
   problem = false;
@@ -172,7 +178,7 @@ if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
 process GwasCatDl{
     label 'R'
-    publishDir "${params.output_dir}/gwascat",  overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/gwascat",  mode:'copy'
     output :
        file("${out}_all.csv") into gwascat_ch
        file("${out}*")
@@ -180,7 +186,7 @@ process GwasCatDl{
       phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
       out="gwascat_format"
       """
-      wget -c ${params.gwas_cat_ftp}
+      wget -c ${params.gwas_cat_ftp} --no-check-certificate
       format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${listchro.join(',')}
       """
 }
@@ -234,14 +240,14 @@ process clump_data{
  input :
      set file(bed),file(bim),file(fam) from gwas_plk_clump
      file(gwasfile) from gwas_file_clump
- publishDir "${params.output_dir}/clump/", overwrite:true, mode:'copy'
+ publishDir "${params.output_dir}/clump/",  mode:'copy'
  output :
     file("${output}.clumped") into file_clump 
  script :
    output="clump_output"
    plkfile=bed.baseName
    """
-   plink_format.py --inp_asso $gwasfile --chro_header  ${params.head_chr} --bp_header ${params.head_bp} --a1_header ${params.head_A1} --a2_header ${params.head_A2}  --pval_header ${params.head_pval} --beta_header ${params.head_beta}  --out $output --rs_header ${params.head_rs} --se_header  ${params.head_se}
+   formatsumstat_inplink.py --inp_asso $gwasfile --chro_header  ${params.head_chr} --bp_header ${params.head_bp} --a1_header ${params.head_A1} --a2_header ${params.head_A2}  --pval_header ${params.head_pval} --beta_header ${params.head_beta}  --out $output --rs_header ${params.head_rs} --se_header  ${params.head_se} --bim $bim
  ${params.plink_bin} -bfile $plkfile  -out $output --keep-allele-order --threads ${params.plink_cpus_req}   --clump $output --clump-p1 ${params.threshold_p} --clump-p2 ${params.threshold_p2} --clump-r2 ${params.clump_r2} --clump-kb ${params.size_wind_kb}
   """
 }
@@ -266,7 +272,7 @@ pos_tonalyse_ch=postonalyse.flatMap { list_str -> list_str.split() }
 process ExtractPositionGwas{
   memory params.other_mem_req
   input :
-     file(filegwas) from gwas_file
+     tuple file(filegwas) from gwas_file
      set file(bed),file(bim),file(fam) from gwas_extract_plk
   each  pos from pos_tonalyse_ch
   output :
@@ -277,7 +283,7 @@ process ExtractPositionGwas{
     set val(pos),file("${out}.range") into range_plink
     set val(pos), file("${out}.all") into data_i
     set val(pos), file("${out}.pos") into paintor_gwas_annot
-  publishDir "${params.output_dir}/$pos/file_format/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/file_format/", mode:'copy'
   script :
     bp=pos.split('_')[1]
     chro=pos.split('_')[0]
@@ -332,7 +338,7 @@ process ComputedFineMapCond{
   memory params.fm_mem_req
   input :
     set val(pos),file(ld),file(filez) from ld_fmcond_group
-  publishDir "${params.output_dir}/$pos/fm_cond", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/fm_cond",  mode:'copy'
   output :
     set val(pos), file("${out}.snp") into res_fmcond
     set file("${out}.config"), file("${out}.cred"), file("${out}.log_cond")
@@ -354,7 +360,7 @@ process ComputedFineMapSSS{
   cpus params.fm_cpus_req
   input :
      set val(pos),file(ld),file(filez) from ld_fmss_group
-  publishDir "${params.output_dir}/$pos/fm_sss", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/fm_sss",  mode:'copy'
   output :
     set val(pos),file("${out}.snp") into res_fmsss
     set file("${out}.config"), file("${out}.cred${params.n_causal_snp}"), file("${out}.log_sss")
@@ -374,7 +380,7 @@ process ComputedCaviarBF{
   label 'finemapping'
   input :
      set val(pos),file(ld),file(filez) from ld_caviarbf_group
-  publishDir "${params.output_dir}/$pos/caviarbf", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/caviarbf",  mode:'copy'
   output :
    set val(pos), file("${output}.marginal") into res_caviarbf
    set file("$output"), file("${output}.statistics")
@@ -401,7 +407,7 @@ baliseannotpaint=1
   process paintor_selectannot{
    input :
     set val(pos),file(list_loc), file(listinfo) from paintor_gwas_annot2
-   publishDir "${params.output_dir}/$pos/paintor/annot", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/$pos/paintor/annot", mode:'copy'
    output :
     set val(pos),file(out) into (paintor_fileannot, paintor_fileannotplot, paintor_fileannot2)
    script :
@@ -444,7 +450,7 @@ process ComputedPaintor{
    memory params.fm_mem_req
    input :
     set val(pos),file(ld),file(filez), file(fileannot), val(annot_name) from ld_paintor_group
-  publishDir "${params.output_dir}/$pos/paintor/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/$pos/paintor/",  mode:'copy'
   output :
       set val(pos),file("${output}.results") into res_paintor_ch
       set val(pos),file(FileInfo) into infores_paintor_ch
@@ -505,7 +511,7 @@ process ComputedCojo{
    cpus params.gcta_cpus_req
    input :
      set val(pos),file(filez), file(bed),file(bim),file(fam) from gcta_gwas_join
-   publishDir "${params.output_dir}/$pos/cojo_gcta", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/$pos/cojo_gcta",  mode:'copy'
    output :
      set val(pos), file("${output}.jma.cojo")  into res_cojo
      set file("${output}.cma.cojo"), file("${output}.ldr.cojo"), file("${output}.log")
@@ -524,17 +530,19 @@ process ComputedCojo{
 }
 if(params.genes_file==""){
 process GetGenesInfo{
-   memory '20GB'
-   label 'R'
+   memory { strmem(params.other_mem_req) + 1.GB * (task.attempt -1) }
+   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+   maxRetries 10
+
    output :
       file(out) into genes_file_ch
-   publishDir "${params.output_dir}/data/", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/data/", mode:'copy'
    script :
      out="gencode.v19.genes"
      """
-     wget -c ${params.genes_file_ftp}
+     wget -c ${params.genes_file_ftp} --no-check-certificate
      zcat `basename ${params.genes_file_ftp}` > file_genes
-     change_genes.r file_genes
+     change_genes_gencode.py file_genes
      """
 }
 }else{
@@ -547,7 +555,7 @@ process MergeResult{
     memory params.other_mem_req
     input :
       set val(pos), file(paintor),file(infopaintor), file(paintor_bf), file(pfileannot), file(cojo), file(caviarbf), file(fmsss), file(fmcond), file(datai), file(genes), file(gwascat) from mergeall
-   publishDir "${params.output_dir}/$pos/", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/$pos/",  mode:'copy'
     output :
        set file("${out}.pdf"), file("${out}.all.out"), file("${out}.all.out")
     script :

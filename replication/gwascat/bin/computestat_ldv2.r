@@ -142,7 +142,6 @@ if(!is.null(headaf)){
  datagwas$h2.gwas<-computedher(datagwas[[headbeta]], datagwas[[headse]], datagwas[[headaf]],datagwas[[headN]])
 }else{
 datagwas$h2.gwas<-NA
-
 }
 if(!is.null(headbeta))datagwas$z.gwas<-datagwas[[headbeta]]/datagwas[[headse]]
 
@@ -192,7 +191,7 @@ write.csv(allmerge, file=paste(opt[['out']],'_allresume.csv',sep=''),row.names=F
 minpval<-as.numeric(opt[['min_pvalue']])
 dataresallsig<-dataresall[!is.na(dataresall[,headpval]) & dataresall[,headpval]<minpval,]
 if(nrow(dataresallsig)>0){
-if(!is.null(headbeta))dataresallsig$info_gwas<-paste(dataresallsig[,'CHR'],':',dataresallsig[,'BP'],'-beta:',dataresallsig[,headbeta], ',se:',dataresallsig[,headse],',pval:',dataresallsig[,headpval]) else dataresallsig$info_gwas<-paste(dataresallsig[,'CHR'],':',dataresallsig[,'BP'],'-beta:',dataresallsig[,headz], ,',pval:',dataresallsig[,headpval])
+if(!is.null(headbeta))dataresallsig$info_gwas<-paste(dataresallsig[,'CHR'],':',dataresallsig[,'BP'],'-beta:',dataresallsig[,headbeta], ',se:',dataresallsig[,headse],',pval:',dataresallsig[,headpval]) else dataresallsig$info_gwas<-paste(dataresallsig[,'CHR'],':',dataresallsig[,'BP'],'-z:',dataresallsig[,headz],',pval:',dataresallsig[,headpval])
 
 
 chro<-aggregate(as.formula(paste("CHR~block")), data=dataresallsig, unique)

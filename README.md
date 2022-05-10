@@ -17,6 +17,8 @@ The major change from Version 2 to Version 3 is the reorganisation of the repo s
 This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, you should run `nextflow run h3abionet/h3agwas/assoc/main.nf`
 
 
+***Preprint manuscript can be found on [biorxiv](https://www.biorxiv.org/content/10.1101/2022.05.02.490206v1)***
+
 ## Brief introduction
 
 In addition to this README we have a detailed tutorial and videos 
@@ -836,6 +838,11 @@ the typical reason is that you have not allocated enough memory for the process 
 ## Citing this workflow
 
 If you use this workflow, please cite the following paper
+
+* Studies Jean-Tristan Brandenburg, Lindsay Clark, Gerrit Botha, Sumir Panji, Shakuntala Baichoo, Christopher J. Fields, Scott Hazelhurst. (2022). H3AGWAS : A portable workflow for Genome Wide Association Studies bioRxiv 2022.05.02.490206; doi: https://doi.org/10.1101/2022.05.02.490206 
+
+and 
+
 
 * Baichoo S, Souilmi Y, Panji S, Botha G, Meintjes A, Hazelhurst S, Bendou H, De Beste E, Mpangase P, Souiai O, Alghali M, Yi L, O'Connor B, Crusoe M, Armstrong D, Aron S, Joubert D, Ahmed A, Mbiyavanga M, Van Heusden P, Magosi, L, Zermeno, J, Mainzer L, Fadlelmola F, Jongeneel CV, and Mulder N. (2018) Developing reproducible bioinformatics analysis workflows for heterogenous computing environments to support African genomics, *BMC Bioinformatics* **19**, 457, 13 pages, doi:10.1186/s12859-018-2446-1.
 

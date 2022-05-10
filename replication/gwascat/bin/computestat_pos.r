@@ -164,6 +164,7 @@ datagwas$z.gwas<-datagwas[[headz]]
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');
 
 
+print(head(datagwas,1))
 datagwas$p.adjust.fdr<-p.adjust(datagwas[,headpval],'fdr')
 datagwas$p.adjust.bonf<-p.adjust(datagwas[,headpval],'bonferroni')
 headN<-opt[['N_value']]
