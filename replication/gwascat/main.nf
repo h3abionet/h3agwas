@@ -48,7 +48,7 @@ def strmem(val){
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "min_pval_clump", "size_win_kb"]
+allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output", "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "min_pval_clump", "size_win_kb"]
 allowed_params_blocks = ["haploblocks", "plkref_haploblocks", "plk_othopt_haploblocks"]
 allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances","instance-type", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts"]
 allowed_params_headinfo=["head_chro_gwascat", "head_bp_gwascat", "head_pval_gwascat"]
@@ -111,7 +111,6 @@ params.random_statneutre=0
 params.size_win_kb=250
 params.size_win_kb_ld=-1
 params.size_win_kb_clump=-1
-params.nb_cpu = 3
 
 params.gwas_cat=""
 // haploblocks information
@@ -395,7 +394,7 @@ process clump_aroundgwascat{
       out=params.output
       plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
       """ 
-      plink -bfile $bfile  --clump $assocclump -clump-p1 $params.min_pval_clump --clump-p2 1 --clump-kb ${params.size_win_kb} --clump-r2 $params.clump_r2 -out $out --threads $max_plink_cores --memory $plink_mem_req_max
+      plink -bfile $bfile  --clump $assocclump -clump-p1 ${params.min_pval_clump} --clump-p2 1 --clump-kb ${params.size_win_kb} --clump-r2 $params.clump_r2 -out $out --threads $max_plink_cores --memory $plink_mem_req_max
       """
 }
 
