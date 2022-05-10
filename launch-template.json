@@ -1,0 +1,15 @@
+{
+    "LaunchTemplateName": "h3a-batch-template",
+    "LaunchTemplateData": {
+        "BlockDeviceMappings": [
+            {
+                "DeviceName": "/dev/xvda",
+                "Ebs": {
+                    "Encrypted": false,
+                    "VolumeSize": 100,
+                    "VolumeType": "gp2"
+                }
+            }
+        ]
+    }
+}
