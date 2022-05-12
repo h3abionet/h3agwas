@@ -53,6 +53,7 @@ nullfile = [false,"False","false", "FALSE",0,"","0","null",null]
 def checkColumnHeader(fname, columns) {
   if (workflow.profile == "awsbatch") return;
   if (fname.toString().contains("s3://")) return;
+  if (fname.toString().contains("az://")) return;
   if (nullfile.contains(fname)) return;
   new File(fname).withReader { line = it.readLine().tokenize() }
   problem = false;
