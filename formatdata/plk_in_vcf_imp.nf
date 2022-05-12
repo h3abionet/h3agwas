@@ -133,9 +133,9 @@ process deletedmultianddel{
    memory params.plink_mem_req
    cpus params.max_plink_cores
    input :
-    set file(bed), file(bim), file(fam) from plk_newrs
+    tuple path(bed), path(bim), path(fam) from plk_newrs
    output :
-    set file("${out}.bed"),file("${out}.bim"),file("${out}.fam") into plk_noindel
+    tuple path("${out}.bed"),path("${out}.bim"),path("${out}.fam") into plk_noindel
    script :
     plk=bed.baseName
     out=plk+"_nomulti"
@@ -149,10 +149,10 @@ process refallele{
    memory params.plink_mem_req
    cpus params.max_plink_cores
    input :
-    set file(bed), file(bim), file(fam) from plk_noindel
-    file(infors) from l_infors2
+    tuple path(bed), path(bim), path(fam) from plk_noindel
+    path(infors) from l_infors2
    output :
-    set file("${out}.bed"),file("${out}.bim"),file("${out}.fam") into (plk_alleleref, plk_chrocount)
+    tuple path("${out}.bed"),path("${out}.bim"),path("${out}.fam") into (plk_alleleref, plk_chrocount)
   script :
     plk=bed.baseName
     out=plk+"_refal"
@@ -162,7 +162,31 @@ process refallele{
     """
 }
 
-hgrefconv=Channel.fromPath(params.reffasta,checkIfExists:true)
+hgrefi=Channel.fromPath(params.reffasta, checkIfExists:true)
+process checkfasta{
+  cpus params.max_plink_cores
+  label 'py3utils'
+  errorStrategy { task.exitStatus == 1 ? 'retry' : 'terminate' }
+  maxRetries 1
+  input :
+     path(fasta) from hgrefi
+  output :
+     tuple path("$fasta2"), path("${fasta2}.fai") into (hgref, hgref2, hgrefconv)
+  script :
+    fasta2="newfasta.gz"
+    """
+    if [ "${task.attempt}" -eq "1" ]
+    then
+    samtools faidx $fasta
+    cp $fasta $fasta2
+    mv $fasta".fai"  $fasta2".fai"
+    else
+    zcat $fasta | bgzip -@ ${params.max_plink_cores} -c > $fasta2
+    samtools faidx $fasta2
+    fi
+    """
+}
+
 if(params.parralchro==0){
 plink_mem_req_max=params.bcftools_mem_req.replace('GB','000').replace('Gigabytes','000').replace('KB','').replace('Kilobytes','').replace(' ','')
 
@@ -175,13 +199,13 @@ process convertInVcf {
    cpus params.max_plink_cores
    time params.big_time
    input :
-    set file(bed), file(bim), file(fam) from plk_alleleref
-    file(gz_info) from rs_infogz_2
-    file(fast) from hgrefconv
+    tuple path(bed), path(bim), path(fam) from plk_alleleref
+    path(gz_info) from rs_infogz_2
+    tuple path(fast), path(fastaindex) from hgrefconv
    publishDir "${params.output_dir}/vcf/", overwrite:true, mode:'copy'
    output :
-    file("${out}.rep")
-    file("${out}.vcf.gz")  into (vcfi, vcfi2)
+    path("${out}.rep")
+    path("${out}.vcf.gz")  into (vcfi, vcfi2)
    script:
      base=bed.baseName
      out="${params.output}"
@@ -197,7 +221,7 @@ process convertInVcf {
 
 process CounChro{
   input :
-       set file(bed), file(bim), file(fam) from plk_chrocount
+       tuple path(bed), path(bim), path(fam) from plk_chrocount
   output :
         stdout into chrolist
   script :
@@ -216,14 +240,14 @@ process convertInVcfChro{
    memory params.plink_mem_req
    cpus params.max_plink_cores
    input :
-      set file(bed), file(bim), file(fam) from plk_alleleref
-      file(fast) from hgrefconv
-      file(gz_info) from rs_infogz_3
+      tuple path(bed), path(bim), path(fam) from plk_alleleref
+      path(fast) from hgrefconv
+      path(gz_info) from rs_infogz_3
    publishDir "${params.output_dir}/vcf_bychro/", overwrite:true, mode:'copy'
    each chro from ListeChro
    output : 
-     file("${out}.rep") 
-     file("${out}.vcf.gz") into vcf_chro
+     path("${out}.rep") 
+     path("${out}.vcf.gz") into vcf_chro
    script:
      base=bed.baseName
      out="${params.output}"+"_"+chro
@@ -243,10 +267,10 @@ process mergevcf{
   label 'py3utils'
   cpus params.max_plink_cores
   input :
-   val(allfile) from vcf   
+   path(allfile) from vcf   
   publishDir "${params.output_dir}/vcf/", overwrite:true, mode:'copy'
   output :
-     file("${out}.vcf.gz")  into (vcfi, vcfi2)
+     path("${out}.vcf.gz")  into (vcfi, vcfi2)
   script :
     fnames = allfile.join(" ")
     out="${params.output}"
@@ -257,20 +281,18 @@ process mergevcf{
 
 }
 
-//if(params.reffasta!=""){
-hgref=Channel.fromPath(params.reffasta, checkIfExists:true)
-hgref2=Channel.fromPath(params.reffasta, checkIfExists:true)
+
+//hgref2=Channel.fromPath(params.reffasta, checkIfExists:true)
 process checkfixref{
   label 'py3utils'
   input :
-    file(vcf) from vcfi
-    file(hg) from hgref
+    path(vcf) from vcfi
+    tuple path(hg), path(index) from hgref
   publishDir "${params.output_dir}/check/Bcftools", overwrite:true, mode:'copy'
   output :
-    file("${params.output}.checkbcf*") 
+    path("${params.output}.checkbcf*") 
   script :
     """
-    ${params.bin_samtools} faidx $hg
     ${params.bin_bcftools} +fixref $vcf -- -f $hg 1> ${params.output}".checkbcf.out" 2> ${params.output}".checkbcf.err"
     """
 }
@@ -278,15 +300,14 @@ process checkfixref{
 process checkVCF{
   label 'py3utils'
   input :
-    file(vcf) from vcfi2
-    file(hg) from hgref2
+    path(vcf) from vcfi2
+    tuple path(hg), path(index) from hgref2
   publishDir "${params.output_dir}/check/CheckVCF", overwrite:true, mode:'copy'
   output :
-    file("${out}*") 
+    path("${out}*") 
   script :
     out="${params.output}_check"
     """
-    ${params.bin_samtools} faidx $hg
     checkVCF.py -r $hg -o $out $vcf
     """
 }
