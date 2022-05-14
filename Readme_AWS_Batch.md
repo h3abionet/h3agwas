@@ -38,7 +38,7 @@ This defines what resources you need for your workflow.  There are a number of s
 
 ### 2.1 Disk space
 
-By default, AWS instances that run batch jobs are 30GB in size. We think that you need an image that is at least 4x bigger than the input data size to run   safely. If your need less than 30GB, there's no problem _and you can skip the rest of 2.1_. If not, there's an extra configuration step in the configuration to set up an environment with disks of the correct size
+By default, AWS instances that run batch jobs are 30GB in size. We think that you need an image that is at least 4x bigger than the input data size to run   safely. <b>If your need less than 30GB, there's no problem _and you can skip the rest of 2.1_</b>. If not, there's an extra configuration step in the configuration to set up an environment with disks of the correct size
 
 The easiest way of doing this is to set up a _launch template_. You can do this using the console but in my experience it is more complex than using  the command line tools.
 
@@ -47,6 +47,9 @@ Install boto3 library using pip or yum or the like (e.g., `yum install python3-b
 There is a file called `launch-template.json`  in this directory. Download it to your machine. Change the _LaunchTemplateName_ field associated value to something meaningful and unique for you and the _VolumeSize_ field to the value you want (in units of GB)
 
 Then, using the following command (_mutatis mutandis_ -- that is change the region and the name of the template file if you've changed it) create the launch template
+
+Note that the service templates are account and region specific. So if you you define a template for `af-south-1` it will not show in `us-east-1`
+
 
 
 ```
@@ -75,16 +78,18 @@ Choose
    * _Managed_ environment type
    * give a meaningful name
    * enable environment
-   * under additional settings
+   * under "Service role" pick _AWSBatchServiceRole_
+   * under additional settings  for "Compute environment configuration" (this sometimes only appears once you click in the next section -- so the UI can be confusing here so be patient).
         * _AWSBatchServiceRole_
 	* ecsInstanceRole
-	* Choose a keypair for the region (not usually needed)
+	* Choose a keypair for the region (this is only needed if you intend to ssh into the instances that spin up and so would *not* normally be done)
 * Instance Configuration
   * _Spot_ pricing (choose the percentage your pocket can afford)
   * _Optimal_ for allowed instance types
   * `SPOT_CAPACITY_OPTIMIZED` for allocation strategy
-  * Under _Additional settings_
-     * pick _none_ or a template you have defined if you need to. Note for each template you need to define a new environment. (See section 2.1 above)
+  * You don't need a "Spot fleet role" if you have chosen `SPOT_CAPACITY_OPTIMIZED`
+  * Under _Additional settings_ (if you have ever defined a launch template for this region)  
+     * pick _none_ or a template you have defined if you need to. Note for each template you need to define a new environment. (See section 2.1 above). If you haven't defined a template for this region there will be nothing for you to do and you won't be able to select an option; that's OK.
     * You don't need to to pick an AMI and should do so only if you really know what you are doing.
 * Under networking you can pick the defaults -- note that under additonal settings are the definitions of the securty groups which define access
 * Add tags if you want to  : may be helpful for tracking resources
@@ -115,7 +120,7 @@ You use the queue name in your Nextflow config file.
 
 ## 3. Create an additonal Nextflow configuration file
 
-It will look something like this. I'll call this `aws.config` for the example but you can name it what ever you want.
+It will look something like this. I'll call this `aws.config` for the example but you can name it what ever you want. <b>Please note that the `accessKey` and `secretKey` must be valid for the account and region in which you created the environment and queue</b>. Also if you are using an IAM user the IAM user must have permission to run Batch jobs.
 
 ```
 
