@@ -128,7 +128,33 @@ process dostat{
   """
 }
 }
-ref_ch=Channel.fromPath(params.reffasta, checkIfExists:true)
+//ref_ch=Channel.fromPath(params.reffasta, checkIfExists:true)
+
+
+hgrefi=Channel.fromPath(params.reffasta, checkIfExists:true)                    
+process checkfasta{                                                             
+  cpus params.max_plink_cores                                                   
+  label 'py3utils'                                                              
+  errorStrategy { task.exitStatus == 1 ? 'retry' : 'terminate' }                
+  maxRetries 1                                                                  
+  input :                                                                       
+     path(fasta) from hgrefi                                                    
+  output :                                                                      
+     tuple path("$fasta2"), path("${fasta2}.fai") into ref_ch
+  script :                                                                      
+    fasta2="newfasta.gz"                                                        
+    """                                                                         
+    if [ "${task.attempt}" -eq "1" ]                                            
+    then                                                                        
+    samtools faidx $fasta                                                       
+    cp $fasta $fasta2                                                           
+    mv $fasta".fai"  $fasta2".fai"                                              
+    else                                                                        
+    zcat $fasta | bgzip -@ ${params.max_plink_cores} -c > $fasta2               
+    samtools faidx $fasta2                                                      
+    fi                                                                          
+    """                                                                         
+} 
 list_vcf=ref_ch.combine(list_vcf)
 
 if(params.min_scoreinfo>0){
@@ -138,7 +164,7 @@ process formatvcfscore{
   memory params.plink_mem_req
   time   params.big_time
   input :
-     set file(ref),file(vcf) from list_vcf
+     set file(ref), file(refidx),file(vcf) from list_vcf
   publishDir "${params.output_dir}/bcf_filter", overwrite:true, mode:'copy', pattern: "*.bcf"
   output :
      set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
