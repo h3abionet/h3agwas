@@ -322,9 +322,9 @@ if(params.ldsc_h2_multi==1){
 
 balise_filers_rel=1
 if(params.bolt_h2 || params.gcta_h2 || params.gemma_h2){
- bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
- bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString()
- fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString()
+ bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+ bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+ fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
  ch_select_rs_format= Channel.create()
  Channel.from(file(bed),file(bim),file(fam)).buffer(size:3)
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
