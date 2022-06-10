@@ -23,6 +23,8 @@ A2Head="A2"
 BetHead="BETA"
 PHead="PVAL"
 SError="SE"
+NHead="N"
+FreqHead="FREQA1"
 
 # PROCESS ARGUMENTS
 if len(sys.argv) < 3:
@@ -32,6 +34,7 @@ files=sys.argv[2:]
 
 # MERGE STUDIES
 fout=open(out+'.meta','w')
+foutN=open(out+'.N','w')
 #fmap=open(out+'.mmap','w')
 flog=open(out+'.log','w')
 fpivot=open(out+'.pivot','w')
@@ -49,7 +52,6 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
     if PosA2Head : 
       if snp[PosA2Head] not in vectortorbase:
          return 'NA NA '
-    
     beta=snp[PosBetHead]
     if CompSE :
         if float(p)==0.5 :
@@ -62,13 +64,13 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
     # CHECK ALLELE TO PIVOT
     if PosA2Head and PosA1Head :
        if A1Pivot == snp[PosA1Head] and A2Pivot == snp[PosA2Head]:
-          return beta+' '+stderr+' ' 
+          return beta+' '+stderr+' '
        elif A1Pivot == snp[PosA2Head] and A2Pivot == snp[PosA1Head]:
             # SIMPLE FLIP
             if beta != "NA" :
                beta='%f'%(float(beta)*-1)
             else :
-               return 'NA NA '
+               return ('NA NA ', 'NA ', 'NA ')
        elif A1Pivot == comple[snp[PosA1Head]] and A2Pivot == comple[snp[PosA2Head]]:
                         # STRAND INCONSIS., BUT GOOD
             flog.write('FLIP_STRAND %s in study %d\n'%(rsid,studyindex))
@@ -84,14 +86,16 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
             flog.write('EXCLUDE %s due to allele inconsistency: A1:%s A2:%s in study %d but A1:%s A2:%s in study %d\n'
                                    %(rsid, A1Pivot, A2Pivot, pivotstudyindex,
                                snp[PosA1Head], snp[PosA2Head], studyindex))
-            return 'NA NA '
-    return beta+' '+stderr+' ' 
+            return ('NA NA ', 'NA ', 'NA ')
+    return beta+' '+stderr+' '
 
 
 # READ FILES
 #studies=[]
 newfileslist=[]
 rsidschar={}
+#rsidsN={}
+#rsidsFreq={}
 rsidsinfo={}
 listrsall=set([])
 CmtFile=0
@@ -157,9 +161,10 @@ for f in files:
     fin.close()
     CmtFile+=1
 
+
 for rsid in listrsall :
-   if rsidsinfo[rsid][0] > 1:
-         fout.write(rsidschar[rsid]+'\n')    
+   if rsidsinfo[rsid][0] > 0:
+         fout.write(rsidschar[rsid]+'\n')
 
 wf=open(out+'.'+'files', 'w') 
 wf.write("\n".join(newfileslist))

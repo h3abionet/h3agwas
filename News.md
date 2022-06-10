@@ -2,6 +2,7 @@
 
 
 ## What's new :
+* 2022-06-10 : update meta of metasoft, add column for N, Frequencies for each publication in merge result
 * 2022-05-04 : preprint manuscript can be found on [biorxiv](https://www.biorxiv.org/content/10.1101/2022.05.02.490206v1)
 * 2021-11-04 : association script include saige software
 * 2021-10-25 : new script to do a conditional analysis using gemma see [finemapping](finemapping/README.md)

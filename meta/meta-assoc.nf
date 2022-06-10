@@ -37,6 +37,7 @@ params.input_config=''
 params.metal=0
 params.gwama=0
 params.metasoft=0
+params.csv_sep=','
 params.plink=0
 params.mrmega=0
 params.pheno="meta"
@@ -79,8 +80,7 @@ gwama_mem_req=params.gwama_mem_req
 ma_mem_req=params.ma_mem_req
 metasoft_mem_req=params.metasoft_mem_req
 
-def configfile_analysis(file){
-   sep=','
+def configfile_analysis(file, sep){
    File theInfoFile = new File( file )
    if(file.contains("s3://")){
      println "File " + file + "is in S3 so its existence can't be checked."
@@ -94,6 +94,11 @@ def configfile_analysis(file){
    } 
    def lines = theInfoFile.readLines()
    def SplH=lines[0].split(sep)
+   if(SplH.size()==1){
+      println SplH
+      println "problem of tiy separator"
+      exit(1)
+   }
    resInfo=[]
    resFile=[]
    lines.remove(0)
@@ -102,7 +107,8 @@ def configfile_analysis(file){
    listnum=[]
    NumRef=-1
    for(line in lines){
-       def splLine=line.split(sep)
+      def splLine=line.split(sep)
+      if(splLine.size()>4){
        def cmtelem=0
        def SubRes=[]
        while (cmtelem < SplH.size()){
@@ -121,7 +127,12 @@ def configfile_analysis(file){
        resInfo.add(SubRes.join(','))
        listnum.add(CmtL)
        CmtL+=1
+     }
    }
+ if(CmtL<2){
+   println "no enough file found for meta analyse, check your column header and sep in your csv file\n exit"
+   exit(1)
+ }
  return([resFile,resInfo, NumRef, listnum])
 }
 if(params.file_config==''){
@@ -129,14 +140,14 @@ println "not file config defined\n exit"
 exit(1)
 }
 checkexi=Channel.fromPath(params.file_config,checkIfExists:true)
-info_file=configfile_analysis(params.file_config)
+info_file=configfile_analysis(params.file_config,params.csv_sep)
 pos_file_ref=info_file[2]
 liste_filesforref_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[3]))
 process extract_rs_file{
     memory ma_mem_req
     input :
       set file(file_assoc), val(info_file), val(num) from liste_filesforref_ch
-    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/", mode:'copy'
     output  :
        //file(file_rs) into file_rs_ref_chan, file_ref_rs_metal
        file(file_rs) into file_rs_formerge
@@ -146,6 +157,7 @@ process extract_rs_file{
         ma_extract_rsid.py --input_file $file_assoc --out_file $file_rs --info_file $info_file
         """
 }
+
 file_rs_formerge_m=file_rs_formerge.collect()
 
 process extract_allrs{
@@ -170,7 +182,7 @@ process ChangeFormatFile {
     input :
       set file(file_assoc), val(info_file), val(num),file(file_ref) from liste_filesi_ch
     output :
-      file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega)
+      file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega, liste_file_metasoft_extractinfo)
       file(newfile_assocplk) into liste_file_plk
     script :
        newfile_assoc="${file_assoc}_${num}.modif"
@@ -183,6 +195,7 @@ process ChangeFormatFile {
 liste_file_gwama=liste_file_gwama.collect()
 liste_file_metal=liste_file_metal.collect()
 liste_file_metasoft=liste_file_metasoft.collect()
+liste_file_metasoft_extractinfo=liste_file_metasoft_extractinfo.collect()
 liste_file_mrmega=liste_file_mrmega.collect()
 liste_file_plk=liste_file_plk.collect()
 
@@ -195,7 +208,7 @@ if(params.gwama==1){
      time params.big_time
     input :
       file(list_file) from liste_file_gwama
-    publishDir "${params.output_dir}/gwama", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/gwama", mode:'copy'
     output :
       //file("${out}*")
       file("${out}.out") into res_gwama
@@ -212,7 +225,7 @@ if(params.gwama==1){
   }
   process showGWAMA {
     memory ma_mem_req
-    publishDir params.output_dir, overwrite:true, mode:'copy'
+    publishDir params.output_dir, mode:'copy'
     input:
       file(assoc) from res_gwama
     output:
@@ -235,7 +248,7 @@ if(params.mrmega==1){
     time params.big_time
     input :
       file(list_file) from liste_file_mrmega
-    publishDir "${params.output_dir}/mrmega", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/mrmega", mode:'copy'
     output :
       //file("${out}*")
       file("${out}.result") into res_mrmega
@@ -252,7 +265,7 @@ if(params.mrmega==1){
   }
   process showMRMEGA {
     memory ma_mem_req
-    publishDir params.output_dir, overwrite:true, mode:'copy'
+    publishDir params.output_dir, mode:'copy'
     input:
       file(assoc) from res_mrmega
     output:
@@ -279,7 +292,7 @@ if(params.metal==1){
       file(list_file) from liste_file_metal
       file(file_ref_rs) from file_ref_rs_metal
       
-    publishDir "${params.output_dir}/metal", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/metal",  mode:'copy'
     output :
       file("${out}1.stat") into res_metal
       tuple file("${out}1.stat"), file("${out}1.stat.info")
@@ -300,7 +313,7 @@ if(params.metal==1){
   }
   process showMetal {
     memory ma_mem_req
-    publishDir params.output_dir, overwrite:true, mode:'copy'
+    publishDir params.output_dir,  mode:'copy'
     input:
       file(assoc) from res_metal
     output:
@@ -318,32 +331,74 @@ if(params.metal==1){
 
 if(params.metasoft==1){
 
+  //filepvaltable=channel.fromPath(params.metasoft_pvalue_table, checkIfExists:true)
   file_pvaltab=params.metasoft_pvalue_table
-  process doMetaSoft {
+  process formatMetasoft{
     time params.big_time
     memory metasoft_mem_req
-    label 'metaanalyse'
     input :
       file(list_file) from liste_file_metasoft
-      //file(file_pvaltab) from filepvaltable
-    publishDir "${params.output_dir}/metasoft", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/metasoft",mode:'copy'
     output :
-      set file("${out}.meta"),file("${out}.res"),file("${out}.log"), file("${out}.files"), file("${out}.format.res"), file("${out}.pivot")
-      file("${out}.format.res")  into res_metasoft
+      set file("${out}.meta"), file("${out}.files"), file("${out}.pivot") into (format_sumstat, format_sumstat2)
     script :
       out = "metasoft_res"
       lfile=list_file.join(" ")
       """
       ma_formatmetasoft.py $out $lfile
-      java -jar ${params.metasoft_bin} -input $out".meta"  -output $out".res"   -log $out".log" -pvalue_table $file_pvaltab ${params.ma_metasoft_opt}
-      ma_trans_outsetasoft.py $out".res" $out".files" $out".pivot"  $out".format.res"
+      """
+  }
+  process extractInfoMetasoft{
+    time params.big_time
+    memory metasoft_mem_req
+    input :
+      file(list_file) from liste_file_metasoft_extractinfo
+    publishDir "${params.output_dir}/metasoft",mode:'copy'
+    output :
+      file("${out}.N") into infoMetasoft
+    script :
+      out = "metasoft_res"
+      lfile=list_file.join(" ")
+      """
+      ma_formatmetasoft_info.py $out $lfile
+      """
+  }
+  process doMetasoft {
+    time params.big_time
+    memory metasoft_mem_req
+    label 'metaanalyse'
+    input :
+      set file(metastat), file(listfiles), file(pivot) from format_sumstat
+    publishDir "${params.output_dir}/metasoft",mode:'copy'
+    output :
+      set file("${out}.res"), file("${out}.log") into resbrut_metasoft
+    script :
+      out = "metasoft_res"
+      """
+      java -jar ${params.metasoft_bin} -input $metastat  -output $out".res"   -log $out".log" -pvalue_table $file_pvaltab ${params.ma_metasoft_opt}
+      """
+  }
+  process FormatOutputMetasoft{
+    time params.big_time
+    memory metasoft_mem_req
+    input :
+      set path(metastat), path(listfiles), path(pivot) from format_sumstat2
+      set path(metasoftres), path(filelog) from resbrut_metasoft
+      path(InfoN) from infoMetasoft
+    publishDir "${params.output_dir}/metasoft",mode:'copy'
+    output :
+      set path("${out}.format.res") into res_metasoft
+    script :
+      out = "metasoft_res"
+      """
+      ma_trans_outsetasoft.py $metasoftres $listfiles $pivot  $InfoN $out".format.res"
       """
   }
   process showMetasoft {
     label 'metaanalyse'
     time params.big_time
     memory metasoft_mem_req
-    publishDir params.output_dir, overwrite:true, mode:'copy'
+    publishDir params.output_dir,  mode:'copy'
     input:
       file(assoc) from res_metasoft
     output:
@@ -365,7 +420,7 @@ if(params.plink==1){
      cpus params.max_plink_cores
      input :
       file(listeplk) from liste_file_plk
-    publishDir "${params.output_dir}/plink", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/plink", mode:'copy'
      output :
        file("$out*") 
        file("${out}.meta") into  res_plink
@@ -381,7 +436,7 @@ if(params.plink==1){
   process showPlink {
     time params.big_time
     memory ma_mem_req
-    publishDir params.output_dir, overwrite:true, mode:'copy'
+    publishDir params.output_dir,  mode:'copy'
     input:
       file(assoc) from res_plink
     output:
@@ -442,7 +497,7 @@ process doReport {
   label 'latex'
   input:
     file(reports) from report_ch.toList()
-  publishDir params.output_dir, overwrite:true, mode:'copy'
+  publishDir params.output_dir, mode:'copy'
   output:
     file("${out}.pdf")
   script:

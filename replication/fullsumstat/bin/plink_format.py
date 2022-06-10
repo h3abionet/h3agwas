@@ -163,14 +163,22 @@ def addz(dicsumstat, listkey ,z_header) :
   if z_header :
      return dicsumstat
   for key in listkey :
-      dicsumstat[key][6]=float(dicsumstat[key][7])/float(dicsumstat[key][8])
+      if dicsumstat[key][7]!='NA' and dicsumstat[key][8]!='NA':
+         dicsumstat[key][6]=float(dicsumstat[key][7])/float(dicsumstat[key][8])
+      else :
+         dicsumstat[key][6]='NA'
   return dicsumstat
  
+def formatval(x, fct) :
+  if x =='NA':
+    return x
+  return fct(x)
+
 def addbetase(dicsumstat, listkey ,beta_header, se_header) :
    if beta_header and se_header :
        return dicsumstat
    for key in listkey :
-    z, p, n=float(dicsumstat[key][6]),float(dicsumstat[key][9]),int(dicsumstat[key][10])
+    z, p, n=formatval(dicsumstat[key][6], float),formatval(dicsumstat[key][9], float),formatval(dicsumstat[key][10], int)
     if z!='NA' and p!='NA' and n!='NA':
      b=z/sqrt(2*p*(1-p)*(n+z**2))
      se=1/sqrt(2*p*(1-p)*(n+z**2))

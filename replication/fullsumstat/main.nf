@@ -17,10 +17,11 @@
 
 import java.nio.file.Paths
 
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
 
-
-
-def helps = [ 'help' : 'help' ]
+ helps = [ 'help' : 'help' ]
 allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "min_pval_clump", "size_win_kb","secret-key", "region", "AMI", "instanceType","bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "plink_mem_req", "plink_mem_req"]
 allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts", "max_plink_cores"]
 allowed_params_head_sumstat1 = ["file_gwas_sumstat1","head_pval_sumstat1", "head_freq_sumstat1", "head_bp_sumstat1", "head_chr_sumstat1", "head_rs_sumstat1", "head_beta_sumstat1", "head_se_sumstat1", "head_A1_sumstat1", "head_A2_sumstat1", "head_n_sumstat1", "n_count1",'head_z_sumstat1']
@@ -81,6 +82,7 @@ params.head_se_sumstat1=""
 params.head_A1_sumstat1="ALLELE1"
 params.head_A2_sumstat1="ALLELE0"
 params.head_n_sumstat1=""
+params.head_z_sumstat1=""
 
 
 params.file_gwas_sumstat2=""
@@ -94,6 +96,7 @@ params.head_se_sumstat2=""
 params.head_A1_sumstat2=""
 params.head_A2_sumstat2=""
 params.head_n_sumstat2=""
+params.head_z_sumstat2=""
 
 
 
@@ -130,6 +133,14 @@ other_cpus_req=params.other_cpus_req
 
 if(params.input_dir=="" || params.input_pat==""){
 println "params input_dir directory of your bedfile or/and input_pat pattern of your bedfile not define"
+System.exit(-1)
+}
+if(params.head_beta_sumstat2=='' && params.head_z_sumstat2==''){
+println "beta and z not initialise in sumstat 2 "
+System.exit(-1)
+}
+if(params.head_beta_sumstat1=='' && params.head_z_sumstat1==''){
+println "beta and z not initialise in sumstat 1 "
 System.exit(-1)
 }
 
@@ -230,9 +241,12 @@ process extractgwas2_forplink{
 
 
 
+
+
 process plink_sumstat1_rep{
-    cpus max_plink_cores
-    memory plink_mem_req
+  cpus max_plink_cores
+  errorStrategy { task.exitStatus in 137..143 ? 'retry' : 'terminate' }
+  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
   input :
       path(filegwas) from file_plk_ss1_rep
       path(bed_pos) from sumstat2_bed 
@@ -266,10 +280,10 @@ process computed_stat{
     tuple path('sumstat_ref.metal'), path('sumstat_cmp.metal') into metalanalyse_ch
  script :
    out=params.output+"_stat" 
-   gwasref="--gwas_ref $sumstat1 --gwas_ref_chr CHR --gwas_ref_bp BP --gwas_ref_a1 A1 --gwas_ref_a2 A2 --gwas_ref_beta BETA --gwas_ref_se SE --gwas_ref_p P --gwas_ref_af AF "
-   gwascmp="--gwas_cmp $sumstat2 --gwas_ref_chr CHR --gwas_ref_bp BP --gwas_ref_a1 A1 --gwas_ref_a2 A2 --gwas_ref_beta BETA --gwas_ref_se SE --gwas_ref_p P --gwas_ref_af AF "
+   gwasref="--gwas_ref $sumstat1 --gwas_ref_chr CHR --gwas_ref_bp BP --gwas_ref_a1 A1 --gwas_ref_a2 A2 --gwas_ref_beta BETA --gwas_ref_se SE --gwas_ref_p P --gwas_ref_af AF --gwas_ref_n N"
+   gwascmp="--gwas_cmp $sumstat2 --gwas_cmp_chr CHR --gwas_cmp_bp BP --gwas_cmp_a1 A1 --gwas_cmp_a2 A2 --gwas_cmp_beta BETA --gwas_cmp_se SE --gwas_cmp_p P --gwas_cmp_af AF --gwas_cmp_n N"
  """ 
-  extract_pvalue.r $gwasref $gwascmp --file_clump $clump --out $out $n_ref $n_cmp
+  extract_pvalue.r $gwasref $gwascmp --file_clump $clump --out $out 
   """
 }
 
