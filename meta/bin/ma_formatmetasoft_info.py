@@ -62,7 +62,10 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head,  PosB
     else :
        NVal=None
     if PosFreq :  
-       FreqVal=float(snp[PosFreq])
+       try :
+        FreqVal=float(snp[PosFreq])
+       except :
+        FreqVal=None
     else :
        FreqVal=None
     # CHECK ALLELE TO PIVOT
