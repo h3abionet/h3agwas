@@ -387,7 +387,7 @@ if(params.metasoft==1){
       path(InfoN) from infoMetasoft
     publishDir "${params.output_dir}/metasoft",mode:'copy'
     output :
-      set path("${out}.format.res") into res_metasoft
+      path("${out}.format.res") into res_metasoft
     script :
       out = "metasoft_res"
       """

@@ -20,7 +20,7 @@ DicN={}
 readN=open(fileN)
 for line in readN :
   spl=line.split()
-  DicN[spl[0]]=line.replace('\n','')
+  DicN[spl[0]]='\t'.join(spl[1::])
 readN.close()
 
 readfile=open(InfoI)
@@ -32,7 +32,6 @@ del head[0]
 print(head)
 head=head[:-2]
 ncol=len(head)
-head+=['RSID2']
 head+=["P_"+x for x in InfoI]
 head+=["M_"+x for x in InfoI]
 head+=["N_"+x for x in InfoI]

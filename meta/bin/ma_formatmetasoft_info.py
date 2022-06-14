@@ -197,7 +197,10 @@ def getsumandfreq(N, freq):
       StrN+=str(x)+"\t"    
     else :
      StrN+="NA\t"
-     StrFrq+="NA\t"
+     if freq[cmt] :
+       StrFrq += str(freq[cmt])
+     else :
+      StrFrq+="NA\t"
     cmt+=1
  if SumN == 0 :
    NFinal=StrN+'NA'
