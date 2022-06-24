@@ -77,14 +77,15 @@ def checknull(x):
 
 ## to defined if we need to add individual number
 def GetCount(l_newhead,l_oldhead) :
-  if ('Ncount' in l_newhead) and ('N' not in l_newhead):
+  if ('Ncount' in l_newhead) :
     PosCount=l_newhead.index('Ncount')
-    Ncount=l_oldhead[PosCount]
-    print('new N column add with '+str(Ncount))
+    if   ('N' not in l_newhead):
+        Ncount=l_oldhead[PosCount]
+    else :
+        Ncount=None
     del l_oldhead[PosCount]
     del l_newhead[PosCount]
   else :
-    print('no Ncount')
     Ncount=None
   return (Ncount, l_newhead,l_oldhead)
 
