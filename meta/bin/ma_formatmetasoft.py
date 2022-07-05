@@ -54,6 +54,7 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
          return 'NA NA '
     beta=snp[PosBetHead]
     if CompSE :
+        p = snp[PosPHead]
         if float(p)==0.5 :
               p2=0.499999
         else :
