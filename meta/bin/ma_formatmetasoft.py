@@ -70,7 +70,7 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
             if beta != "NA" :
                beta='%f'%(float(beta)*-1)
             else :
-               return ('NA NA ', 'NA ', 'NA ')
+               return 'NA NA '
        elif A1Pivot == comple[snp[PosA1Head]] and A2Pivot == comple[snp[PosA2Head]]:
                         # STRAND INCONSIS., BUT GOOD
             flog.write('FLIP_STRAND %s in study %d\n'%(rsid,studyindex))
@@ -86,7 +86,7 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
             flog.write('EXCLUDE %s due to allele inconsistency: A1:%s A2:%s in study %d but A1:%s A2:%s in study %d\n'
                                    %(rsid, A1Pivot, A2Pivot, pivotstudyindex,
                                snp[PosA1Head], snp[PosA2Head], studyindex))
-            return ('NA NA ', 'NA ', 'NA ')
+            return 'NA NA '
     return beta+' '+stderr+' '
 
 

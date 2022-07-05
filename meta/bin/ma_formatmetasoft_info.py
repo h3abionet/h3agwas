@@ -58,7 +58,7 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head,  PosB
       if snp[PosA2Head] not in vectortorbase:
          return (True,None, None)
     if PosN :  
-       NVal=int(snp[PosN])
+       NVal=float(snp[PosN])
     else :
        NVal=None
     if PosFreq :  
