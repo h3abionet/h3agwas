@@ -61,9 +61,17 @@ nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfil
 ### arguments :
 * `file_listvcf` : file contains each bgzip vcf files to merge, one by line [default : none]
 * `min_scoreinfo` : what score info minimum do you want : [default :0.6]
-* `output_dir` : directory of output : [default : impute2] 
+* `output_dir` : directory of output : [default : bgen] 
 * `qctoolsv2_bin` : bin file for qctools 
 * `genotype_field` : genotype field to transform [degault : GP]
+* `bgen_type` : bgen type see [qctool manual] (https://www.well.ox.ac.uk/~gav/qctool_v2/documentation/alphabetical_options.html) :
+ * default bgen (other  : "bgen_v1.2", "bgen_v1.1")
+* `other_option`  : other option to give to qctools
+
+for instance for bolt lmm format bgen must be :
+```
+~/nextflow ~/Travail/git/h3agwas/formatdata/vcf_in_bgen_merge.nf --file_listvcf listvcf --output_pat  exampledata2_imp --output_dir ./ -profile slurmSingularity -resume --bgen_type bgen_v1.2  --other_opt  \"-bgen-bits 8\"
+```
 
 
 

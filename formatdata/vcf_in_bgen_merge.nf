@@ -40,6 +40,8 @@ params.genotype_field="GP"
 params.qctoolsv2_bin="qctool"
 params.bcftools_bin="bcftools"
 params.score_imp="INFO"
+params.bgen_type="bgen"
+params.other_opt=" -bgen-bits 8 "
 
 
 if(params.file_listvcf==""){
@@ -90,10 +92,11 @@ process formatvcfinbgen{
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
      file("${Ent}.bgen")
+     file("${Ent}.sample")
   script :
     Ent="${params.output}"
     """
-    ${params.qctoolsv2_bin} -g $vcf -vcf-genotype-field ${params.genotype_field} -ofiletype bgen -og ${Ent}.bgen -filetype vcf 
+    ${params.qctoolsv2_bin} -g $vcf -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt}
     """
 }
 

@@ -28,7 +28,7 @@ nextflow.enable.dsl = 1
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel", "saige", "gemma_bin"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel", "saige", "gemma_bin", "mbgen", "mbgen_sample", "use_imputed", "bgen_mininfo"]
 
 
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -76,6 +76,9 @@ params.vcf_field="DS"
 params.vcf_minmac=1
 outfname = params.output_testing
 params.cut_maf=0.01
+params.mbgen=""
+params.mbgen_sample=""
+params.bgen_mininfo=0.6
 
 
 
@@ -837,6 +840,18 @@ if (params.boltlmm == 1) {
   }else{
      Bolt_genetic_map = Channel.fromPath("${dummy_dir}/05",checkIfExists:true) 
   }
+  if(params.mbgen!=""){
+    bgen_ch=Channel.fromPath(params.mbgen, checkIfExists:true)
+    if(params.mbgen_sample==''){
+      println "params.mbgen_sample not initialise when mbgen params initial";
+      System.exit(-2);
+     }
+    bgensample_ch = Channel.fromPath(params.mbgen_sample, checkIfExists:true)
+  }else{
+  bgen_ch=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
+  bgensample_ch= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+  }
+
 
   process doBoltmm{
     maxForks params.max_forks
@@ -845,14 +860,16 @@ if (params.boltlmm == 1) {
     memory params.bolt_mem_req
     time   params.big_time
     input:
-      set file(plinksbed), file(plinksbim), file(plinksfam) from plink_ch_bolt
-      file(phef) from newdata_ch_bolt
+      tuple path(plinksbed), path(plinksbim), path(plinksfam) from plink_ch_bolt
+      path(phef) from newdata_ch_bolt
       file(rs_exclude) from rs_ch_exclude_bolt
       file(SnpChoiceMod) from filers_matrel_bolt
       file(imp2_filelist) from Impute2FileList 
       file(imp2_fid) from Impute2FID
       file(bolt_ld_score) from Bolt_ld_score
       file(bolt_genetic_map) from Bolt_genetic_map
+      path(bgen) from bgen_ch
+      path(bgensample) from bgensample_ch
     publishDir "${params.output_dir}/boltlmm", overwrite:true, mode:'copy'
     each this_pheno from ind_pheno_cols_ch_bolt
     output:
@@ -864,8 +881,10 @@ if (params.boltlmm == 1) {
       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
       outimp  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
+      outimp  = (params.mbgen!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
       outbolt     = "$base-${our_pheno2}.stat" 
       outf    = (params.bolt_impute2filelist!="") ? outimp : outbolt
+      outf    = (params.mbgen!="") ? outimp : outbolt
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
       model_snp  = "--modelSnps=$SnpChoiceMod "
@@ -873,6 +892,7 @@ if (params.boltlmm == 1) {
       ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
       boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp --impute2MinMAF ${params.cut_maf} " : ""
+      boltimpute = (params.mbgen!="") ? " --bgenFile $bgen --sampleFile $bgensample  --bgenMinINFO ${params.bgen_mininfo}  --bgenMinMAF ${params.cut_maf} --statsFileBgenSnps $outimp " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
       BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`

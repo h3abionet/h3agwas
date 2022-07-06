@@ -38,6 +38,10 @@ params.genotype_field="GP"
 params.qctoolsv2_bin="qctool"
 params.bcftools_bin="bcftools"
 params.score_imp="INFO"
+params.bgen_type="bgen"
+params.other_opt=""
+
+
 
 
 
@@ -56,10 +60,11 @@ process formatvcfinbgen{
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
      file("${Ent}.bgen")
+     file("${Ent}.sample")
   script :
     Ent=vcf.baseName
     """
-    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype bgen -og ${Ent}.bgen -filetype vcf 
+    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt}
     """
 }
 
