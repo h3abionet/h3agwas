@@ -17,6 +17,8 @@
  *This is licensed under the MIT Licence. See the "LICENSE" file for details
  */
 
+nextflow.enable.dsl = 1
+
 
 import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;

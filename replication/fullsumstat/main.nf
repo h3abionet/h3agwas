@@ -17,6 +17,8 @@
 
 import java.nio.file.Paths
 
+nextflow.enable.dsl = 1
+
 def strmem(val){
  return val as nextflow.util.MemoryUnit
 }

@@ -23,6 +23,8 @@
 import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
+nextflow.enable.dsl = 1
+
 
 
 def helps = [ 'help' : 'help' ]

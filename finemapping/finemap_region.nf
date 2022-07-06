@@ -1,4 +1,6 @@
 #!/usr/bin/env nextflow
+nextflow.enable.dsl = 1
+
 /*
  * Authors       :
  *

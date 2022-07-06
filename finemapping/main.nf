@@ -1,4 +1,5 @@
 #!/usr/bin/env nextflow
+
 /*
  * Authors       :
  *
@@ -14,6 +15,7 @@
  *
  */
 
+nextflow.enable.dsl = 1
 def strmem(val){
  return val as nextflow.util.MemoryUnit
 }

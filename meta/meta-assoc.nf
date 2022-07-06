@@ -18,6 +18,9 @@
 
 import java.nio.file.Paths
 
+nextflow.enable.dsl = 1
+
+
 def helps = [ 'help' : 'help' ]
 
 allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req", "metasoft_mem_req", "plink_mem_req"]

@@ -1,5 +1,6 @@
 #!/usr/bin/env nextflow
 import java.nio.file.Paths
+nextflow.enable.dsl = 1 
 /*
  * Authors       :
  *
@@ -114,7 +115,7 @@ process transfvcfInBed1000G{
    input :
      tuple val(chro), file(vcf1000) from file1000G
    output :
-     tuple val(chro), file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro
+     tuple val(chro), path("${out}.bim"), path("${out}.fam"), path("${out}.bed") into plk_chro
    script :
      out="chrtmp_"+chro
      """
@@ -125,18 +126,18 @@ process transfvcfInBed1000G{
 process cleanPlinkFile{
     cpus params.nb_cpus
     input :
-     tuple val(chro), file(bim), file(fam), file(bed) from plk_chro
+     tuple val(chro), path(bim), path(fam), path(bed) from plk_chro
     output : 
-     tuple file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro_cl
+     tuple path("${out}.bim"), path("${out}.fam"), path("${out}.bed") into plk_chro_cl
     script :
-     plk=bim.baseName
-     out="chr_"+chro
-     """
-     cp "$bim" "${bim}.save"
-     awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}.save" > "$bim"
-     awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $bim > ${bim}.wellpos.pos
-     awk '{print \$2}' $plk".bim" | sort | uniq -d > duplicated_snps.snplist
-     plink -bfile $plk  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus} --exclude duplicated_snps.snplist
+    plk=bim.baseName
+    out="chr_"+chro
+       """
+      cp "$bim" "${bim}.save"
+      awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}.save" > "$bim"
+      awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $bim > ${bim}.wellpos.pos
+      awk '{print \$2}' $plk".bim" | sort | uniq -d > duplicated_snps.snplist
+      plink -bfile $plk  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus} --exclude duplicated_snps.snplist
      """
 }
 plk_chro_flt=plk_chro_cl.collect()
@@ -255,7 +256,7 @@ process cleanPlinkFile_GC{
     input :
      tuple val(chro), file(bim), file(fam), file(bed) from plk_chro_gc
     output : 
-     tuple file("${out}.bim"), file("${out}.fam"), file("${out}.bed") into plk_chro_cl_gc
+     tuple path("${out}.bim"), path("${out}.fam"), path("${out}.bed") into plk_chro_cl_gc
     script :
      plk=bim.baseName
      out="chr_"+chro

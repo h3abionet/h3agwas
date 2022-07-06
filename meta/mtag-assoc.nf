@@ -16,6 +16,8 @@ import java.nio.file.Paths
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
+nextflow.enable.dsl = 1
+
 
 // Checks if the file exists
 checker = { fn ->

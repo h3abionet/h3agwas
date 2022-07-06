@@ -22,6 +22,8 @@
 import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
+nextflow.enable.dsl = 1
+
 
 
 // Checks if the file exists

@@ -16,6 +16,7 @@
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
+nextflow.enable.dsl = 1
 
 
 

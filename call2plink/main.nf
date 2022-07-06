@@ -7,6 +7,7 @@
  Scott Hazelhust, 2017-2018
 */
 
+nextflow.enable.dsl = 1
 
 null_values = [0,"0",false,""]
 
