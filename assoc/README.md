@@ -105,7 +105,7 @@ with pipeline, do a GxE interaction with Gemma and Plink, arguments :
    * pipeline computed frequencies, N for each group with plink and add to files, futhermore they add A1 and A2.
    * furthermore BetaGxE and SeGxE computed by pipeline as SeGxE : sqrt(se1^2 + se2^2), BetaGxE : Z\_GXE * SeGxE
  * optionnal input bgen : 
-  * `mbgen`  : file contains list of bgen file 
+  * `mbgen`  : bgen file (for bolt)
   * `mbgen_sample` : list of sample bgen
 
 
