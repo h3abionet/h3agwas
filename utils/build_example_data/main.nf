@@ -69,8 +69,11 @@ params.clump_kb=250
 params.dir_vcf="ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/"
 
 
+
 if(params.list_chro_pheno==""){
 list_chro_pheno=params.list_chro
+}else{
+list_chro_pheno=params.list_chro_pheno
 }
 listchro=getlistchro(params.list_chro)
 listchro_pheno=getlistchro(list_chro_pheno)
