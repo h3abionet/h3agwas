@@ -53,6 +53,7 @@ params.gwas_cat=""
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 params.list_pheno="Type 2 diabetes"
 params.gcta_bin="gcta64"
+params.list_vcf=""
 
 params.sex_info_file="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel"
 params.sex_info="gender,1:male,2:female,IID:sample"
@@ -68,6 +69,7 @@ params.clump_r2=0.50
 params.clump_kb=250
 //ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz
 params.dir_vcf="ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/"
+params.ftp1000genome=1
 
 
 
@@ -88,12 +90,12 @@ System.exit(0)
 
 }
 
-listchro_ch=listchro_ch.combine(Channel.fromPath(params.pos_allgeno, checkIfExists:true))
 
 
 
-
-process Dl1000G{
+if(params.ftp1000genome==1){
+ listchro_ch=listchro_ch.combine(Channel.fromPath(params.pos_allgeno, checkIfExists:true))
+ process Dl1000G{
    label 'py3utils'
    cpus params.nb_cpus
    input :
@@ -102,12 +104,47 @@ process Dl1000G{
        tuple val(chro), file("${file1000G}") into file1000G
    script :
       //ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/ALL.chr17.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
-      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz"
+      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_*.genotypes.vcf.gz"
       file1000G= (chro=='Y') ? "ALL.chrY.phase3_integrated_v2b.20130502.genotypes.vcf.gz" : "$file1000G"
       """
       awk -v chro=$chro '{if(\$1==chro)print \$1"\\t"\$2-1"\\t"\$2"\\t"\$1":"\$2}' $pos_geno > pos.bed 
       bcftools view --threads ${params.nb_cpus} -R pos.bed ${params.dir_vcf}/$file1000G|bgzip -c > $file1000G
       """
+ }
+}else{
+ if(params.list_vcf!=''){
+   listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines(), checkIfExists:true)
+   process findchro{
+      label 'py3utils'
+      input :
+        path(vcf) from listvcf_ch
+      output :
+        tuple env(chro), path(vcf), path("${vcf}.tbi") into (filevcf_chro_ch1, filevcf_chro_ch2)
+      script :
+        """ 
+        chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
+        tabix -p vcf $vcf 
+        """
+     }
+    
+  filevcf_chro_charray=filevcf_chro_ch1.combine(Channel.fromPath(params.pos_allgeno, checkIfExists:true)) 
+  process extract_chrovcf{
+     label 'py3utils'
+     input :
+        tuple val(chro),path(vcf), path(vcfindex),path(pos_geno) from filevcf_chro_charray
+      output :
+        tuple val(chro),  path(vcfout) into file1000G
+      script :
+        vcfout="vcf_array_"+chro+".bcf"
+        """
+        awk -v chro=$chro '{if(\$1==chro)print \$1"\\t"\$2-1"\\t"\$2"\\t"\$1":"\$2}' $pos_geno > pos.bed 
+        bcftools view --threads ${params.nb_cpus} -R pos.bed $vcf|bgzip -c > $vcfout
+        """
+  }
+
+ }else{
+  println "error not params.list_vcf" 
+ }
 }
 
 process transfvcfInBed1000G{
@@ -131,13 +168,14 @@ process cleanPlinkFile{
      tuple path("${out}.bim"), path("${out}.fam"), path("${out}.bed") into plk_chro_cl
     script :
     plk=bim.baseName
-    out="chr_"+chro
-       """
-      cp "$bim" "${bim}.save"
-      awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}.save" > "$bim"
+    out="chr_"+chro+"_clean"
+      """
+      cp $fam $plk"_tmp.fam"  
+      cp $bed $plk"_tmp.bed"  
+      awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}" > $plk"_tmp.bim"
       awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $bim > ${bim}.wellpos.pos
-      awk '{print \$2}' $plk".bim" | sort | uniq -d > duplicated_snps.snplist
-      plink -bfile $plk  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus} --exclude duplicated_snps.snplist
+      awk '{print \$2}' $plk"_tmp.bim" | sort | uniq -d > duplicated_snps.snplist
+      plink -bfile $plk"_tmp"  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus} --exclude duplicated_snps.snplist
      """
 }
 plk_chro_flt=plk_chro_cl.collect()
@@ -145,12 +183,11 @@ plk_chro_flt=plk_chro_cl.collect()
 process mergePlinkFile{
    cpus params.nb_cpus
    input :
-      file(allfile) from plk_chro_flt
+     file(allfile) from plk_chro_flt
    output :
-     tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  allplkres_ch_befsex
+     tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into allplkres_ch_befsex
    script : 
-     println allfile
-     allfile2=allfile.toList().collect {it.toString().replaceFirst(~/\.[^\.]+$/, '')}
+     allfile2=allfile.toList().collect{it.toString().replaceFirst(~/\.[^\.]+$/, '')}
      allfile2=allfile2.unique()
      firstbed=allfile2[0]
      allfile2.remove(0)
@@ -217,23 +254,45 @@ process getchr_gc{
 }
 
 //listchro_ch_gwascat=Channel.from(listchro_pheno)
-  newlistchro_ch_gwascat=Channel.create()
-  check = Channel.create()
-  listchro_ch_gwascat.flatMap { list_str -> list_str.split() }.tap ( check) .set { newlistchro_ch_gwascat}
-    newlistchro_ch_gwascat= newlistchro_ch_gwascat.combine(gwascat_pos)
+ newlistchro_ch_gwascat=Channel.create()
+ check = Channel.create()
+ listchro_ch_gwascat.flatMap { list_str -> list_str.split() }.tap ( check) .set { newlistchro_ch_gwascat}
+ newlistchro_ch_gwascat= newlistchro_ch_gwascat.combine(gwascat_pos)
 
-process Dl1000G_GC{
+if(params.ftp1000genome==1){
+ process Dl1000G_GC{
    label 'py3utils'
    input :
       tuple val(chro), file(pos_geno) from newlistchro_ch_gwascat
    output :
        tuple val(chro), file("${file1000G}")  into file1000G_gwasc
    script :
-      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz"
+      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_*.genotypes.vcf.gz"
       file1000G= (chro=='Y') ? "ALL.chrY.phase3_integrated_v2b.20130502.genotypes.vcf.gz" : "$file1000G"
       """
       tabix -fh ${params.dir_vcf}/$file1000G -R $pos_geno |bgzip -c > $file1000G
       """
+ }
+}else{
+ if(params.list_vcf!=''){
+  filevcf_chro_chf_chro_ch_gc=filevcf_chro_ch2.join(newlistchro_ch_gwascat)
+  process extract_chrovcf_gc{
+     label 'py3utils'
+     input :
+        tuple val(chro),path(vcf) ,path(vcfindex), path(pos_geno) from filevcf_chro_chf_chro_ch_gc
+      output :
+        tuple val(chro),  path(vcfout) into file1000G_gwasc
+      script :
+       vcfout="vcf_gc_"+chro+".vcf.gz"
+        """
+        tabix -fh $vcf -R $pos_geno |bgzip -c > $vcfout
+        """
+  }
+ }else{
+
+ }
+
+
 }
 
 process transfvcfInBed1000G_GC{
@@ -261,11 +320,12 @@ process cleanPlinkFile_GC{
      plk=bim.baseName
      out="chr_"+chro
      """
-     cp "$bim" "${bim}.save"
-     awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}.save" > "$bim"
-     awk '{print \$2}' $plk".bim" | sort | uniq -d > duplicated_snps.snplist
+     cp $fam $plk"_tmp.fam"
+     cp $bed $plk"_tmp.bed"
+     awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}" > $plk"_tmp.bim"
+     awk '{print \$2}' $plk"_tmp.bim" | sort | uniq -d > duplicated_snps.snplist
      awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $bim > ${bim}.wellpos.pos 
-     plink -bfile $plk  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus}  --exclude duplicated_snps.snplist
+     plink -bfile $plk"_tmp"  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus}  --exclude duplicated_snps.snplist
 
      """
 }

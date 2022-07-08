@@ -28,7 +28,7 @@ nextflow.enable.dsl = 1
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel", "saige", "gemma_bin", "mbgen", "mbgen_sample", "use_imputed", "bgen_mininfo"]
+allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel", "saige", "gemma_bin", "bgen", "bgen_sample", "use_imputed", "bgen_mininfo"]
 
 
 /*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
@@ -76,8 +76,8 @@ params.vcf_field="DS"
 params.vcf_minmac=1
 outfname = params.output_testing
 params.cut_maf=0.01
-params.mbgen=""
-params.mbgen_sample=""
+params.bgen=""
+params.bgen_sample=""
 params.bgen_mininfo=0.6
 
 
@@ -840,13 +840,13 @@ if (params.boltlmm == 1) {
   }else{
      Bolt_genetic_map = Channel.fromPath("${dummy_dir}/05",checkIfExists:true) 
   }
-  if(params.mbgen!=""){
-    bgen_ch=Channel.fromPath(params.mbgen, checkIfExists:true)
-    if(params.mbgen_sample==''){
-      println "params.mbgen_sample not initialise when mbgen params initial";
+  if(params.bgen!=""){
+    bgen_ch=Channel.fromPath(params.bgen, checkIfExists:true)
+    if(params.bgen_sample==''){
+      println "params.bgen_sample not initialise when bgen params initial";
       System.exit(-2);
      }
-    bgensample_ch = Channel.fromPath(params.mbgen_sample, checkIfExists:true)
+    bgensample_ch = Channel.fromPath(params.bgen_sample, checkIfExists:true)
   }else{
   bgen_ch=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
   bgensample_ch= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
@@ -880,19 +880,19 @@ if (params.boltlmm == 1) {
       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
       our_pheno3         = our_pheno2.replaceAll(/\/np.\w+/,"")
       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
-      outimp  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
-      outimp  = (params.mbgen!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
+      outimp1  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
+      outimp2  = (params.bgen!="") ? "$base-${our_pheno2}.bgen.stat" : "$base-${our_pheno2}.stat"
       outbolt     = "$base-${our_pheno2}.stat" 
-      outf    = (params.bolt_impute2filelist!="") ? outimp : outbolt
-      outf    = (params.mbgen!="") ? outimp : outbolt
+      outf    = (params.bolt_impute2filelist!="") ? outimp1 : outbolt
+      outf    = (params.bgen!="") ? outimp2 : outf
       outReml = "$base-$our_pheno2"+".reml"
       covar_file_bolt =  (params.covariates) ?  " --covarFile ${phef} " : ""
       model_snp  = "--modelSnps=$SnpChoiceMod "
       ld_score_cmd = (params.bolt_ld_score_file!="") ? "--LDscoresFile=$bolt_ld_score" :" --LDscoresUseChip "
       ld_score_cmd = (params.bolt_ld_score_file!="" & params.bolt_ld_scores_col!="") ? "$ld_score_cmd --LDscoresCol=${params.bolt_ld_scores_col}" :" $ld_score_cmd "
       exclude_snp = (params.exclude_snps!="") ? " --exclude $rs_exclude " : ""
-      boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp --impute2MinMAF ${params.cut_maf} " : ""
-      boltimpute = (params.mbgen!="") ? " --bgenFile $bgen --sampleFile $bgensample  --bgenMinINFO ${params.bgen_mininfo}  --bgenMinMAF ${params.cut_maf} --statsFileBgenSnps $outimp " : ""
+      boltimpute = (params.bolt_impute2filelist!="") ? " --impute2FileList $imp2_filelist --impute2FidIidFile $imp2_fid --statsFileImpute2Snps $outimp1 --impute2MinMAF ${params.cut_maf} " : ""
+      boltimpute = (params.bgen!="") ? " $boltimpute --bgenFile $bgen --sampleFile $bgensample  --bgenMinINFO ${params.bgen_mininfo}  --bgenMinMAF ${params.cut_maf} --statsFileBgenSnps $outimp2 " : ""
       geneticmap = (params.genetic_map_file!="") ?  " --geneticMapFile=$bolt_genetic_map " : ""
       """
       BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`
@@ -1528,19 +1528,58 @@ if(params.fastgwa==1){
 
    balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
    balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
+   if(params.bgen!=""){
+     bgen_ch_fastgwa_i=Channel.fromPath(params.bgen, checkIfExists:true)
+     process indexbgen {
+      label 'utils'
+      input :
+        path(bgen) from bgen_ch_fastgwa_i
+      output :
+        tuple path(bgen), path("${bgen}.bgi") into bgen_ch_fastgwa
+      """
+      bgenix -g $bgen -index
+      """
+
+     }
+     if(params.bgen_sample==''){
+       println "params.bgen_sample not initialise when bgen params initial";
+       System.exit(-2);
+      }
+     bgensample_ch_fastgwa_i = Channel.fromPath(params.bgen_sample, checkIfExists:true)
+     process samplebgen_format{
+      input :
+       path(sample) from bgensample_ch_fastgwa_i
+      output :
+       path(newsample) into bgensample_ch_fastgwa
+      script :
+        newsample=sample.baseName+'_gcta.sample'
+        """
+        head -1 $sample | awk '{print \$0" sex"}' > $newsample
+        sed -n 2p $sample | awk '{print \$0" D"}' >> $newsample
+        sed '1,2d' $sample | awk '{print \$0" 0"}' >> $newsample
+        """
+     }
+   }else{
+    bgen_ch_fastgwa=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
+    bgensample_ch_fastgwa_i= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+   }
+
+
    process FastGWARun{
        maxForks params.max_forks
        label 'gcta'
        memory params.fastgwa_mem_req
        cpus params.fastgwa_num_cores
        input :
-	  set val(head),file(alldigrm), file(allbingrm) from grm_all
-	  set file(bed),file(bim),file(fam) from fastgwa_assoc_ch 
-	  file(covariates) from data_ch_fastgwa
+	  tuple val(head),path(alldigrm), path(allbingrm) from grm_all
+	  tuple path(bed),path(bim),path(fam) from fastgwa_assoc_ch 
+	  path(covariates) from data_ch_fastgwa
+          tuple path(bgen), path(bgenindex) from bgen_ch_fastgwa
+          path(bgensample) from bgensample_ch_fastgwa
        publishDir "${params.output_dir}/fastgwa/", overwrite:true, mode:'copy'
        each this_pheno from pheno_spl_gcta
        output :
-	  set val(base), val(this_pheno), file("${out}.fastGWA") into fastgwa_manhatten_ch
+	  tuple val(base), val(this_pheno), path("${out}.fastGWA") into fastgwa_manhatten_ch
        script :
 	base=bed.baseName
 	phef = "${base}_fastgwa_n.phe"
@@ -1553,9 +1592,10 @@ if(params.fastgwa==1){
 	out                = "$base-$our_pheno"
 	covqual_fastgwa = (balqualcov) ? " --covar $covfilequal " : ""
 	covqual_cov = (balqualcov) ? " --cov_type ${params.covariates_type} --covqual_file $covfilequal " : ""
+        genet=(params.bgen=='') ? "  --bfile $base " : " --bgen $bgen --sample $bgensample --info ${params.bgen_mininfo} "
 	"""
 	all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
-	${params.gcta64_bin} --bfile $base ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa --maf ${params.cut_maf}
+	${params.gcta64_bin} $genet ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa --maf ${params.cut_maf}
 	"""
    }
 
