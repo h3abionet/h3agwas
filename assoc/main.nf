@@ -20,7 +20,10 @@
 
 //---- General definitions --------------------------------------------------//
 
-import java.nio.file.Paths
+import java.nio.file.Paths;
+import sun.nio.fs.UnixPath;
+import java.security.MessageDigest;
+
 nextflow.enable.dsl = 1 
 
 
@@ -114,8 +117,8 @@ params.gemma_num_cores = 8
 params.pheno = "_notgiven_"
 
 //
-params.saige_bin_fitmodel="/usr/local/bin/step1_fitNULLGLMM.R"
-params.saige_bin_spatest="/usr/local/bin/step2_SPAtests.R"
+params.saige_bin_fitmodel="step1_fitNULLGLMM.R"
+params.saige_bin_spatest="step2_SPAtests.R"
 params.saige_loco=1
 params.saige_mem_req='10GB'
 params.saige_num_cores=10
@@ -304,6 +307,7 @@ raw_src_ch= Channel.create()
 ch_select_rs_format=Channel.create()
 ch_format_ldscore=Channel.create()
 ch_saige_heritability=Channel.create()
+ch_saige_assoc=Channel.create()
 
 Channel
     .from(file(bed),file(bim),file(fam))
@@ -343,7 +347,7 @@ if (thin+chrom) {
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
       /*JT Append initialisation boltlmm_assoc_ch */
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch, ch_bolt_snpchoice, ch_select_rs_format, ch_saige_heritability)
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch, ch_bolt_snpchoice, ch_select_rs_format, ch_saige_heritability, ch_saige_assoc)
     script:
        base = bed.baseName
        out  = base+"_t"
@@ -356,7 +360,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format, ch_format_ldscore,ch_saige_heritability) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a,a,a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format, ch_format_ldscore,ch_saige_heritability, ch_saige_assoc) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a,a,a, a] }
 }
 
 
@@ -753,6 +757,10 @@ if (params.fastlmm == 1) {
      reader.close();
      return(lines)
   }
+
+
+
+
 if (params.boltlmm == 1) {
 
   plink_ch_bolt = Channel.create()
@@ -847,9 +855,11 @@ if (params.boltlmm == 1) {
       System.exit(-2);
      }
     bgensample_ch = Channel.fromPath(params.bgen_sample, checkIfExists:true)
+    bgensample_ch2 = Channel.fromPath(params.bgen_sample, checkIfExists:true)
   }else{
   bgen_ch=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
   bgensample_ch= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+  bgensample_ch2= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
   }
 
 
@@ -1463,8 +1473,46 @@ if (params.plink_gxe==1) {
   report_plink_gxe=Channel.empty()
 }
 
-if(params.fastgwa==1){
+if(params.bgen!="" && params.fastgwa+params.saige >1){
+     bgen_ch_fastgwa_i=Channel.fromPath(params.bgen, checkIfExists:true)
+     process indexbgen {
+      label 'utils'
+      input :
+        path(bgen) from bgen_ch_fastgwa_i
+      output :
+        tuple path(bgen), path("${bgen}.bgi") into (bgen_ch_fastgwa,bgen_ch_saige)
+      """
+      bgenix -g $bgen -index
+      """
 
+     }
+     if(params.bgen_sample==''){
+       println "params.bgen_sample not initialise when bgen params initial";
+       System.exit(-2);
+      }
+     bgensample_ch_fastgwa_i = Channel.fromPath(params.bgen_sample, checkIfExists:true)
+     process samplebgen_format{
+      input :
+       path(sample) from bgensample_ch_fastgwa_i
+      output :
+       path(newsample) into (bgensample_ch_fastgwa,bgensample_ch_saige)
+      script :
+        newsample=sample.baseName+'_gcta.sample'
+        """
+        head -1 $sample | awk '{print \$0" sex"}' > $newsample
+        sed -n 2p $sample | awk '{print \$0" D"}' >> $newsample
+        sed '1,2d' $sample | awk '{print \$0" 0"}' >> $newsample
+        """
+     }
+}else{
+    bgen_ch_fastgwa=Channel.fromPath("${dummy_dir}/06", checkIfExists:true).combine(Channel.fromPath("${dummy_dir}/08", checkIfExists:true))
+    bgensample_ch_fastgwa= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+    bgen_ch_saige=Channel.fromPath("${dummy_dir}/06", checkIfExists:true).combine(Channel.fromPath("${dummy_dir}/08", checkIfExists:true))
+    bgensample_ch_saige= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+}
+
+
+if(params.fastgwa==1){
    if(params.gcta_grmfile==""){
     process FastGWADoGRM{
        cpus params.fastgwa_num_cores
@@ -1528,41 +1576,6 @@ if(params.fastgwa==1){
 
    balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
    balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
-   if(params.bgen!=""){
-     bgen_ch_fastgwa_i=Channel.fromPath(params.bgen, checkIfExists:true)
-     process indexbgen {
-      label 'utils'
-      input :
-        path(bgen) from bgen_ch_fastgwa_i
-      output :
-        tuple path(bgen), path("${bgen}.bgi") into bgen_ch_fastgwa
-      """
-      bgenix -g $bgen -index
-      """
-
-     }
-     if(params.bgen_sample==''){
-       println "params.bgen_sample not initialise when bgen params initial";
-       System.exit(-2);
-      }
-     bgensample_ch_fastgwa_i = Channel.fromPath(params.bgen_sample, checkIfExists:true)
-     process samplebgen_format{
-      input :
-       path(sample) from bgensample_ch_fastgwa_i
-      output :
-       path(newsample) into bgensample_ch_fastgwa
-      script :
-        newsample=sample.baseName+'_gcta.sample'
-        """
-        head -1 $sample | awk '{print \$0" sex"}' > $newsample
-        sed -n 2p $sample | awk '{print \$0" D"}' >> $newsample
-        sed '1,2d' $sample | awk '{print \$0" 0"}' >> $newsample
-        """
-     }
-   }else{
-    bgen_ch_fastgwa=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
-    bgensample_ch_fastgwa_i= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
-   }
 
 
    process FastGWARun{
@@ -1620,13 +1633,22 @@ if(params.fastgwa==1){
    report_fastgwa_ch=Channel.empty()
 }
 
-
-
 if(params.saige==1){
-  if(params.list_vcf==""){
-    println "No list_vcf given for saige -- set params.list_vcf";
-    System.exit(-2);
-  }
+    bim_ch_saige=channel.fromPath(bim)
+    process getListeChro_saige{
+        input :
+          file(BimFile) from bim_ch_saige
+        output :
+          stdout into chrolist_saige
+        script:
+         """
+         cat $BimFile|awk '{print \$1}'|uniq|sort|uniq
+        """
+   }
+   check3 = Channel.create()
+   chrolist_saige_ch=chrolist_saige.flatMap { list_str -> list_str.split() }.tap ( check3)
+
+
   if(balise_filers_rel==1){
     process subplink_heritability_saige{
     input :
@@ -1655,10 +1677,12 @@ if(params.saige==1){
   fam_ch_saige = Channel.create()
   plk_ch_saige_her = Channel.create()
   ch_plk_saige.separate (plk_ch_saige_her, fam_ch_saige) { a -> [ a, a[2]] }
+    data_ch_saige = Channel.fromPath(params.data,checkIfExists:true)
 
-  data_ch_saige = Channel.fromPath(params.data,checkIfExists:true)
-  firstvcf_ch=Channel.fromPath(file(params.list_vcf).readLines()[0], checkIfExists:true)
-  process checkidd_saige{
+  
+  if(params.list_vcf!=''){
+   firstvcf_ch=Channel.fromPath(file(params.list_vcf).readLines()[0], checkIfExists:true)
+   process checkidd_saige_vcf{
     label 'R'
     input :
       path(covariates) from data_ch_saige
@@ -1676,7 +1700,28 @@ if(params.saige==1){
       format_saige_pheno.r --data $covariates --ind_vcf fileind --out ${covariates_form}
       plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid"
       """
-  }
+   }
+  }else{
+   process checkidd_saige{
+    label 'R'
+    input :
+      path(covariates) from data_ch_saige
+      path(bgensample) from  bgensample_ch2
+      tuple path(bed), path(bim), path(fam) from plk_ch_saige_her
+    output :
+      tuple path("${bfileupdate}.bed"), path("${bfileupdate}.bim"), path("${bfileupdate}.fam") into plk_ch_saige_her_idupd
+      tuple path(covariates_form),path("${bfileupdate}.fam") into data_ch_saige_form
+    script :
+      covariates_form=covariates.baseName+'_saige.ind'
+      bfile=bed.baseName
+      bfileupdate=bfile+'_idsaige'
+      indnbgen=(params.bgen!='') ? "--ind_bgen $bgensample" : ""
+      """
+      format_saige_pheno.r --data $covariates $indnbgen --out ${covariates_form}
+      plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid"
+      """
+   }
+ }
   process  getSaigePheno {
     input:
       tuple path(covariates), path(fam) from data_ch_saige_form
@@ -1707,7 +1752,7 @@ if(params.saige==1){
    publishDir "${params.output_dir}/saige/varexp/", overwrite:true, mode:'copy'
    each this_pheno from pheno_ch_saige
    output :
-     set val(our_pheno) ,file("${output}_*markers.SAIGE.results.txt"), file("${output}.rda"), file("${output}.varianceRatio.txt"), val(plkf) into file_varexp 
+     set val(our_pheno) ,file("${output}.rda"), file("${output}.varianceRatio.txt"), val(plkf) into file_varexp 
    script :
      covoption = (params.covariates=="") ? "" : " --covarColList=${params.covariates}"
      binpheno = (params.pheno_bin==1) ? " --traitType=binary " : " --traitType=quantitative --invNormalize=TRUE"
@@ -1716,7 +1761,7 @@ if(params.saige==1){
      our_pheno    = this_pheno.replaceAll(/|\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
      output=our_pheno+"_var"
      """
-     Rscript ${params.saige_bin_fitmodel} \
+     ${params.saige_bin_fitmodel} \
         --plinkFile=$plkf \
         --phenoFile=$pheno \
         --phenoCol=$our_pheno $covoption \
@@ -1727,9 +1772,11 @@ if(params.saige==1){
      """
    
   }
-  listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines(), checkIfExists:true)
-  process buildindex {
-    label 'saige'
+  if(params.list_vcf!=''){
+   listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines(), checkIfExists:true)
+   process buildindex {
+     label 'utils'
+
     input :
        file(vcf) from listvcf_ch
     output :
@@ -1740,22 +1787,22 @@ if(params.saige==1){
        hostname
        tabix -C -p vcf $vcf
        """
-  }
-  vcf_andvariance_ch=listvcf_ind_ch.combine(file_varexp) 
-  process doSaige{
-   memory params.saige_mem_req
-   cpus params.saige_num_cores
-   label 'saige'
-   input :
-       set file(vcf), file(vcfindex), val(our_pheno) ,file(best30), file(rda), file(varRatio), val(base) from vcf_andvariance_ch 
-   output :
+   }
+   vcf_andvariance_ch=listvcf_ind_ch.combine(file_varexp) 
+   process doSaige{
+    memory params.saige_mem_req
+    cpus params.saige_num_cores
+    label 'saige'
+    input :
+       set file(vcf), file(vcfindex), val(our_pheno) , file(rda), file(varRatio), val(base) from vcf_andvariance_ch 
+    output :
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
-   script :
+    script :
      output=vcf.baseName+".res"
      bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
      """
       Chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
-      Rscript  ${params.saige_bin_spatest} \
+      ${params.saige_bin_spatest} \
         --vcfFile=$vcf\
         --vcfFileIndex=$vcfindex \
         --vcfField=${params.vcf_field} \
@@ -1766,14 +1813,77 @@ if(params.saige==1){
         --varianceRatioFile=$varRatio \
         --SAIGEOutputFile=$output ${bin_option_saige}
      """
-  }
+   }
+ }else if(params.bgen!=''){
+   bgen_andvariance_ch=bgen_ch_saige.combine(bgensample_ch_saige).combine(file_varexp)
+   process doSaigeBgen{
+    memory params.saige_mem_req
+    cpus params.saige_num_cores
+    label 'saige'
+    input :
+       tuple path(bgen), path(bgenindex), path(bgensample),val(our_pheno),path(rda), path(varRatio), val(base) from bgen_andvariance_ch
+    each Chro from chrolist_saige_ch
+    output :
+      set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
+    script :
+     output=bgen.baseName+"_"+Chro+".saige"
+     bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     Chro=Chro.replace(' ','')
+     Chro=(Chro=="23") ? "X": "$Chro"
+     """
+      ${params.saige_bin_spatest} \
+        --bgenFile=$bgen    \
+        --bgenFileIndex=$bgenindex \
+        --sampleFile=$bgensample \
+        --AlleleOrder=ref-first \
+        --chrom=$Chro \
+        --minMAF=${params.cut_maf}\
+        --minMAC=${params.vcf_minmac} \
+        --GMMATmodelFile=$rda \
+        --varianceRatioFile=$varRatio \
+        --SAIGEOutputFile=$output ${bin_option_saige}
+     """
+   }
+
+ }else{
+
+   plink_andvariance_ch=ch_saige_assoc.combine(file_varexp)
+   process doSaigePlink{
+    memory params.saige_mem_req
+    cpus params.saige_num_cores
+    label 'saige'
+    input :
+       tuple file(bed), file(bim), file(fam),val(our_pheno) , path(rda), path(varRatio), val(base) from plink_andvariance_ch
+    each Chro from chrolist_saige_ch
+    output :
+      tuple val(our_pheno),file("$output"), val(base) into ch_saige_bychro
+    script :
+     output=bed.baseName+'_'+Chro+".saige"
+     bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     """
+      ${params.saige_bin_spatest} \
+        --bedFile=$bed \
+        --bimFile=$bim \
+        --famFile=$fam \
+        --chrom=$Chro \
+        --AlleleOrder=alt-first \
+        --minMAF=${params.cut_maf}\
+        --minMAC=${params.vcf_minmac} \
+        --GMMATmodelFile=$rda \
+        --varianceRatioFile=$varRatio \
+        --SAIGEOutputFile=$output ${bin_option_saige}
+     """
+   }
+
+
+ }
  ch_saige_res=ch_saige_bychro.groupTuple()
  process doMergeSaige{
           input :
-            set (val(this_pheno),file(list_file), base_list) from ch_saige_res
+            tuple (val(this_pheno),file(list_file), base_list) from ch_saige_res
          publishDir "${params.output_dir}/saige", overwrite:true, mode:'copy'
          output :
-             set val(base), val(our_pheno2), file("$out") into saige_manhatten_ch
+             tuple val(base), val(our_pheno2), file("$out") into saige_manhatten_ch
          script :
              base=base_list[0]
              our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
@@ -1785,7 +1895,7 @@ if(params.saige==1){
              head -1 $file1 > $out
              cat $fnames | grep -v CHR >> $out
              """
- }
+  }
   process showSaigeManhatten {
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
@@ -1797,7 +1907,7 @@ if(params.saige==1){
       our_pheno = this_pheno.replaceAll("_","-")
       out = "C058-saige-"+our_pheno
       """
-      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header SNPID --pval_header p.value --beta_header BETA --info_prog SAIGE
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHR --pos_header POS --rs_header  SNPID,MarkerID --pval_header p.value --beta_header BETA --info_prog SAIGE
       """
   }
 

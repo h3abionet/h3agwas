@@ -191,7 +191,7 @@ transform vcf in bimbam format after filters for quality.
 * `bcftools_bin` : bcftools bin [default : bcftools]
 
 
-## Pipeline : prepareforimp.nf
+## Prepare data for imputation : `plk_in_vcf_imp.nf`
 
 ### argument :
 * `input_dir`

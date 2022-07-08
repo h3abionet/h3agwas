@@ -30,6 +30,15 @@ def parseArguments():
 
 args = parseArguments()
 
+def getent(Head, listheader) :
+  HeadSpl=Head.split(',') 
+  for x in HeadSpl :
+    if x in listheader :
+       return x
+  print(' header '+Head+' not found in list header'+ ",".join(listheader))
+  exit(2)
+
+
 inp     = args.inp
 phenos= args.phenoname
 base    = args.out.replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
@@ -93,6 +102,7 @@ best_row = r"%s & %s & %s & %7.4f & %6.3E \\"
 def get10Best(result,pheno):
     top = result.sort_values(PvalueEnt).head(10)
     best = ""
+    print(RsEnt)
     for r in top.iterrows():
         x= r[1]
         row = best_row%(x[ChroEnt],x[RsEnt].replace("_","-"),x[PosEnt],x[BEnt],x[PvalueEnt])+EOL
@@ -101,6 +111,7 @@ def get10Best(result,pheno):
         
 
 result = pd.read_csv(inp,delim_whitespace=True)
+RsEnt=getent(RsEnt, list(result))
 chroms = result.groupby(ChroEnt)
 
 fig, (ax1, ax2) =  plt.subplots(2, 1, sharey=True)

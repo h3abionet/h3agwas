@@ -518,7 +518,7 @@ process identifyIndivDiscSexinfo {
      file(logfile) into  (report_failed_sex_ch, failed_sex_ch1)
      tuple file(imiss), file(lmiss),file(sexcheck_report) into batchrep_missing_ch
      file("${base}.hwe") into hwe_stats_ch
-  validExitStatus 0, 1
+  errorStrategy { task.exitStatus in [0,1] ? 'ignore' : 'terminate' }
   script:
     base = plinks[0].baseName
     logfile= "${base}.badsex"

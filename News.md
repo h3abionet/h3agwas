@@ -2,6 +2,8 @@
 
 
 ## What's new :
+* 2022-07-8 : add plink support for saige [assoc](assoc/README.md) 
+* 2022-07-8 : add bgen support for saige,bolt-lmm and gcta [assoc](assoc/README.md) 
 * 2022-06-10 : update meta of metasoft, add column for N, Frequencies for each publication in merge result
 * 2022-05-04 : preprint manuscript can be found on [biorxiv](https://www.biorxiv.org/content/10.1101/2022.05.02.490206v1)
 * 2021-11-04 : association script include saige software

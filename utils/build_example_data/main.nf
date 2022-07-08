@@ -366,11 +366,11 @@ process format_simulated{
    input :
      tuple file(bed), file(bim), file(fam) from allplkres_ch_gc
      file(gwascat) from gwascat_detail
-   publishDir "${params.output_dir}/simul_pheno/pheno_format/",  overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/simul_pheno/data_format/",  overwrite:true, mode:'copy'
    output :
       tuple file(bed), file(bim), file(fam), file(outeffect) into (info_sim_qt, info_sim_ql)
       file(fam) into fam_countnb
-      file("$params.output*")
+      file("$params.output.effect.*")
    script :
      plk=bed.baseName
      outeffect=params.output+".effect.rs"
