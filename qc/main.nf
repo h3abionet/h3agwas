@@ -406,7 +406,7 @@ if (samplesheet != "0")  {
  */
 process getDuplicateMarkers {
   memory other_mem_req
-  publishDir params.output_dir, pattern: "*dups", \
+  publishDir "${params.output_dir}/snps/duplicate_marker", pattern: "*dups", \
              overwrite:true, mode:'copy'
   input:
     file(inpfname) from checked_input.bim_ch
@@ -512,7 +512,7 @@ process identifyIndivDiscSexinfo {
   input:
      file(plinks) from qc1B_ch
 
-  publishDir params.output_dir, overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/samples/sexinfo", overwrite:true, mode:'copy'
 
   output:
      file(logfile) into  (report_failed_sex_ch, failed_sex_ch1)
@@ -545,7 +545,7 @@ process generateSnpMissingnessPlot {
   memory other_mem_req
   input:
       file(lmissf) from snp_miss_ch
-  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/snps/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
      file(output) into report_snpmiss_ch
 
@@ -563,7 +563,7 @@ process generateIndivMissingnessPlot {
   memory other_mem_req
   input:
       file(imissf) from ind_miss_ch1
-  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/samples/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     file(output) into report_indmisspdf_ch
   script:
@@ -618,7 +618,7 @@ process removeQCPhase1 {
   memory plink_mem_req
   input:
     tuple file(bed), file(bim), file(fam) from qc1_ch
-  publishDir params.output_dir, overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/phase1/", overwrite:true, mode:'copy'
   output:
     file("${output}*.{bed,bim,fam}") into (qc2A_ch,qc2B_ch,qc2C_ch,qc2D_ch)
      tuple file("qc1.out"), file("${output}.irem") into report_qc1_ch
@@ -673,7 +673,7 @@ process drawPCA {
       file cc from cc2_ch
     output:
       tuple  file ("eigenvalue.pdf"), file(output) into report_pca_ch
-    publishDir params.output_dir, overwrite:true, mode:'copy',pattern: "*.pdf"
+    publishDir "${params.output_dir}/pca/", overwrite:true, mode:'copy',pattern: "*.pdf"
     script:
       base=eigvals.baseName
       cc_fname = params.case_control
@@ -696,7 +696,7 @@ if (params.high_ld_regions_fname != "") {
     input:
       file plinks from qc2B_ch
       file ldreg  from ldreg_ch
-      publishDir params.output_dir, overwrite:true, mode:'copy'
+      publishDir "${params.output_dir}/samples/ibd", overwrite:true, mode:'copy'
     output:
       file "${outf}.genome" into (find_rel_ch,batch_rel_ch)
     script:
@@ -717,7 +717,7 @@ if (params.high_ld_regions_fname != "") {
     memory plink_mem_req
     input:
       file plinks from qc2B_ch
-      publishDir params.output_dir, overwrite:true, mode:'copy'
+      publishDir "${params.output_dir}/samples/ibd", overwrite:true, mode:'copy'
     output:
       file "${outf}.genome" into (find_rel_ch,batch_rel_ch)
     script:
@@ -742,7 +742,7 @@ process findRelatedIndiv {
      file (ibd_genome) from find_rel_ch
   output:
      file(outfname) into (related_indivs_ch1,related_indivs_ch2, report_related_ch) 
-  publishDir params.output_dir, overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/samples/relatdness", overwrite:true, mode:'copy'
   script:
      base = missing.baseName
      outfname = "${base}-fail_IBD".replace(".","_")+".txt"
@@ -756,7 +756,7 @@ process calculateSampleHeterozygosity {
    input:
       file(nodups) from qc2C_ch
 
-   publishDir params.output_dir, overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/samples/heterozygoty", overwrite:true, mode:'copy'
    output:
       tuple file("${hetf}.het"), file("${hetf}.imiss") into (hetero_check_ch, plot1_het_ch)
       file("${hetf}.imiss") into missing_stats_ch
@@ -774,7 +774,7 @@ process generateMissHetPlot {
   memory other_mem_req
   input:
     tuple file(het), file(imiss) from plot1_het_ch
-  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/samples/heterozygoty", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     file(output) into report_misshet_ch
   script:
@@ -792,7 +792,7 @@ process getBadIndivsMissingHet {
     tuple file(het), file(imiss) from hetero_check_ch
   output:
     file(outfname) into (failed_miss_het, report_misshetremf_ch)
-  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.txt"
+  publishDir "${params.output_dir}/samples/heterozygoty", overwrite:true, mode:'copy', pattern: "*.txt"
   script:
     base = het.baseName
     outfname = "${base}-fail_het".replace(".","_")+".txt"
@@ -856,7 +856,7 @@ process generateDifferentialMissingnessPlot {
    memory other_mem_req
    input:
      file clean_missing from clean_diff_miss_plot_ch1
-   publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
+   publishDir "${params.output_dir}/snps/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
    output:
       file output into report_diffmissP_ch
    script:
@@ -893,7 +893,7 @@ process removeSkewSnps {
   input:
     file (plinks) from qc3B_ch
     file(failed) from skewsnps_ch
-  publishDir params.output_dir, overwrite:true, mode:'copy'  
+  publishDir "${params.output_dir}/snps/skews", overwrite:true, mode:'copy'  
   output:
     tuple file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") \
       into (qc4A_ch, qc4B_ch, qc4C_ch,  report_cleaned_ch)
@@ -908,30 +908,13 @@ process removeSkewSnps {
 
 
 
-/*
-process convertInVcf {
-   memory plink_mem_req
-   cpus max_plink_cores
-   input :
-     tuple file(bed), file(bim), file(fam), file (log) from qc4A_ch
-   publishDir params.output_dir, overwrite:true, mode:'copy'
-   output :
-    file("${base}.vcf")  
-   script:
-     base= bed.baseName
-     """
-     plink --bfile ${base} --threads ${max_plink_cores} --recode vcf --out $base
-     """
-
-}*/
-
 
 process calculateMaf {
   memory plink_mem_req
   input:
     tuple  file(bed), file(bim), file(fam), file(log) from qc4C_ch
 
-  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.frq"
+  publishDir "${params.output_dir}/snps/maf", overwrite:true, mode:'copy', pattern: "*.frq"
 
   output:
     file "${base}.frq" into maf_plot_ch
@@ -950,7 +933,7 @@ process generateMafPlot {
   memory other_mem_req
   input:
     file input from maf_plot_ch
-  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/snps/maf", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     file(output) into report_mafpdf_ch
 
@@ -984,7 +967,7 @@ process generateHwePlot {
   memory other_mem_req
   input:
     file unaff from unaff_hwe
-  publishDir params.output_dir, overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/snps/hwe", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     file output into report_hwepdf_ch
 
@@ -1025,7 +1008,7 @@ process batchProc {
     file genome    from batch_rel_ch    // pruneForIBD
     file pkl       from x_analy_res_ch  // analyseX
     file rem_indivs from related_indivs_ch2 // findRel
-  publishDir params.output_dir, pattern: "*{csv,pdf}", \
+  publishDir "${params.output_dir}/samples/batch", pattern: "*{csv,pdf}", \
              overwrite:true, mode:'copy'
   output:
       file("${base}-batch.tex")      into report_batch_report_ch
