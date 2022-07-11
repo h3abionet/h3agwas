@@ -92,8 +92,8 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
    * GT : used genotype
    * DS : used dosage of imputation
   * bin :
-   * step 1 `saige_bin_fitmodel` : binary R for saige and fit model : [default :/usr/local/bin/step1_fitNULLGLMM.R]
-   * step2 `saige_bin_spatest` : binary R for saige and do association : [default : /usr/local/bin/step2_SPAtests.R]
+   * step 1 `saige_bin_fitmodel` : binary R for saige and fit model : [default : step1_fitNULLGLMM.R]
+   * step2 `saige_bin_spatest` : binary R for saige and do association : [default : step2_SPAtests.R]
   * ressource :
    * `saige_mem_req` : memory required for saige [default : 10GB] 
    * `saige_num_cores` : memory required for saige [default : 10], just used for step1 of SAIGE
@@ -104,13 +104,39 @@ with pipeline, do a GxE interaction with Gemma and Plink, arguments :
   * `plink_gxe` : GxE interation with plink (see option -gxe, in [plink manual](http://zzz.bwh.harvard.edu/plink/anal.shtml#qtgxe)) [default : 0], no covariate could be provided.
    * pipeline computed frequencies, N for each group with plink and add to files, futhermore they add A1 and A2.
    * furthermore BetaGxE and SeGxE computed by pipeline as SeGxE : sqrt(se1^2 + se2^2), BetaGxE : Z\_GXE * SeGxE
- * optionnal input bgen : 
-  * `mbgen`  : bgen file (for bolt)
-  * `mbgen_sample` : list of sample bgen
+ * optionnal input bgen ( for bolt, saige and fastGWA): 
+  * `bgen`  : bgen file 
+  * `bgen_sample` : list of sample and fastGWA 
+  * specificity :
+   * bolt-lmm : dosage ssociation in paralel with genotype plink file
+   * saige :
+    * vcf file are prioritise to bgen file (option bgen ignore for saibe)
+    * association not done on genotype with plink format 
+    * relatdness done using genotype of plink
+  * fastgwa :
+    * grm done using genotype of plink
+    * bgen prioritise compared to genotype where association not done
 
 
 
-For example
+## Genotype / dosage format by software
+| Software | plink | vcf | bgen | impute 2 |
+| --- | --- | --- | --- | --- |
+| gemma | yes |  no | no | no |
+| plink association | yes |  no | no | no |
+| gcta/fastGWA | yes |  no | yes | no |
+| saige | yes |  yes | yes | no |
+| bolt-LMM | yes |  no | yes | yes |
+| fast-lmm | yes |  no | no | no |
+| --- | --- | --- | --- | --- |
+| description | genotype |  dosage | dosage | dosage |
+| --- | --- | --- | --- | --- |
+| Option | `--input_dir`/`--input_pat`| `--list_vcf` | `--bgen`/`--bgen_sample` | `bolt_impute2filelist`/`bolt_impute2fidiid` |
+| --- | --- | --- | --- | --- |
+
+
+
+##Example
 
 ```nextflow run assoc/assoc.nf --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
 

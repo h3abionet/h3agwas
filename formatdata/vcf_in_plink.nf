@@ -57,7 +57,7 @@ params.remove_on_bp  = 1
 
 params.file_listvcf=""
 params.min_scoreinfo=0.6
-params.max_plink_cores = 8 
+params.max_plink_cores = 8
 //params.plink_mem_req = '10GB' // how much plink needs for this
 params.other_mem_req = '10GB' // how much plink needs for this
 params.output_pat="out"
@@ -122,12 +122,27 @@ process dostat{
  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
  output :
    file("${fileout}*")
+   tuple path("${fileout}.tex"),path('*report_freq.pdf'), path("*_report_score.pdf") into tex_stat
  script :
   fileout=params.output_pat+"_report"
   allfile=allstat.join(',') 
   """
   stat_vcf.py  --out $fileout --min_score ${params.min_scoreinfo} --list_files $allfile
   """
+}
+process texfile{
+  label 'latex'
+  input :
+    tuple path(tex), path(freqpdf), path(scorepdf) from tex_stat
+  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+  output :
+   path("${out}.pdf")
+  script :
+     out=tex.baseName
+     """
+    pdflatex $out >& /dev/null
+    pdflatex $out
+    """ 
 }
 }
 //ref_ch=Channel.fromPath(params.reffasta, checkIfExists:true)
@@ -174,8 +189,11 @@ process formatvcfscore{
      set val(Ent), file("${Ent}.bcf") into bcf_ch
   script :
     Ent=vcf.baseName.replaceAll(/.vcf$/, '')
+    threadn=params.max_plink_cores/ 5
+    threadn = threadn.round()
     """
-    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf | bcftools norm -Ou -m -any | bcftools norm -Ou -f $ref |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' > $Ent".bcf"
+    hostname
+    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf --threads $threadn | bcftools norm -Ou -m -any --threads  $threadn | bcftools norm -Ou -f $ref --threads $threadn  --threads  $threadn |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' --threads  $threadn > $Ent".bcf"
   cat $Ent".bcf" |plink --bcf /dev/stdin \
     --keep-allele-order \
     --vcf-idspace-to _ \

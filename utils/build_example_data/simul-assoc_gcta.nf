@@ -43,6 +43,7 @@ params.list_chro_pheno=""
 params.simu_hsq=0.3
 params.simu_rep=10
 params.gcta_bin="gcta64"
+params.cut_maf=0.01
 
 
 params.gwas_cat=""
@@ -62,6 +63,7 @@ params.clump_p2=0.01
 params.clump_r2=0.50
 params.clump_kb=250
 params.nb_snp=-1
+params.keep=""
 
 params.nb_cpus=4
 
@@ -85,6 +87,11 @@ checker = { fn ->
     else
        error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
+
+
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../../qc/input"
 
 
 
@@ -123,19 +130,26 @@ process GwasCatDl{
       """
 }
 
+if(params.keep!=""){
+keepind=channel.fromPath(params.keep)
+}else{
+keepind=channel.fromPath("${dummy_dir}/00")
+}
 
 process extract_gc_dl{
    cpus params.nb_cpus
    input :
      tuple file(bed), file(bim), file(fam) from gwas_plk_ch
+     path(keepind)
      file(bed_pos) from gwascat_bed_ch1
    output : 
      set file("${out}.bed"), file("${out}.bim"),  file("${out}.fam") into gwas_plk_ch_gc
    script :
       plk=bed.baseName
       out=plk+"_gc"
+      keepindcmd=(params.keep!="")? "  --keep $keepind  " : ""
       """
-      plink -bfile $plk --extract range $bed_pos --keep-allele-order  --make-bed -out $out
+      plink -bfile $plk --extract range $bed_pos --keep-allele-order  --make-bed -out $out  --maf ${params.cut_maf} $keepindcmd
       """
 }
 

@@ -37,6 +37,9 @@ def getlistchro(listchro){
 }
 
 
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../../qc/input"
 
 
 params.list_chro="1-22"
