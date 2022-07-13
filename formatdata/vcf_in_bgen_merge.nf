@@ -28,7 +28,7 @@ nextflow.enable.dsl = 1
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ['file_listvcf', 'min_scoreinfo', "output_dir", "max_cores"]
+allowed_params = ['file_listvcf', 'min_scoreinfo', "output_dir", "max_cores", "output", "bgen_bits", "mem_req", "genotype_field", "qctoolsv2_bin", "bcftools_bin", "score_imp", "bgen_type"]
 
 params.mem_req = '10GB' // how much plink needs for this
 params.output_dir="bgen/"
@@ -62,7 +62,7 @@ process filter_vcf{
   script :
     Ent=vcf.baseName+"_filter.vcf.gz"
     """
-    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf -Oz > $Ent
+    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf -Oz --threads  ${params.max_cores} > $Ent
     ${params.bcftools_bin} index $Ent
     """
 }
@@ -72,6 +72,7 @@ process mergeall{
   label 'py3utils'
   time   params.big_time
   memory params.mem_req
+  cpus params.max_cores
   input :
      file(allfile) from lcf
   output :
@@ -79,7 +80,7 @@ process mergeall{
    script :
     out="all.vcf.gz"
     """
-    ${params.bcftools_bin} concat *vcf.gz -Oz -o $out
+    ${params.bcftools_bin} concat *vcf.gz -Oz -o $out  --threads  ${params.max_cores} 
     """
     
 }

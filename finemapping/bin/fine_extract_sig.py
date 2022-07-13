@@ -15,6 +15,7 @@ def extractinfobim(chro, begin, end,bimfile):
    listpos=[]
    listref=[]
    listalt=[]
+   listsnp=[]
    listdup=set([])
    for line in readbim :
       splline=line.split()
@@ -26,11 +27,13 @@ def extractinfobim(chro, begin, end,bimfile):
            listref.pop(posindex) 
            listalt.pop(posindex) 
            listdup.add(pos)
+           listsnp.pop(posindex)
          else : 
           listpos.append(pos)
+          listsnp.append(splline[1])
           listref.append(splline[4])
           listalt.append(splline[5])
-   return (listpos, listref, listalt)
+   return (listpos, listref, listalt, listsnp)
 
 def appendfreq(bfile, result, freq_header,rs_header, n_header, chr_header,bp_header, bin_plk, keep, threads) :
    plkfreqfil=os.path.basename(bfile)
@@ -47,22 +50,28 @@ def appendfreq(bfile, result, freq_header,rs_header, n_header, chr_header,bp_hea
    Cmd+=" --out "+plkfreqfil
    os.system(Cmd)
    data_n=pd.read_csv(plkfreqfil+".frq",delim_whitespace=True)
+   databim = pd.read_csv(bfile+".bim", delim_whitespace=True)
+   #CHR            SNP   A1   A2
+   databim.columns = ["CHR","SNP", "Other","BP","A1", "A2"]
+   data_n=data_n.merge(databim,how="inner", on=["CHR","SNP","A1", "A2"])
    # CHR            SNP   A1   A2          MAF  NCHROBS
    #SNP A1 A2 freq b se p N
    data_n['N']=data_n['NCHROBS']/2
    if n_header==None and freq_header==None:
-      data_n=data_n[["SNP","MAF","N"]]
+      data_n=data_n[["CHR","BP","MAF","N"]]
       freq_head="MAF"
       n_header="N"
    elif n_header==None :
-      data_n=data_n[["SNP","N"]]
+      data_n=data_n[["CHR","BP","N"]]
       n_header="N"
    elif freq_header==None :
-      data_n=data_n[["SNP","MAF"]]
+      data_n=data_n[["CHR","BP","MAF"]]
       freq_head="MAF"
    IsFreq=True
    IsN=True
-   result=result.merge(data_n,how="inner", left_on=rs_header, right_on="SNP")
+   result[chr_header]=result[chr_header].astype(str)
+   data_n['CHR']=data_n['CHR'].astype(str)
+   result=result.merge(data_n,how="inner", left_on=[chr_header,bp_header], right_on=["CHR","BP"])
    return (freq_head, n_header, result)
 
 EOL=chr(10)
@@ -124,26 +133,25 @@ TAB=chr(9)
 ##rsid chromosome position allele1 allele2 maf beta se
 
 
-(listbim, listalt, listref)=extractinfobim(chro, begin,end,args.bfile+".bim")
+(listbim, listalt, listref, listsnp)=extractinfobim(chro, begin,end,args.bfile+".bim")
 
 small=result[(result[args.chro_header]==chro) & (result[args.pos_header]>=begin) & (result[args.pos_header]<=end)]
 
-small=pd.merge(small, pd.DataFrame({"pos":listbim, 'altbim232':listalt, 'refbim232':listref}),left_on=args.pos_header, right_on="pos" )
-print(small)
+small=pd.merge(small, pd.DataFrame({"pos":listbim, 'altbim232':listalt, 'refbim232':listref, 'snpbim232':listsnp}),left_on=args.pos_header, right_on="pos" )
 small=small[((small['altbim232']==small[args.a1_header]) & (small['refbim232']==small[args.a2_header])) | ((small['altbim232']==small[args.a2_header]) & (small['refbim232']==small[args.a1_header]))]
 
 if args.min_pval and small[args.p_header].min()> args.min_pval:
    sys.exit('min pval '+str(args.min_pval)+'>'+' min(p) '+ str(small[args.p_header].min()))
 small=small.loc[small[args.pos_header].isin(listbim)]
-
 if args.n : 
   small['N']=args.n
   n_header='N'
 
 if (n_header==None or freq_header==None):
   (freq_header, n_header, small)=appendfreq(args.bfile, small, freq_header,rs_header, n_header, args.chro_header,args.pos_header,args.bin_plk, args.keep, args.threads)
+print(small)
 
-PosCol=[rs_header,args.chro_header, args.pos_header, args.a1_header, args.a2_header, freq_header, args.beta_header, args.se_header, args.p_header, n_header]
+PosCol=['snpbim232',args.chro_header, args.pos_header, args.a1_header, args.a2_header, freq_header, args.beta_header, args.se_header, args.p_header, n_header]
 RsName=["rsid","chromosome","position","allele1","allele2","maf", "beta", "se", "p","N"]
 small=small[(small[rs_header]==rs) | ((small[freq_header]>maf) & (small[freq_header]<(1-maf)))]
 

@@ -2,6 +2,7 @@
 
 
 ## What's new :
+* 2022-07-13 : add regenie software for association [assoc](assoc/README.md) 
 * 2022-07-8 : add plink support for saige [assoc](assoc/README.md) 
 * 2022-07-8 : add bgen support for saige,bolt-lmm and gcta [assoc](assoc/README.md) 
 * 2022-06-10 : update meta of metasoft, add column for N, Frequencies for each publication in merge result

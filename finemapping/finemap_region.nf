@@ -81,8 +81,8 @@ params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z", "prob_cred_set"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "gcta_opt_multigrm_cor", "gcta_opt_grm_cor"]
-param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
+params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "gcta_opt_multigrm_cor", "gcta_opt_grm_cor", "other_cpus_req"]
+param_data=["gwas_cat", "genes_file", "genes_file_ftp", "ftp1000genome"]
 param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "gwas_cat_ftp", "list_pheno"]
 
 allowed_params+=params_mf
@@ -130,6 +130,8 @@ params.used_pval_z=0
 params.headgc_chr=""
 params.headgc_bp=""
 params.gwas_cat = ""
+params.ftp1000genome=1
+params.list_vcf=""
 
 params.prob_cred_set=0.95
 
@@ -154,10 +156,12 @@ params.caviarbf_avalue="0.1,0.2,0.4"
 params.caviar_mem_req="40GB"
 params.paintor_fileannot=""
 params.paintor_listfileannot=""
+params.other_cpus_req=10
 //params.paintor_annot=""
 
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 params.list_pheno=""
+params.ftp_vcf="ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/"
 
 
 
@@ -175,6 +179,138 @@ params.end_seq=""
 if(params.begin_seq > params.end_seq){
 error('begin_seq > end_seq')
 }
+if(params.input_dir=="" | params.input_pat==""){
+ 
+ if(params.ftp1000genome==1){
+  listchro_ch=channel.from(params.chro)
+  process Dl1000G{
+   label 'py3utils'
+   cpus params.other_cpus_req
+   input :
+      tuple val(chro) from listchro_ch
+   output :
+       tuple val(chro), file("${file1000G}") into file1000G
+   script :
+      //ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/ALL.chr17.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
+      file1000G= (chro=='X') ? "ALL.chrX.phase3_shapeit2_mvncall_integrated_v1c.20130502.genotypes.vcf.gz" : "ALL.chr${chro}.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz"
+      file1000G= (chro=='Y') ? "ALL.chrY.phase3_integrated_v2b.20130502.genotypes.vcf.gz" : "$file1000G"
+      """
+      echo  $chro $params.begin_seq $params.end_seq | awk '{print \$1"\t"\$2"\t"\$3"\t"\$3":"\$2}'> pos.bed
+      bcftools view --threads ${params.other_cpus_req} -R pos.bed ${params.ftp_vcf}/$file1000G|bgzip -c > $file1000G
+      """
+  }
+ }else{
+  if(params.list_vcf!=''){
+    listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines(), checkIfExists:true)
+    process findchro{
+      label 'py3utils'
+      input :
+        path(vcf) from listvcf_ch
+      output :
+        tuple env(chro), path(vcf), path("${vcf}.tbi") into (filevcf_chro_ch1, filevcf_chro_ch2)
+      script :
+        """
+        chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
+        tabix -p vcf $vcf
+        """
+     }
+   filevcf_chro_charray=filevcf_chro_ch1.join(Channel.from(params.chro))
+   process extract_chrovcf{
+     label 'py3utils'
+     input :
+        tuple val(chro),path(vcf), path(vcfindex) from filevcf_chro_charray
+      output :
+        tuple val(chro),  path(vcfout) into file1000G
+      script :
+        vcfout="vcf_array_"+chro+".bcf"
+        """
+        awk -v chro=$chro '{if(\$1==chro)print \$1"\\t"\$2-1"\\t"\$2"\\t"\$1":"\$2}' $pos_geno > pos.bed
+        bcftools view --threads ${params.other_cpus_req} -R pos.bed $vcf|bgzip -c > $vcfout
+        """
+   }
+
+  }else{
+   println "error not params.list_vcf"
+  }
+ }
+
+ process transfvcfInBed1000G{
+   cpus params.other_cpus_req
+   input :
+     tuple val(chro), file(vcf1000) from file1000G
+   output :
+     tuple val(chro), path("${out}.bim"), path("${out}.fam"), path("${out}.bed") into plk_chro
+   script :
+     out="chrtmp_"+chro
+     """
+     plink --vcf $vcf1000  --keep-allele-order  --make-bed -out $out --threads ${params.other_cpus_req}
+     """
+ }
+//
+ process cleanPlinkFile{
+    cpus params.other_cpus_req
+    input :
+     tuple val(chro), path(bim), path(fam), path(bed) from plk_chro
+    output :
+     tuple path("${out}.bim"), path("${out}.fam"), path("${out}.bed") into plk_chro_cl
+    script :
+    plk=bim.baseName
+    out="chr_"+chro+"_clean"
+      """
+      cp $fam $plk"_tmp.fam"
+      cp $bed $plk"_tmp.bed"
+      awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}" > $plk"_tmp.bim"
+      awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $plk"_tmp.bim" > ${bim}.wellpos.pos
+      awk '{print \$2}' $plk"_tmp.bim" | sort | uniq -d > duplicated_snps.snplist
+      plink -bfile $plk"_tmp"  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.other_cpus_req} --exclude duplicated_snps.snplist
+     """
+ }
+ plk_chro_flt=plk_chro_cl.collect()
+
+ process mergePlinkFile{
+   cpus params.other_cpus_req
+   input :
+     file(allfile) from plk_chro_flt
+   output :
+     tuple file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into raw_src_ch
+   script :
+     allfile2=allfile.toList().collect{it.toString().replaceFirst(~/\.[^\.]+$/, '')}
+     allfile2=allfile2.unique()
+     firstbed=allfile2[0]
+     allfile2.remove(0)
+     nbfile = allfile2.size()
+     out=params.output+"_befsex"
+     """
+     if [ $nbfile == "0" ]
+     then
+     cp ${firstbed}.fam ${out}.fam
+     cp ${firstbed}.bed ${out}.bed
+     cp ${firstbed}.bim ${out}.bim
+     else
+     echo "${allfile2.join('\n')}" > listbedfile
+     plink --bfile $firstbed  --keep-allele-order --threads ${params.other_cpus_req} --merge-list listbedfile --make-bed --out $out
+     fi
+
+     """
+ }
+ 
+}else{
+
+bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+
+raw_src_ch= Channel.create()
+Channel
+    .from(file(bed),file(bim),file(fam))
+    .buffer(size:3)
+    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
+    .set { raw_src_ch }
+}
+
+
+
+
 if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
 process GwasCatDl{
@@ -212,17 +348,6 @@ params.each { parm ->
   }
 }
 
-
-bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-
-raw_src_ch= Channel.create()
-Channel
-    .from(file(bed),file(bim),file(fam))
-    .buffer(size:3)
-    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
-    .set { raw_src_ch }
 
 
 gwas_extract_plk=Channel.create()

@@ -27,9 +27,14 @@ The key options are:
  * `prob_cred_set` :  prob of credible set [default : 0.95], for FINEMAP software
  * `used_pval_z` : build pvalue using z (need to check) [defaul 0:no]
 * `threshold_p` : treshold to used [default : 5E10-8]
-
-* `input_dir`, `output_dir`: where input and output goes to and comes from;
-* `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+* genetics data :
+ * 2 way are possiblie, data already in plink format (if possible same data that association has been done) or 1000 genome will be download
+ * genetics data user :
+  * `input_dir`, `output_dir`: where input and output goes to and comes from;
+  * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+ * 1000 genome :
+  * `ftp_vcf`
+  * `other_cpus_req`
 * `file_gwas` : file contains summary stat of gwas :
  * `head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
  * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)

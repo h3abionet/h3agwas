@@ -176,7 +176,7 @@ process cleanPlinkFile{
       cp $fam $plk"_tmp.fam"  
       cp $bed $plk"_tmp.bed"  
       awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}" > $plk"_tmp.bim"
-      awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $bim > ${bim}.wellpos.pos
+      awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $plk"_tmp.bim" > ${bim}.wellpos.pos
       awk '{print \$2}' $plk"_tmp.bim" | sort | uniq -d > duplicated_snps.snplist
       plink -bfile $plk"_tmp"  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.nb_cpus} --exclude duplicated_snps.snplist
      """
