@@ -202,12 +202,12 @@ rs_label_ch=Channel.from(list_rs)
 process ExtractInfoRs{
     memory other_mem_req
     input:
-       file(gwas_file) from gwas_ch
+       path(gwas_file) from gwas_ch
     each rs from rs_label_ch
     output :
-      set val(rs), file(out_locus_rs) into locuszoom_ch
-      set val(rs), file(out_info_rs) into infors_rs, infors_rs2
-      set val(rs), file(out_gwas_rs) into infors_gwas
+      tuple val(rs), path(out_locus_rs) into locuszoom_ch
+      tuple val(rs), path(out_info_rs) into infors_rs, infors_rs2
+      tuple val(rs), path(out_gwas_rs) into infors_gwas
     script:
       out="sub_"+rs.replace(':',"_")
       out_locus_rs=out+"_around.stat"
@@ -219,8 +219,8 @@ process ExtractInfoRs{
       """
 }
 
-if(params.list_file_annot!=""){
 fileannot_ch = infors_rs
+if(params.list_file_annot!=""){
 listfile=[]
 file(params.list_file_annot).readLines().each{listfile.add(it.split()[1])}
 listdb=Channel.from(list_rs).combine(Channel.fromPath(listfile, checkIfExists:true).collect().toList())
@@ -234,9 +234,9 @@ gwas_ch_annovar = Channel.fromPath(params.file_gwas,checkIfExists:true)
 process ExtractAllRs{
     memory other_mem_req
     input:
-       file(gwas_file) from gwas_ch_annovar
+       path(gwas_file) from gwas_ch_annovar
     output :
-      file("${out}_all.annov") into info_annovar, info_annovar_chro, info_annovar_2
+      path("${out}_all.annov") into info_annovar, info_annovar_chro, info_annovar_2
     script :
        out=params.output
        """ 
@@ -245,7 +245,7 @@ process ExtractAllRs{
 }
   process getListeChro{
         input :
-          file(BimFile) from info_annovar_chro
+          path(BimFile) from info_annovar_chro
         output :
           stdout into chrolist
         script:
@@ -260,9 +260,9 @@ listdb2=Channel.from(params.list_db_anovar.split(','))
 process getannovar_db {
   input : 
       val(db) from listdb2
-  publishDir "${params.output_dir}/dbzip/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/dbzip/", mode:'copy'
   output:
-    file("humandb/${params.ref_annovar}_*.txt") into db_annovar
+    path("humandb/${params.ref_annovar}_*.txt") into db_annovar
   script :
    output=params.ref_annovar+"_" + db+'.txt'
    """
@@ -274,10 +274,10 @@ info_annovar=info_annovar.combine(db_annovar.flatMap())
 
 process annovar_chro_db{
    input :
-     set file(filepos_annov), file(annov_db) from info_annovar
+     tuple path(filepos_annov), path(annov_db) from info_annovar
    each chro from chrolist
    output :
-      set val(chro),file("$fileout") into list_db_format_ch_chro
+      tuple val(chro), path("$fileout") into list_db_format_ch_chro
    script :
      db=annov_db.baseName
      out_chro_tmp=db
@@ -295,10 +295,10 @@ process annovar_chro_db{
 list_db_chro=info_annovar_2.combine(list_db_format_ch_chro.groupTuple())
 process mergechro_db{
  input :
-    set file(infoannov),val(chro), file(listfile) from list_db_chro
-  publishDir "${params.output_dir}/db_annov/", overwrite:true, mode:'copy'
+    tuple path(infoannov),val(chro), path(listfile) from list_db_chro
+  publishDir "${params.output_dir}/db_annov/", mode:'copy'
   output :
-    file(out) into merge_chro_ch
+    path(out) into merge_chro_ch
   script :
     out_annov_tmp=chro+"_tmp.bed"
     listfch=listfile.join(",")
@@ -313,11 +313,11 @@ process mergechro_db{
 db_format_ch=merge_chro_ch.collect()
 process merge_annovar{
    input :
-    file(listfile) from db_format_ch
+    path(listfile) from db_format_ch
    output:
-    file(listfile) into listdb
-    file(info_file_annot) into infodb
-    file("annot") into infofilechr
+    path(listfile) into listdb
+    path(info_file_annot) into infodb
+    path("annot") into infofilechr
    script :
       file_annot="annot"
       info_file_annot="annot.info"
@@ -326,7 +326,8 @@ process merge_annovar{
       touch $info_file_annot
       """
 }
-listdb = Channel.from(list_rs).combine(infors_rs)
+println list_rs
+listdb = Channel.from(list_rs).combine(listdb)
 infodb = Channel.from(list_rs).cross(infodb)
 infofilechr = Channel.from(list_rs).combine(infofilechr)
 
@@ -347,7 +348,7 @@ process PlotLocusZoom{
     memory params.plink_mem_req
     input : 
        set val(rs), file(filegwas),file(lz_dir) from locuszoom_ch
-    publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/$rsnameout", mode:'copy'
     output :
        file("out_*/*.svg")
        set val(rs), file("out_*/*.pdf") into report_lz_ch
@@ -361,15 +362,19 @@ process PlotLocusZoom{
 
 
 //println list_rs.size()
+//fileannot_ch.view()
+//listdb.view()
+//infodb.view()
+//infofilechr.view()
 process ExtractAnnotation{
       label 'latex'
-      memory plink_mem_req
+//      memory plink_mem_req
       input :
         tuple val(rs),path(file_rs) from fileannot_ch
-        tuple val(rs), file(listfile) from listdb 
-        tuple val(rs), file(infoannot) from infodb
-        tuple val(rs),file(filechro) from infofilechr
-      publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
+        tuple val(rs), path(listfile) from listdb 
+        tuple val(rs), path(infoannot) from infodb
+        tuple val(rs),path(filechro) from infofilechr
+      publishDir "${params.output_dir}/$rsnameout", mode:'copy'
       output :
         path("${out}*")
         path("*${rsnameout}*")
@@ -383,62 +388,62 @@ process ExtractAnnotation{
          pdflatex $out
          """
 }
-
-
-bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-
-plink_src_ch= Channel.create()
-Channel
-    .from(file(bed),file(bim),file(fam))
-    .buffer(size:3)
-    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
-    .set { plink_src_ch }
-
-
-fileplotgeno_ch = infors_rs2.join(Channel.from(list_rs).combine(plink_src_ch)).join(Channel.from(list_rs).combine(Channel.fromPath(params.data,checkIfExists:true)))
-if(params.covariates)cov_plot_geno="--cov ${params.covariates}"
-else  cov_plot_geno=""
-if(params.gxe!="")gxe_cov_geno="--gxe ${params.gxe}"
-else gxe_cov_geno=""
-process PlotByGenotype{
-    label 'R'
-    memory plink_mem_req
-    input :
-        set val(rs),path(file_rs), path(bed), path(bim), path(fam), paht(data)  from fileplotgeno_ch
-    publishDir "${params.output_dir}/$rsnameout", overwrite:true, mode:'copy'
-    output :
-       set val(rs), path(outpdf) into report_plot_rs_ch
-    script :
-        rsnameout=rs.replace(':',"_")
-        plinkbase=bed.baseName
-        out="plk_"+rsnameout
-        outpdf="geno-"+rsnameout+".pdf"
-        """
-        plink -bfile $plinkbase --extract $file_rs  --recode tab --out $out
-        an_plotboxplot.r --ped $out".ped" --data $data --out $outpdf --pheno ${params.pheno} $cov_plot_geno $gxe_cov_geno
-        """
-}
-all_info_rs_ch=report_lz_ch.join(infors_gwas).join(report_info_rs).join(report_plot_rs_ch)
-if(params.covariates)covrep="--cov ${params.covariates}"
-else  covrep=""
-process WriteReportRsFile{
-    label 'latex'
-    memory plink_mem_req
-    input :
-       tuple val(rs), path(locuszoom), path(gwasres),path(annotpdf) ,path(plotgeno) from all_info_rs_ch 
-    publishDir "${params.output_dir}/$rsnnameout", overwrite:true, mode:'copy'
-    output :
-       paht(out)
-    script :
-       rsnnameout=rs.replace(':',"_")
-       outtex=rsnnameout+".tex"
-       out=rsnnameout+".pdf"
-       infoaf=head_freq=="" ? "" :  " --freq_header  $head_freq " 
-       """
-       an_general_man.py --inp_asso $gwasres --rsname $rs --pheno ${params.pheno} $covrep --out $outtex --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} $infoaf --locuszoom_plot $locuszoom --geno_plot $plotgeno --inp_asso $gwasres --annot_pdf $annotpdf
-       pdflatex $rsnnameout
-       pdflatex $rsnnameout
-       """ 
-}
+//
+//
+//bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+//bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+//fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+//
+//plink_src_ch= Channel.create()
+//Channel
+//    .from(file(bed),file(bim),file(fam))
+//    .buffer(size:3)
+//    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
+//    .set { plink_src_ch }
+//
+//
+//fileplotgeno_ch = infors_rs2.join(Channel.from(list_rs).combine(plink_src_ch)).join(Channel.from(list_rs).combine(Channel.fromPath(params.data,checkIfExists:true)))
+//if(params.covariates)cov_plot_geno="--cov ${params.covariates}"
+//else  cov_plot_geno=""
+//if(params.gxe!="")gxe_cov_geno="--gxe ${params.gxe}"
+//else gxe_cov_geno=""
+//process PlotByGenotype{
+//    label 'R'
+//    memory plink_mem_req
+//    input :
+//        set val(rs),path(file_rs), path(bed), path(bim), path(fam), path(data)  from fileplotgeno_ch
+//    publishDir "${params.output_dir}/$rsnameout", mode:'copy'
+//    output :
+//       set val(rs), path(outpdf) into report_plot_rs_ch
+//    script :
+//        rsnameout=rs.replace(':',"_")
+//        plinkbase=bed.baseName
+//        out="plk_"+rsnameout
+//        outpdf="geno-"+rsnameout+".pdf"
+//        """
+//        plink -bfile $plinkbase --extract $file_rs  --recode tab --out $out
+//        an_plotboxplot.r --ped $out".ped" --data $data --out $outpdf --pheno ${params.pheno} $cov_plot_geno $gxe_cov_geno
+//        """
+//}
+//all_info_rs_ch=report_lz_ch.join(infors_gwas).join(report_info_rs).join(report_plot_rs_ch)
+//if(params.covariates)covrep="--cov ${params.covariates}"
+//else  covrep=""
+//process WriteReportRsFile{
+//    label 'latex'
+//    memory plink_mem_req
+//    input :
+//       tuple val(rs), path(locuszoom), path(gwasres),path(annotpdf) ,path(plotgeno) from all_info_rs_ch 
+//    publishDir "${params.output_dir}/$rsnnameout", mode:'copy'
+//    output :
+//       path(out)
+//    script :
+//       rsnnameout=rs.replace(':',"_")
+//       outtex=rsnnameout+".tex"
+//       out=rsnnameout+".pdf"
+//       infoaf=head_freq=="" ? "" :  " --freq_header  $head_freq " 
+//       """
+//       an_general_man.py --inp_asso $gwasres --rsname $rs --pheno ${params.pheno} $covrep --out $outtex --chro_header $head_chr --pos_header $head_bp --rs_header $head_rs --pval_header $head_pval --beta_header ${head_beta} $infoaf --locuszoom_plot $locuszoom --geno_plot $plotgeno --inp_asso $gwasres --annot_pdf $annotpdf
+//       pdflatex $rsnnameout
+//       pdflatex $rsnnameout
+//       """ 
+//}

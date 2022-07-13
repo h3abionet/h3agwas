@@ -26,6 +26,11 @@ nextflow.enable.dsl = 1
 
 
 
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../../qc/input"
+
+
 // Checks if the file exists
 checker = { fn ->
    if (fn.exists())
@@ -155,9 +160,9 @@ fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFi
 
 
 }else{
-bed=file('bed')
-bim=file('bim')
-fam=file('fam')
+bed=file('${dummy_dir}/00')
+bim=file('${dummy_dir}/01')
+fam=file('${dummy_dir}/02')
 }
 
 fileplk= Channel.create()

@@ -40,6 +40,8 @@ params.bcftools_bin="bcftools"
 params.score_imp="INFO"
 params.bgen_type="bgen"
 params.other_opt=""
+params.bgen_bits=8
+
 
 
 
@@ -64,7 +66,7 @@ process formatvcfinbgen{
   script :
     Ent=vcf.baseName
     """
-    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt}
+    ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt}  -bgen-bits ${params.bgen_bits}
     """
 }
 

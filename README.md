@@ -36,7 +36,7 @@ pipeline do different step of GWAS :
  * [Format data differents dataset](formatdata//README.md) :
    * plink in vcf to prepared your data at imputation 
    * vcf in plink after imputation
-
+ * h3agwas doesn't perform imputation, specific pipeline can be found in [h3abionet](https://github.com/h3abionet/chipimputation)
 
 ## What's new :
  * see [What's new](News.md)

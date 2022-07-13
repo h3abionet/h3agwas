@@ -41,7 +41,8 @@ params.qctoolsv2_bin="qctool"
 params.bcftools_bin="bcftools"
 params.score_imp="INFO"
 params.bgen_type="bgen"
-params.other_opt=" -bgen-bits 8 "
+params.other_opt=""
+params.bgen_bits=8
 
 
 if(params.file_listvcf==""){
@@ -96,7 +97,7 @@ process formatvcfinbgen{
   script :
     Ent="${params.output}"
     """
-    ${params.qctoolsv2_bin} -g $vcf -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt}
+    ${params.qctoolsv2_bin} -g $vcf -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt} -bgen-bits ${params.bgen_bits}
     """
 }
 

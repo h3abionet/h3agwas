@@ -44,6 +44,9 @@ GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
 allowed_params+=GxE_params
 Saige_params=['pheno_bin', "list_vcf", "saige_num_cores", "saige_mem_req", "vcf_field"]
 allowed_params+=Saige_params
+regenie_params=['regenie_bin', "regenie_bsize", "regenie_bsize_step1", "regenie_bsize_step2", "regenie_otheropt_step1", "regenie_otheropt_step2", "regenie_loco", "regenie_num_cores", "regenie_mem_req", "regenie", "regenie_mafstep1"]
+allowed_params+=regenie_params
+
 
 FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa', "gcta64_bin"]
 allowed_params+=FastGWA_params
@@ -83,6 +86,17 @@ params.bgen=""
 params.bgen_sample=""
 params.bgen_mininfo=0.6
 
+
+params.regenie_bin="regenie"
+params.regenie_bsize=100
+params.regenie_bsize_step1=""
+params.regenie_bsize_step2=""
+params.regenie_otheropt_step1=""
+params.regenie_otheropt_step2=""
+params.regenie_loco=1
+params.regenie_num_cores=6
+params.regenie_mem_req="20GB"
+params.regenie_mafstep1=0.01
 
 
 /* Defines the path where any scripts to be executed can be found.
@@ -308,6 +322,7 @@ ch_select_rs_format=Channel.create()
 ch_format_ldscore=Channel.create()
 ch_saige_heritability=Channel.create()
 ch_saige_assoc=Channel.create()
+ch_regenie_assoc=Channel.create()
 
 Channel
     .from(file(bed),file(bim),file(fam))
@@ -347,7 +362,7 @@ if (thin+chrom) {
       set file(bed), file(bim), file(fam) from raw_src_ch
     output:
       /*JT Append initialisation boltlmm_assoc_ch */
-      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch, ch_bolt_snpchoice, ch_select_rs_format, ch_saige_heritability, ch_saige_assoc)
+      set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into  ( pca_in_ch, assoc_ch, gemma_assoc_ch, boltlmm_assoc_ch,fastlmm_assoc_ch, rel_ch_fastlmm,assoc_ch_gxe_freq, assoc_ch_gxe, grlm_assoc_ch, fastgwa_assoc_ch, ch_bolt_snpchoice, ch_select_rs_format, ch_saige_heritability, ch_saige_assoc,ch_regenie_assoc)
     script:
        base = bed.baseName
        out  = base+"_t"
@@ -360,7 +375,7 @@ if (thin+chrom) {
 
 } else {
     /*JT : append boltlmm_assoc_ch and a]*/
-    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format, ch_format_ldscore,ch_saige_heritability, ch_saige_assoc) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a,a,a, a] }
+    raw_src_ch.separate( pca_in_ch, assoc_ch, assoc_ch_gxe,assoc_ch_gxe_freq,gemma_assoc_ch, boltlmm_assoc_ch, fastlmm_assoc_ch,rel_ch_fastlmm, grlm_assoc_ch,fastgwa_assoc_ch,ch_bolt_snpchoice,ch_select_rs_format, ch_format_ldscore,ch_saige_heritability, ch_saige_assoc,ch_regenie_assoc) { a -> [a,a,a,a,a,a,a,a,a,a,a, a,a,a,a, a] }
 }
 
 
@@ -433,7 +448,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params
      input :
        set file(bed),file(bim), file(fam) from ch_select_rs_format
     output:
-       file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line, filers_her_saige
+       file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line, filers_her_saigem,filers_matrel_regenie
      script:
         base = bed.baseName
         prune= "${base}-prune"
@@ -450,6 +465,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params
    filers_matrel_mat_GWA=Channel.fromPath("${dummy_dir}/0") 
    filers_matrel_mat_gem=channel.fromPath("${dummy_dir}/0") 
    filers_her_saige=channel.fromPath("${dummy_dir}/00")
+   filers_matrel_regenie=channel.fromPath("${dummy_dir}/00")
    if(params.boltlmm==1){
       //BoltNbMaxSnps=1000000
       process buildBoltFileSnpRel{
@@ -475,10 +491,44 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params
         filers_matrel_mat_GWA=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
         filers_matrel_mat_gem=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
         filers_her_saige=Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
+        filers_matrel_regenie==Channel.fromPath(params.file_rs_buildrelat, checkIfExists:true)
   }
  }
 }
 
+/*format and prepared bgen sample*/
+if(params.bgen!=""){
+    if(params.bgen_sample==''){
+      println "params.bgen_sample not initialise when bgen params initial";
+      System.exit(-2);
+     }
+    data_ch_bgen=channel.fromPath(params.data, checkIfExists:true)
+    bgensample_ch_i = Channel.fromPath(params.bgen_sample, checkIfExists:true)
+    process bgen_formatsample {
+        label 'R'
+        input :
+         path(data) from data_ch_bgen
+         path(bgen_sample) from  bgensample_ch_i
+       output :
+          path(bgen_sample2)  into (bgensample_ch,bgensample_ch2, bgensample_regenie_ch, bgensample_ch_regenie)
+          path(bgen_samplesaige2) into  (bgensample_ch_fastgwa,bgensample_ch_saige)
+       script :
+           bgen_sample2=bgen_sample+".modif"
+           bgen_samplesaige2=bgen_sample+"_saige.modif"
+           """
+           format_samplebgen.r --sample $bgen_sample  --out_sample $bgen_sample2 --out_samplesaige $bgen_samplesaige2 --data $data
+           """
+    } 
+
+}else{
+  bgensample_ch= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+  bgensample_ch2= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+  bgensample_ch_fastgwa= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+  bgensample_ch_saige= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+  bgensample_ch_regenie= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+
+
+}
  
 if (params.data != "") {
 
@@ -695,7 +745,7 @@ if (params.fastlmm == 1) {
 
   // this part is plotting done for any fastlmm mode
   //, overwrite:true, mode:'copy'
-  process showFastLmmManhatten {
+  process showFastLmmManhattan {
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
@@ -842,26 +892,13 @@ if (params.boltlmm == 1) {
   }else{
      Bolt_ld_score = Channel.fromPath("${dummy_dir}/04",checkIfExists:true) 
   }
-//genetic_map_file
   if(params.genetic_map_file!=""){
      Bolt_genetic_map= Channel.fromPath(params.genetic_map_file, checkIfExists:true)
   }else{
      Bolt_genetic_map = Channel.fromPath("${dummy_dir}/05",checkIfExists:true) 
   }
-  if(params.bgen!=""){
-    bgen_ch=Channel.fromPath(params.bgen, checkIfExists:true)
-    if(params.bgen_sample==''){
-      println "params.bgen_sample not initialise when bgen params initial";
-      System.exit(-2);
-     }
-    bgensample_ch = Channel.fromPath(params.bgen_sample, checkIfExists:true)
-    bgensample_ch2 = Channel.fromPath(params.bgen_sample, checkIfExists:true)
-  }else{
-  bgen_ch=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
-  bgensample_ch= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
-  bgensample_ch2= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
-  }
-
+  if(params.bgen=="")bgen_ch=Channel.fromPath(params.bgen, checkIfExists:true)
+  else bgen_ch=Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
 
   process doBoltmm{
     maxForks params.max_forks
@@ -913,7 +950,7 @@ if (params.boltlmm == 1) {
       """
   }
 
-  process showBoltmmManhatten {
+  process showBoltmmManhattan {
    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
@@ -1144,7 +1181,7 @@ if (params.gemma+params.gemma_gxe>0) {
    }
 
 
-   process showGemmaManhatten {
+   process showGemmaManhattan {
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     label 'bigMem'
@@ -1329,7 +1366,7 @@ if (params.gemma+params.gemma_gxe>0) {
        """
   } 
 
-  process showGemmaManhattenGxE { 
+  process showGemmaManhattanGxE { 
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
@@ -1454,7 +1491,7 @@ if (params.plink_gxe==1) {
        """
    }
 
-   process showPlinkManhattenGxE {
+   process showPlinkManhattanGxE {
     label 'gcta'
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
@@ -1486,29 +1523,9 @@ if(params.bgen!="" && params.fastgwa+params.saige >1){
       """
 
      }
-     if(params.bgen_sample==''){
-       println "params.bgen_sample not initialise when bgen params initial";
-       System.exit(-2);
-      }
-     bgensample_ch_fastgwa_i = Channel.fromPath(params.bgen_sample, checkIfExists:true)
-     process samplebgen_format{
-      input :
-       path(sample) from bgensample_ch_fastgwa_i
-      output :
-       path(newsample) into (bgensample_ch_fastgwa,bgensample_ch_saige)
-      script :
-        newsample=sample.baseName+'_gcta.sample'
-        """
-        head -1 $sample | awk '{print \$0" sex"}' > $newsample
-        sed -n 2p $sample | awk '{print \$0" D"}' >> $newsample
-        sed '1,2d' $sample | awk '{print \$0" 0"}' >> $newsample
-        """
-     }
 }else{
     bgen_ch_fastgwa=Channel.fromPath("${dummy_dir}/06", checkIfExists:true).combine(Channel.fromPath("${dummy_dir}/08", checkIfExists:true))
-    bgensample_ch_fastgwa= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
     bgen_ch_saige=Channel.fromPath("${dummy_dir}/06", checkIfExists:true).combine(Channel.fromPath("${dummy_dir}/08", checkIfExists:true))
-    bgensample_ch_saige= Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
 }
 
 
@@ -1612,7 +1629,7 @@ if(params.fastgwa==1){
 	"""
    }
 
-   process showFastGWAManhatten {
+   process showFastGWAManhattan {
    label 'py3fast'
    memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
@@ -1896,7 +1913,7 @@ if(params.saige==1){
              cat $fnames | grep -v CHR >> $out
              """
   }
-  process showSaigeManhatten {
+  process showSaigeManhattan {
     memory params.other_process_mem_req
     publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
@@ -1915,6 +1932,121 @@ if(params.saige==1){
 
 }else{
  report_saige_ch=Channel.empty()
+}
+
+if(params.regenie==1){
+
+ data_ch_regenie = Channel.fromPath(params.data, checkIfExists:true)
+ check = Channel.create()
+ pheno_cols_ch_regenie= Channel.from(params.pheno.split(","))
+
+  if(params.bgen!=""){
+    bgen_ch_regenie=Channel.fromPath(params.bgen, checkIfExists:true)
+    if(params.bgen_sample==''){
+      println "params.bgen_sample not initialise when bgen params initial";
+      System.exit(-2);
+     }
+  }else{
+    bgen_ch_regenie=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
+  }
+
+
+
+   
+
+ process regenie_step1{
+   cpus params.regenie_num_cores
+   memory params.regenie_mem_req
+   input :
+     path(data) from data_ch_regenie
+     path(rsrel) from filers_matrel_regenie
+     tuple path(bed), path(bim), path(fam) from ch_regenie_assoc
+   each pheno from pheno_cols_ch_regenie
+   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy'
+   output : 
+    tuple val(our_pheno), path("$phef"),path("${out}_pred.list"), path("${out}_1.loco"),path(bed), path(bim), path(fam)  into ch_regenie_pheno
+    path("${out}.log")
+   script :
+       our_pheno       = pheno.replaceAll(/\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
+
+      loco=(params.regenie_loco==0) ? "" : " --loocv "
+      bfile=bed.baseName
+      bfilesub=bfile+"_sub"
+      keeppos=(rsrel=='00') ? ""   : " --extract $rsrel "
+      covoption = (params.covariates=="") ? "" : " --cov_list ${params.covariates}"
+      covoption_regenie= (params.covariates=="") ? "" : " -covarFile $data  --covarColList ${params.covariates}"
+      bsize=(params.regenie_bsize_step1=="") ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step1}"
+      regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
+      phef=pheno+".pheno"
+      out=phef+"_regenie"
+      """
+      all_covariate.py --data  $data --inp_fam  $fam  $covoption \
+                          --pheno $pheno --phe_out ${phef}  --form_out 2 --nona  1
+      plink -bfile $bfile $keeppos --make-bed -out $bfilesub -maf ${params.regenie_mafstep1} --keep $phef
+      ${params.regenie_bin} --step 1   --bed $bfilesub    --phenoFile $phef  --phenoCol ${our_pheno} --bsize $bsize $regenie_loco --out  $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step1}
+      if [ ! -f $out"_1.loco" ]
+      then
+      touch $out"_1.loco"
+      fi
+      """
+ }
+ ch_regenie_pheno_2=ch_regenie_pheno.combine(bgen_ch_regenie).combine(bgensample_ch_regenie)
+ process regenie_step2{
+   cpus params.regenie_num_cores
+   memory params.regenie_mem_req
+   input :
+    tuple val(pheno), path(data),path(list), path(loco),path(bed), path(bim), path(fam),path(bgen), path(bgensample)  from ch_regenie_pheno_2
+   publishDir "${params.output_dir}/regenie/", overwrite:true, mode:'copy'
+   output :
+     tuple val(bfile), val(pheno), path("${out}*${pheno}.regenie") into regenie_manhatten_chi
+   script :
+    loco=(params.regenie_loco==0) ? "" : " --loocv "
+    bfile=bed.baseName
+    covoption_regenie= (params.covariates=="") ? "" : " -covarFile $data  --covarColList ${params.covariates}"
+    bsize=(params.regenie_bsize_step2=="") ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step2}"
+    regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
+    genet=(params.bgen=="")? " --bed $bedfile " : " --bgen $bgen --sample $bgensample "
+    loco=(params.regenie_loco==0) ? "" : " --loocv "
+    out=pheno+"_regenie_assoc"
+    """
+     ${params.regenie_bin} --step 2  $genet   --phenoFile $data --phenoCol $pheno ${covoption_regenie} --bsize $bsize   --pred $list  $loco   --out $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step2}
+  """
+ }
+ process format_regeniesumstat{
+  input :
+   tuple val(bfile), val(pheno), path(assoc) from regenie_manhatten_chi
+  publishDir "${params.output_dir}/regenie/", overwrite:true, mode:'copy'
+  output :
+    tuple val(bfile), val(pheno), path(newassoc) into regenie_manhatten_ch
+  script :
+    newassoc=assoc.baseName+"_format.regenie" 
+  """
+  format_sumstat_regenie.py $assoc $newassoc
+  """ 
+ }
+
+  process showRegenieManhattan {
+    memory params.other_process_mem_req
+    publishDir params.output_dir, overwrite:true, mode:'copy'
+    input:
+      set val(base), val(this_pheno), file(assoc) from regenie_manhatten_ch
+    output:
+      file("${out}*")  into report_regenie_ch
+    script:
+      our_pheno = this_pheno.replaceAll("_","-")
+      out = "C058-saige-"+our_pheno
+      //CHROM GENPOS ID ALLELE0 ALLELE1 A1FREQ INFO N TEST BETA SE CHISQ LOG10P EXTRA
+      """
+      general_man.py  --inp $assoc --phenoname $this_pheno --out ${out} --chro_header CHROM --pos_header GENPOS --rs_header  ID --pval_header P --beta_header BETA --info_prog regenie
+      """
+  }
+
+
+
+}else{
+
+ report_regenie_ch=Channel.empty()
+
 }
 
 
@@ -1946,6 +2078,7 @@ report_ch = report_fastlmm_ch.flatten().mix(pheno_report_ch.flatten())
 				     .mix(report_gemma_ch_GxE.flatten())
 				     .mix(report_plink_gxe.flatten())
 				     .mix(report_saige_ch.flatten())
+                                     .mix(report_regenie_ch.flatten())
                                      .mix(report_gemma_ch.flatten()).toList()
 
 process doReport {

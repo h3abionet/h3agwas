@@ -22,6 +22,7 @@ def parseArguments():
     parser.add_argument('--cov_out', type=str,help="output covariate file")
     parser.add_argument('--covqual_file', type=str,help="output covariate file")
     parser.add_argument('--cov_file', type=str,help="output covariate file")
+    parser.add_argument('--nona', type=int,help="output covariate file", default=0)
     parser.add_argument('--gxe_out', type=str,help="output gxe file (gemma use)")
     parser.add_argument('--gxe', type=str,help="gxe covariate (gemma use)")
     parser.add_argument('--form_out', type=int,help="format output : 1:Gemma, 2:boltlmm, 3:FastLmm, 4:gcta", required=True)
@@ -138,6 +139,8 @@ if args.form_out == 1 :
    merge.reindex(["FID","IID"]+gxe)
    merge.to_csv(args.gxe_out,sep=TAB,columns=gxe_labels,header=False,index=False,na_rep=MissingOut)
 elif  args.form_out == 2 :
+   if args.nona == 1:
+      merge=merge.dropna()
    merge.reindex(["FID","IID"])
    merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels+covariates,header=True,index=False,na_rep=MissingOut)
 elif  args.form_out == 3 :

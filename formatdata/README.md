@@ -70,7 +70,7 @@ nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfil
 
 for instance for bolt lmm format bgen must be :
 ```
-~/nextflow ~/Travail/git/h3agwas/formatdata/vcf_in_bgen_merge.nf --file_listvcf listvcf --output_pat  exampledata2_imp --output_dir ./ -profile slurmSingularity -resume --bgen_type bgen_v1.2  --other_opt  \"-bgen-bits 8\"
+~/nextflow ~/Travail/git/h3agwas/formatdata/vcf_in_bgen_merge.nf --file_listvcf listvcf --output_pat  exampledata2_imp --output_dir ./ -profile slurmSingularity -resume --bgen_type bgen_v1.2 
 ```
 
 
@@ -204,8 +204,8 @@ transform vcf in bimbam format after filters for quality.
     * `poshead_rs_inforef` : position of column where rs in file  [default : 2]
 * `deleted_notref` : deleted position s not found in `file_ref_gzip`
 * `reffasta` : fasta reference, if present do control of vcf file :
- *checkVCF.py
- *bcftools : used plugin of +fixref see `BCFTOOLS_PLUGINS=bcftools/plugins/`
+ * checkVCF.py
+ * bcftools : used plugin of +fixref see `BCFTOOLS_PLUGINS=bcftools/plugins/`
  
 
 ### requirement 
@@ -214,6 +214,7 @@ transform vcf in bimbam format after filters for quality.
 *R
 *python
 * for control of vcf 
- *checkVCF.py is present in binary of nextflow pipeline (https://github.com/zhanxw/checkVCF)
+ * checkVCF.py is present in binary of nextflow pipeline (https://github.com/zhanxw/checkVCF)
  *samtools
+ * qctools
 
