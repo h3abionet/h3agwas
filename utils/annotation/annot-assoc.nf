@@ -223,8 +223,8 @@ fileannot_ch = infors_rs
 if(params.list_file_annot!=""){
 listfile=[]
 file(params.list_file_annot).readLines().each{listfile.add(it.split()[1])}
-listdb=Channel.from(list_rs).combine(Channel.fromPath(listfile, checkIfExists:true).collect().toList())
-infodb=Channel.from(list_rs).combine(Channel.fromPath(params.info_file_annot,checkIfExists:true))
+listdbi=Channel.fromPath(listfile, checkIfExists:true).collect()
+infodbi=Channel.fromPath(params.info_file_annot,checkIfExists:true).collect()
 infofilechr=Channel.from(list_rs).combine(Channel.fromPath(params.list_file_annot,checkIfExists:true))
 
 
@@ -315,8 +315,8 @@ process merge_annovar{
    input :
     path(listfile) from db_format_ch
    output:
-    path(listfile) into listdb
-    path(info_file_annot) into infodb
+    path(listfile) into listdbi
+    path(info_file_annot) into infodbi
     path("annot") into infofilechr
    script :
       file_annot="annot"
@@ -326,12 +326,36 @@ process merge_annovar{
       touch $info_file_annot
       """
 }
-println list_rs
-listdb = Channel.from(list_rs).combine(listdb).flatMap{it[-1]}
-infodb = Channel.from(list_rs).combine(infodb).flatMap{it[-1]}
-infofilechr = Channel.from(list_rs).combine(infofilechr)
 
+infofilechr = Channel.from(list_rs).combine(infofilechr)
 }
+process listdb{
+ input :
+   path(df) from listdbi
+ each rs from Channel.from(list_rs)
+ output :
+    path(df) into listdb
+ script: 
+  """
+  echo "a"
+  """ 
+}
+
+
+    
+process infodb{
+ input :
+   path(df) from infodbi
+ each rs from Channel.from(list_rs)
+ output :
+    path(df) into infodb
+ script: 
+  """
+  echo "a"
+  """ 
+}
+
+
 
 
 if(params.loczm_gwascat!=""){
@@ -366,19 +390,21 @@ process PlotLocusZoom{
  
 
 fileannot_ch2=fileannot_ch.join(infofilechr)
+
 process ExtractAnnotation{
       label 'latex'
       memory plink_mem_req
       input :
         tuple val(rs),path(file_rs), path(filechro) from fileannot_ch2
         path(listfile) from listdb 
-        tuple path(infoannot) from infodb
+        path(infoannot) from infodb
       publishDir "${params.output_dir}/$rsnameout", mode:'copy'
       output :
         tuple val(rs), path("${out}.pdf") into report_info_rs
         path("${out}*")
         path("*${rsnameout}*")
       script :    
+         println listfile
          out="annot-"+rs.replace(':','_')
          rsnameout=rs.replace(':',"_")
          """  
