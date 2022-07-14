@@ -8,8 +8,7 @@ This section describes a pipeline in devlopment, purpose of this pipeline is to 
 ### Installation
 need python3, METAL (last version : https://github.com/statgen/METAL), GWAMA, MR-MEGA and MetaSoft (one version is available on utils/bin/)
 
-### Running
-The pipeline is run: `nextflow run meta-assoc.nf`
+### Option
 
 The key options are:
   * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
@@ -74,6 +73,25 @@ The key options are:
 #### MR-MEGA
 MR-MEGA need chromosomes, positions and N (sample number) for each position, so in pipeline referent file (in file_config, 1 in IsRefFile) must be have chromosome and poosition
 
+### Example 
+* data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+* a csv file need to described each input, contains header for each file
+
+```
+echo "rsID,Chro,Pos,A1,A2,Beta,Se,Pval,N,freqA1,direction,Imputed,Sep,File,Ncount" > utils/input_meta.csv
+for File in `ls data/summarystat/*.gemma|grep -v ".all"`
+do
+echo "rs,chr,ps,allele0,allele1,beta,se,p_wald,NA,af,NA,NA,TAB,$File,2500" >>  utils/input_meta.csv
+done
+```
+
+* input :
+  * user can choose software that he want to run : metal (`--metal 1`), gwama (`--gwama 1`), metasoft (` --metasoft 1`) MrMega (`--mrmega 1`) and plink (`--plink 1`)
+
+```
+nextflow run ~/Travail/git/h3agwas/meta/meta-assoc.nf   --metal 1 --gwama 1 --metasoft 1 --mrmega 1 --plink  1  --file_config utils/input_meta.csv -resume -profile slurmSingularity --output_dir meta
+```
+
 
 
 ## Mtag analysis
@@ -81,21 +99,32 @@ MR-MEGA need chromosomes, positions and N (sample number) for each position, so 
 ### reference 
 
 ### parameters
-TODO
 
-  * `file_gwas` : one ore more one file gwas of differents phenotype
-    * ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
-    * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
-    * `head_rs` : rs header column [default : "SNP"]
-    * `head_beta` : beta header colum [default : "BETA"]
-    * `head_se`  : column for standard error of beta "SE"
-    * `head_A1` : column for A0 :[default : "ALLELE0" ]
-    * `head_A2` : column for A0 :[default : "ALLELE2" ]
-    * `head_freq` : freq header [ default : A1Freq],
-    * `head_n`: N header, used just for ldsc, if not present, `Nind` must be initialize.
-  * if n not initialise :
-    * used plink file to computed each position with n :
-      * `input_pat` : input pattern of plink file
-      * `input_dir` : input dir of plink file
-    * list_n : need to be implemented
+* `file_gwas` : one ore more one file gwas of differents phenotype
+  *  ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+  * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
+  * `head_rs` : rs header column [default : "SNP"]
+  * `head_beta` : beta header colum [default : "BETA"]
+  * `head_se`  : column for standard error of beta "SE"
+  * `head_A1` : column for A0 :[default : "ALLELE0" ]
+  * `head_A2` : column for A0 :[default : "ALLELE2" ]
+  * `head_freq` : freq header [ default : A1Freq],
+  * `head_n`: N header, used just for ldsc, if not present, `Nind` must be initialize.
+* if n not initialise :
+  * used plink file to computed each position with n :
+  * `input_pat` : input pattern of plink file
+  * `input_dir` : input dir of plink file
+  * list_n : need to be implemented
+
+
+## Example
+* data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+* multi-trait analysis of GWAS (MTAG), a method for joint analysis of summary statistics from genome-wide association studies (GWAS) of different traits, possibly from overlapping samples.
+* input :
+ * list of summary statistic `file_gwas` and header from gwas file: `-head_[name]`
+ * also you can give nformation relative to : ` --input_dir data/imputed/ --input_pat imput_data --pheno pheno_qt1,pheno_qt2 --data data/pheno/pheno_test.all `, can add N value to each summary statistic
+
+```
+nextflow h3abionet/h3agwas/meta/mtag-assoc.nf --head_freq af --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/ --input_pat imput_data --file_gwas  data/summarystat/all_pheno.gemma,data/summarystat/all_phenoq2.gemma --pheno pheno_qt1,pheno_qt2 --data data/pheno/pheno_test.all -resume   -profile slurmSingularity
+```
 

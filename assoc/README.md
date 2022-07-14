@@ -176,20 +176,29 @@ with pipeline, do a GxE interaction with Gemma and Plink, arguments :
  * pipeline computed frequencies, N for each group with plink and add to files, futhermore they add A1 and A2.
  * furthermore BetaGxE and SeGxE computed by pipeline as SeGxE : sqrt(se1^2 + se2^2), BetaGxE : Z\_GXE * SeGxE
 
-
-
-
+##Other flags are:
+* `thin`. You can set this to a floating point number in the range (0, 1] and then the PLINK data files are thinned leaving only that proportion of the SNPs. This allows pipeline to be tested with a small proportion of the data This is probably only needed for debugging purposes and usually this should not be be set.
+* `chrom`. Only do testing on this chromosome.
 
 
 
 ##Example
 
+### example 1
 ```nextflow run assoc/assoc.nf --input_pat raw-GWA-data --chi2 1 --logistic 1 --adjust 1```
 
 analyses the files `raw-GWA-data` bed, bim, fam files and performs a chi2 and logistic regression test, and also does multiple testing correction.
 
-Other flags are:
-* `thin`. You can set this to a floating point number in the range (0, 1] and then the PLINK data files are thinned leaving only that proportion of the SNPs. This allows pipeline to be tested with a small proportion of the data This is probably only needed for debugging purposes and usually this should not be be set.
-* `chrom`. Only do testing on this chromosome.
+### example 2
+* Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+
+```
+nextflow run h3abionet/h3agwas/assoc --input_dir data/imputed/ --input_pat imput_data \
+ --data data/pheno/pheno_test.all --pheno pheno_qt1,pheno_qt2 \
+ --output_dir assoc --output assoc \
+ --gemma 1 --assoc 1 --sample_snps_rel 1 --linear 1 \
+  -profile slurmSingularity \
+ --bgen data/imputed/bgen/out.bgen --bgen_sample data/imputed/bgen/out.sample
+```
 
 

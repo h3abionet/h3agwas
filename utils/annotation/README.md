@@ -1,5 +1,4 @@
 <img src="../../auxfiles/H3ABioNetlogo2.jpg"/>
-
 #  Annotation pipeline : `annotation/main.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to extract, plot of specific position from gwas result, phenotype and genotype, and annotate positoin
@@ -40,3 +39,23 @@ The key options are:
  * `loczm_bin` : binary of locus zoom, used to defined also database 
 ## Installation 
  * locuszoom, R : (ggplot2), python3
+
+## Example 
+* Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+
+### warning : 
+ aws : locus zoom doesn't work, pipeline on AWS doesn't work, you must install your own locus zoom
+
+### command lines
+input :
+ * plink file
+ * summary statistisc
+ * phenotype and data file
+ * rs from gwas (one or more, separate with comma)
+ * Annotation used annovar file, if you don't `list_file_annot` and `info_file_annot`, data will be downloaded
+
+```
+nextflow run  ~/Travail/git/h3agwas/utils/annotation/main.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir annotation --list_rs "2:45832137:A:G,1:117539108:G:T" --data data/pheno/pheno_test.all --pheno pheno_qt1  -resume  -profile slurmSingularity --loczm_bin  "/dataE/AWIGenGWAS/shared/ResultGWAS/Ressource/locuszoom/bin/locuszoom"
+```
+
+

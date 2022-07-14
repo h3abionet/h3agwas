@@ -10,8 +10,7 @@ two distincs approaches should be considered :
 ### Installation
 need python3, gcta, ldlc, bolt and gemma, R with ggplot2
 
-### Running
-The pipeline is run: `nextflow run assoc/esth2-assoc.nf`
+
 
 The key options are:
 * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
@@ -88,4 +87,18 @@ The key options are:
     * `gcta_h2_mgrmfile` : if file not provide pipeline will do step described before[default None]
    * `gcta_mem_reqmgrm` : [default 40GB]
    * `params.gcta_reml_alg` : see reml-alg :  Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.  [oa]
+
+### Example 
+* data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+
+Pipeline of heritability estimation and co-heritatbility, can used two type of input :
+  * plink file + phenotype with `--input_dir`, `--input_pat`, `--data` and `--pheno`
+  * summary statistics :  `--file_gwas` one or more, and `--head_[lhead]`
+
+```
+~/nextflow ~/Travail/git/h3agwas/heritabilities/main.nf \
+  --input_dir data/imputed/  --input_pat imput_data --data data/pheno/pheno_test.all --pheno pheno_qt1,pheno_qt2 \
+  --file_gwas data/summarystat/all_pheno.gemma,data/summarystat/all_phenoq2.gemma   --head_pval  "p_wald"  --head_freq  "af" --head_bp  "bp" --head_chr  "chr" --head_rs  "rs" --head_beta "beta" --head_se "se" --head_A1 "allele1" --head_A2 "allele0" --Nind 500,500 \
+  --ldsc_h2 0 --ldsc_h2_multi 0 --bolt_h2 1 --bolt_h2_multi 1 --gcta_h2 0 --gcta_h2_imp 0 --gcta_h2_multi 0 --gemma_h2 1 --gemma_h2_pval 1 -resume --output_dir heritability/ -profile slurmSingularity
+```
 

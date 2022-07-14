@@ -2,6 +2,7 @@
 
 
 ## What's new :
+* 2022-07-13 : found example and command line of pipeline in [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 * 2022-07-13 : add in  [finemapping/finemap_region.nf](finemapping/README.md) , 1000 genome downlowd if there is no genetics data
 * 2022-07-13 : add regenie software for association [assoc](assoc/README.md) 
 * 2022-07-8 : add plink support for saige [assoc](assoc/README.md) 

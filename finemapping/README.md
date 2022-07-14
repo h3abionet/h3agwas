@@ -1,22 +1,28 @@
 <img src="../aux/H3ABioNetlogo2.jpg"/>
+# Finemaping 
 
-#  finemapping a specific region using pipeline: `finemapping/finemap_region.nf`
+4 scripts to perform fine-mapping :
+ * run fine-mapping at one specific region `finemapping/finemap_region.nf` 
+ * run fine-mapping on full summary statistics `finemapping/main.nf` 
+ * [cojo](https://cnsgenomics.com/software/gcta/#COJO) from gcta `finemapping/finemap_region.nf` 
+ * Conditional analysis of gwas using gemma `finemapping/cond-assoc.nf`
+ 
+
+##  Finemapping a specific region using pipeline: `finemapping/finemap_region.nf`
 
 This workflow has been extensively expanded by Jean-Tristan Brandenburg
 
 The purpose of this pipeline is to perform a initial analysis of finemapping 
 
 Our script, *finemapping* takes as input PLINK files, gwas file
-## to do
-* problem with output of option  `--cond` of finemapping
 
-## some limits 
+### some limits 
 * pipeline discarded positions duplicated from genetics file and bed file
-## Running
+### Running
 
 The pipeline is run: `nextflow run finemapping/finemap_region.nf`
 
-## options
+### options
 
 The key options are:
 * finemapping :
@@ -66,20 +72,23 @@ The key options are:
 ### Installation
 need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 
-##For example
+### Example 
+* Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+```
+nextflow run  ~/Travail/git/h3agwas/finemapping/finemap_region.nf  --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_pheno "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1_wind --output finemapping_pheno1 -resume  -profile slurmSingularity --begin_seq 112178657 --end_seq 113178657 --chro 10
+```
 
+##  finemapping pipeline automated with selection of lead snps using plink : `finemapping/main.nf`
 
-#  finemapping pipeline automated with selection of snps using plink : `finemapping/main.nf`
-## algorithm :
+### algorithm :
  * using clump plink to defined independant locus
  * for each snps apply algorithms from pipeline `finemapping/finemap_region.nf`
 
-## options
+### options
 
 The key options are:
 * finemapping :
  * `n_causal_snp` : for finemapping causal snp number
- * ``
  * `prob_cred_set` :  prob of credible set [default : 0.95], for FINEMAP software
  * `used_pval_z` : build pvalue using z (need to check) [defaul 0:no]
  * `threshold_p` : treshold to used [default : 5E10-8]
@@ -118,12 +127,17 @@ The key options are:
 ### Installation
 need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 
-##For example
-TODO
+###For example
+* Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+
+```
+nextflow run  ~/Travail/git/h3agwas/finemapping/main.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_pheno "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1 --output finemapping_pheno1 -resume  -profile slurmSingularity
+```
 
 
 
-# Conditional & joint (COJO) analysis of GWAS summary statistic
+
+## Conditional & joint (COJO) analysis of GWAS summary statistic
 
 this section describes a pipeline in devloment, objectives is doing a conditional and joint association using GWAS summary data and gcta
 see [cojo](https://cnsgenomics.com/software/gcta/#COJO)
@@ -162,13 +176,18 @@ Cojo parameter :
   * `cojo_top_snps_chro` :  Perform a stepwise model selection procedure to select a fixed number of independently associated SNPs by chromosome without a p-value threshold.  [integer between 0 and n, to define top snp number. default : 0].
   * `gcta_mem_req`="6GB"
 
+### Example 
+* Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
+```
+nextflow run   ~/Travail/git/h3agwas/h3agwas/finemapping/cojo-assoc.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/  --input_pat imput_data  --output_dir cojo --data data/pheno/pheno_test.all --pheno pheno_qt1 --file_gwas data/summarystat/all_pheno.gemma  -resume   -profile slurmSingularity
+```
 
-# Conditional analysis of GWAS using gemma
+## Conditional analysis of GWAS using gemma
 
 ### Installation
 need python3, gemma, R
-tested for singularity image: no
+tested for singularity image: yes
 
 ### algorithm
 * pipeline used :
@@ -185,7 +204,15 @@ tested for singularity image: no
  * plot of LD between ref and cond
  * plot of p-value comparison of initial without conditional and conditional 
 
-### Running
-The pipeline is run: `nextflow run assoc/cond-assoc.nf`
+
+### Example 
+* data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+* to perform a conditional analysis, using gemma where positions is used as covariable of the phenotype and check pos_ref (`--pos_ref`) is link or indepependant  , argument same than gwas for gemma where you need to add :
+  *  pipeline will run a raw gwas using phenotype and covariable and after performed gwas using genotypes of each position from `pos_cond` as covariable
+  * `chro_cond` : chro where `pos_cond` and `pos_ref`
+  * `pos_ref` : pos will be tested for independance or not to `pos_cond`
+  * `pos_cond` : list of position as conditional to verify indpendance with `pos_ref`, include as covariable
+* pipeline will compute ld between your positions ref and cond and produce figure
+
 
 

@@ -1,4 +1,3 @@
-
 <img src="helperfiles/H3ABioNetlogo2.jpg"/>
 
 # H3Agwas Pipeline Version 3
@@ -23,6 +22,7 @@ This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, yo
 
 In addition to this README we have a detailed tutorial and videos 
 * These can be found at http://www.bioinf.wits.ac.za/gwas
+* found example data-set and example in  [h3agwas-examples github](https://github.com/h3abionet/h3agwas-examples)
 
 pipeline do different step of GWAS :
  * [Format input illuminat in plink format](call2plink/README.md)
@@ -36,7 +36,11 @@ pipeline do different step of GWAS :
  * [Format data differents dataset](formatdata//README.md) :
    * plink in vcf to prepared your data at imputation 
    * vcf in plink after imputation
- * h3agwas doesn't perform imputation, specific pipeline can be found in [h3abionet](https://github.com/h3abionet/chipimputation)
+ * h3agwas doesn't perform imputation, specific pipeline can be found in [h3abionet](https://github.com/h3abionet/chipimputation).
+
+## Example and data-set 
+
+Data-set example can be found in [h3agwas-examples github](https://github.com/h3abionet/h3agwas-examples)
 
 ## What's new :
  * see [What's new](News.md)

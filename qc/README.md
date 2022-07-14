@@ -97,3 +97,15 @@ There are three parameters that are important control performance. You probably 
 A PDF report can be found in the output directory. This describes the process as well as what the inputs and outputs were.
 
 Note that one issue that sometimes occurs in analysis is that there may over time be multple copies of the same file, perhaps with minor differences. To help version control, the PDF report captures the md5 checksums of inputs and outputs.
+
+## 6 Example 
+* data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+
+```
+~/nextflow run h3abionet/h3agwas/qc/main.nf --input_dir data/array_plk  --input_pat array --ouput_dir qc  --output kgpexample \
+ --phenotype data/pheno/pheno_test.all --pheno_col phenoqc_ql \
+ --case_control data/pheno/pheno_test.all --case_control_col Sex \
+ --batch data/pheno/pheno_test.all --batch_col batch \
+ -profile slurmSingularity -resume
+```
+

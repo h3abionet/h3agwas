@@ -1,6 +1,5 @@
 <img src="../aux/H3ABioNetlogo2.jpg"/>
-
-# Pipeline : format data
+# Pipelines to format data
 
 ## Script : `vcf_in_plink.nf`
 ### Requirement :
@@ -39,14 +38,10 @@ chr position COMBINED_rate(cM/Mb) Genetic_Map(cM)
 1 568527 0 0
 ```
 
+###  Example 
+* data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
-### example 
 
-```
-ls  dirvcf/chr*.vcf.gz > listfileawigen
-nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf listfileawigen -resume -profile slurm --output_pat awigen  --genetic_maps $FileCM --plink_mem_req 6GB -r hackathon
-
-```
 
 ## Script : `vcf_in_bgen.nf`
 ### Requirement :
