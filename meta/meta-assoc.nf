@@ -1,4 +1,4 @@
-#!/usr/bin/env nextflow
+$vw#!/usr/bin/env nextflow
 /*
  * Authors       :
  *
@@ -430,8 +430,10 @@ if(params.plink==1){
     script :
      lpk=listeplk.join(" ")
      out=params.output+'_plink'
+     //weighted-z
+     vw =  (params.ma_inv_var_weigth==1) ? " + weighted-z " : ""
      """
-     ${params.plink_bin} --meta-analysis $lpk + qt -out $out --threads ${params.max_plink_cores} 
+     ${params.plink_bin} --meta-analysis $lpk + qt $vw -out $out --threads ${params.max_plink_cores} 
      """
 
   }
