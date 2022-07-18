@@ -43,7 +43,15 @@ chr position COMBINED_rate(cM/Mb) Genetic_Map(cM)
 
 
 
-## Script : `vcf_in_bgen.nf`
+## Script : `vcf_in_bgen.nf` / `vcf_in_bgen_merge.nf` `vcf_in_bgen_merge_chro.nf`
+### three srategy of conversion :
+ * `vcf_in_bgen.nf` : convert each vcf that was filter in bgen, without merge with one process 
+ * `vcf_in_bgen_merge.nf` : 
+   * vcf are filter and merge and merge and format in bgen
+ * `vcf_in_bgen_merge_chro.nf` :
+  * vcf are filter
+  * vcf are format in bgen 
+  * bgen are merge
 ### Requirement :
 * plink, bcftools, bash, qctools, nextflow
 * singularity / dockers image : no test yet
@@ -134,7 +142,9 @@ for instance for bolt lmm format bgen must be :
   * `mem_req` : memory request for processes>
 
 ## Pipeline : convert position hg38 in hg19
+```
 nextflow run convert_posversiongenome.nf
+```
 ### what is doing?
 * if no file give download gwas catalog
 * extract positions of interest 
@@ -175,7 +185,7 @@ pip3.6 install CrossMap --user
 pip3.6 install numpy==1.16.1 --user
 chmod +x ~/.local/bin/CrossMap.py
 
-## Pipeline : vcf_in_bimbam.nf
+## Pipeline : `vcf_in_bimbam.nf`
 transform vcf in bimbam format after filters for quality.
 ###arguments
 * `file_listvcf` : file contains each bgzip vcf files to merge, one by line [default : none]
@@ -203,13 +213,16 @@ transform vcf in bimbam format after filters for quality.
  * bcftools : used plugin of +fixref see `BCFTOOLS_PLUGINS=bcftools/plugins/`
  
 
-### requirement 
-*bcftools
-*plink 
-*R
-*python
+# General requirement 
+* bcftools
+* plink 
+* R
+* python
+* qctools (v2)
+* samtools
 * for control of vcf 
  * checkVCF.py is present in binary of nextflow pipeline (https://github.com/zhanxw/checkVCF)
- *samtools
- * qctools
 
+#Example 
+
+see [h3agwas-example github](https://github.com/h3abionet/h3agwas-examples)
