@@ -39,13 +39,12 @@ The key options are:
 
 By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
 
-## 2. example :
-
 
 ## 3. Optionnal input
 * optionnal input bgen ( for bolt, saige and fastGWA):
  * `bgen`  : bgen file
  * `bgen_sample` : list of sample 
+ * `list_bgen` : file contains a list bgen, must be have at least `bgen_sample`
 * specificity :
  * bolt-lmm : dosage bgen or impute2 in paralel with genotype plink file
  * saige :
