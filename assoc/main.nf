@@ -931,7 +931,7 @@ if (params.boltlmm == 1) {
       our_pheno          = this_pheno.replaceAll(/_|\/np.\w+/,"-").replaceAll(/[0-9]+@@@/,"")
       outimp1  = (params.bolt_impute2filelist!="") ? "$base-${our_pheno2}.imp.stat" : "$base-${our_pheno2}.stat"
       outimp2  = (params.bgen!="") ? "$base-${our_pheno2}.bgen.stat" : "$base-${our_pheno2}.stat"
-      outimp2  = (params.list_bgen!="") ? "$base-${our_pheno2}.bgen.stat" : $outimp2
+      outimp2  = (params.list_bgen!="") ? "$base-${our_pheno2}.bgen.stat" : outimp2
       outbolt     = "$base-${our_pheno2}.stat" 
       outf    = (params.bolt_impute2filelist!="") ? outimp1 : outbolt
       outf    = (params.bgen!="") ? outimp2 : outf
