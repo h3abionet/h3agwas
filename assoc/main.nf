@@ -187,6 +187,7 @@ params.gcta_grmfile=""
 params.sample_snps_rel=0
 params.sample_snps_rel_paramplkl="100 20 0.1 --maf 0.01"
 params.pheno_bin=0
+params.snps_include_rel=""
 
 
 params.input_pat  = 'raw-GWA-data'
@@ -442,19 +443,23 @@ pheno     = ""
 balise_filers_rel=1
 if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params.gemma_gxe+params.saige>0){
  if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
+  if(params.snps_include_rel!='') snpinclrel=channel.fromPath(params.snps_include_rel)
+  else snpinclrel=channel.fromPath("${dummy_dir}/00")
   process select_rs_format{
      cpus max_plink_cores
      memory plink_mem_req
      time   params.big_time
      input :
-       set file(bed),file(bim), file(fam) from ch_select_rs_format
+       tuple path(bed),path(bim), path(fam) from ch_select_rs_format
+       path(snp_inclrel) from  snpinclrel
     output:
        file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line, filers_her_saige,filers_matrel_regenie
      script:
         base = bed.baseName
         prune= "${base}-prune"
+        extract=(params.snps_include_rel=='')? "" : " -extract range $snp_inclrel "
         """
-        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores}
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} $extract --autosome
         """
    }
    //BoltNbMaxSnps=filers_count_line.countLines()
@@ -954,7 +959,7 @@ if (params.boltlmm == 1) {
       ls *.bgen | awk -v sample=${bgensample} '{print \$1" "sample}' > $listbgen
       fi
       BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`
-      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3}  --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt $bgen $boltimpute $ld_score_cmd $exclude_snp  $model_snp $geneticmap
+      bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3}  --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt $missing_cov $bgen $boltimpute $ld_score_cmd $exclude_snp  $model_snp $geneticmap  ${params.bolt_otheropt} --maxModelSnps=\$BoltNbMaxSnps --lmmForceNonInf
    
       """
   }

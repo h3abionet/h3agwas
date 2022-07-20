@@ -20,24 +20,32 @@ Our script, *assoc* takes as input PLINK files that have been through quality co
 ## 1. Running the main association testing : general option
 
 The pipeline is run: `nextflow run assoc`
+By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
 
 The key options are:
+### input / output 
 * `input_dir`, `output_dir`: where input and output goes to and comes from;
 * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+### phenotype and data 
 * `data`: a tab-separated file that contains phenotype data for your particpants. The row is a header line, with one participant per line after that. The first two columns should FID IID followed by any phenotype values you want to use for testing or for covariates. It can contain other data too -- as long as the ones that you need are in this file.
 * `pheno`: a comma-separated list of phenotypes that you want to test. Each phenotype is tested separately. If you wish to do a transform to the phenottype, you can suffix the phenotype with _/function_ where function is a numpy function. For example you might say `--pheno bmi/np.log` which will apply the log function to the phenotype. Any numpy function can be used, typical uses being np.log and np.sqrt. We plan to support user provision of a user-given function.
 * `covariates`: a comma-separated list of phenotypes that you want to use
-* `exclude_snps` option to exclude some snps active just for boltlmm (see `--exclude` in boltlmm manual) : SNP ID must be first column (default none)
-*  `print_pca` : by default pipeline compute and print pca (`print_pca`=1), if you want avoid this step (`print_pca` = 0)
-* `genetic_map_file` : genetic map used in boltlmm 
+
+### build reltdness 
 * build relatdness and GRM, you have different way to buil matrix of relatdness for boltlmm, gemma, fast gwa or fastlmm, regenie
-  * by default all snps are used and for boltlmm 9,500,000 are shuffled 
+  * by default all snps are used and for boltlmm 950,000 are shuffled 
   * you can give a rs contains id or rs `file_rs_buildrelat` 
-  * you can used `sample_snps_rel` (default 0), will used plink to sample snps and 
+  * you can used `sample_snps_rel` (default 0), will used plink to sample snps :
+    * `sample_snps_rel_paramplkl` : parameter for plink to obtained independnat pairwise ([default : 100 20 0.1 --maf 0.01 ])
+    * `snps_include_rel` : bed file (chro begin end rs) to include on plink command to defined independant snps [default : ""]
   *  `file_rs_buildrelat` : file with rs list (one by lines) to build genetics models (relatdness), for gemma `-snps`,  boltlmm `--modelSnps`, regenie to build step 1
+  
+### other option 
+* `genetic_map_file` : genetic map used in boltlmm 
+*  `print_pca` : by default pipeline compute and print pca (`print_pca`=1), if you want avoid this step (`print_pca` = 0)
+* `exclude_snps` option to exclude some snps active just for boltlmm (see `--exclude` in boltlmm manual) : SNP ID must be first column (default none)
 
 
-By default a chi2 test for association is done. But you can do multiple different tests in one run by settintg the appropriate parameter to 1. Note at least one must be set to 1
 
 
 ## 3. Optionnal input
