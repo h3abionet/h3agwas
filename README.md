@@ -7,6 +7,8 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5145/badge)](https://bestpractices.coreinfrastructure.org/projects/5145)
 [![biotools:h3agwas](https://img.shields.io/badge/biotools-h3agwas-blue)](https://bio.tools/h3agwas)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/h3abionet/h3agwas)](https://quay.io/organization/h3abionet_org)
+[![Amazon aws](https://img.shields.io/badge/aws-pass-green)](Readme_AWS_Batch.md)
+![version](https://img.shields.io/github/v/release/h3abionet/h3agwas)
 
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
