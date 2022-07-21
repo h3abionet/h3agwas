@@ -82,10 +82,10 @@ columns=flexible,
 breaklines=true
 }
 *-usepackage{url}
-*-title{transformation pipeline}
+*-title{Pipeline : Convert vcf in plink}
 *-date{%(date)s}
 '''+dateheader+('''
-*-author{H3Agwas : transformation of vcf in plink format}
+*-author{H3Agwas}
 
 *-newcommand{*-ourfig}[3]{*-begin{figure}[ht]*-begin{center}*-includegraphics[scale=0.6]{#3} *-end{center} *-caption{#2 [File is *-protect*-url{#3}]}  *-label{#1}*-end{figure}}
 *-begin{document}

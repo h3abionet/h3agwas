@@ -82,8 +82,8 @@ params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno",
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
 params_memcpu=["gcta_mem_req","plink_mem_req", "plink_cpus_req","other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req"]
-param_data=["gwas_cat", "genes_file", "genes_file_ftp"]
-param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro"]
+param_data=["gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc"]
+param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro", 'file_pheno']
 allowed_params+=params_mf
 allowed_params+=params_cojo
 allowed_params+=params_filegwas
@@ -132,6 +132,7 @@ params.used_pval_z=0
 params.headgc_chr=""
 params.headgc_bp=""
 params.gwas_cat = ""
+params.file_phenogc = ""
 
 params.file_gwas=""
 
@@ -165,7 +166,7 @@ params.size_wind_kb=100
 
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 params.list_chro="1-22"
-params.list_pheno=""
+params.list_phenogc=""
 
 
 
@@ -178,8 +179,8 @@ params.plink_bin="plink"
 listchro=getlistchro(params.list_chro)
 if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
-if(params.file_pheno=="")phenogc=channel.fromPath("${dummy_dir}/01")
-else phenogc_ch=channel.fromPath(params.file_pheno)
+if(params.file_phenogc=="")phenogc_ch=channel.fromPath("${dummy_dir}/01")
+else phenogc_ch=channel.fromPath(params.file_phenogc)
 
 process GwasCatDl{
     label 'R'
@@ -190,13 +191,13 @@ process GwasCatDl{
        file("${out}_all.csv") into gwascat_ch
        file("${out}*")
     script :
-      phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
-      phenofile= (params.list_pheno=="") ? "" : "  --file_pheno  $phenogc "
+      phenol= (params.list_phenogc=="") ? "" : "  --pheno '${params.list_phenogc}' "
+      phenofile= (params.file_phenogc=="") ? "" : "  --file_pheno  $phenogc "
       out="gwascat_format"
       """
       wget -c ${params.gwas_cat_ftp} --no-check-certificate
-      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${listchro.join(',')}
-      """
+      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${listchro.join(',')} $phenofile
+      """ 
 }
 headgc_chr="chrom"
 headgc_bp="chromEnd"

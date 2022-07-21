@@ -56,6 +56,9 @@ The key options are:
 * `gwas_cat` : file of gwas catalog for plot 
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog
+  * `listpheno_gc` :  from gwas catalog what pheno used (separated by a comma)
+  * `file_phenogc` :  from gwas catalog what pheno used inside a file (separated by a comma)
+
 * cojo parameter :
   * `gcta_mem_req`="6GB"
   * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ] (need to be implemented)
@@ -113,11 +116,13 @@ The key options are:
 * `gwas_cat` : file of gwas catalog for plot
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog
+  * `listpheno_gc` :  from gwas catalog what pheno used (separated by a comma)
+  * `file_phenogc` :  from gwas catalog what pheno used inside a file (separated by a comma)
 * cojo parameter :
   * `gcta_mem_req`="6GB"
-  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ] (need to be implemented)
-  * `cojo_actual_geno` : If the individual-level genotype data of the discovery set are available (e.g. a single-cohort GWAS), you can use the discovery set as the reference sample. *option to avoid due to a various bug*  [default 0] (need to be implemented)
-  * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO) )(need to be implemented)
+  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ]
+  * `cojo_actual_geno` : If the individual-level genotype data of the discovery set are available (e.g. a single-cohort GWAS), you can use the discovery set as the reference sample. *option to avoid due to a various bug*  [default 0] 
+  * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO) 
 * annotations parameter :
  * Todo
 * **binary** :

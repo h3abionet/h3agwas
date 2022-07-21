@@ -82,7 +82,7 @@ params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z", "prob_cred_set"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
 params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "gcta_opt_multigrm_cor", "gcta_opt_grm_cor", "other_cpus_req"]
-param_data=["gwas_cat", "genes_file", "genes_file_ftp", "ftp1000genome"]
+param_data=["gwas_cat", "genes_file", "genes_file_ftp", "ftp1000genome", "list_phenogc", "file_phenogc"]
 param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "gwas_cat_ftp", "list_pheno"]
 
 allowed_params+=params_mf
@@ -160,7 +160,7 @@ params.other_cpus_req=10
 //params.paintor_annot=""
 
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
-params.list_pheno=""
+params.list_phenogc=""
 params.ftp_vcf="ftp://ftp.1000genomes.ebi.ac.uk:21/vol1/ftp/release/20130502/"
 
 
@@ -313,18 +313,25 @@ Channel
 
 if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
+if(params.file_phenogc=="")phenog_gc=channel.fromPath("${dummy_dir}/01")
+else phenogc_ch=channel.fromPath(params.file_phenogc)
+
+
 process GwasCatDl{
     label 'R'
     publishDir "${params.output_dir}/gwascat",   mode:'copy'
+    input :
+        file(phenogc) from  phenogc_ch
     output :
        file("${out}_all.csv") into gwascat_ch
        file("${out}*")
     script :
-      phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
+      phenol= (params.list_phenogc=="") ? "" : "  --pheno '${params.list_phenogc}' "
+      phenofile= (params.file_phenogc=="") ? "" : "  --file_pheno  $phenogc "
       out="gwascat_format"
       """
       wget -c ${params.gwas_cat_ftp} --no-check-certificate
-      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${params.chro}
+      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${params.chro} $phenofile
       """
 }
 headgc_chr="chrom"
