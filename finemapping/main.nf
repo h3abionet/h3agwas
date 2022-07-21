@@ -178,14 +178,20 @@ params.plink_bin="plink"
 listchro=getlistchro(params.list_chro)
 if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
+if(params.file_pheno=="")phenogc=channel.fromPath("${dummy_dir}/01")
+else phenogc_ch=channel.fromPath(params.file_pheno)
+
 process GwasCatDl{
     label 'R'
     publishDir "${params.output_dir}/gwascat",  mode:'copy'
+    input :
+      file(phenogc) from  phenogc_ch
     output :
        file("${out}_all.csv") into gwascat_ch
        file("${out}*")
     script :
       phenol= (params.list_pheno=="") ? "" : "  --pheno '${params.list_pheno}' "
+      phenofile= (params.list_pheno=="") ? "" : "  --file_pheno  $phenogc "
       out="gwascat_format"
       """
       wget -c ${params.gwas_cat_ftp} --no-check-certificate

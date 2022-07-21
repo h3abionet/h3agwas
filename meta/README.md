@@ -92,6 +92,7 @@ MR-MEGA need chromosomes, positions and N (sample number) for each position, so 
 | Mr Mega| [here](https://genomics.ut.ee/en/tools)|  [here](https://bmcbioinformatics.biomedcentral.com/track/pdf/10.1186/1471-2105-11-288.pdf)|
 | plink | [here](https://zzz.bwh.harvard.edu/plink/metaanal.shtml) | |
 
+### References
 [Comparison of Two Meta-Analysis Methods: Inverse-Variance-Weighted Average and Weighted Sum of Z-Scores](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5287121/)
 
 ### Example 
