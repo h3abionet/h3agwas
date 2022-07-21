@@ -2,13 +2,11 @@
 
 # H3Agwas Pipeline Version 3
 
+[![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A520.04.0-brightgreen.svg)](https://www.nextflow.io/)
 [![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F-green)](https://fair-software.eu)
-
-
- [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5145/badge)](https://bestpractices.coreinfrastructure.org/projects/5145)
-
-
-[biotools:h3agwas](https://bio.tools/h3agwas)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5145/badge)](https://bestpractices.coreinfrastructure.org/projects/5145)
+[![biotools:h3agwas](https://img.shields.io/badge/biotools-h3agwas-blue)](https://bio.tools/h3agwas)
+[![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/h3abionet/h3agwas)](https://quay.io/organization/h3abionet_org)
 
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
@@ -25,17 +23,19 @@ In addition to this README we have a detailed tutorial and videos
 * found example data-set and example in  [h3agwas-examples github](https://github.com/h3abionet/h3agwas-examples)
 
 pipeline do different step of GWAS :
- * [Format input illuminat in plink format](call2plink/README.md)
+ * [Format output illumina in plink format](call2plink/README.md)
  * [Quality control of array input illuminat in plink format](qc/README.md)
  * [Association using different software : gcta, plink, gemma, Bolt-LMM, FastLMM and GxE with gemma and plink](assoc/README.md)
  * Post meta analyses script :
-   * [meta analyse script and mtag approach](meta/README.md)
-   * [Computation of heritabilities or variance explained of phenotype](heritabilities/README.md)
-   * [Finemapping and cojo extraction of windows ](finemapping/README.md)
+   * [Meta analysis and Multi-Trait Analysis of GWAS ](meta/README.md)
+   * [Computation of heritabilities or variance explained of phenotype using summary statistisc or genetics](heritabilities/README.md)
+   * [Finemapping, cojo extraction of windows or conditional analysis using gemma](finemapping/README.md)
+   * [Annotation and plot of result](utils/annotation/README.md)
  * [Simulation of dataset](utils/build_example_data/README.md)
  * [Format data differents dataset](formatdata//README.md) :
-   * plink in vcf to prepared your data at imputation 
-   * vcf in plink after imputation
+   * plink in vcf to prepared your data at imputation;
+   * vcf in plink, bgen, bimbam after imputation;
+   * summary statistics between build;
  * h3agwas doesn't perform imputation, specific pipeline can be found in [h3abionet](https://github.com/h3abionet/chipimputation).
 
 ## Example and data-set 
@@ -129,15 +129,19 @@ There are three separate workflows that make up *h3agwas*
     *  ̀heritabilities/esth2-assoc.nf` : estimate heritability and co-heritabilie with gcta, ldsc, gemma and bolt
 
 6. `finemapping` :
-    * `finemapping/main.nf` : performed meta analysis using different data set 
+    * `finemapping/main.nf` : performed fine-mapping on full summary statistics, using plink, gcta, FINEMAP...
+    * `finemapping/finemap_region.nf.nf` : performed fine-mapping on specific region
+    * `finemapping/cond-assoc` : performed conditional association on specificcs SNPs
     * `finemapping/cojo-assoc.nf` : do Conditional & joint (COJO) analysis of GWAS summary statistics without individual-level genotype data with gcta
 
 7. `utils/build_example_data` 
-   * `utils/build_example_data/main.nf` : extract data set from vcf file and simulate dataset 
-   * `utils/build_example_data/simul-assoc.nf` : simulation of phenotype using phenosim 
+   * `utils/build_example_data/main.nf` : extract specifics positions from vcf file and used by default gwas catalog and phenotype to simulate dataset using gcta 
+   * `utils/build_example_data/simul-assoc_gcta.nf` : simul phenotype using plink file, gcta and gwas catalog
+   * `utils/build_example_data/simul-assoc_phenosim.nf` : simulation of phenotype using phenosim using random positions
 
-8. `utils/permutatation` 
+8. `utils/permutation` 
   * `utils/permutation/permutation-assoc.nf`: do a permutation test to reevaluate p.value with gemma
+
 9. `formatdata` : additional script to format data added some missing information etc...
   *  see [README of formatdata/](formatdata/)
 
@@ -408,8 +412,6 @@ Nextflow provides [several options](https://www.nextflow.io/docs/latest/tracing.
     `nextflow run <pipeline name> -with-timeline time.html`
 
     This is useful for seeing how long different parts of your process took. Also useful is peak virtual memory used, which you may need to know if running on very large data to ensure you have a big enough machine and specify the right parmeters.
-
-
 
 
 # 5. Running the workflow in different environments

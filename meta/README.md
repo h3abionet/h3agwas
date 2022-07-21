@@ -74,9 +74,11 @@ The key options are:
 MR-MEGA need chromosomes, positions and N (sample number) for each position, so in pipeline referent file (in file_config, 1 in IsRefFile) must be have chromosome and poosition
 
 ### option comparaison software
+
+| | options | 
 | Software | `ma_genomic_cont` | `ma_inv_var_weigth` | `ma_overlap_sample` | `ma_random_effect` |
 | --- | --- | --- | --- | --- |
-| explanation | genomic control | invert variance weight | sample overlap | Random Effect |
+| descriptionus| genomic control | invert variance weight | sample overlap | Random Effect |
 | default | 0 | 0 | 0 | 0 |
 | metal | yes | yes  | yes | no |
 | gwama | yes | default  no | yes | 
@@ -84,13 +86,19 @@ MR-MEGA need chromosomes, positions and N (sample number) for each position, so 
 | plink | no | yes | no | no |
 | Metasoft | no | no | no | default |
 | --- | --- | --- | --- | --- |
+
 1 'weighted-z' requests weighted Z-score-based p-values (as computed by the Abecasis Lab's METAL software)
+
 #### Ressource
-| Software | Manuals | |
-| metal | [here](https://genome.sph.umich.edu/wiki/METAL_Documentation) |  [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2922887/)|
-| gwama | [here](https://genomics.ut.ee/en/tools) | [here](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-288)| 
+
+| Software | Manuals | References |
+| --- | --- | --- |
+| Metal | [here](https://genome.sph.umich.edu/wiki/METAL_Documentation) |  [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2922887/)|
+| Gwama | [here](https://genomics.ut.ee/en/tools) | [here](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-288)| 
 | Mr Mega| [here](https://genomics.ut.ee/en/tools)|  [here](https://bmcbioinformatics.biomedcentral.com/track/pdf/10.1186/1471-2105-11-288.pdf)|
-| plink | [here](https://zzz.bwh.harvard.edu/plink/metaanal.shtml) | |
+| plink | [here](https://zzz.bwh.harvard.edu/plink/metaanal.shtml) | [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950838/)|
+| Metasof | [here](genetics.cs.ucla.edu/meta) | [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3146723/) |
+| --- | --- | --- |
 
 ### References
 [Comparison of Two Meta-Analysis Methods: Inverse-Variance-Weighted Average and Weighted Sum of Z-Scores](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5287121/)
