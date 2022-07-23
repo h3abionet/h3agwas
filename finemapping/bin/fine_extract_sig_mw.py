@@ -315,6 +315,7 @@ headall=["rsid","chromosome","position","allele1","allele2","maf", "beta", "se",
 #out_all=args.out_head+".all"
 #small.to_csv(out_all, sep=TAB, header=True, index=False,na_rep="NA")
 posfinemap=[7,]
+maxn=0
 for chro in clumpres :
    for bp in clumpres[chro] :
       key=chro+'_'+str(bp)
@@ -344,9 +345,10 @@ for chro in clumpres :
         writefm.write(' '.join(headfm)+'\n')
         writeall.write(' '.join(headall)+'\n')
         writepaintor.write('Z\n')
-        writepos.write("chromosome position")
+        writepos.write("chromosome position\n")
         for bpsumstat in listsumstat :
           [a1,a2,beta , se , z , n , af , p, rsbim ]=sumstat[chro][bpsumstat]
+          maxn=max(n,maxn)
           writegcta.write(' '.join([str(x) for x in [rsbim, a1,a2,af,beta,se,p,n]])+'\n')
           writefm.write(' '.join([str(x) for x in [rsbim,chro,bpsumstat, a1,a2,af,beta,se]])+'\n')
           writecaviar.write(" ".join([str(x) for x in [rsbim,z]])+'\n')
@@ -364,9 +366,10 @@ for chro in clumpres :
         writepos.close()
         writers.close()
       
+writen=open('n.out', 'w')
+writen.write(str(maxn))
+writen.close()
         
-
-
 
 
 #result[args.chro_header]=result[args.chro_header].astype(str)

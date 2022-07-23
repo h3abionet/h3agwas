@@ -4,7 +4,7 @@
 4 scripts to perform fine-mapping :
  * run fine-mapping at one specific region `finemapping/finemap_region.nf` 
  * run fine-mapping on full summary statistics `finemapping/main.nf` 
- * [cojo](https://cnsgenomics.com/software/gcta/#COJO) from gcta `finemapping/finemap_region.nf` 
+ * [cojo](https://cnsgenomics.com/software/gcta/#COJO) from gcta `finemapping/cojo.nf` 
  * Conditional analysis of gwas using gemma `finemapping/cond-assoc.nf`
  
 
@@ -17,7 +17,7 @@ The purpose of this pipeline is to perform a initial analysis of finemapping
 Our script, *finemapping* takes as input PLINK files, gwas file
 
 ### some limits 
-* pipeline discarded positions duplicated from genetics file and bed file
+* pipeline discarded positions duplicated from genetics file and summary statistics
 ### Running
 
 The pipeline is run: `nextflow run finemapping/finemap_region.nf`
@@ -49,10 +49,10 @@ The key options are:
  * `head_se`  : column for standard error of beta "SE"
  * `head_A1` : column for allele 1 :[default : "ALLELE1" ]
  * `head_A2` : column for allele 0 or 2 :[default : "ALLELE0" ]
- * `head_freq` : freq header [ default : TODO],
- * `head_chr` : freq header [ default : TODO],
- * `head_bp` : freq header [ default : TODO],
-* `n_pop` : number individuals for data set pop [default : 10000]
+ * `head_freq` : freq header [ default : ""],
+ * `head_chr` : freq header [ default :  ""],
+ * `head_bp` : freq header [ default : ""],
+* `n_pop` : number individuals for data set pop [default : ""]
 * `gwas_cat` : file of gwas catalog for plot 
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog
@@ -71,6 +71,15 @@ The key options are:
  * `paintor_bin` : software binary 
  * `plink_bin` : software binary 
  * `gcta_bin` : software binary 
+ * mem and cpu :
+  * `max_plink_cores` LD / plink [default 4]
+  * `plink_mem_req`   LD / plink     [default : "5GB"]
+  * `gcta_mem_req` [default :"6GB"]
+  * `caviar_mem_req` [default :"40GB"]
+  * `paintor_mem_req` [default :"20GB"]
+  * `fm_mem_req ` [default : "20G"]
+  * `plink_mem_req` [default :"6GB"]
+
 
 ### Installation
 need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
@@ -78,7 +87,7 @@ need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 ### Example 
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 ```
-nextflow run  ~/Travail/git/h3agwas/finemapping/finemap_region.nf  --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_pheno "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1_wind --output finemapping_pheno1 -resume  -profile slurmSingularity --begin_seq 112178657 --end_seq 113178657 --chro 10
+nextflow run  h3abioneth3agwas/finemapping/finemap_region.nf  --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_pheno "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1_wind --output finemapping_pheno1 -resume  -profile slurmSingularity --begin_seq 112178657 --end_seq 113178657 --chro 10
 ```
 
 ##  finemapping pipeline automated with selection of lead snps using plink : `finemapping/main.nf`
@@ -123,12 +132,23 @@ The key options are:
   * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ]
   * `cojo_actual_geno` : If the individual-level genotype data of the discovery set are available (e.g. a single-cohort GWAS), you can use the discovery set as the reference sample. *option to avoid due to a various bug*  [default 0] 
   * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO) 
+ * mem and cpu :
+  * `max_plink_cores` LD / plink [default 4]
+  * `plink_mem_req`   LD / plink     [default : "5GB"]
+  * `gcta_mem_req` [default :"6GB"]
+  * `caviar_mem_req` [default :"40GB"]
+  * `paintor_mem_req` [default :"20GB"]
+  * `fm_mem_req ` [default : "20G"]
+  * `plink_mem_req` [default :"6GB"]
+
+
 * annotations parameter :
  * Todo
 * **binary** :
  * `finemap_bin` : software binary
  * `paintor_bin` : software binary
  * `plink_bin` : software binary
+
 ### Installation
 need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 
@@ -136,7 +156,7 @@ need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 ```
-nextflow run  ~/Travail/git/h3agwas/finemapping/main.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_pheno "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1 --output finemapping_pheno1 -resume  -profile slurmSingularity
+nextflow run  h3abioneth3agwas/finemapping/main.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_pheno "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1 --output finemapping_pheno1 -resume  -profile slurmSingularity
 ```
 
 
@@ -185,7 +205,7 @@ Cojo parameter :
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 ```
-nextflow run   ~/Travail/git/h3agwas/h3agwas/finemapping/cojo-assoc.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/  --input_pat imput_data  --output_dir cojo --data data/pheno/pheno_test.all --pheno pheno_qt1 --file_gwas data/summarystat/all_pheno.gemma  -resume   -profile slurmSingularity
+nextflow run   h3abioneth3agwas/h3agwas/finemapping/cojo-assoc.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/  --input_pat imput_data  --output_dir cojo --data data/pheno/pheno_test.all --pheno pheno_qt1 --file_gwas data/summarystat/all_pheno.gemma  -resume   -profile slurmSingularity
 ```
 
 ## Conditional analysis of GWAS using gemma

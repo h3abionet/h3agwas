@@ -109,11 +109,12 @@ params.output_dir = "${params.work_dir}/output"
 params.genes_file=""
 params.genes_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
 params.output="finemap"
+params.file_phenogc=""
 
 params.gcta_bin="gcta64"
 
 // paramater
-params.n_pop=25000
+params.n_pop=""
 
 // params file input
 params.head_pval = "P_BOLT_LMM"
@@ -136,7 +137,6 @@ params.cut_maf=0.01
 
 params.prob_cred_set=0.95
 
-params.plink_mem_req="6GB"
 
 params.other_mem_req="20GB"
 
@@ -145,7 +145,6 @@ params.gcta_mem_req="15GB"
 params.gcta_cpus_req = 1
 
 params.fm_cpus_req = 5
-params.fm_mem_req = "20G"
 params.cojo_slct=1
 params.cojo_slct_other=""
 params.cojo_actual_geno=0
@@ -154,7 +153,12 @@ params.big_time='100h'
 params.threshold_p=5*10**-8
 params.n_causal_snp=3
 params.caviarbf_avalue="0.1,0.2,0.4"
+
 params.caviar_mem_req="40GB"
+params.paintor_mem_req="20GB"
+params.fm_mem_req = "20G"
+params.plink_mem_req="6GB"
+
 params.paintor_fileannot=""
 params.paintor_listfileannot=""
 params.other_cpus_req=10
@@ -202,7 +206,7 @@ if(params.input_dir=="" | params.input_pat==""){
   }
  }else{
   if(params.list_vcf!=''){
-    listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines(), checkIfExists:true)
+    listvcf_ch=Channel.fromPath(file(params.list_vcf, checkIfExists:true).readLines(), checkIfExists:true)
     process findchro{
       label 'py3utils'
       input :
@@ -314,8 +318,8 @@ Channel
 
 if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
-if(params.file_phenogc=="")phenog_gc=channel.fromPath("${dummy_dir}/01")
-else phenogc_ch=channel.fromPath(params.file_phenogc)
+if(params.file_phenogc=="")phenogc_ch=channel.fromPath("${dummy_dir}/01")
+else phenogc_ch=channel.fromPath(params.file_phenogc,checkIfExists:true)
 
 
 process GwasCatDl{
@@ -367,7 +371,8 @@ gwas_file=Channel.fromPath(params.file_gwas,checkIfExists:true)
 // plink 
 checkColumnHeader(params.file_gwas, [params.head_beta, params.head_se, params.head_A1,params.head_A2, params.head_freq, params.head_chr, params.head_bp, params.head_rs, params.head_pval, params.head_n])
 process ExtractPositionGwas{
-  memory params.other_mem_req
+  memory params.plink_mem_req
+  cpus params.max_plink_cores
   input :
      file(filegwas) from gwas_file
      set file(bed),file(bim),file(fam) from gwas_extract_plk
@@ -379,6 +384,7 @@ process ExtractPositionGwas{
     file("${out}.range") into range_plink
     file("${out}.all") into data_i
     file("${out}.pos") into paintor_gwas_annot
+    env n into nval_ch, nval_ch_fmss, nval_ch_fm, nval_ch_caviar, nval_ch_paintor
   publishDir "${params.output_dir}/file_format/",  mode:'copy'
   script :
     freq= (params.head_freq=="") ? "":" --freq_header ${params.head_freq} "
@@ -386,13 +392,17 @@ process ExtractPositionGwas{
     nvalue= (params.n_pop=="") ? "":" --n ${params.n_pop}"
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     bfile=bed.baseName
+    plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
     """
-    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq  --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nvalue --min_pval ${params.threshold_p} $nheader --z_pval ${params.used_pval_z} --maf ${params.cut_maf}
+    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq  --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nvalue --min_pval ${params.threshold_p} $nheader --z_pval ${params.used_pval_z} --maf ${params.cut_maf} --threads ${params.max_plink_cores} 
+    n=`cat n.out`
     """
 }
 
 
 process SubPlink{
+  memory params.plink_mem_req
+  cpus params.max_plink_cores
   input :
      set file(bed),file(bim),file(fam) from plink_subplk
      file(range) from range_plink
@@ -401,13 +411,15 @@ process SubPlink{
   script : 
      plk=bed.baseName
      out=plk+'_sub'
+    plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
      """
-     ${params.plink_bin} -bfile $plk  --keep-allele-order --extract  range  $range --make-bed -out  $out
+     ${params.plink_bin} -bfile $plk  --keep-allele-order --extract  range  $range --make-bed -out  $out 
      """
 }
 
 process ComputedLd{
-   memory params.other_mem_req
+   memory params.plink_mem_req
+   cpus params.max_plink_cores
    input : 
       set file(bed),file(bim),file(fam) from subplink_ld
   output :
@@ -415,19 +427,23 @@ process ComputedLd{
    script :
     outld=params.chro+"_"+params.begin_seq+"_"+params.end_seq+".ld"
     plk=bed.baseName
+  plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
+
     """
-     ${params.plink_bin} --r2 square0 yes-really -bfile $plk -out "tmp"
+    ${params.plink_bin} --r2 square0 yes-really -bfile $plk -out "tmp" --threads ${params.max_plink_cores}  --memory  $plink_mem_req_max
     sed 's/\\t/ /g' tmp.ld | sed 's/nan/0/g' > $outld
     """
 }
 
+
 process ComputedFineMapCond{
   label 'finemapping'
-  cpus params.fm_cpus_req
+  cpus 2
   memory params.fm_mem_req
   input :
     file(ld) from ld_fmcond 
     file(filez) from finemap_gwas_cond
+    val(n) from nval_ch_fm
   publishDir "${params.output_dir}/fm_cond",  mode:'copy'
   output :
     file("${out}.snp") into res_fmcond
@@ -437,8 +453,8 @@ process ComputedFineMapCond{
   out=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_cond" 
   """ 
   echo "z;ld;snp;config;cred;log;n_samples" > $fileconfig
-  echo "$filez;$ld;${out}.snp;${out}.config;${out}.cred;${out}.log;${params.n_pop}" >> $fileconfig
-  ${params.finemap_bin} --cond --in-files $fileconfig   --log --cond-pvalue ${params.threshold_p}  --n-causal-snps ${params.n_causal_snp}  --prob-cred-set ${params.prob_cred_set}
+  echo "$filez;$ld;${out}.snp;${out}.config;${out}.cred;${out}.log;$n" >> $fileconfig
+  ${params.finemap_bin} --cond --in-files $fileconfig   --log --cond-pvalue ${params.threshold_p}  --n-causal-snps ${params.n_causal_snp}  --prob-cred-set ${params.prob_cred_set} 
   """
 }
 
@@ -449,6 +465,7 @@ process ComputedFineMapSSS{
   input :
     file(ld) from ld_fmsss
     file(filez) from finemap_gwas_sss
+    val(n) from nval_ch_fmss
   publishDir "${params.output_dir}/fm_sss",  mode:'copy'
   output :
     file("${out}.snp") into res_fmsss
@@ -458,7 +475,7 @@ process ComputedFineMapSSS{
   out=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_sss"
   """
   echo "z;ld;snp;config;cred;log;n_samples" > $fileconfig
-  echo "$filez;$ld;${out}.snp;${out}.config;${out}.cred;${out}.log;${params.n_pop}" >> $fileconfig
+  echo "$filez;$ld;${out}.snp;${out}.config;${out}.cred;${out}.log;$n" >> $fileconfig
   ${params.finemap_bin} --sss --in-files $fileconfig  --n-threads ${params.fm_cpus_req}  --log --n-causal-snps ${params.n_causal_snp} --prob-cred-set ${params.prob_cred_set}
   """
 }
@@ -469,6 +486,7 @@ process ComputedCaviarBF{
   input :
     file(filez) from caviarbf_gwas
     file(ld) from ld_caviarbf
+    val(n) from nval_ch_caviar
   publishDir "${params.output_dir}/caviarbf",  mode:'copy'
   output :
    file("${output}.marginal") into res_caviarbf
@@ -476,7 +494,7 @@ process ComputedCaviarBF{
   script :
    output=params.chro+"_"+params.begin_seq+"_"+params.end_seq+"_caviarbf"
    """
-   ${params.caviarbf_bin} -z ${filez} -r $ld  -t 0 -a ${params.caviarbf_avalue} -c ${params.n_causal_snp} -o ${output} -n ${params.n_pop}
+   ${params.caviarbf_bin} -z ${filez} -r $ld  -t 0 -a ${params.caviarbf_avalue} -c ${params.n_causal_snp} -o ${output} -n $n
    nb=`cat ${filez}|wc -l `
    ${params.modelsearch_caviarbf_bin} -i $output -p 0 -o $output -m \$nb 2> ${output}_modelsearch.log
    """
@@ -526,12 +544,13 @@ annotname=Channel.from("N")
 }
 process ComputedPaintor{
    label 'finemapping'
-   memory params.fm_mem_req
+   memory params.paintor_mem_req
    input :
     file(filez) from paintor_gwas
     file(ld) from ld_paintor
     file(fileannot) from paintor_fileannot
     val(annot_name) from annotname
+    val(n) from nval_ch_paintor
   each ncausal from NCausalSnp
   publishDir "${params.output_dir}/paintor/",  mode:'copy'
   output :
@@ -556,7 +575,7 @@ process ComputedPaintor{
     else
     cp $fileannot $output".annotations"
     fi
-    ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal -num_samples  ${params.n_pop} -Lname $BayesFactor $annot
+    ${params.paintor_bin} -input input.files -in ./ -out ./ -Zhead Z -LDname ld -enumerate $ncausal -num_samples  $n -Lname $BayesFactor $annot
     """
 }
 res_paintor_ch=res_paintor.collect()

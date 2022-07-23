@@ -164,6 +164,10 @@ smallgcta=smallgcta.rename(columns={"rsid": "SNP", "chromosome": "chr", "positio
 
 out_gcta=args.out_head+'.gcta'
 smallgcta[['SNP','A1','A2','freq','b','se','p','N']].to_csv(out_gcta, sep=TAB, header=True, index=False,na_rep="NA")
+maxn=smallgcta['N'].max()
+writen=open('n.out', 'w')
+writen.write(str(maxn))
+writen.close()
 
 ## change freq and allele
 bal=small['maf']>0.5

@@ -196,7 +196,11 @@ datai=read.table(opt[['datai']], header=T)
 datai$chropos<-paste(datai$chromosome, datai$position)
 datai$gwascat<-F
 datai$gwascat[datai$chropos %in% datagwascat$chropos]<-T
-datai<-datai[,c("rsid","chromosome","position","allele1","allele2","maf","beta","se", "p","z", 'gwascat','n')]
+headz<-'z'
+headn<-'n'
+if('Z' %in% names(datai))headz<-'Z'
+if('N' %in% names(datai))headn<-'N'
+datai<-datai[,c("rsid","chromosome","position","allele1","allele2","maf","beta","se", "p",headz,'gwascat',headn)]
 datai$logpval<- -log10(datai$p)
 datai$num<-1:nrow(datai)
 datai$IsSig<-F
@@ -238,8 +242,12 @@ datainwork$IsSig[!is.na(datainwork$pJ)]<-T
 
 if(!is.null(opt[['paintor_fileannot']]) & !(opt[['paintor_fileannot']] %in% c('NOFILE', "0","00","01"))){
 	DataAnnot<-read.table(opt[['paintor_fileannot']], header=T)
-	if(!is.null(opt[['paintor_annot']]) | !(opt[['paintor_annot']] %in% c('NOFILE', "0","00", "01")))HeadAnnot<-readLines(opt[['paintor_annot']])
-	else HeadAnnot = names(DataAnnot)
+        print(!is.null(opt[['paintor_annot']]))
+	if(is.null(opt[['paintor_annot']])) HeadAnnot = names(DataAnnot)
+        else {
+          if(opt[['paintor_annot']] %in% c('NOFILE', "0","00","01","02"))  HeadAnnot = names(DataAnnot)
+          else  HeadAnnot<-readLines(opt[['paintor_annot']])
+        }
 	HeadAnnot2<-gsub("-",".",HeadAnnot)
 	DataAnnot$num<-1:nrow(DataAnnot)
 	DataAnnot<-merge(datainwork[,c('num','rsid','chromosome','position')], DataAnnot[,c('num',HeadAnnot2)], by='num')
