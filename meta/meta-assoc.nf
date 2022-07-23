@@ -1,4 +1,4 @@
-$vw#!/usr/bin/env nextflow
+#!/usr/bin/env nextflow
 /*
  * Authors       :
  *

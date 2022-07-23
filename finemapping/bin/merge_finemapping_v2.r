@@ -3,7 +3,7 @@ library("optparse")
 library(data.table)
 PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL, listpval=c('bf_caviar', 'log10bf_fm', 'Posterior_Prob_paint'), listheadprint=c('caviar', 'fm', 'paint')){
 print('Plotrs')
-if(paintfile %in% c('NOFILE',"0","1","2", "3","4","5"))paintfile=NULL
+if(paintfile %in% c('NOFILE',"0","00","01","02", "03","04","05"))paintfile=NULL
 ColI="blue";ColInitial=t_col(ColI,30)
 ColGWASCat="red3";ColFineMap='black'
 
@@ -196,7 +196,7 @@ datai=read.table(opt[['datai']], header=T)
 datai$chropos<-paste(datai$chromosome, datai$position)
 datai$gwascat<-F
 datai$gwascat[datai$chropos %in% datagwascat$chropos]<-T
-datai<-datai[,c("rsid","chromosome","position","allele1","allele2","maf","beta","se", "p", 'gwascat')]
+datai<-datai[,c("rsid","chromosome","position","allele1","allele2","maf","beta","se", "p","z", 'gwascat','n')]
 datai$logpval<- -log10(datai$p)
 datai$num<-1:nrow(datai)
 datai$IsSig<-F
@@ -236,9 +236,9 @@ datainwork<-merge(datainwork,datagcta2[,c('Chr','SNP','bp', 'bJ','bJ_se','pJ','L
 datainwork$IsSig[!is.na(datainwork$pJ)]<-T
 
 
-if(!is.null(opt[['paintor_fileannot']]) & !(opt[['paintor_fileannot']] %in% c('NOFILE', "0","1"))){
+if(!is.null(opt[['paintor_fileannot']]) & !(opt[['paintor_fileannot']] %in% c('NOFILE', "0","00","01"))){
 	DataAnnot<-read.table(opt[['paintor_fileannot']], header=T)
-	if(!is.null(opt[['paintor_annot']]) | !(opt[['paintor_annot']] %in% c('NOFILE',"0", "1")))HeadAnnot<-readLines(opt[['paintor_annot']])
+	if(!is.null(opt[['paintor_annot']]) | !(opt[['paintor_annot']] %in% c('NOFILE', "0","00", "01")))HeadAnnot<-readLines(opt[['paintor_annot']])
 	else HeadAnnot = names(DataAnnot)
 	HeadAnnot2<-gsub("-",".",HeadAnnot)
 	DataAnnot$num<-1:nrow(DataAnnot)

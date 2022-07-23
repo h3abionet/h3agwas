@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 
-if sys.argv[1]=="NOFILE" or (sys.argv[1] in ["0","1", "2","3","4", "5","6"]): 
+if sys.argv[1]=="NOFILE" or (sys.argv[1] in ["0","00","01", "02","03","04", "05","06"]): 
    Read=open(sys.argv[2])
    nbline=len(Read.readlines())-1
    print(nbline)

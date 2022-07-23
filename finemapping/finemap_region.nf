@@ -76,7 +76,7 @@ def checkColumnHeader(fname, columns) {
 def helps = [ 'help' : 'help' ]
 
 allowed_params = ["input_dir","input_pat","output","output_dir","data","covariates", "work_dir", "scripts", "max_forks", "phenotype", "accessKey", "access-key", "secretKey", "secret-key",  "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "batch", "batch_col" ,"samplesize", "manifest", "region", "AMI", "queue", "strandreport"]
-params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin"]
+params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "cut_maf"]
 params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"]
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z", "prob_cred_set"]
@@ -132,6 +132,7 @@ params.headgc_bp=""
 params.gwas_cat = ""
 params.ftp1000genome=1
 params.list_vcf=""
+params.cut_maf=0.01
 
 params.prob_cred_set=0.95
 
@@ -262,7 +263,7 @@ if(params.input_dir=="" | params.input_pat==""){
       awk '{if(\$2=="."){\$2=\$1":"\$4};print \$0}' "${bim}" > $plk"_tmp.bim"
       awk '{if(length(\$5)==1 && length(\$6)==1)print \$2}' $plk"_tmp.bim" > ${bim}.wellpos.pos
       awk '{print \$2}' $plk"_tmp.bim" | sort | uniq -d > duplicated_snps.snplist
-      plink -bfile $plk"_tmp"  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.other_cpus_req} --exclude duplicated_snps.snplist
+      plink -bfile $plk"_tmp"  --keep-allele-order --extract  ${bim}.wellpos.pos --make-bed -out $out --threads ${params.other_cpus_req} --exclude duplicated_snps.snplist 
      """
  }
  plk_chro_flt=plk_chro_cl.collect()
@@ -288,7 +289,7 @@ if(params.input_dir=="" | params.input_pat==""){
      cp ${firstbed}.bim ${out}.bim
      else
      echo "${allfile2.join('\n')}" > listbedfile
-     plink --bfile $firstbed  --keep-allele-order --threads ${params.other_cpus_req} --merge-list listbedfile --make-bed --out $out
+     plink --bfile $firstbed  --keep-allele-order --threads ${params.other_cpus_req} --merge-list listbedfile --make-bed --out $out -maf ${params.cut_maf}
      fi
 
      """
@@ -386,7 +387,7 @@ process ExtractPositionGwas{
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     bfile=bed.baseName
     """
-    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq  --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nvalue --min_pval ${params.threshold_p} $nheader --z_pval ${params.used_pval_z}
+    fine_extract_sig.py --inp_resgwas $filegwas --chro ${params.chro} --begin ${params.begin_seq}  --end ${params.end_seq} --chro_header ${params.head_chr} --pos_header ${params.head_bp} --beta_header ${params.head_beta} --se_header ${params.head_se} --a1_header ${params.head_A1} --a2_header ${params.head_A2} $freq  --bfile $bfile --rs_header ${params.head_rs} --out_head $out --p_header ${params.head_pval}  $nvalue --min_pval ${params.threshold_p} $nheader --z_pval ${params.used_pval_z} --maf ${params.cut_maf}
     """
 }
 

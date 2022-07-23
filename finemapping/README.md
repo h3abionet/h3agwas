@@ -98,7 +98,7 @@ The key options are:
  * `threshold_p2` :  Secondary significance threshold for clumped SNPs see [clump](https://zzz.bwh.harvard.edu/plink/clump.shtml)
  * `size_wind_kb` : size windows used for clump and around each independant snps
  * `clump_r2` : ld used for [clump](https://zzz.bwh.harvard.edu/plink/clump.shtml)
-
+ * `cut_maf` minor allele frequencies [ default : 0.01]
 * `input_dir`, `output_dir`: where input and output goes to and comes from;
 * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
 * `file_gwas` : file contains summary stat of gwas :

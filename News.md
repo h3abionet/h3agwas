@@ -2,12 +2,28 @@
 
 
 ## What's new :
-* 2022-07-19 : add `list_bgen` option to complete bgen for saige, regenie and boltlmm in [assoc](assoc/README.md)
-* 2022-07-13 : found example and command line of pipeline in [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
-* 2022-07-13 : add in  [finemapping/finemap_region.nf](finemapping/README.md) , 1000 genome downlowd if there is no genetics data
-* 2022-07-13 : add regenie software for association [assoc](assoc/README.md) 
-* 2022-07-8 : add plink support for saige [assoc](assoc/README.md) 
-* 2022-07-8 : add bgen support for saige,bolt-lmm and gcta [assoc](assoc/README.md) 
+###V3.3.0
+* general : add nextflow.enable.dsl = 1 to all nf script for compatibility new version of nextflow.
+* association :
+  * add regenie software for association [assoc](assoc/README.md) 
+ * add plink input for saige [assoc](assoc/README.md) 
+ * add bgen support for saige,bolt-lmm and gcta and regenie [assoc](assoc/README.md) 
+  * `list_bgen` option to complete bgen for saige, regenie and boltlmm in [assoc](assoc/README.md)
+  * `bgen` : for one file 
+* docker :
+ * image docker/singularity of saige : change by official image from github
+ * image of rproject : image based by ubuntu 22.04 and R 4.2
+* example :
+ * found example and command line of pipeline in [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
+* finemaping :
+ * [finemapping/finemap_region.nf](finemapping/README.md) : 1000 genome downlowd if there is no genetics data
+ * [finemapping/main.nf](finemapping/README.md) : change script of extraction and algoritm for faster and improvment algoritm
+ * `cut_maf` : option work for finemap_region and main  [default : 0.01]
+* 
+* qc :
+ * minor bug fixed for new version of nextflow
+ * reorganisation of output
+### previous change :
 * 2022-06-10 : update meta of metasoft, add column for N, Frequencies for each publication in merge result
 * 2022-05-04 : preprint manuscript can be found on [biorxiv](https://www.biorxiv.org/content/10.1101/2022.05.02.490206v1)
 * 2021-11-04 : association script include saige software
