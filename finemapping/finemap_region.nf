@@ -81,8 +81,8 @@ params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"
 params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z", "prob_cred_set"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "gcta_opt_multigrm_cor", "gcta_opt_grm_cor", "other_cpus_req"]
-param_data=["gwas_cat", "genes_file", "genes_file_ftp", "ftp1000genome", "list_phenogc", "file_phenogc"]
+params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "gcta_opt_multigrm_cor", "gcta_opt_grm_cor", "other_cpus_req", "paintor_mem_req"]
+param_data=["gwas_cat", "genes_file", "genes_file_ftp", "ftp1000genome", "list_phenogc", "file_phenogc" ,"list_vcf", "ftp_vcf"]
 param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "gwas_cat_ftp", "list_pheno"]
 
 allowed_params+=params_mf
@@ -446,7 +446,7 @@ process ComputedFineMapCond{
     val(n) from nval_ch_fm
   publishDir "${params.output_dir}/fm_cond",  mode:'copy'
   output :
-    file("${out}.snp") into res_fmcond
+    tuple path("${out}.snp"), path("${out}.cred") into res_fmcond
     set file("${out}.config"), file("${out}.cred"), file("${out}.log_cond")
   script:
   fileconfig="config"
@@ -468,7 +468,7 @@ process ComputedFineMapSSS{
     val(n) from nval_ch_fmss
   publishDir "${params.output_dir}/fm_sss",  mode:'copy'
   output :
-    file("${out}.snp") into res_fmsss
+    tuple path("${out}.snp"), path("${out}.cred${params.n_causal_snp}") into res_fmsss
     set file("${out}.config"), file("${out}.cred${params.n_causal_snp}"), file("${out}.log_sss")
   script:
   fileconfig="config"
@@ -631,8 +631,8 @@ process MergeResult{
       file(infopaintor) from infores_paintor_ch
       file(cojo) from res_cojo
       file(caviarbf) from res_caviarbf
-      file(fmsss) from res_fmsss
-      file(fmcond) from res_fmcond
+      tuple path(fmsss), path(fmssscred) from res_fmsss
+      tuple path(fmcond), path(fmcondcred)  from res_fmcond
       file(datai) from data_i
       file(genes) from  genes_file_ch
       file(gwascat) from gwascat_ch
@@ -649,7 +649,9 @@ process MergeResult{
        cat $infopaint > infopaint
        echo "sss $fmsss" > infofinemap 
        echo "cond $fmcond" >> infofinemap 
-       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot
+       echo "cond $fmcondcred" > infofinemapcred
+       echo "sss $fmssscred" >> infofinemapcred
+       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred
       """
 
 }

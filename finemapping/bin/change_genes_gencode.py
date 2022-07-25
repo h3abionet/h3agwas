@@ -21,7 +21,7 @@ for line in readgene :
       resgene=[x for x in tmp if patrn in x ]
       if len(resgene)> 0:
         resgene=resgene[0].replace(patrn, '').replace(' ','').replace('"',"")
-        chro=resgene[0].replace('chr','')
+        chro=splline[0].replace('chr','')
         writegene.write("\t".join([chro, splline[2], splline[3], splline[4], resgene])+'\n')
 
 writegene.close()

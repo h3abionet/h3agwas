@@ -367,7 +367,7 @@ process ComputedFineMapCond{
     set val(pos),file(ld),file(filez), val(n) from ld_fmcond_group
   publishDir "${params.output_dir}/$pos/fm_cond",  mode:'copy'
   output :
-    set val(pos), file("${out}.snp") into res_fmcond
+    set val(pos), file("${out}.snp"),file("${out}.cred") into res_fmcond
    set file("${out}.config"), file("${out}.cred"), file("${out}.log_cond")
   script:
   fileconfig="config"
@@ -404,7 +404,7 @@ process ComputedFineMapSSS{
      set val(pos),file(ld),file(filez),val(n) from ld_fmss_group
   publishDir "${params.output_dir}/$pos/fm_sss",  mode:'copy'
   output :
-    set val(pos),file("${out}.snp") into res_fmsss
+    set val(pos),file("${out}.snp"), file("${out}.cred${params.n_causal_snp}") into res_fmsss
     set file("${out}.config"), file("${out}.cred${params.n_causal_snp}"), file("${out}.log_sss")
   script:
   fileconfig="config"
@@ -664,14 +664,14 @@ process MergeResult{
     label 'R'
     memory params.other_mem_req
     input :
-      set val(pos), file(paintori),file(infopaintor), file(paintor_bf), file(pfileannoti), file(cojo), file(caviarbf), file(fmsss), file(fmcond), file(datai), file(genes), file(gwascat) from mergeall
+      set val(pos), file(paintori),file(infopaintor), file(paintor_bf), file(pfileannoti), file(cojo), file(caviarbf), file(fmsss), file(fmssscred), file(fmcond), file(fmcondcred), file(datai), file(genes), file(gwascat) from mergeall
    publishDir "${params.output_dir}/$pos/",   pattern:"${out}*", mode:'copy'
    publishDir "${params.output_dir}/$pos/plot",    mode:'copy'
     output :
        set file("${out}.pdf"), file("${out}.all.out"), file("${out}.all.out")
-       set val(pos), file(paintori),file(infopaintor), file(paintor_bf), file(pfileannoti), file(cojo), file(caviarbf), file(fmsss), file(fmcond), file(datai), file(genes), file(gwascat), file("run.bash")
+       set val(pos), file(paintori),file(infopaintor), file(paintor_bf), file(pfileannoti), file(cojo), file(caviarbf), file(fmsss),file(fmssscred), file(fmcond),file(fmcondcred), file(datai), file(genes), file(gwascat), file("run.bash"), file("infopaintor"), file("infofinemap"), file("infofinemapcred")
     script :
-      out=params.output
+      out=params.output+'_'+pos
       infopaint=infopaintor.join(" ")
       pfileannot= (baliseannotpaint=="0" | params.paintor_bin==0) ? "":" --paintor_fileannot $pfileannoti "
       paintor = (params.paintor_bin=="0") ? "" : "--listpaintor  infopaintori"
@@ -679,9 +679,11 @@ process MergeResult{
       """
        cat $infopaintor > infopaintor
        echo "sss $fmsss" > infofinemap 
+       echo "sss $fmssscred" > infofinemapcred
        echo "cond $fmcond" >> infofinemap 
-       merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot
-       echo "merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot" > run.bash
+       echo "cond $fmcondcred" >> infofinemapcred
+       merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred
+       echo "merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred" > run.bash
       """
 }
 
