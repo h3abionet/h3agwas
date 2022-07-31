@@ -114,7 +114,7 @@ process format_mergebgen{
     input :
        path(lbgen) from lbgen
        path(lbgen) from lsample
-    publishDir "${params.output_dir}/bgen_chro", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
     output :
        file("${Ent}.bgen")
        file("${Ent}.sample")
