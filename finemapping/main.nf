@@ -16,9 +16,61 @@
  */
 
 nextflow.enable.dsl = 1
+
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
+}
+
+
 def strmem(val){
  return val as nextflow.util.MemoryUnit
 }
+
+/*definition*/
+def errormess(message,exitn=0){
+    if(message=="")return(0)
+    println(message)
+    System.exit(exitn)
+}
+def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, notpossibleval=null) {
+  messageerror=""
+  if(param==null){
+    messageerror+="error :--"+namesparam+" is null " 
+  } else {
+    if(!(param.getClass() in type)){
+   messageerror+="error :--"+namesparam+" must be a "+ type
+     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     else messageerror+=" but type is "+param.getClass()+" value "+ param
+   }else{
+   if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
+   if(max && param>max)messageerror+="\nerror : --"+namesparam +"> maxvalue :" + param+" > "+max
+   if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
+   }
+   }
+    errormess(messageerror,2)
+}
+
+
+def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=null, notpossibleval=null){
+ messageerror=""
+ for(param in listparams){
+   if(params.containsKey(param)){
+     checkparams(params[param], param, type, min=min, max=max, possibleval=possibleval, notpossibleval=notpossibleval)
+   }else{
+     messageerror+="param :"+param+" not initialize\n" 
+   }
+ }
+ errormess(messageerror, 2)
+
+}
+
 
 
 def getlistchro(listchro){
@@ -74,16 +126,19 @@ def checkColumnHeader(fname, columns) {
 
 
 def helps = [ 'help' : 'help' ]
-
-allowed_params = ["input_dir","input_pat","output","output_dir","data","covariates", "work_dir", "scripts", "max_forks", "cut_maf", "phenotype", "accessKey", "access-key", "secretKey", "secret-key",  "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "batch", "batch_col" ,"samplesize", "manifest", "region", "AMI", "queue", "strandreport"]
+/*
+allowed_params = ["input_dir","input_pat","output","output_dir","covariates", "work_dir", "scripts", "max_forks", "cut_maf", "phenotype", "accessKey", "access-key", "secretKey", "secret-key",  "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "big_time","thin", "batch", "batch_col" ,"samplesize", "manifest", "region", "AMI", "queue", "strandreport", 'list_phenogc', "queue","batch"]
 params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp", "list_pheno"]
 params_mf=["n_pop","threshold_p", "n_causal_snp", "prob_cred_set"]
-params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno", "threshold_p2", "clump_r2", "size_wind_kb"]
+params_cojo=["cojo_slct_other", "cojo_slct", "cojo_actual_geno", "threshold_p2", "clump_r2", "size_wind_kb"]
 params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z"]
 params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "plink_cpus_req","other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "paintor_mem_req"]
+params_memcpu=["gcta_mem_req","plink_mem_req", "max_plink_cores","other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "paintor_mem_req"]
 param_data=["gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc"]
 param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro", 'file_pheno']
+
+
+
 allowed_params+=params_mf
 allowed_params+=params_cojo
 allowed_params+=params_filegwas
@@ -92,12 +147,30 @@ allowed_params+=params_memcpu
 allowed_params+=param_gccat
 allowed_params+=params_paintorcav
 allowed_params+=param_data
+*/
+
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro", 'file_pheno', 'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue']
+allowed_params=allowed_params_input
+allowed_params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp", "list_pheno"]
+allowed_params+=allowed_params_bin
+allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores']
+allowed_params+=allowed_params_cores
+allowed_params_intother=["max_forks", "n_pop", "n_causal_snp", 'cojo_slct', "size_wind_kb"]
+allowed_params+=allowed_params_intother
+allowed_params_bolother=["used_pval_z"]
+allowed_params+=allowed_params_bolother
+allowed_params_float=["cut_maf", "threshold_p", "prob_cred_set", 'threshold_p2', 'clump_r2']
+allowed_params+=allowed_params_float
+allowed_params_memory=["gcta_mem_req" , "plink_mem_req", "other_mem_req", "fm_mem_req","caviar_mem_req", "paintor_mem_req", "boot-storage-size"]
+allowed_params+=allowed_params_memory
+params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
+allowed_params+=params_filegwas
+
 
 
 
 def params_help = new LinkedHashMap(helps)
 
-//dummy_dir="${workflow.projectDir}/qc/input"
 
 filescript=file(workflow.scriptFile)
 projectdir="${filescript.getParent()}"
@@ -115,7 +188,7 @@ params.output="finemap"
 params.gcta_bin="gcta64"
 
 // paramater
-params.n_pop=""
+params.n_pop=0
 
 // params file input
 params.head_pval = "P_BOLT_LMM"
@@ -149,7 +222,6 @@ params.plink_cpus_req=5
 params.fm_cpus_req = 5
 params.cojo_slct=1
 params.cojo_slct_other=""
-params.cojo_actual_geno=0
 
 params.caviar_mem_req="40GB"
 params.paintor_mem_req="20GB"
@@ -226,6 +298,15 @@ params.each { parm ->
   }
 }
 
+checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bin, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+checkmultiparam(params,allowed_params_float, [java.lang.Double,java.lang.Float, java.lang.Integer, java.math.BigDecimal], min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,params_filegwas, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+
 
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
 bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
@@ -251,7 +332,7 @@ gwas_file_clump=Channel.fromPath(params.file_gwas,checkIfExists:true)
 checkColumnHeader(params.file_gwas, [params.head_beta, params.head_se, params.head_A1,params.head_A2, params.head_freq, params.head_chr, params.head_bp, params.head_rs, params.head_pval, params.head_n])
 process clump_data{
  memory params.plink_mem_req
- cpus params.plink_cpus_req
+ cpus params.max_plink_cores
  input :
      set file(bed),file(bim),file(fam) from gwas_plk_clump
      file(gwasfile) from gwas_file_clump
@@ -264,7 +345,7 @@ process clump_data{
    plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
    """
    formatsumstat_inplink.py --inp_asso $gwasfile --chro_header  ${params.head_chr} --bp_header ${params.head_bp} --a1_header ${params.head_A1} --a2_header ${params.head_A2}  --pval_header ${params.head_pval} --beta_header ${params.head_beta}  --out $output --rs_header ${params.head_rs} --se_header  ${params.head_se} --bim $bim
- ${params.plink_bin} -bfile $plkfile  -out $output --keep-allele-order --threads ${params.plink_cpus_req}   --clump $output --clump-p1 ${params.threshold_p} --clump-p2 ${params.threshold_p2} --clump-r2 ${params.clump_r2} --clump-kb ${params.size_wind_kb} --maf ${params.cut_maf} --memory $plink_mem_req_max
+ ${params.plink_bin} -bfile $plkfile  -out $output --keep-allele-order --threads ${params.max_plink_cores}   --clump $output --clump-p1 ${params.threshold_p} --clump-p2 ${params.threshold_p2} --clump-r2 ${params.clump_r2} --clump-kb ${params.size_wind_kb} --maf ${params.cut_maf} --memory $plink_mem_req_max
   """
 }
 process extract_sigpos_gwas{
