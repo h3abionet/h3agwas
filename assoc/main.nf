@@ -23,33 +23,74 @@
 import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
-
 nextflow.enable.dsl = 1 
+
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
+}
+
+
+/*definition*/
+def errormess(message,exitn=0){
+    if(message=="")return(0)
+    println(message)
+    System.exit(exitn)
+}
+def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, notpossibleval=null) {
+  messageerror=""
+  if(!(param.getClass() in type)){
+   messageerror+="error :--"+namesparam+" must be a "+ type
+     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     else messageerror+=" but type is "+param.getClass()+" value "+ param
+   }else{
+   if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
+   if(max && param>max)messageerror+="\nerror : --"+namesparam +"> maxvalue :" + param+" > "+max
+   if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
+   }
+    errormess(messageerror)
+}
+
+def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=null, notpossibleval=null){
+
+ for(param in listparams){
+   checkparams(params[param], param, type, min=min, max=max, possibleval=possibleval, notpossibleval=notpossibleval)
+ }
+ 
+}
+
+
+
 
 
 
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates","gemma_num_cores","gemma_mem_req","gemma","linear","logistic","assoc","fisher", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "other_mem_req", "max_plink_cores", "pheno","big_time","thin", "gemma_mat_rel","print_pca", "file_rs_buildrelat","genetic_map_file", "rs_list","adjust","bootStorageSize","shared-storage-mount","mperm","sharedStorageMount","max-instances","maxInstances","boot-storage-size","sharedStorageMound","instance-type","instanceType","AMI", "gemma_multi", "sample_snps_rel", "saige", "gemma_bin", "bgen", "bgen_sample", "use_imputed", "bgen_mininfo", "list_bgen"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta64_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType"]
+allowed_params=allowed_params_input
+allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'fastlmm_num_cores', 'saige_num_cores',"regenie_num_cores", "fastgwa_num_cores"]
+allowed_params+=allowed_params_cores
+allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_bsize_step2", "grm_nbpart", "thin"]
+allowed_params+=allowed_params_intother
+allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_cov", 'gemma_multi', 'pheno_bin', 'fastlmm_multi', "regenie_loco", "sexinfo_available", "print_pca", "saige_loco"]
+allowed_params+=allowed_params_bolother
+allowed_params_float=["cut_maf", "bgen_mininfo", "regenie_mafstep1"]
+allowed_params+=allowed_params_float
+allowed_params_memory=["gemma_mem_req" , "plink_mem_req", "other_mem_req", "bolt_mem_req", 'fastlmm_mem_req', 'saige_mem_req', "regenie_mem_req", "fastgwa_mem_req", "bootStorageSize", "bootStorageSize", "boot-storage-size", "sharedStorageMount"]
+allowed_params+=allowed_params_memory
+allowed_params_test=["gemma", "linear","logistic","assoc","fisher",  "saige", "boltlmm", 'gemma_gxe', 'plink_gxe', 'fastlmm', "regenie", "fastgwa"]
+allowed_params+=allowed_params_test
 
 
-/*bolt_use_missing_cov --covarUseMissingIndic : “missing indicator method” (via the --covarUseMissingIndic option), which adds indicator variables demarcating missing status as additional covariates. */
-ParamBolt=["bolt_ld_scores_col", "bolt_ld_score_file","boltlmm", "bolt_covariates_type",  "bolt_use_missing_cov", "bolt_num_cores", "bolt_mem_req", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin"]
-allowed_params+=ParamBolt
-ParamFast=["fastlmm","fastlmm_num_cores", "fastlmm_mem_req", "fastlmm_multi", "fastlmmc_bin", "covariates_type"]
-allowed_params+=ParamFast
-/*Gxe : */
-GxE_params=['gemma_gxe', "plink_gxe", "gxe"]
-allowed_params+=GxE_params
-Saige_params=['pheno_bin', "list_vcf", "saige_num_cores", "saige_mem_req", "vcf_field"]
-allowed_params+=Saige_params
-regenie_params=['regenie_bin', "regenie_bsize", "regenie_bsize_step1", "regenie_bsize_step2", "regenie_otheropt_step1", "regenie_otheropt_step2", "regenie_loco", "regenie_num_cores", "regenie_mem_req", "regenie", "regenie_mafstep1"]
-allowed_params+=regenie_params
 
 
-FastGWA_params=["fastgwa_mem_req", "fastgwa_num_cores", 'fastgwa', "gcta64_bin"]
-allowed_params+=FastGWA_params
 
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
@@ -71,7 +112,7 @@ params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
 params.output_testing = "cleaned"
-params.thin       = ""
+params.thin       = 0
 params.covariates = ""
 params.chrom      = ""
 params.print_pca = 1
@@ -81,7 +122,6 @@ params.list_vcf=""
 params.vcf_field="DS"
 params.vcf_minmac=1
 outfname = params.output_testing
-params.cut_maf=0.01
 params.bgen=""
 params.bgen_sample=""
 params.bgen_mininfo=0.6
@@ -90,14 +130,15 @@ params.list_bgen=""
 
 params.regenie_bin="regenie"
 params.regenie_bsize=100
-params.regenie_bsize_step1=""
-params.regenie_bsize_step2=""
+params.regenie_bsize_step1=0
+params.regenie_bsize_step2=0
 params.regenie_otheropt_step1=""
 params.regenie_otheropt_step2=""
 params.regenie_loco=1
 params.regenie_num_cores=6
 params.regenie_mem_req="20GB"
 params.regenie_mafstep1=0.01
+params.regenie=0
 
 
 /* Defines the path where any scripts to be executed can be found.
@@ -111,7 +152,7 @@ params.mperm = 00
 /* Adjust for multiple correcttion */
 params.adjust = 0
 
-supported_tests_all = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma", "gemma_gxe", 'saige']
+supported_tests_all = ["assoc","fisher","model","cmh","linear","logistic","boltlmm", "fastlmm", "gemma", "gemma_gxe", 'saige', "regenie"]
 
 
 params.assoc     = 0
@@ -192,7 +233,6 @@ params.snps_include_rel=""
 
 params.input_pat  = 'raw-GWA-data'
 
-params.sexinfo_available = "false"
 
 
 params.plink_mem_req = '6GB' // how much plink needs for this
@@ -205,6 +245,15 @@ max_plink_cores = params.max_plink_cores
 
 params.help = false
 
+/*check param*/
+checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+checkmultiparam(params,allowed_params_test, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+checkmultiparam(params,allowed_params_float, [java.lang.Float, java.lang.Integer, java.math.BigDecimal], min=0, max=null, possibleval=null, notpossibleval=null)
+//checkmultiparam(params, , type, min=null, max=null, possibleval=null, notpossibleval=null)
 data_ch_pheno = Channel.fromPath(params.data, checkIfExists:true)
 data_ch_show = Channel.fromPath(params.data, checkIfExists:true)
 data_ch_gemma = Channel.fromPath(params.data, checkIfExists:true)
@@ -337,16 +386,9 @@ println "\nTesting data            : ${params.input_pat}\n"
 println "Testing for phenotypes  : ${params.pheno}\n"
 println "Using covariates        : ${params.covariates}\n\n"
 
-if (params.gemma) println "Doing gemma testing"
-if (params.saige) println "Doing saige testing"
-if (params.assoc) println "Doing assoc testing"
-if (params.linear) println "Doing linear regression testing"
-if (params.logistic) println "Doing logistic regression testing"
-if (params.fastlmm == 1) println "Doing mixed model with fastlmm "
-if (params.boltlmm == 1) println "Doing mixed model with boltlmm "
-if(params.gemma_gxe==1)println "Doing mixed model with gemma and gxe with "+params.gxe
-if(params.plink_gxe==1)println "Doing association with gxe and plink with "+params.gxe
-println "\n"
+for(test in allowed_params_test){
+ if (params[test]) println "Doing $test testing"
+}
 
 if (params.thin)
    thin = "--thin ${params.thin}"
@@ -1430,7 +1472,7 @@ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {
            if (params.covariates) covariate = "--covar ${phenof} --covar-name ${params.covariates} "
            out = pheno
        }
-       if(params.sexinfo_available=='true'){
+       if(params.sexinfo_available==1){
          sexallow=""
        }else{
         sexallow="--allow-no-sex"
@@ -2070,7 +2112,7 @@ if(params.regenie==1){
       keeppos=(rsrel=='00') ? ""   : " --extract $rsrel "
       covoption = (params.covariates=="") ? "" : " --cov_list ${params.covariates}"
       covoption_regenie= (params.covariates=="") ? "" : " -covarFile $data  --covarColList ${params.covariates}"
-      bsize=(params.regenie_bsize_step1=="") ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step1}"
+      bsize=(params.regenie_bsize_step1==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step1}"
       regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
       phef=pheno+".pheno"
       out=phef+"_regenie"
@@ -2097,7 +2139,7 @@ if(params.regenie==1){
     loco=(params.regenie_loco==0) ? "" : " --loocv "
     bfile=bed.baseName
     covoption_regenie= (params.covariates=="") ? "" : " -covarFile $data  --covarColList ${params.covariates}"
-    bsize=(params.regenie_bsize_step2=="") ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step2}"
+    bsize=(params.regenie_bsize_step2==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step2}"
     regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
     genet=(params.bgen=="")? " --bed $bfile " : " --bgen $bgen --sample $bgensample "
     genet=(params.list_bgen=="")? " $genet " : " --bgen $bgen --sample $bgensample "

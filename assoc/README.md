@@ -90,6 +90,7 @@ The key options are:
  * plink gwas option :
     * `adjust`: do we want to do explicit testing for Bonferroni correction et al that PLINK odes
     * `mperm`: do you want to test doing permutation testing. If so, how many tests?  By default this is 1000.
+    * `sexinfo_available` presence of sex in plink file 1, yes 2 : no  [default : 0]
 
 ### 2. gemma option 
 *  `gemma`: should gemma be used? (default 0)
@@ -165,9 +166,9 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
 * `regenie` : perform a regenie analyse yes : 1, no : 0 [default : 0]
 * bsize :
  * `regenie_mafstep1` : maf for step 1
- * `regenie_bsize` : bsize used for step 1 and 2 if `regenie_bsize_step1` and `regenie_bsize_step2` are not initialise [default 100]
- * `regenie_bsize_step1` : bsize for step 1
-* `regenie_bsize_step2` : bsize for step 2
+ * `regenie_bsize` : bsize used for step 1 and 2 if `regenie_bsize_step1` and `regenie_bsize_step2` are 0 [default 100]
+ * `regenie_bsize_step1` : bsize for step 1 [default 0]
+* `regenie_bsize_step2` : bsize for step 2 [default 0]
 * `regenie_otheropt_step1` : other option in command line of step 1
 * `regenie_otheropt_step2` : other option in command line of step 2
 * `regenie_loco` : option loco for bgen, yes : 1, no : 0, [default 1]
