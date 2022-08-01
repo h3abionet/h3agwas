@@ -189,6 +189,8 @@ params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
         println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
   }
+    System.exit(exitn)
+
 }
 
 checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)

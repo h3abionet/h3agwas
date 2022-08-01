@@ -17,6 +17,7 @@ This means that instead of running `nextflow run h3abionet/h3agwas/assoc.nf`, yo
 
 
 ***Preprint manuscript can be found on [biorxiv](https://www.biorxiv.org/content/10.1101/2022.05.02.490206v1)***
+***found news and last version in [dev branch](https://github.com/h3abionet/h3agwas/tree/dev)***
 
 ## Brief introduction
 

@@ -20,18 +20,80 @@ import java.nio.file.Paths
 
 nextflow.enable.dsl = 1
 
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
+}
+
+def errormess(message,exitn=0){
+    if(message=="")return(0)
+    println(message)
+    System.exit(exitn)
+}
+
+
+def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, notpossibleval=null) {
+  messageerror=""
+  if(param==null){
+    messageerror+="error :--"+namesparam+" is null "
+  } else {
+    if(!(param.getClass() in type)){
+   messageerror+="error :--"+namesparam+" must be a "+ type
+     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     else messageerror+=" but type is "+param.getClass()+" value "+ param
+   }else{
+   if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
+   if(max && param>max)messageerror+="\nerror : --"+namesparam +"> maxvalue :" + param+" > "+max
+   if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
+   }
+   }
+    errormess(messageerror,2)
+}
+
+
+def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=null, notpossibleval=null){
+ messageerror=""
+ for(param in listparams){
+   if(params.containsKey(param)){
+     checkparams(params[param], param, type, min=min, max=max, possibleval=possibleval, notpossibleval=notpossibleval)
+   }else{
+     messageerror+="param :"+param+" not initialize\n"
+   }
+ }
+ errormess(messageerror, 2)
+
+}
+
+
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req", "metasoft_mem_req", "plink_mem_req"]
+//allowed_params = ['input_config', 'metal', 'gwama', 'heterogenity', 'metal_bin', 'GWAMA_bin', "ma_mem_req", "gwama_mem_req", "metasoft_mem_req", "plink_mem_req"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "input_config","ma_metasoft_opt","metasoft_pvalue_table", "big_time", "file_config", "bootStorageSize","maxInstances","max-instances", "pheno","shared-storage-mount","csv_sep", "ma_mrmega_opt"]
+allowed_params=allowed_params_input
+allowed_params_cores=["max_plink_cores"]
+allowed_params+=allowed_params_cores
+allowed_params_intother=["ma_mrmega_pc"]
+allowed_params+=allowed_params_intother
+allowed_params_bin=["GWAMA_bin", "plink_bin", "metal_bin", "gwama_bin", "mrmega_bin", "metasoft_bin"]
+allowed_params+=allowed_params_bin
+allowed_params_bolother=["ma_random_effect", "ma_genomic_cont", "ma_inv_var_weigth","use_rs","ma_overlap_sample"]
+allowed_params+=allowed_params_bolother
+allowed_params_float=[]
+allowed_params+=allowed_params_float
+allowed_params_memory=["mrmega_mem_req", "ma_mem_req", "gwama_mem_req","metasoft_mem_req","plink_mem_req","ma_mem_req_utils"]
+allowed_params+=allowed_params_memory
+allowed_params_test=["plink", "metal", "gwama", "mrmega", "metasoft"]
+allowed_params+=allowed_params_test
 
-/*
-params.each { parm ->
-  if (! allowed_params.contains(parm.key)) {
-    println "\nUnknown parameter : Check parameter <$parm>\n";
-  }
-}
-*/
+
+
 def params_help = new LinkedHashMap(helps)
 
 
@@ -76,13 +138,18 @@ params.ma_metasoft_opt=""
 params.ma_mrmega_opt=""
 
 params.covariates=""
-ma_mem_req_utils="10GB"
+params.ma_mem_req_utils="10GB"
 report_ch = Channel.empty()
 
 gwama_mem_req=params.gwama_mem_req
 ma_mem_req=params.ma_mem_req
 metasoft_mem_req=params.metasoft_mem_req
 
+params.each { parm ->
+  if (! allowed_params.contains(parm.key)) {
+    println "\nUnknown parameter : Check parameter <$parm>\n";
+  }
+}
 def configfile_analysis(file, sep){
    File theInfoFile = new File( file )
    if(file.contains("s3://")){
@@ -138,9 +205,20 @@ def configfile_analysis(file, sep){
  }
  return([resFile,resInfo, NumRef, listnum])
 }
+
+
+checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+checkmultiparam(params,allowed_params_test, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+checkmultiparam(params,allowed_params_float, [java.lang.Float, java.lang.Integer, java.math.BigDecimal], min=0, max=null, possibleval=null, notpossibleval=null)
+
+
 if(params.file_config==''){
 println "not file config defined\n exit"
-exit(1)
+System.exit(-1)
 }
 checkexi=Channel.fromPath(params.file_config,checkIfExists:true)
 info_file=configfile_analysis(params.file_config,params.csv_sep)
@@ -164,7 +242,7 @@ process extract_rs_file{
 file_rs_formerge_m=file_rs_formerge.collect()
 
 process extract_allrs{
-    memory ma_mem_req_utils
+    memory params.ma_mem_req_utils
    input :
      path(filers)  from file_rs_formerge_m
    output :

@@ -38,7 +38,6 @@ if (!workflow.resume) {
 
 
 /*definition*/
-/*definition*/
 def errormess(message,exitn=0){
     if(message=="")return(0)
     println(message)
@@ -267,7 +266,7 @@ checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=nu
 checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
 checkmultiparam(params,allowed_params_test, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
 checkmultiparam(params,allowed_params_float, [java.lang.Float, java.lang.Integer, java.math.BigDecimal], min=0, max=null, possibleval=null, notpossibleval=null)
-//checkmultiparam(params, , type, min=null, max=null, possibleval=null, notpossibleval=null)
+
 data_ch_pheno = Channel.fromPath(params.data, checkIfExists:true)
 data_ch_show = Channel.fromPath(params.data, checkIfExists:true)
 data_ch_gemma = Channel.fromPath(params.data, checkIfExists:true)
