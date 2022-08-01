@@ -6,7 +6,7 @@
 ##V3.3.0
 * general : 
   *add nextflow.enable.dsl = 1 to all nf script for compatibility new version of nextflow.
- * add control of arguments input of `assoc/main.nf`, `finemapping/main.nf`, `finemapping/cond-assos.nf` and `finemapping/finemap_region.nf`
+ * add control of arguments input of `assoc/main.nf`, `finemapping/main.nf`, `finemapping/cond-assos.nf`, `finemapping/finemap_region.nf` and `meta/main.nf`
 * association :
   * add regenie software for association [assoc](assoc/README.md) 
  * add plink input for saige [assoc](assoc/README.md) 
