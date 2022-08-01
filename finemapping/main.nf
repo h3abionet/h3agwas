@@ -54,7 +54,7 @@ def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, n
    if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
    }
    }
-    errormess(messageerror,2)
+    errormess(messageerror,-1)
 }
 
 
@@ -67,8 +67,7 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
      messageerror+="param :"+param+" not initialize\n" 
    }
  }
- errormess(messageerror, 2)
-
+ errormess(messageerror, -1)
 }
 
 
@@ -126,30 +125,8 @@ def checkColumnHeader(fname, columns) {
 
 
 def helps = [ 'help' : 'help' ]
-/*
-allowed_params = ["input_dir","input_pat","output","output_dir","covariates", "work_dir", "scripts", "max_forks", "cut_maf", "phenotype", "accessKey", "access-key", "secretKey", "secret-key",  "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "big_time","thin", "batch", "batch_col" ,"samplesize", "manifest", "region", "AMI", "queue", "strandreport", 'list_phenogc', "queue","batch"]
-params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp", "list_pheno"]
-params_mf=["n_pop","threshold_p", "n_causal_snp", "prob_cred_set"]
-params_cojo=["cojo_slct_other", "cojo_slct", "cojo_actual_geno", "threshold_p2", "clump_r2", "size_wind_kb"]
-params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z"]
-params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "max_plink_cores","other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "paintor_mem_req"]
-param_data=["gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc"]
-param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro", 'file_pheno']
 
-
-
-allowed_params+=params_mf
-allowed_params+=params_cojo
-allowed_params+=params_filegwas
-allowed_params+=params_bin
-allowed_params+=params_memcpu
-allowed_params+=param_gccat
-allowed_params+=params_paintorcav
-allowed_params+=param_data
-*/
-
-allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro", 'file_pheno', 'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue']
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue']
 allowed_params=allowed_params_input
 allowed_params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp", "list_pheno"]
 allowed_params+=allowed_params_bin
@@ -282,7 +259,6 @@ headgc_bp="chromEnd"
 gwascat_ch=Channel.fromPath(params.gwas_cat, checkIfExists:true)
 headgc_chr=params.headgc_chr
 headgc_bp=params.headgc_bp
-//checkColumnHeader(params.gwas_cat, [headgc_chr,headgc_bp])
 
 }
 

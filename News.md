@@ -1,9 +1,12 @@
 <img src="auxfiles/H3ABioNetlogo2.jpg"/>
 
 
-## What's new :
-###V3.3.0
-* general : add nextflow.enable.dsl = 1 to all nf script for compatibility new version of nextflow.
+# What\'s new :
+
+##V3.3.0
+* general : 
+  *add nextflow.enable.dsl = 1 to all nf script for compatibility new version of nextflow.
+ * add control of arguments input of `assoc/main.nf`, `finemapping/main.nf`, `finemapping/cond-assos.nf` and `finemapping/finemap_region.nf`
 * association :
   * add regenie software for association [assoc](assoc/README.md) 
  * add plink input for saige [assoc](assoc/README.md) 
@@ -19,11 +22,11 @@
  * [finemapping/finemap_region.nf](finemapping/README.md) : 1000 genome downlowd if there is no genetics data
  * [finemapping/main.nf](finemapping/README.md) : change script of extraction and algoritm for faster and improvment algoritm
  * `cut_maf` : option work for finemap_region and main  [default : 0.01]
-* 
 * qc :
  * minor bug fixed for new version of nextflow
  * reorganisation of output
-### previous change :
+
+## previous change :
 * 2022-06-10 : update meta of metasoft, add column for N, Frequencies for each publication in merge result
 * 2022-05-04 : preprint manuscript can be found on [biorxiv](https://www.biorxiv.org/content/10.1101/2022.05.02.490206v1)
 * 2021-11-04 : association script include saige software

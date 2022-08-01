@@ -1,5 +1,4 @@
 #!/usr/bin/env nextflow
-nextflow.enable.dsl = 1
 
 /*
  * Authors       :
@@ -15,6 +14,19 @@ nextflow.enable.dsl = 1
  * Description : pipeline to do a finemapping 
  *
  */
+
+nextflow.enable.dsl = 1
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
+}
+
 
 def strmem(val){
  return val as nextflow.util.MemoryUnit
@@ -40,6 +52,44 @@ def getlistchro(listchro){
  }
  return(newlistchro)
 }
+
+/*definition*/
+def errormess(message,exitn=0){
+    if(message=="")return(0)
+    println(message)
+    System.exit(exitn)
+}
+def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, notpossibleval=null) {
+  messageerror=""
+  if(param==null){
+    messageerror+="error :--"+namesparam+" is null "
+  } else {
+    if(!(param.getClass() in type)){
+      messageerror+="error :--"+namesparam+" must be a "+ type
+     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     else messageerror+=" but type is "+param.getClass()+" value "+ param
+   }else{
+   if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
+   if(max && param>max)messageerror+="\nerror : --"+namesparam +"> maxvalue :" + param+" > "+max
+   if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
+   }
+   }
+    errormess(messageerror,-1)
+}
+
+
+def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=null, notpossibleval=null){
+ messageerror=""
+ for(param in listparams){
+   if(params.containsKey(param)){
+     checkparams(params[param], param, type, min=min, max=max, possibleval=possibleval, notpossibleval=notpossibleval)
+   }else{
+     messageerror+="param :"+param+" unknown (check your command line)\n"
+   }
+ }
+ errormess(messageerror, -1)
+}
+
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
@@ -75,24 +125,26 @@ def checkColumnHeader(fname, columns) {
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","covariates", "work_dir", "scripts", "max_forks", "phenotype", "accessKey", "access-key", "secretKey", "secret-key",  "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin", "batch", "batch_col" ,"samplesize", "manifest", "region", "AMI", "queue", "strandreport"]
-params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "cut_maf"]
-params_mf=["chro", "begin_seq", "end_seq", "n_pop","threshold_p", "n_causal_snp"]
-params_cojo=["cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
-params_filegwas=[ "file_gwas", "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n", "used_pval_z", "prob_cred_set"]
-params_paintorcav=["paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue"]
-params_memcpu=["gcta_mem_req","plink_mem_req", "other_mem_req","gcta_cpus_req", "fm_cpus_req", "fm_mem_req", "modelsearch_caviarbf_bin","caviar_mem_req", "gcta_opt_multigrm_cor", "gcta_opt_grm_cor", "other_cpus_req", "paintor_mem_req"]
-param_data=["gwas_cat", "genes_file", "genes_file_ftp", "ftp1000genome", "list_phenogc", "file_phenogc" ,"list_vcf", "ftp_vcf"]
-param_gccat=["headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "gwas_cat_ftp", "list_pheno"]
 
-allowed_params+=params_mf
-allowed_params+=params_cojo
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro", 'file_pheno', 'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue',"ftp_vcf", 'file_gwas',  "list_vcf"]
+allowed_params=allowed_params_input
+allowed_params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp", "list_pheno"]
+allowed_params+=allowed_params_bin
+allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores', "other_cpus_req"]
+allowed_params+=allowed_params_cores
+allowed_params_intother=["max_forks", "n_pop", "n_causal_snp", 'cojo_slct', "size_wind_kb", "begin_seq", "end_seq"]
+allowed_params+=allowed_params_intother
+allowed_params_bolother=["used_pval_z", "ftp1000genome"]
+allowed_params+=allowed_params_bolother
+allowed_params_float=["cut_maf", "threshold_p", "prob_cred_set"]
+allowed_params+=allowed_params_float
+allowed_params_memory=["gcta_mem_req" , "plink_mem_req", "other_mem_req", "fm_mem_req","caviar_mem_req", "paintor_mem_req", "boot-storage-size"]
+allowed_params+=allowed_params_memory
+params_filegwas=[ "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
 allowed_params+=params_filegwas
-allowed_params+=params_bin
-allowed_params+=params_memcpu
-allowed_params+=param_gccat
-allowed_params+=params_paintorcav
-allowed_params+=param_data
+params_strorint=["chro"]
+allowed_params+=params_strorint
+
 
 
 
@@ -114,7 +166,7 @@ params.file_phenogc=""
 params.gcta_bin="gcta64"
 
 // paramater
-params.n_pop=""
+params.n_pop=0
 
 // params file input
 params.head_pval = "P_BOLT_LMM"
@@ -147,7 +199,6 @@ params.gcta_cpus_req = 1
 params.fm_cpus_req = 5
 params.cojo_slct=1
 params.cojo_slct_other=""
-params.cojo_actual_geno=0
 params.big_time='100h'
 
 params.threshold_p=5*10**-8
@@ -181,6 +232,17 @@ params.chro=""
 params.begin_seq=""
 params.end_seq=""
 
+checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bin, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+checkmultiparam(params,allowed_params_float, [java.lang.Double,java.lang.Float, java.lang.Integer, java.math.BigDecimal], min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,params_filegwas, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,params_strorint, [java.lang.String,java.lang.Integer], min=null, max=null, possibleval=null, notpossibleval=null)
+
+
 if(params.begin_seq > params.end_seq){
 error('begin_seq > end_seq')
 }
@@ -192,7 +254,7 @@ if(params.input_dir=="" | params.input_pat==""){
    label 'py3utils'
    cpus params.other_cpus_req
    input :
-      tuple val(chro) from listchro_ch
+      val(chro) from listchro_ch
    output :
        tuple val(chro), file("${file1000G}") into file1000G
    script :
@@ -389,7 +451,7 @@ process ExtractPositionGwas{
   script :
     freq= (params.head_freq=="") ? "":" --freq_header ${params.head_freq} "
     nheader= (params.head_n=="") ? "":" --n_header ${params.head_n}"
-    nvalue= (params.n_pop=="") ? "":" --n ${params.n_pop}"
+    nvalue= (params.n_pop>0) ? "":" --n ${params.n_pop}"
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     bfile=bed.baseName
     plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')

@@ -52,7 +52,7 @@ The key options are:
  * `head_freq` : freq header [ default : ""],
  * `head_chr` : freq header [ default :  ""],
  * `head_bp` : freq header [ default : ""],
-* `n_pop` : number individuals for data set pop [default : ""]
+* `n_pop` : number individuals for data set pop [default : 0]
 * `gwas_cat` : file of gwas catalog for plot 
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog
@@ -121,7 +121,7 @@ The key options are:
  * `head_freq` : freq header [ default : TODO],
  * `head_chr` : freq header [ default : TODO],
  * `head_bp` : freq header [ default : TODO],
-* `n_pop` : number individuals for data set pop [default : 10000]
+* `n_pop` : number individuals for data set pop [default : 0]
 * `gwas_cat` : file of gwas catalog for plot
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog

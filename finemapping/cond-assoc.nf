@@ -19,25 +19,93 @@
 import java.nio.file.Paths
 nextflow.enable.dsl = 1
 
+def errormess(message,exitn=0){
+    if(message=="")return(0)
+    println(message)
+    System.exit(exitn)
+}
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, notpossibleval=null) {
+  messageerror=""
+  if(param==null){
+    messageerror+="error :--"+namesparam+" is null "
+  } else {
+    if(!(param.getClass() in type)){
+   messageerror+="error :--"+namesparam+" must be a "+ type
+     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     else messageerror+=" but type is "+param.getClass()+" value "+ param
+   }else{
+   if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
+   if(max && param>max)messageerror+="\nerror : --"+namesparam +"> maxvalue :" + param+" > "+max
+   if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
+   }
+   }
+    errormess(messageerror,-1)
+}
+
+
+def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=null, notpossibleval=null){
+ messageerror=""
+ for(param in listparams){
+   if(params.containsKey(param)){
+     checkparams(params[param], param, type, min=min, max=max, possibleval=possibleval, notpossibleval=notpossibleval)
+   }else{
+     messageerror+="param :"+param+" not initialize\n"
+   }
+ }
+ errormess(messageerror, -1)
+}
+
+
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
+}
+
+
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
+//allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
+
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp",   "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", "pheno", "covariates","pos_cond" ,"file_rs_buildrelat","rs_list","gemma_bin","gemma_mat_rel","sample_snps_rel_paramplkl"]
+
+allowed_params=allowed_params_input
+allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores',"gemma_num_cores"]
+allowed_params+=allowed_params_cores
+allowed_params_intother=["max_forks", "pos_ref", "around","gemma_relopt"]
+allowed_params+=allowed_params_intother
+allowed_params_bolother=["sample_snps_rel"]
+allowed_params+=allowed_params_bolother
+allowed_params_float=["cut_maf"]
+allowed_params+=allowed_params_float
+params_strorint=["chro_cond"]
+allowed_params+=params_strorint
+allowed_params_memory=["plink_mem_req", "gemma_mem_req", "boot-storage-size","other_mem_req"]
+allowed_params+=allowed_params_memory
+
 
 params.queue      = 'batch'
 params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
 params.output = "out_cond"
-params.thin       = ""
 params.covariates = ""
-params.chro_cond      = -1
-params.pos_cond      = -1
+params.chro_cond      = ""
+params.pos_cond      = 0
 params.around = 250000
-params.pos = ""
-params.pos_ref = -1
+params.pos_ref = 0
 params.file_rs_buildrelat = ""
 params.rs_list=""
-params.sample_snps_rel=0
+params.sample_snps_rel=1
 params.gemma_num_cores=4
 params.gemma_mem_req="4GB"
 params.gemma_bin = "gemma"
@@ -46,6 +114,7 @@ params.gemma_relopt = 1
 params.max_plink_cores=5
 params.plink_mem_req = '6GB' // how much plink needs for this
 params.sample_snps_rel_paramplkl="100 20 0.1 --maf 0.01"
+params.cut_maf = 0.01
 
 
 
@@ -116,6 +185,21 @@ checker = { fn ->
        error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
 }
 
+params.each { parm ->
+  if (! allowed_params.contains(parm.key)) {
+        println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
+  }
+}
+
+checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+checkmultiparam(params,params_strorint, [java.lang.String,java.lang.Integer], min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_float, [java.lang.Double,java.lang.Float, java.lang.Integer, java.math.BigDecimal], min=0, max=null, possibleval=null, notpossibleval=null)
+
+
 
 
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
@@ -128,6 +212,8 @@ Channel
     .buffer(size:3)
     .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
     .set { raw_src_ch }
+
+
 extract_reg_ch=Channel.create()
 rel_ch_gemma=Channel.create()
 ch_select_rs_format=Channel.create()
@@ -147,8 +233,8 @@ process extract_region{
        chroC=params.chro_cond
        posCmin=params.pos_cond.toString().split(',').collect{it as int }.min()
        posCmax=params.pos_cond.toString().split(',').collect{it as int }.max()
-       posCmin=(params.pos_ref<0) ? "$posCmin" : "${[posCmin, params.pos_ref].min()}"
-       posCmax=(params.pos_ref<0) ? "$posCmax" : "${[posCmax, params.pos_ref].max()}"
+       posCmin=(params.pos_ref==0) ? "$posCmin" : "${[posCmin, params.pos_ref].min()}"
+       posCmax=(params.pos_ref==0) ? "$posCmax" : "${[posCmax, params.pos_ref].max()}"
        filerange="tmp.ped"
        """
        begin=`expr $posCmin-${params.around}`
@@ -158,7 +244,7 @@ process extract_region{
        begin=1
        fi
        echo -e "$chroC\t\$begin\t\$end\t$chroC:$posCmin" > $filerange
-       plink --keep-allele-order --bfile $base --make-bed --out $out --extract range $filerange
+       plink --keep-allele-order --bfile $base --make-bed --out $out --extract range $filerange --maf ${params.cut_maf}
        """
 }
 
@@ -416,7 +502,7 @@ process computed_ld{
       set file("${newbase}.bim"), file("${newbase}.bed"),file("${newbase}.fam")  into plk_pos_ch
     publishDir "${params.output_dir}/ld/",  mode:'copy'
     script :
-       listpos= (params.pos_ref<1) ?"${params.pos_cond} "  : "${params.pos_cond},${params.pos_ref}"
+       listpos= (params.pos_ref==0) ?"${params.pos_cond} "  : "${params.pos_cond},${params.pos_ref}"
        chr=params.chro_cond
        base               =  plinks[0].baseName
        out = params.output

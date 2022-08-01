@@ -17,28 +17,94 @@
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
+/*definition*/
 nextflow.enable.dsl = 1
+def errormess(message,exitn=0){
+    if(message=="")return(0)
+    println(message)
+    System.exit(exitn)
+}
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, notpossibleval=null) {
+  messageerror=""
+  if(param==null){
+    messageerror+="error :--"+namesparam+" is null "
+  } else {
+    if(!(param.getClass() in type)){
+   messageerror+="error :--"+namesparam+" must be a "+ type
+     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     else messageerror+=" but type is "+param.getClass()+" value "+ param
+   }else{
+   if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
+   if(max && param>max)messageerror+="\nerror : --"+namesparam +"> maxvalue :" + param+" > "+max
+   if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
+   }
+   }
+    errormess(messageerror,-1)
+}
+
+
+def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=null, notpossibleval=null){
+ messageerror=""
+ for(param in listparams){
+   if(params.containsKey(param)){
+     checkparams(params[param], param, type, min=min, max=max, possibleval=possibleval, notpossibleval=notpossibleval)
+   }else{
+     messageerror+="param :"+param+" not initialize\n"
+   }
+ }
+ errormess(messageerror, -1)
+}
+
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
+}
+
+
+
 
 
 
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
-// define param for
-//annotation_model=["gemma","boltlmm", "plink", "head", "linear", "logistic", "fisher", "fastlmm", ""]
-//allowed_params+=annotation_model
-annotation_param=[ "file_gwas","gcta_bin","cojo_p","threshold_p","gcta_mem_req","cojo_slct_other", "cojo_top_snps","cojo_slct", "cojo_actual_geno"]
-allowed_params+=annotation_param
-allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2", "head_n"]
-allowed_params+=allowed_params_head
+
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp",   "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", "pheno", "covariates", "cojo_slct_other", "file_gwas"]
+allowed_params=allowed_params_input
+allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores']
+allowed_params+=allowed_params_cores
+allowed_params_intother=["max_forks", "n_pop","cojo_wind", "cojo_top_snps_chro"]
+allowed_params+=allowed_params_intother
+allowed_params_bolother=["used_pval_z", "cojo_slct", "cojo_actual_geno","cojo_top_snps"]
+allowed_params+=allowed_params_bolother
+allowed_params_float=["cut_maf", "threshold_p", "cojo_p"]
+allowed_params+=allowed_params_float
+allowed_params_memory=["gcta_mem_req" , "plink_mem_req", "other_mem_req", "fm_mem_req","caviar_mem_req", "paintor_mem_req", "boot-storage-size"]
+allowed_params+=allowed_params_memory
+params_filegwas=[ "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
+allowed_params+=params_filegwas
+
+
+
 
 
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
-    println "\nUnknown parameter : Check parameter <$parm>\n";
+        println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
+        System.exit(-1)
   }
 }
+
 
 def params_help = new LinkedHashMap(helps)
 
@@ -62,8 +128,8 @@ params.head_beta="BETA"
 params.head_se="SE"
 params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
-params.cojo_p=""
-params.threshold_p=""
+params.cojo_p=0
+params.threshold_p=0
 params.cojo_wind=10000
 params.cut_maf=0.01
 params.gcta_mem_req="15GB"
@@ -78,7 +144,7 @@ params.cojo_top_snps_chro=0
 params.data=""
 params.pheno=""
 
-if(params.cojo_p=="" & params.threshold_p==""){
+if(params.cojo_p==0 & params.threshold_p==0){
 cojo_p=1e-7
 println "default parameters used for p : 1e-7"
 }else{
@@ -122,6 +188,14 @@ checker = { fn ->
 println "\nTesting data : ${params.data}\n"
 println "Testing for gwas file : ${params.file_gwas}\n"
 
+checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+checkmultiparam(params,allowed_params_float, [java.lang.Double,java.lang.Float, java.lang.Integer, java.math.BigDecimal], min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,params_filegwas, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+
 
 
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
@@ -141,7 +215,7 @@ plink_other=Channel.create()
 raw_src_ch.separate (plink_format, plink_cojo, plink_other) { a -> [ a, a, a] }
 
 
-gwas_chrolist = Channel.fromPath(params.file_gwas)
+gwas_chrolist = Channel.fromPath(params.file_gwas, checkIfExists:true)
 //COunt list chro
 process getListeChro{
         input :
@@ -260,7 +334,7 @@ process SLCTMerge{
 }
 //to do report
 }
-
+println params.cojo_top_snps_chro
 if(params.cojo_top_snps_chro>0){
 process TopAnalyse{
     label 'gcta'
