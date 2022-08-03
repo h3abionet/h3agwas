@@ -86,7 +86,7 @@ def getlistchro(listchro){
    newlistchro.add(x)
   }else{
     logger("problem with chro argument "+x+" "+listchro)
-    System.exit(0)
+    System.exit(-1)
   }
  }
  return(newlistchro)
@@ -116,7 +116,7 @@ def checkColumnHeader(fname, columns) {
       problem=true;
     }
     if (problem)
-      System.exit(2)
+      System.exit(-1)
   }
 }
 
@@ -264,7 +264,7 @@ headgc_bp=params.headgc_bp
 
 if(params.file_gwas==""){
     println "\nfile_gwas not initialised\n";
-    System.exit(2)
+    System.exit(-1)
 }
 
 

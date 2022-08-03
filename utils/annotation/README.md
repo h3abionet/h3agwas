@@ -44,7 +44,7 @@ The key options are:
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 ### warning : 
- aws : locus zoom doesn't work, pipeline on AWS doesn't work, you must install your own locus zoom
+ aws : locus zoom doesn't work with amazon aws, your  must install your own locus zoom and if you need used singularity
 
 ### command lines
 input :
@@ -55,7 +55,9 @@ input :
  * Annotation used annovar file, if you don't `list_file_annot` and `info_file_annot`, data will be downloaded
 
 ```
-nextflow run  ~/Travail/git/h3agwas/utils/annotation/main.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir annotation --list_rs "2:45832137:A:G,1:117539108:G:T" --data data/pheno/pheno_test.all --pheno pheno_qt1  -resume  -profile slurmSingularity --loczm_bin  "/dataE/AWIGenGWAS/shared/ResultGWAS/Ressource/locuszoom/bin/locuszoom"
+## your locus zoom directory 
+DirLZ=locuszoom
+nextflow run  h3abionet/h3agwas/utils/annotation/main.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir annotation --list_rs "2:45832137:A:G,1:117539108:G:T" --data data/pheno/pheno_test.all --pheno pheno_qt1  -resume  -profile slurmSingularity --loczm_bin  $DirLZ
 ```
 
 
