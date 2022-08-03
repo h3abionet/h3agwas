@@ -56,7 +56,7 @@ The key options are:
 * `gwas_cat` : file of gwas catalog for plot 
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog
-  * `listpheno_gc` :  from gwas catalog what pheno used (separated by a comma)
+  * `list_phenogc` :  from gwas catalog what pheno used (separated by a comma)
   * `file_phenogc` :  from gwas catalog what pheno used inside a file (separated by a comma)
 
 * cojo parameter :
@@ -87,7 +87,7 @@ need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 ### Example 
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 ```
-nextflow run  h3abioneth3agwas/finemapping/finemap_region.nf  --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_pheno "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1_wind --output finemapping_pheno1 -resume  -profile slurmSingularity --begin_seq 112178657 --end_seq 113178657 --chro 10
+nextflow run  h3abioneth3agwas/finemapping/finemap_region.nf  --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_phenogc "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1_wind --output finemapping_pheno1 -resume  -profile slurmSingularity --begin_seq 112178657 --end_seq 113178657 --chro 10
 ```
 
 ##  finemapping pipeline automated with selection of lead snps using plink : `finemapping/main.nf`
@@ -125,7 +125,7 @@ The key options are:
 * `gwas_cat` : file of gwas catalog for plot
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog
-  * `listpheno_gc` :  from gwas catalog what pheno used (separated by a comma)
+  * `list_phenogc` :  from gwas catalog what pheno used (separated by a comma)
   * `file_phenogc` :  from gwas catalog what pheno used inside a file (separated by a comma)
 * cojo parameter :
   * `gcta_mem_req`="6GB"
@@ -156,7 +156,7 @@ need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 ```
-nextflow run  h3abioneth3agwas/finemapping/main.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_pheno "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1 --output finemapping_pheno1 -resume  -profile slurmSingularity
+nextflow run  h3abioneth3agwas/finemapping/main.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --list_phenogc "Type 2 diabetes" --input_dir  data/imputed/  --input_pat imput_data --file_gwas data/summarystat/all_pheno.gemma  --output_dir finemapping_pheno1 --output finemapping_pheno1 -resume  -profile slurmSingularity
 ```
 
 
