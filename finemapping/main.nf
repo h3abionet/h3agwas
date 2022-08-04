@@ -126,7 +126,7 @@ def checkColumnHeader(fname, columns) {
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue']
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data"]
 allowed_params=allowed_params_input
 allowed_params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp"]
 allowed_params+=allowed_params_bin
@@ -178,6 +178,7 @@ params.head_se="SE"
 params.head_A1="ALLELE0"
 params.head_A2="ALLELE1"
 params.head_n=""
+params.data=""
 params.cut_maf=0.01
 params.used_pval_z=0
 params.headgc_chr=""
@@ -296,10 +297,44 @@ Channel
     .set { raw_src_ch }
 
 
-gwas_extract_plk=Channel.create()
-plink_subplk=Channel.create()
-gwas_plk_clump=Channel.create()
-raw_src_ch.separate( gwas_extract_plk, plink_subplk,gwas_plk_clump) { a -> [ a, a,a] }
+//gwas_extract_plk=Channel.create()
+//plink_subplk=Channel.create()
+//gwas_plk_clump=Channel.create()
+if(params.data){
+data_ch=channel.fromPath(params.data, checkIfExists:true)
+process extract_inddata{
+  input :
+    path(data) from data_ch
+  output :
+     path(newkeep) into file_keep
+  script :
+       newkeep=data+"_keep"
+       """
+       sed '1d' $data | awk '{print \$1"\t"\$2}' $data > $newkeep
+       """
+}
+
+}else {
+file_keep=channel.fromPath("$dummy_dir/00")
+}
+process clean_plink{
+   memory params.plink_mem_req
+   cpus params.max_plink_cores
+   input :
+     tuple path(bed), path(bim), path(fam)  from raw_src_ch
+     path(filekeep) from file_keep
+   output :
+     tuple path("${newbed}.bed"),path("${newbed}.bim"),path("${newbed}.fam") into gwas_extract_plk, plink_subplk,gwas_plk_clump
+   script :
+     bfile=bed.baseName
+     newbed=bfile+"_clean"
+     maxmaf=1 - params.cut_maf
+     keep=(params.data=="") ? "" : " --keep $filekeep "
+     """ 
+     plink -bfile $bfile --maf ${params.cut_maf}  -out  $newbed -make-bed --threads ${params.max_plink_cores} $keep
+     """
+}
+//raw_src_ch.separate( gwas_extract_plk, plink_subplk,gwas_plk_clump) { a -> [ a, a,a] }
 
 
 gwas_file=Channel.fromPath(params.file_gwas,checkIfExists:true)
@@ -319,11 +354,13 @@ process clump_data{
    output="clump_output"
    plkfile=bed.baseName
    plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
+   afhead=(params.head_freq=='') ? "" : " --freq_header ${params.head_freq} "  
    """
-   formatsumstat_inplink.py --inp_asso $gwasfile --chro_header  ${params.head_chr} --bp_header ${params.head_bp} --a1_header ${params.head_A1} --a2_header ${params.head_A2}  --pval_header ${params.head_pval} --beta_header ${params.head_beta}  --out $output --rs_header ${params.head_rs} --se_header  ${params.head_se} --bim $bim
- ${params.plink_bin} -bfile $plkfile  -out $output --keep-allele-order --threads ${params.max_plink_cores}   --clump $output --clump-p1 ${params.threshold_p} --clump-p2 ${params.threshold_p2} --clump-r2 ${params.clump_r2} --clump-kb ${params.size_wind_kb} --maf ${params.cut_maf} --memory $plink_mem_req_max
+   formatsumstat_inplink.py --inp_asso $gwasfile --chro_header  ${params.head_chr} --bp_header ${params.head_bp} --a1_header ${params.head_A1} --a2_header ${params.head_A2}  --pval_header ${params.head_pval} --beta_header ${params.head_beta}  --out $output --rs_header ${params.head_rs} --se_header  ${params.head_se} --bim $bim --maf ${params.cut_maf} $afhead
+ ${params.plink_bin} -bfile $plkfile  -out $output  --threads ${params.max_plink_cores}   --clump $output --clump-p1 ${params.threshold_p} --clump-p2 ${params.threshold_p2} --clump-r2 ${params.clump_r2} --clump-kb ${params.size_wind_kb} --maf ${params.cut_maf} --memory $plink_mem_req_max
   """
 }
+
 process extract_sigpos_gwas{
   memory params.plink_mem_req
   memory params.max_plink_cores

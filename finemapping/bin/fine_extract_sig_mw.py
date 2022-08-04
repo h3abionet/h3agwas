@@ -21,6 +21,7 @@ def readbim(bimfile, sumstat) :
       if (chro in sumstat) and (pos in sumstat[chro]):
        key=chro+':'+str(pos)
        if key in listsave :
+         print("multi present del "+chro+' '+st(pos))
          del dicchro_rs[chro][dicchro_pos[chro][pos][0]]
          del dicchro_pos[chro][pos]
          del sumstat[chro][pos]
@@ -33,13 +34,13 @@ def readbim(bimfile, sumstat) :
            dicchro_pos[chro]={}
         dicchro_rs[chro][rs]=pos
         dicchro_pos[chro][pos]=[rs,A1,A2]
+       else :
+        print(A1+"!="+sumstat[chro][pos][0])
    for chro in sumstat : 
       listbp=list(sumstat[chro].keys())
       for bp in listbp:
-        try :
-          dicchro_pos[chro][bp]
-        except :
-          #print("not found "+chro+" "+str(bp))
+        if bp not in dicchro_pos[chro] :
+          print("not found del  "+chro+' '+str(bp))
           del sumstat[chro][bp]
    return (dicchro_pos,dicchro_rs,sumstat)
        
@@ -128,9 +129,9 @@ def read_sumstat(filesumstat, clumpres, wind, chro_header, pos_header, a1_header
   listchroclump=clumpres.keys()
   listsave=set([])
   for line in readsumstat :
-    spl=readsumstat.readline().replace('\n','').split()
+    spl=line.replace('\n','').split()
     if len(spl)!=nbcol :
-       print(line)
+       print("line "+line)
        print("warning line doesn't have good format contains "+str(len(spl))+ " column and header "+str(nbcol))
        continue
     if spl[chrohead] not in listchroclump :
@@ -139,11 +140,12 @@ def read_sumstat(filesumstat, clumpres, wind, chro_header, pos_header, a1_header
     pos=int(spl[bphead])
     chro=spl[chrohead]
     if key in listsave :
+      print("del "+chro+' '+str(pos))
       del sumstat[chro][pos]
       continue
     listsave.add(key)
     for posclmp in clumpres[chro].keys():
-      if posclmp>=clumpres[chro][posclmp][2] and posclmp<=clumpres[chro][posclmp][3] :
+      if pos>=clumpres[chro][posclmp][2] and pos<=clumpres[chro][posclmp][3] :
         if chro not in sumstat :
           sumstat[chro]={}
         if nhead :
@@ -214,7 +216,11 @@ def appendfreq(bfile, result,biminfo, freq_header,rs_header, n_header, nval, bin
        spll=line.replace('\n','').split()
        chro=spll[poschro]
        rs=spll[posrs]
-       bp=biminfo[chro][rs]
+       try :
+         bp=biminfo[chro][rs]
+       except :
+         print("rs"+rs+" not found in bim")
+         exit(-1)
        if n_header==None :
           result[chro][bp][5]=round(int(spll[posN])/2)
        if freq_header==None :
@@ -228,6 +234,7 @@ def appendfreq(bfile, result,biminfo, freq_header,rs_header, n_header, nval, bin
      listbp=list(result[chro].keys())
      for bp in listbp :
        if (not result[chro][bp][5])  or (not result[chro][bp][6]):
+          print("warning "+str(chro)+" bp "+str(bp)+" deleted")
           del result[chro][bp]
    return result
 
@@ -265,6 +272,7 @@ def checksumstat(sumstat,maf) :
          if af>=maf :
            sumstat[chro][bp]=[a1,a2,beta, se, z, n, af, p,rsbim]
          else :
+           print("maf del :"+chro+' '+str(bp))
            del sumstat[chro][bp]
    return sumstat 
 EOL=chr(10)

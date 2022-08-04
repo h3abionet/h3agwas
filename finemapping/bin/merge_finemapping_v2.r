@@ -28,6 +28,8 @@ PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL
  plot(datainworkplot$bp_cm[!datainworkplot$baldiff],-log10(datainworkplot$p[!datainworkplot$baldiff]), xlab='bp (cm)', ylab='-log10(Pi)', pch=datainworkplot$pch, cex=1.2, bg=datainworkplot$col[!datainworkplot$baldiff], col=datainworkplot$col[!datainworkplot$baldiff], xaxt='n',ylim=range(-log10(datainworkplot$p))*1.1, frame.plot = FALSE, cex.axis=2,cex.lab=2)
  points(datainworkplot$bp_cm[datainworkplot$baldiff],-log10(datainworkplot$p[datainworkplot$baldiff]), pch=datainworkplot$pch, cex=1.5, bg=datainworkplot$col[datainworkplot$baldiff], col=datainworkplot$col[datainworkplot$baldiff])
  if(any(datainworkplot$gwascat))text(datainworkplot$bp_cm[datainworkplot$gwascat], -log10(datainworkplot$p[datainworkplot$gwascat]), datainworkplot$rsid[datainworkplot$gwascat],  srt=45,col=ColGWASCat, cex=0.8,pos=4)
+  print(table(datainworkplot$IsSig))
+  print(datainworkplot$rsid[datainworkplot$IsSig])
  text(datainworkplot$bp_cm[datainworkplot$IsSig], -log10(datainworkplot$p[datainworkplot$IsSig]), datainworkplot$rsid[datainworkplot$IsSig],  srt=45,col='darkblue', cex=1.2,pos=4)
  if(any(datainworkplot$is_cred))text(datainworkplot$bp_cm[datainworkplot$is_cred], -log10(datainworkplot$p[datainworkplot$is_cred]), datainworkplot$rsid[datainworkplot$is_cred],  srt=45,col='grey', cex=1.2,pos=4)
  par(mar=c(0,5,0,1))
