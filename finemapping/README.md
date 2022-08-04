@@ -140,6 +140,8 @@ The key options are:
   * `paintor_mem_req` [default :"20GB"]
   * `fm_mem_req ` [default : "20G"]
   * `plink_mem_req` [default :"6GB"]
+* `data` :
+ * `optional used individual from data to clean plink file` : todo add phenotype
 
 
 * annotations parameter :

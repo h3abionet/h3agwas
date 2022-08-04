@@ -1,0 +1,1 @@
+../../replication/gwascat/bin/extract_indplink.r

@@ -126,7 +126,7 @@ def checkColumnHeader(fname, columns) {
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", 'pheno', 'covariates']
 allowed_params=allowed_params_input
 allowed_params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp"]
 allowed_params+=allowed_params_bin
@@ -222,6 +222,9 @@ params.size_wind_kb=100
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 params.list_chro="1-22"
 params.list_phenogc=""
+params.pheno=""
+params.data=""
+
 
 
 
@@ -303,14 +306,17 @@ Channel
 if(params.data){
 data_ch=channel.fromPath(params.data, checkIfExists:true)
 process extract_inddata{
+  label 'R'
   input :
     path(data) from data_ch
   output :
      path(newkeep) into file_keep
   script :
        newkeep=data+"_keep"
+       pheno=(params.pheno=="") "" : " --pheno ${params.pheno}"
+       cov=(params.covariates=="") "" : " --cov ${params.covariate} "
        """
-       sed '1d' $data | awk '{print \$1"\t"\$2}' $data > $newkeep
+       extract_indplink.r --data $data $pheno --out $newkeep $cov
        """
 }
 
