@@ -232,8 +232,10 @@ def appendfreq(bfile, result,biminfo, freq_header,rs_header, n_header, nval, bin
    return result
 
 def checksumstat(sumstat,maf) :
-   for chro in sumstat : 
-      for bp in sumstat[chro]:
+   listchro=sumstat.keys()
+   for chro in listchro: 
+      listbp_chro=list(sumstat[chro].keys())
+      for bp in listbp_chro:
          #[getval(spl,a1head), getval(spl,a2head), getval(spl,betahead), getval(spl,sehead),getval(spl,zhead) , getval(spl,nhead), getval(spl,afhead)]
          [a1,a2,beta, se, z, n, af, p, rsbim]=sumstat[chro][bp]
          af=float(af) 

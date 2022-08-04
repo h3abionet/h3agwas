@@ -89,7 +89,7 @@ PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL
   text(1.1,lnum-10.5, "- distribution of post probability : ", pos=postxt)
   text(1.1,lnum-11.5, "  - dstribution of post probability for finemapinf caviar, paintor and finemap, color variabtion gave higher of probabilites", pos=postxt)
   text(1.1,lnum-12.5, "  - distribution of annotation : in % for each positions, red correspond to lead position, or credible interval ", pos=postxt)
-  if(!is.null(gwascat)){
+  if(!is.null(gwascat) & nrow(gwascat)>0){
     print('GC')
     gwascat2<-merge(datainworkplot, gwascat,by.x=c("position"), by.y=c(headbpgc), all=T)
     gwascat2<-gwascat2[!is.na(gwascat2$trait),]
