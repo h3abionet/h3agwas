@@ -34,7 +34,7 @@ def strmem(val){
 }
 
 /*definition*/
-def errormess(message,exitn=0){
+def errormess(message,exitn=-1){
     if(message=="")return(0)
     println(message)
     System.exit(exitn)
@@ -224,6 +224,7 @@ params.list_chro="1-22"
 params.list_phenogc=""
 params.pheno=""
 params.data=""
+params.covariates=""
 
 
 
@@ -313,8 +314,8 @@ process extract_inddata{
      path(newkeep) into file_keep
   script :
        newkeep=data+"_keep"
-       pheno=(params.pheno=="") "" : " --pheno ${params.pheno}"
-       cov=(params.covariates=="") "" : " --cov ${params.covariate} "
+       pheno=(params.pheno=="") ? "" : " --pheno ${params.pheno}"
+       cov=(params.covariates=="") ? "" : " --cov ${params.covariate} "
        """
        extract_indplink.r --data $data $pheno --out $newkeep $cov
        """
