@@ -108,6 +108,7 @@ def read_sumstat(filesumstat, clumpres, wind, chro_header, pos_header, a1_header
   a1head=header.index(a1_header)
   a2head=header.index(a2_header)
   phead=header.index(p_header)
+  nbcol=len(header)
   betahead=None
   if beta_header:
    betahead=header.index(beta_header)
@@ -128,6 +129,10 @@ def read_sumstat(filesumstat, clumpres, wind, chro_header, pos_header, a1_header
   listsave=set([])
   for line in readsumstat :
     spl=readsumstat.readline().replace('\n','').split()
+    if len(spl)!=nbcol :
+       print(line)
+       print("warning line doesn't have good format contains "+str(len(spl))+ " column and header "+str(nbcol))
+       continue
     if spl[chrohead] not in listchroclump :
       continue
     key=spl[chrohead]+':'+spl[bphead]
