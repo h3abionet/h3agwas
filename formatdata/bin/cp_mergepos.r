@@ -76,7 +76,10 @@ DataRs<-read.table(FileRsRes,sep="\t")
 DataRs<-DataRs[,c("V1","V2","V3","V4","V5")]
 names(DataRs)<-c("ChroNewRs","PosNewRs","Rs","Ref","Alt")
 
-DataM<-merge(merge(Data,DataRs,by.x="SNPS",by.y="Rs", all=T),DataCrossMap, by.x="Num", by.y="Num", all=T)
+head(Data)
+head(DataRs)
+head(DataCrossMap)
+DataM<-merge(merge(Data,DataRs,by.x=RsHead,by.y="Rs", all=T),DataCrossMap, by.x="Num", by.y="Num", all=T)
 DataNotFound<-DataM[(is.na(DataM$ChroNewCM) & is.na(DataM$ChroNewRs)),]
 write.table(DataNotFound, file=paste(args[['out']],".notfound.tsv", sep='') ,sep='\t', row.names=F, col.names=T)
 DataM<-DataM[!(is.na(DataM$ChroNewCM) & is.na(DataM$ChroNewRs)),]
