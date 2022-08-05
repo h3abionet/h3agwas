@@ -32,8 +32,8 @@ allowed_params = ['file_toconvert','file_ref_gzip', "output_dir","output", "inpu
 params.file_toconvert=""
 params.link_gwas_cat="https://www.ebi.ac.uk/gwas/api/search/downloads/alternative"
 params.head_rs="SNPS"
-params.head_chro="CHR_ID"
-params.head_pos="CHR_POS"
+params.head_chr="CHR_ID"
+params.head_bp="CHR_POS"
 params.output_dir='gwascat'
 params.sep="TAB"
 params.rs_info=""
@@ -45,6 +45,7 @@ params.bin_crossmap="/usr/local/bin/CrossMap.py"
 params.data_crossmap=''
 params.link_data_crossmap='http://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz'
 
+//wget ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/All_20180418.vcf.gz
 
 if(params.file_toconvert==""){
 process DlGwasCT{
@@ -62,6 +63,7 @@ process DlGwasCT{
 }
 }else{
 file_convert_ch=Channel.fromPath(params.file_toconvert)
+file_convert_ch_ext=Channel.fromPath(params.file_toconvert)
 }
 if(params.file_ref_gzip==""){
 process DlInfoRs{
@@ -89,7 +91,7 @@ process ExtractInfo{
    script  :
       headout="search"
       """
-      cp_extractpos.r --file $fileconvert  --out $headout --head_rs ${params.head_rs} --head_bp ${params.head_pos} --head_chr ${params.head_chro} --sep ${params.sep}
+      cp_extractpos.r --file $fileconvert  --out $headout --head_rs ${params.head_rs} --head_bp ${params.head_bp} --head_chr ${params.head_chr} --sep ${params.sep}
       """
 }
 
@@ -151,6 +153,6 @@ process MergeRes{
    script : 
      headout=params.output
      """
-     cp_mergepos.r --file $filetoconvert  --out $headout --head_rs ${params.head_rs} --head_bp ${params.head_pos} --head_chr ${params.head_chro} --sep ${params.sep} --file_rsres $outinfors --file_cross $crossmap
+     cp_mergepos.r --file $filetoconvert  --out $headout --head_rs ${params.head_rs} --head_bp ${params.head_bp} --head_chr ${params.head_chr} --sep ${params.sep} --file_rsres $outinfors --file_cross $crossmap
      """
 }

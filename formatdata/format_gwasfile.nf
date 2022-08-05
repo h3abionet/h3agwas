@@ -89,14 +89,26 @@ if(params.file_gwas==""){
 error('params.file_gwas: file contains gwas not found')
 }
 
-if(params.headnew_pval=="")params.headnew_pval=params.head_pval 
-if(params.headnew_freq=="")params.headnew_freq=params.head_freq 
-if(params.headnew_bp=="")params.headnew_bp=params.head_bp 
-if(params.headnew_chr=="")params.headnew_chr=params.head_chr 
-if(params.headnew_beta=="")params.headnew_beta=params.head_beta 
-if(params.headnew_se=="")params.headnew_se=params.head_se 
-if(params.headnew_A1=="")params.headnew_A1=params.head_A1 
-if(params.headnew_A2=="")params.headnew_A2=params.head_A2 
+
+headnew_freq=params.headnew_freq
+headnew_pval=params.headnew_pval
+headnew_bp=params.headnew_bp
+headnew_chr=params.headnew_chr
+headnew_beta=params.headnew_beta
+headnew_A1=params.headnew_A1
+headnew_A2=params.headnew_A2
+headnew_N=params.headnew_N
+headnew_se=params.headnew_N
+
+
+if(headnew_pval=="")headnew_pval=params.head_pval 
+if(headnew_freq=="")headnew_freq=params.head_freq 
+if(headnew_bp=="")headnew_bp=params.head_bp 
+if(headnew_chr=="")headnew_chr=params.head_chr 
+if(headnew_beta=="")headnew_beta=params.head_beta 
+if(headnew_se=="")headnew_se=params.head_se 
+if(headnew_A1=="")headnew_A1=params.head_A1 
+if(headnew_A2=="")headnew_A2=params.head_A2 
 //if(params.headnew_N=="")params.headnew_N=params.head_N 
 
 
@@ -129,7 +141,7 @@ process ExtractChroGWAS{
     script :
       gwas_out=gwas.baseName+"_"+chro+".gwas"
       sep=(params.sep!="") ?  "" : ""
-      infofile="Chro:${params.head_chr}:${params.headnew_chr},Pos:${params.head_bp}:${params.headnew_bp},A2:${params.head_A2}:${params.headnew_A2},A1:${params.head_A1}:${params.headnew_A1},af:${params.head_freq}:${params.headnew_freq},Beta:${params.head_beta}:${params.headnew_beta},Se:${params.head_se}:${params.headnew_se},Pval:${params.head_pval}:${params.headnew_pval},N:${params.head_N}:${params.headnew_N}"
+      infofile="Chro:${params.head_chr}:${headnew_chr},Pos:${params.head_bp}:${headnew_bp},A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},af:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${params.headnew_N}"
       """
       extractandformat_gwas.py --input_file $gwas --out_file ${gwas_out} --chr $chro --info_file $infofile
       """
@@ -186,9 +198,9 @@ process MergeRsGwasChro{
      Freqheadopt=(params.head_freq!="") ? " --freq_head ${params.head_freq} " : ""
 
      NheadNewopt=(params.headnew_N!="") ? " --Nnew_head ${params.headnew_N} " : ""
-     FreqNewheadopt=(params.headnew_freq!="") ? " --freqnew_head ${params.headnew_freq} " : ""
+     FreqNewheadopt=(headnew_freq!="") ? " --freqnew_head ${headnew_freq} " : ""
      """
-     mergeforrs.py --input_gwas $gwas --input_rs $chrors  --out_file $outmerge --chro_head  ${params.headnew_chr} --bp_head  ${params.headnew_bp} --rs_head ${params.headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt  --a1_head ${params.headnew_A1} --a2_head  ${params.headnew_A2}
+     mergeforrs.py --input_gwas $gwas --input_rs $chrors  --out_file $outmerge --chro_head  ${headnew_chr} --bp_head  ${headnew_bp} --rs_head ${params.headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt  --a1_head ${headnew_A1} --a2_head  ${headnew_A2}
      """
 
 }
