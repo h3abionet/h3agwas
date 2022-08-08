@@ -1,5 +1,7 @@
-<img src="../aux/H3ABioNetlogo2.jpg"/>
-# Pipelines to format data
+<img src="../helperfiles/H3ABioNetlogo2.jpg"/>
+
+
+# Pipelines Format data, plink in vcf, vcf in various format, summary statistics and change of build
 
 ## Script : `vcf_in_plink.nf`
 ### Requirement :
@@ -40,7 +42,6 @@ chr position COMBINED_rate(cM/Mb) Genetic_Map(cM)
 
 ###  Example 
 * data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
-
 
 
 ## Script : `vcf_in_bgen.nf` / `vcf_in_bgen_merge.nf` `vcf_in_bgen_merge_chro.nf`

@@ -1,7 +1,7 @@
 <img src="../helperfiles/H3ABioNetlogo2.jpg"/> 
 #  Meta analyse pipeline: `assoc/main.nf`
 
-# 3. MetaAnalysis pipeline : `assoc/meta-assoc.nf`
+# MetaAnalysis pipeline : `assoc/meta-assoc.nf`
 
 This section describes a pipeline in devlopment, purpose of this pipeline is to do a meta analysis with a various format files.Our script, *meta-assoc.nf* takes as input various GWAS results files and `rsid` to do a metanalysis with METAL, GWAMA and Metasoft
 

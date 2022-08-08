@@ -1,4 +1,5 @@
 <img src="../helperfiles/H3ABioNetlogo2.jpg"/>
+
 #Heritabilies estimation  : `heritabilities/main.nf`
 
 This section describes a pipeline in devlopment, objectives is estimated heritabilities with various way, we developped : ldlc, grmel of bolt and greml of gcta, gemma
@@ -7,9 +8,10 @@ two distincs approaches should be considered :
   * based on gwas result as implemented in ldlc and gemma
 
 
-### Installation
+## Installation
 need python3, gcta, ldlc, bolt and gemma, R with ggplot2
 
+## Key Options
 
 
 The key options are:
@@ -88,7 +90,7 @@ The key options are:
    * `gcta_mem_reqmgrm` : [default 40GB]
    * `params.gcta_reml_alg` : see reml-alg :  Specify the algorithm to run REML iterations, 0 for average information (AI), 1 for Fisher-scoring and 2 for EM. The default option is 0, i.e. AI-REML, if this option is not specified.  [oa]
 
-### Example 
+## Example 
 * data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 Pipeline of heritability estimation and co-heritatbility, can used two type of input :
