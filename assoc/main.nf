@@ -86,7 +86,7 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta64_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" ,"shared-storage-mount"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta64_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" ]
 allowed_params=allowed_params_input
 allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'fastlmm_num_cores', 'saige_num_cores',"regenie_num_cores", "fastgwa_num_cores"]
 allowed_params+=allowed_params_cores
@@ -152,7 +152,6 @@ params.regenie_num_cores=6
 params.regenie_mem_req="20GB"
 params.regenie_mafstep1=0.01
 params.regenie=0
-params.shared-storage-mount="/mnt/shared"
 
 
 /* Defines the path where any scripts to be executed can be found.
