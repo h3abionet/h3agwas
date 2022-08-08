@@ -1,4 +1,5 @@
 <img src="../helperfiles/H3ABioNetlogo2.jpg"/>
+
 # Finemaping 
 
 4 scripts to perform fine-mapping :
