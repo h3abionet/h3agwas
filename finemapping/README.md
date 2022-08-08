@@ -35,7 +35,7 @@ The key options are:
   * genetics data user :
     * `input_dir`, `output_dir`: where input and output goes to and comes from;
     * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
- * 1000 genome :
+* 1000 genome :
   * `ftp_vcf`
   * `other_cpus_req`
 * `file_gwas` : file contains summary stat of gwas :
@@ -150,6 +150,7 @@ The key options are:
 need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
 
 ###For example
+
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 ```
