@@ -147,7 +147,8 @@ The key options are:
   * `paintor_fileannot)`  : file contains annotation (see paintor manual)
 
 ### Installation
-need locuszoom, _R_ : (ggplot2), python3, finemap, paintor, gcta, plink
+need locuszoom, _R_ : ggplot2, python3, finemap, paintor, gcta, plink
+
 
 ###For example
 
