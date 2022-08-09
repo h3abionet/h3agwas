@@ -959,7 +959,7 @@ if (params.boltlmm == 1) {
      Bolt_genetic_map = Channel.fromPath("${dummy_dir}/05",checkIfExists:true) 
   }
   if(params.bgen!="")bgen_ch=Channel.fromPath(params.bgen, checkIfExists:true)
-  else bgen_ch=Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+  else bgen_ch=Channel.fromPath("${dummy_dir}/08", checkIfExists:true)
 
   if(params.list_bgen!="")bgen_ch=Channel.fromPath(file(params.list_bgen).readLines(), checkIfExists:true).collect()
   process doBoltmm{
@@ -1613,7 +1613,7 @@ if(params.bgen!="" && params.fastgwa+params.saige >1){
 }else{
     bgen_ch_fastgwa=Channel.fromPath("${dummy_dir}/06", checkIfExists:true)
     bgen_ch_saige=Channel.fromPath("${dummy_dir}/06", checkIfExists:true).combine(Channel.fromPath("${dummy_dir}/07", checkIfExists:true))
-    bgen_ch_fastgwa_idx=Channel.fromPath("${dummy_dir}/07", checkIfExists:true)
+    bgen_ch_fastgwa_idx=Channel.fromPath("${dummy_dir}/08", checkIfExists:true)
 }
 
 
