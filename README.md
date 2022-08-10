@@ -41,6 +41,7 @@ pipeline do different step of GWAS :
    * summary statistics between build;
  * h3agwas doesn't perform imputation, specific pipeline can be found in [h3abionet](https://github.com/h3abionet/chipimputation).
 
+<img src="helperfiles/script_pipeline_all.png" title="overview of pipeline in gwas studies">
 ## Example and data-set 
 
 Data-set example can be found in [h3agwas-examples github](https://github.com/h3abionet/h3agwas-examples)
