@@ -1,4 +1,3 @@
-#!/usr/bin/env nextflow
 /*
  * Authors       :
  *
@@ -58,7 +57,7 @@ params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
 params.output_testing = "cleaned"
 params.covariates = ""
-params.Nind=0
+params.Nind=""
 params.pheno=""
 params.munge_sumstats_bin="munge_sumstats.py"
 params.ldsc_bin="ldsc.py"
@@ -67,16 +66,16 @@ params.file_rs_buildrelat = ""
 params.genetic_map_file=""
 
 params.file_gwas=""
-params.head_pval = "P_BOLT_LMM"
-params.head_freq = "A1FREQ"
+params.head_pval = ""
+params.head_freq = ""
 params.head_n = ""
-params.head_bp = "BP"
-params.head_chr = "CHR"
-params.head_rs = "SNP"
-params.head_beta="BETA"
-params.head_se="SE"
-params.head_A1="ALLELE1"
-params.head_A2="ALLELE0"
+params.head_bp = ""
+params.head_chr = ""
+params.head_rs = ""
+params.head_beta=""
+params.head_se=""
+params.head_A1=""
+params.head_A2=""
 
 //gcta grm option 
 params.grm_cutoff=0.025
@@ -203,42 +202,157 @@ if(params.ldsc_h2==1){
  if(params.file_gwas==""){
   error("\n\n------\nbCan't do ldsc without file_gwas\n\n---\n")
  }
- gwas_file_ldsc=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it ,checkIfExists:true)}
- if(params.head_n=="" && params.Nind==0){
-       error("\n\n------\nheader_n or Nind paramaters must be allowed\n\n---\n")
+ gwas_file_ldsc_i=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it ,checkIfExists:true)}
+ if(params.head_n=="" && params.Nind==""){
+       error("\n\n------\nheader_n in summary statisticws or Nind paramaters must be allowed\n\n---\n")
  }
+ if(params.head_n==""){
+   splNind=params.Nind.split(',')
+   if(splNind.size()==1)gwas_file_ldsc=gwas_file_ldsc_i.combine(channel.from(params.Nind))
+   else {
+     val_n_ch_ldsc=channel.from(splNind)
+     if(splNind.size()!=params.file_gwas.split(",").size()){
+       error("\n\n------\nparams.Nind must be same size than gwas or 1 value used for all gwas\n\n---\n")
+      }
+      process combine_ngwasldsc{
+         input :
+          path(gwas) from  gwas_file_ldsc_i
+          val(nind) from val_n_ch_ldsc
+         output :
+           tuple path(gwas), val(nind) into gwas_file_ldsc
+         script :
+           """
+          echo $nind
+         """
+     }  
+   }
+ }else{
+  gwas_file_ldsc=gwas_file_ldsc_i.combine("")
+ } 
  if(params.dir_ref_ld_chr==""){
-       error("\n\n------\ndir_ref_ld_chr must be allowed with full path\n\n---\n")
+       error("\n\n------\nno directory give for ld score, ldsc see : https://github.com/bulik/ldsc#where-can-i-get-ld-scores\n\n---\n")
+ }
+
+ gwas_file_1=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it ,checkIfExists:true)}
+ if(params.list_snp==""){
+  process GetSnpList{
+   time params.big_time
+   input :
+      file(gwas) from gwas_file_1
+   output :
+     file("$out") into list_file_pos
+     file("${out}2") into list_file_pos2
+   script :
+     out=gwas+".list"
+     chrbp=(params.head_chr!="" && params.head_bp!="") ? ",Pos:${params.head_bp},Chro:${params.head_chr}" : ""
+     """
+     ma_extract_rsid.py --input_file $gwas --out_file $out --info_file rsID:${params.head_rs},A1:${params.head_A1},A2:${params.head_A2}${chrbp} --ldsc
+     """
+  }
+ }else{
+  list_file_pos=Channel.fromPath(params.list_snp,checkIfExists:true)
+  list_file_pos2=Channel.fromPath(params.list_snp,checkIfExists:true)
+ }
+ list_file_posm2_ch=list_file_pos2.collect()
+ process mergelistsnp {
+    input :
+      path(allfile) from list_file_posm2_ch
+    output :
+      path(mergeall) into  list_file_pos_merge 
+    script :
+      allfile_m=allfile.join(" ")
+      mergeall="merge_rs" 
+      """
+      head -1 ${allfile[0]} > $mergeall
+      cat $allfile_m|grep -v "SNP"|sort|uniq >> $mergeall
+      """
 
  }
- dir_ref_ld_chr_ch_ldsc = Channel.fromPath(params.dir_ref_ld_chr, type: 'dir' ,checkIfExists:true)
- process DoLDSC{
+
+check_rs_ldsc=Channel.fromPath("${params.dir_ref_ld_chr}/*.ldscore.gz", checkIfExists:true).combine(list_file_pos_merge)
+
+process extract_rs_formldsc{
+     input :
+      tuple path(ldscore), path(posinfo) from check_rs_ldsc
+     output :
+       path(out) into rsupdate_chro_ch
+     script :
+       out=ldscore+".rs"
+     """
+     extract_rs_ldscdb.py --ldsc_input $ldscore --gwas_input $posinfo --out $out
+     """
+ }
+
+rsupdate_ch_allfile=rsupdate_chro_ch.collect()
+process merge_allchroscore{
+  input :
+    path(allfile) from rsupdate_ch_allfile
+  output :
+      path(filers) into rsupdate_ch_merge
+  script :
+  filers="allrs.update" 
+   """
+   cat ${allfile.join(" ")} >>$filers
+   """
+}
+ gwas_file_updaters=gwas_file_ldsc.combine(rsupdate_ch_merge)
+
+process update_rsgwas{
+  input :
+    tuple path(gwas), val(N),path(rsupdate) from gwas_file_updaters
+  output :
+    tuple path(newgwas), val(N),path(newfilepos)  into gwas_file_ldsc_update
+  script :
+    newgwas=gwas+'.updaters'
+    newfilepos=gwas+'.listpos'
+    """
+    updaters_gwasldsc.py --gwas $gwas --rstoupdate $rsupdate --a1_header ${params.head_A1} --a2_header ${params.head_A2} --chro_header ${params.head_chr} --bp_header ${params.head_bp} --out $newgwas  --rs_header ${params.head_rs} --out_pos $newfilepos
+    """
+}
+
+ //dir_ref_ld_chr_ch_ldsc = Channel.fromPath(params.dir_ref_ld_chr, type: 'dir' ,checkIfExists:true)
+ //gwas_file_ldsc_withld=gwas_file_ldsc_update.combine(dir_ref_ld_chr_ch_ldsc)
+ 
+ process FormatLDSC{
    label 'py2ldsc'
    memory ldsc_mem_req
    input :
-      file(gwas) from gwas_file_ldsc
-      file(dir_ld) from dir_ref_ld_chr_ch_ldsc
-   publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
+      tuple path(gwas), val(Nind),path(infopos) from gwas_file_ldsc_update
+   publishDir "${params.output_dir}/ldsc",mode:'copy', pattern: "*.sumstats.gz"
    output :
-     file("$out"+".log") 
-     set val(gwasf), val(out), file("${out}.log") into logldsc 
-
+    path("$out"+".sumstats.gz") into (list_gwas_formatldsc1,list_gwas_formatldsc, list_gwas_formatldsc2)
    script :
-     NInfo=params.head_n=="" ? " --N ${params.Nind} " : "--N-col ${params.head_n} " 
-     out=gwas.baseName.replace('_','-')+"_ldsc"
+     NInfo=params.head_n=="" ? " --N ${Nind} " : "--N-col ${params.head_n} " 
+     out=gwas.baseName.replace('_','-')+"_mg"
      gwasf=gwas.baseName
      """
-     ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out"_mg" --snp ${params.head_rs} --p ${params.head_pval} \
-     --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --no-alleles
-     ${params.ldsc_bin} --h2 $out"_mg.sumstats.gz" --ref-ld-chr $dir_ld/ --w-ld-chr $dir_ld/ --out $out ${params.ldsc_h2opt}
+     ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp ${params.head_rs} --p ${params.head_pval} \
+     --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --merge-alleles $infopos
      """ 
 }
+list_gwas_formatldsc1_a=list_gwas_formatldsc1.combine(Channel.fromPath(params.dir_ref_ld_chr, type: 'dir' ,checkIfExists:true))
+ process doLDSC{
+   label 'py2ldsc'
+   memory ldsc_mem_req
+   input :
+      tuple path(gwasf), path(dir_ld) from list_gwas_formatldsc1_a
+   publishDir "${params.output_dir}/ldsc", mode:'copy'
+   output :
+     tuple path(gwasf), val(out), path("${out}.log") into logldsc
+   script :
+     out=gwasf.baseName+"_ldsc"
+     """
+     ${params.ldsc_bin} --h2 $gwasf --ref-ld-chr $dir_ld/ --w-ld-chr $dir_ld/ --out $out ${params.ldsc_h2opt}
+     """
+}
+
+
 
    process doLDSC_Stat{
        label 'R'
        input :
-         set val(gwas), val(out), file(logiciel) from logldsc
-       publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
+         tuple val(gwas), val(out), path(logiciel) from logldsc
+       publishDir "${params.output_dir}/ldsc", mode:'copy'
        output :
          file("${out}_ldsc.stat") into report_ldsc
        script :
@@ -251,46 +365,7 @@ if(params.ldsc_h2==1){
  report_ldsc=Channel.empty()
 }
 if(params.ldsc_h2_multi==1){
- println "ldsc_h2_multi"
- if(params.file_gwas==""){
-  error("---------------\n ldsc_h2_multi=1 and file_gwas is null\n\n---------------")
- }
- gwas_file_1 = Channel.fromPath(params.file_gwas.split(",")[0], checkIfExists:true)
- if(params.list_snp==""){
-  process GetSnpList{
-   time params.big_time
-   input :
-      file(gwas) from gwas_file_1
-   output :
-     file("$out") into list_file_pos
-   script :
-     out="info_poschro.list"
-     """
-     ma_extract_rsid.py --input_file $gwas --out_file $out --info_file rsID:${params.head_rs},A1:${params.head_A1},A2:${params.head_A2} --ldsc
-     """
-  }
- }else{
-  list_file_pos=Channel.fromPath(params.list_snp,checkIfExists:true) 
- }
 
-  list_gwas_multi=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it, checkIfExists:true)}.combine(list_file_pos)
-  process FormatLDSC{
-   label 'py2ldsc'
-   time params.big_time
-   memory params.ldsc_mem_req
-   memory ldsc_mem_req
-   input :
-    set file(gwas), file(infopos) from list_gwas_multi
-   output :
-    file("$out"+".sumstats.gz") into (list_gwas_formatldsc, list_gwas_formatldsc2)
-   script :
-    out=gwas.baseName.replace('_','-')
-    NInfo=params.head_n=="" ? " --N ${params.Nind} " : "--N-col ${params.head_n} " 
-    """
-    ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp ${params.head_rs} --p ${params.head_pval} \
-    --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --merge-alleles $infopos 
-    """
-  }
 
  list_gwas_formatldsc3=list_gwas_formatldsc.collect()
  dir_ref_ld_chr_ch = Channel.fromPath(params.dir_ref_ld_chr, type: 'dir' ,checkIfExists:true)

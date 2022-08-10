@@ -67,16 +67,25 @@ headeri=readfile.readline().replace('\n','').split(sep)
 PosRs=headeri.index(nomrs)
 PosA1=headeri.index(A1Nom)
 PosA2=headeri.index(A2Nom)
+balisechro=False
 if nompos.upper()!="NA" and nomchro.upper()!="NA" and len(nompos)>0 and len(nomchro)>0 :
    balisechro=True
    PosChro=headeri.index(nomchro)
    PosPos=headeri.index(nompos)
 if args.ldsc :
+   writenew2=open(args.out_file+'2', 'w')
    writenew.write('SNP\tA1\tA2\n')
-   for ligne in readfile :
+   writenew2.write('SNP\tA1\tA2\tChro\tBP\n')
+   if balisechro==False :
+    for ligne in readfile :
      spl=ligne.replace('\n','').split(sep)
      if spl[PosRs]!='.' :
         writenew.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\n')
+   else :
+    for ligne in readfile :
+     spl=ligne.replace('\n','').split(sep)
+     writenew.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\n')
+     writenew2.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\t'+spl[PosChro]+'\t'+spl[PosPos]+'\n')
 elif  balisechro == True  :
    writenew.write('rsID\tChro\tPos\tA1\tA2\tnewRs\n')
    for ligne in readfile :
