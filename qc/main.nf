@@ -350,11 +350,11 @@ process inMD5 {
      file(out) into report_inpmd5_ch
   echo true
   script:
-       bed = plink[0]
-       bim = plink[1]
-       fam = plink[2]
-       out  = "${plink[0].baseName}.md5"
-       template "md5.py"
+       bfile= plink[0].baseName
+       out  = "${bfile}.md5"
+       """
+       md5.py --bfile $bfile --out $out
+       """
 }
 
 
@@ -414,7 +414,9 @@ process getDuplicateMarkers {
   script:
      base     = inpfname.baseName
      outfname = "${base}.dups"
-     template "dups.py"
+     """
+     dups.py $inpfname $outfname $remove_on_bp
+     """
 }
 
 
@@ -678,8 +680,9 @@ process drawPCA {
       cc_fname = params.case_control
       // also relies on "col" defined above
       output="${base}-pca".replace(".","_")+".pdf"
-      template "drawPCA.py"
-
+      """
+      drawPCA.py --input $base --cc $cc --cc_fname $cc_fname --eigvecs $eigvecs --eigvals $eigvals --output $output --column $col
+      """
 }
 
 
@@ -990,7 +993,10 @@ process outMD5 {
   echo true
   script:
        out  = "${bed.baseName}.md5"
-       template "md5.py"
+       bfile=bed.baseName
+       """
+       md5.py --bfile $bfile --out $out
+       """
 }
 
 

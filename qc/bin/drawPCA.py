@@ -17,19 +17,16 @@ gap = EOL*3
 colour_choices=["black","magenta","darkcyan","red","blue","orange","aqua","beige","chartreuse","darkblue","gold","indigo","ivory","olive","sienna","wheat","salmon","orangered","silver","tan","grey","lightblue","violet","yellow","turquoise", "yellowgreen","khaki","goldenrod","aquamarine","azure","brown","crimson","fuchsia"]
 
 def parseArguments():
-   if len(sys.argv)<=1:
-      sys.argv=\
-      "drawPCA.py $base $cc $cc_fname $col $eigvals $eigvecs $output".split()
-   parser=argparse.ArgumentParser()
-   parser.add_argument('input', type=str, metavar='input'),
-   parser.add_argument('cc', type=str, metavar='label'),
-   parser.add_argument('cc_fname', type=str, metavar='label'),
-   parser.add_argument('column', type=str, metavar='label'),
-   parser.add_argument('eigvals', type=str, metavar='label'),
-   parser.add_argument('eigvecs', type=str, metavar='output'),
-   parser.add_argument('output', type=str, metavar='output'),
-   args = parser.parse_args()
-   return args
+    parser = argparse.ArgumentParser(description='plot pca using python')
+    parser.add_argument('--input',type=str,required=True,help="File with phenotype and covariate data")
+    parser.add_argument('--cc',type=str,required=True,help="File with phenotype and covariate data")
+    parser.add_argument('--cc_fname',type=str,required=True,help="case control column")
+    parser.add_argument('--column',type=str,required=True,help="label individual")
+    parser.add_argument('--eigvals', type=str,help="plink eigen values")
+    parser.add_argument('--eigvecs', type=str,help="plink eigen vectors")
+    parser.add_argument('--output', type=str,help="output")
+    args = parser.parse_args()
+    return args
 
 
 
