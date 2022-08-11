@@ -11,7 +11,7 @@ if len(sys.argv)<=1:
     sys.argv=["xCheck.py","$x","$f_hi_female", "$f_lo_male","$out"]
     missingness=eval("$missingness")
 else:
-    missingness = [0.01,0.03,0.05]
+    missingness = [float(x) for x in sys.argv[5].split(',')]
 
 idtypes = dict(map(lambda x: (x,object),["FID","IID"]))
 

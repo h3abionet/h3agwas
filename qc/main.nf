@@ -495,7 +495,10 @@ if (extrasexinfo == "--must-have-sex") {
      script:
 	x = xchr[0].baseName
 	out = "x.pkl"
-	template "xCheck.py"
+        misstr=missingness.join(",")
+	"""
+        xCheck.py $x $f_hi_female $f_lo_male $out $misstr
+        """
    }
 } else {
 
@@ -556,7 +559,10 @@ process generateSnpMissingnessPlot {
     base   = lmissf.baseName
     label  = "SNPs"
     output = "${base}-snpmiss_plot".replace(".","_")+".pdf"
-    template "missPlot.py"
+    missing=
+    """
+    missPlot.py $input $label $output
+    """
 }
 
 
@@ -572,7 +578,9 @@ process generateIndivMissingnessPlot {
     base   = imissf.baseName
     label  = "samples"
     output = "${base}-indmiss_plot".replace(".","_")+".pdf"
-    template "missPlot.py"
+    """
+    missPlot.py $input $label $output
+    """
 }
  
 process getInitMAF {
@@ -599,7 +607,9 @@ process showInitMAF {
   script:
     base = freq.baseName+"-initmaf"
     base = base.replace(".","_")
-    template "showmaf.py"
+    """
+    showmaf.py $freq  $base
+    """
 }
 
 process showHWEStats {
@@ -611,7 +621,9 @@ process showHWEStats {
   script:
     base = hwe.baseName+"-inithwe"
     base = base.replace(".","_")
-    template "showhwe.py"
+    """
+    showhwe.py $hwe  $base
+    """
 }
 
 
@@ -748,7 +760,9 @@ process findRelatedIndiv {
   script:
      base = missing.baseName
      outfname = "${base}-fail_IBD".replace(".","_")+".txt"
-     template "removeRelInds.py"
+     """
+     removeRelInds.py $missing $ibd_genome $outfname $super_pi_hat
+     """
 }
 
 
@@ -782,7 +796,9 @@ process generateMissHetPlot {
   script:
     base = imiss.baseName
     output  = "${base}-imiss-vs-het".replace(".","_")+".pdf"
-    template "missHetPlot.py"
+    """
+    missHetPlot.py $imiss $het $output
+    """
 }
 
 
@@ -798,7 +814,9 @@ process getBadIndivsMissingHet {
   script:
     base = het.baseName
     outfname = "${base}-fail_het".replace(".","_")+".txt"
-    template "select_miss_het_qcplink.py"
+    """
+    select_miss_het_qcplink.py $het ${params.cut_het_low} ${params.cut_het_high} $outfname
+    """
 }
 
 
@@ -865,7 +883,9 @@ process generateDifferentialMissingnessPlot {
        input = clean_missing
        base  = clean_missing.baseName.replace(".","_").replace("-nd","")
        output= "${base}-diff-snpmiss_plot.pdf"
-       template "diffMiss.py"
+       """
+       diffMiss.py $input $output
+       """
 
  }
 
@@ -886,7 +906,9 @@ process findSnpExtremeDifferentialMissingness {
     base     = missing.baseName.replace("-.*","").replace(".","_")
     probcol = 'EMP2'  // need to change if we don't use mperm
     failed   = "${base}-failed_diffmiss.snps"
-    template "select_diffmiss_qcplink.py"
+    """
+    select_diffmiss_qcplink.py $missing $probcol $cut_diff_miss $failed
+    """
 }
 
 
@@ -942,7 +964,9 @@ process generateMafPlot {
   script:
     base    = input.baseName
     output  = "${base}-maf_plot.pdf"
-    template "mafplot.py"
+    """
+    mafplot.py $input $output
+    """
 }
 
 
@@ -977,7 +1001,9 @@ process generateHwePlot {
     input  = unaff
     base   = unaff.baseName.replace(".","_")
     output = "${base}-hwe_plot.pdf"
-    template "hweplot.py"
+    """
+    hweplot.py $input $output
+    """
 }
 
 
@@ -1024,7 +1050,9 @@ process batchProc {
     base = eigenval.baseName
     batch_col = params.batch_col
     pheno_col = params.pheno_col
-    template "batchReport.py"
+    """
+    batchReport.py $base $batch $batch_col $phenotype $pheno_col $imiss $sexcheck_report $eigenvec   $genome   $pkl $rem_indivs
+    """
 }
 
 

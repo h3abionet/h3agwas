@@ -34,6 +34,7 @@ def parseArguments():
     parser.add_argument('eigenvec', type=str, metavar='eigenvec',help="eigenvector"),
     parser.add_argument('genome', type=str, metavar='genome',help="genome"),
     parser.add_argument('sx_pickle', type=str, metavar='sx_pickle',help="pickle file with errors"),
+    parser.add_argument('rem_indivs', type=str, metavar='rem_indivs',help="rem_indivs"),
     args = parser.parse_args()
     return args
 
@@ -46,10 +47,11 @@ PCT = chr(37)
 null_file = "emptyZ0"
 
 if len(sys.argv)<=1:
-    sys.argv = ["batchReport.py","$base","$batch","$batch_col","$phenotype","$pheno_col","$imiss","$sexcheck_report","$eigenvec","$genome","$pkl"]
+    sys.argv = ["batchReport.py","$base","$batch","$batch_col","$phenotype","$pheno_col","$imiss","$sexcheck_report","$eigenvec","$genome","$pkl", "$rem_indivs"]
 
 
 args = parseArguments()
+print(args)
 
 
 idtypes = dict(map(lambda x: (x,str),\
@@ -120,7 +122,7 @@ removing first those who are related to multiple people (e.g. if A is a cousin o
 
 *-begin{itemize}
 *-item There were %(numpairs)d pairs of individuals over the cut-off. These can be found in the PLINK report *-url{%(all_pi_hat)s}.
-*-item %(num_rem)d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{${rem_indivs}}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than $super_pi_hat are removed.)
+*-item %(num_rem)d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%(rem_indivs)s}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than $super_pi_hat are removed.)
 *-item The individuals with ##{*-widehat{*-pi} *-geq 0.45 }## can be found in *-url{%(vclose)s}.
 *-end{itemize}
 
@@ -266,7 +268,7 @@ def plotPCs(base,eigs,pfrm,pheno_col,batch,batch_col):
         plt.tight_layout()
         fn = "%s-%s.pdf"%(base,site)
         allplots.append((fn, pheno_col+" "+str(site)))
-        plt.savefig(fn,type="pdf")
+        plt.savefig(fn,format="pdf")
     return allplots
 
        
@@ -409,10 +411,10 @@ def getRelatedPairs(pfrm,pheno_col,genome):
                 for (p1, p2) in prs:
                     rel_text=rel_text+" "+pstr(p1)+" "+pstr(p2)+"; "
             rel_text=rel_mixed+rel_text+"}"+EOL
-    num_rem = len(open("$rem_indivs").readlines())
+    num_rem = len(open(args.rem_indivs).readlines())
     rel_file="%s-reltable.csv"%(args.base)
     rdict = { 'numpairs' : group[" ALL"], 'num_rem':num_rem, 'all_pi_hat':genome, 'vclose':rel_file, \
-              'pheno_col':pheno_col, 'rows':rows }
+            'pheno_col':pheno_col, 'rows':rows , 'rem_indivs':args.rem_indivs}
     text=rel_template%rdict+rel_text
     # (group[" ALL"],num_rem,grel_file,pheno_col,rows)
     vclose  = getVClose(gfrm,pfrm,pheno_col)
