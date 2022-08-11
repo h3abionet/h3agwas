@@ -98,7 +98,8 @@ A PDF report can be found in the output directory. This describes the process as
 
 Note that one issue that sometimes occurs in analysis is that there may over time be multple copies of the same file, perhaps with minor differences. To help version control, the PDF report captures the md5 checksums of inputs and outputs.
 
-## 6 Example 
+
+## 6. Example 
 * data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 ```
@@ -108,4 +109,7 @@ Note that one issue that sometimes occurs in analysis is that there may over tim
  --batch data/pheno/pheno_test.all --batch_col batch \
  -profile slurmSingularity -resume
 ```
+
+## 7. Overview
+<img src="utils/qc_overview.png" title="overview of qc pipeline">
 

@@ -17,7 +17,7 @@ Our script, *assoc* takes as input PLINK files that have been through quality co
 * does a principal component analysis on the data, and produces pictures from that; 
 * performs a simple association test giving odds ratio and  raw and adjusted _p_ values
 ## 0. Overview
-<img src="figure/Assocnf.png"/>
+<img src="utils/Assocnf.png"/>
 
 ## 1. Running the main association testing : general option
 

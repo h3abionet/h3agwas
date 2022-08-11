@@ -11,6 +11,17 @@ two distincs approaches should be considered :
 ## Installation
 need python3, gcta, ldlc, bolt and gemma, R with ggplot2
 
+
+## Overview
+
+| Softwares | general | Summary statitistics| relatdness / phenotype | Coheritability |
+| --- | --- |
+| General options | | `--data` / `--pheno` / `--sample_snps_rel` | `--file_gwas` / `--head_[]` | |
+| gemma | `--gemma_h2_typeest` | `--gemma_h2_pval` | `--gemma_h2` | - |
+| bolt-lmm | | - | `--bolt_h2`| `--bolt_h2_multi`
+| ldsc |  | `--ldsc_h2` / `--dir_ref_ld_chr`| - | `--ldsc_h2_multi` |
+
+
 ## Key Options
 
 
@@ -18,11 +29,19 @@ The key options are:
 * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
 * `output_dir` : output directory
 * `output_pat` : output pattern
-* `sample_snps_rel` : do you need to sample snps for relatdness using plink, 1 yes, 0 : no [default 0]
-  * `sample_snps_rel_paramplkl` [default : 100 20 0.1]
 
+### General option phenotype and genotype
+
+* SNPs to built relatdness
+  * `sample_snps_rel` : do you need to sample snps for relatdness using plink, 1 yes, 0 : no [default 0]
+    * `sample_snps_rel_paramplkl` [default : 100 20 0.1]
+  * `file_rs_buildrelat` : list of rs used to build relatdness [default : None ]
 * `data` : same option that _assoc/main.nf_, file is optional, used for gemma, bolt and gcta
   * `pheno` :phenotypes used in data to computed in gemma, bolt
+  * `covariates` :phenotypes used in data to computed in gemma, bolt
+
+### General option estimation using summary statistics
+
 * `file_gwas` : one ore more one file gwas, used for ldsc and gemma, to defined column of files :
   * `head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
   * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
@@ -34,8 +53,11 @@ The key options are:
   * `head_freq` : freq header [ default : A1Freq],
   * `head_n`: N header, used just for ldsc, if not present, `Nind` must be initialize.
   * `Nind` : if `head_n` not initialise, must be initialise, individuals number for each gwas file, separate by comma
+
+### LDSC
+[LDSC](https://github.com/bulik/ldsc) computes heritabilies between gwas value using LD information.
+
 * `ldsc_h2` : need a estimation of h2 by ldc : 1 [default : 0]:
-  * [LDSC](https://github.com/bulik/ldsc) computes heritabilies between gwas value using LD information.
   * `ldsc_bin` : binary for ldsc
   * `dir_ref_ld_chr` : folder containing ld information, 1 file by begin by chromosome num without chr, see : `--ref-ld-chr` in ldsc manual
   * ̀`ldsc_mem_req`
@@ -43,18 +65,20 @@ The key options are:
   * `munge_sumstats_bin` : binary for munge
   * `ldsc_h2opt` : other option for ldsc
   * output :
-* `gemma_h2` : estimation using gemma,
+* `gemma` : estimation using gemma,
   * `gemma_bin` : gemma binary [ default "gemma"]
   * `gemma_h2` : do you want a estimation with gemma of heritabilies with relatdness matrix [default : 0] :
-  * `gemma_h2_pval` : do you want a estimation of heritabilities with gemma using p-value [ default : 0]
+  * `gemma_h2_pval` : do you want a estimation of heritabilities with gemma using summary statistics [ default : 0]
    * need file of pvalue see `file_gwas`
    * Z obtained with beta/se
-  * `gemma_h2_typeest` do you wang a (1) or reml (2)[default : "1"]
+  * `gemma_h2_typeest` do you want a HE regression ("1") or reml ("2") or both ("1,2")[default : "1"]
   * `gemma_mat_rel` for `gemma_h2`, have you a pre estimated relatdness otherwise it wil be computed with plink file [default : none]
   * `gemma_num_cores` : Core number [ default : 6]
   * `gemma_mem_req` : memory for gemma [ default : "10GB" ]
   * `gemma_relopt` = 1
-  * file_rs_buildrelat : list of rs used to build relatdness [default : None ]
+
+### Bolt-lmm
+
 * `bolt_h2` : estimation using bolt
   *  see [manual](https://data.broadinstitute.org/alkesgroup/BOLT-LMM/)
   * file_rs_buildrelat : list of rs used to build relatdness [default : None ]
@@ -64,6 +88,9 @@ The key options are:
   * `bolt_num_cores` if bolt is used set this up to 8
   * `bolt_mem_req` memory required for boltlmm, (default : 6GB)
   * `bolt_h2_multi`  : to have multi variance between traits [ default : 0]
+
+### GCTA : phenotype, genotype and co heritability 
+
 * `gcta` :
   * general option :
    * `output_dir` : plink directory
