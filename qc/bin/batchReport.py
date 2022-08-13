@@ -24,17 +24,25 @@ def debug(*args):
 
 def parseArguments():
     parser=argparse.ArgumentParser()
-    parser.add_argument('base', type=str, metavar='base'),
-    parser.add_argument('batch', type=str, metavar='batch'),
-    parser.add_argument('batch_col', type=str, metavar='batch_col'),
-    parser.add_argument('phenotype', type=str, metavar='phenotype'),
-    parser.add_argument('pheno_col', type=str, metavar='pheno_col',help="phenotype colum"),
-    parser.add_argument('imiss', type=str, metavar='imiss',help="indiv missingness"),
-    parser.add_argument('sexcheck_report', type=str, metavar='lmiss',help="sex check report"),
-    parser.add_argument('eigenvec', type=str, metavar='eigenvec',help="eigenvector"),
-    parser.add_argument('genome', type=str, metavar='genome',help="genome"),
-    parser.add_argument('sx_pickle', type=str, metavar='sx_pickle',help="pickle file with errors"),
-    parser.add_argument('rem_indivs', type=str, metavar='rem_indivs',help="rem_indivs"),
+    parser.add_argument('--base', type=str, metavar='base',required=True),
+    parser.add_argument('--batch',required=True),
+    parser.add_argument('--param_batch',required=True),
+    parser.add_argument('--batch_col', type=str, metavar='batch_col',required=True),
+    parser.add_argument('--phenotype', type=str, metavar='phenotype',required=True),
+    parser.add_argument('--param_phenotype', type=str, metavar='phenotype',required=True),
+    parser.add_argument('--pheno_col', type=str, metavar='pheno_col',help="phenotype colum",required=True),
+    parser.add_argument('--imiss', type=str, metavar='imiss',help="indiv missingness",required=True),
+    parser.add_argument('--sexcheck_report', type=str, metavar='lmiss',help="sex check report",required=True),
+    parser.add_argument('--eigenvec', type=str, metavar='eigenvec',help="eigenvector",required=True),
+    parser.add_argument('--genome', type=str, metavar='genome',help="genome",required=True),
+    parser.add_argument('--sx_pickle', type=str, metavar='sx_pickle',help="pickle file with errors", required=False, default="0"),
+    parser.add_argument('--pkl', type=str, help="pickle file with errors", required=True, default="0"),
+    parser.add_argument('--rem_indivs', type=str, metavar='rem_indivs',help="rem_indivs", required=True),
+    parser.add_argument('--pi_hat', type=str, metavar='pi_hat',help="pi_hat", required=True),
+    parser.add_argument('--super_pi_hat', type=str,help="pi_hat", required=True),
+    parser.add_argument('--extrasexinfo', type=str,help="pi_hat", required=False, default=""),
+    parser.add_argument('--f_lo_male', type=str,help="pi_hat", required=True),
+    parser.add_argument('--f_hi_female', type=str,help="pi_hat", required=True),
     args = parser.parse_args()
     return args
 
@@ -46,12 +54,14 @@ PCT = chr(37)
 
 null_file = "emptyZ0"
 
+
 if len(sys.argv)<=1:
-    sys.argv = ["batchReport.py","$base","$batch","$batch_col","$phenotype","$pheno_col","$imiss","$sexcheck_report","$eigenvec","$genome","$pkl", "$rem_indivs"]
+    sys.argv = ["batchReport.py","$base","$batch","$batch_col","$phenotype","$pheno_col","$imiss","$sexcheck_report","$eigenvec","$genome","$pkl", "$rem_indivs", "$pi_hat"]
 
 
 args = parseArguments()
-print(args)
+f=open(args.extrasexinfo)
+extrasexinfo=f.readline().replace(' ','').replace('\n', '')
 
 
 idtypes = dict(map(lambda x: (x,str),\
@@ -100,7 +110,7 @@ none_rel_template = """
 
 *-subsection{Relatedness}
 
-There are no related pairs of individuals (##*-widehat{*-pi} > ${pi_hat}##, the parameter of the pipeline).
+There are no related pairs of individuals (##*-widehat{*-pi} > %(pi_hat)##, the parameter of the pipeline).
 
 
 """
@@ -114,15 +124,15 @@ rel_template = """
 Using PLINK, relatedness is computed on using IBD with
 ##{*-widehat{*-pi}}## as a proxy. The data used for this analysis was
 the result of the QC Phase 1 work.  The ##*-widehat{*-pi}## of
-${pi_hat} is a parameter of the pipeline.
+%(pi_hat)s is a parameter of the pipeline.
 
 All pairs of individuals with a
-##{*-widehat{*-pi} *-geq ${pi_hat} }## are examined -- we try to remove as few individuals as possible by
+##{*-widehat{*-pi} *-geq %(pi_hat)s }## are examined -- we try to remove as few individuals as possible by
 removing first those who are related to multiple people (e.g. if A is a cousin of B and C, B and C may not be related so it makes sense to remove A rather than B and C).
 
 *-begin{itemize}
 *-item There were %(numpairs)d pairs of individuals over the cut-off. These can be found in the PLINK report *-url{%(all_pi_hat)s}.
-*-item %(num_rem)d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%(rem_indivs)s}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than $super_pi_hat are removed.)
+*-item %(num_rem)d individuals were removed because of relatedness.  The list of such individuals can be found in the file *-url{%(rem_indivs)s}. (One individual in each pair is removed;  any individuals in a pair with relatedness strictly greater than %(super_pi_hat)s are removed.)
 *-item The individuals with ##{*-widehat{*-pi} *-geq 0.45 }## can be found in *-url{%(vclose)s}.
 *-end{itemize}
 
@@ -138,7 +148,7 @@ the number of pairs of individuals with ##*-widehat{*-pi}## between 0.45 and 0.9
 %(rows)s*-hline
 *-end{tabular}
 *-end{center}
-*-caption{Overall breakdown of ##*-widehat{*-pi}## anomalies: for the overall dataset and each sub-group we show the number of total number of pairs with ##*-widehat{*-pi} > $pi_hat##, the number of pairs with ##*-widehat{*-pi} > 0.95## (twins or sample duplication perhaps?), and the number of pairs with ##0.95 > *-widehat{*-pi} >0.45## (siblings or parent/child?).}
+*-caption{Overall breakdown of ##*-widehat{*-pi}## anomalies: for the overall dataset and each sub-group we show the number of total number of pairs with ##*-widehat{*-pi} > %(pi_hat)s##, the number of pairs with ##*-widehat{*-pi} > 0.95## (twins or sample duplication perhaps?), and the number of pairs with ##0.95 > *-widehat{*-pi} >0.45## (siblings or parent/child?).}
 *-label{tab:sex:overall}
 *-end{table}
 """
@@ -197,7 +207,7 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
     num_samples = g['N_MISS'].count()
     ave_miss    = 100*g['N_MISS'].sum()/g['N_GENO'].sum()
     num_poor_i  = g[['F_MISS']].agg(poorFn)
-    if "$extrasexinfo" == "--must-have-sex":
+    if extrasexinfo == "--must-have-sex":
         sxfrm       = getCsvI(sexcheck_report)
         g = pd.merge(pfrm,sxfrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
         problems = g[['STATUS']].agg(sexCheckProblem)
@@ -394,7 +404,7 @@ def getRelatedPairs(pfrm,pheno_col,genome):
 
     keys = sorted(group.keys())
     if len(keys) == 0:
-        return none_rel_template
+        return none_rel_template%{'pi_hat':args.pi_hat}
     if len(keys)==2:
         keys=[" ALL"]
     for k in keys:
@@ -414,7 +424,7 @@ def getRelatedPairs(pfrm,pheno_col,genome):
     num_rem = len(open(args.rem_indivs).readlines())
     rel_file="%s-reltable.csv"%(args.base)
     rdict = { 'numpairs' : group[" ALL"], 'num_rem':num_rem, 'all_pi_hat':genome, 'vclose':rel_file, \
-            'pheno_col':pheno_col, 'rows':rows , 'rem_indivs':args.rem_indivs}
+            'pheno_col':pheno_col, 'rows':rows , 'rem_indivs':args.rem_indivs, 'pi_hat':args.pi_hat, 'super_pi_hat':args.super_pi_hat}
     text=rel_template%rdict+rel_text
     # (group[" ALL"],num_rem,grel_file,pheno_col,rows)
     vclose  = getVClose(gfrm,pfrm,pheno_col)
@@ -441,8 +451,8 @@ so for QC should be considerd further.
 In this analysis, we use PLINK to analyse the non-recombining
 regions of the X-chromosome, and in particular its computation of the
 inbreeding co-efficient of the X-chromosome. If the ##F## statistic is
-greater than $f_lo_male, PLINK infers that the sample is male; if it
-is less than $f_hi_female, it infers that the sample is female.
+greater than %(f_lo_male)s, PLINK infers that the sample is male; if it
+is less than %(f_hi_female)s, it infers that the sample is female.
 
 Reminder: the checking of sex on the raw data before any other QC is shown in Section 1. The rest of this section analyses the data after basic QC on genotype has been done and so differences may be seen.
 
@@ -454,7 +464,7 @@ patterns within the individuals studied. How these samples should be
 treated will require some thought, but these are not a sign of
 problems of the experimental protocol, and not by itself probably a sign of problems with
 genotyping or DNA quality errors. We define a soft anomaly as an indvidual having an ##F## value between 
-$f_hi_female and $f_lo_male, which is possible but unusual.
+%(f_hi_female)s and %(f_lo_male)s, which is possible but unusual.
 
 
 *-emph{Hard} errors are cases where the sex in the manifest/fam file
@@ -465,9 +475,9 @@ are likely to be a sign of sample handling errors. Great care needs to
 be taken with this.
 
 A summary of the detailed analysis is shown below. In the output, the
-file *-url{%s} is a CSV file that has sample ID, per-individual
+file *-url{%(sex_name)s} is a CSV file that has sample ID, per-individual
 missingness rate in the raw data (*-verb!F_MISS! is the individual
-missingness rate *-emph{not} the F-statistic), the *-url{%s} status, and
+missingness rate *-emph{not} the F-statistic), the *-url{%(pheno_col)s} status, and
 whether that sample is hard (H) or soft error (S) for given tolerated
 per-individual genotyping error rates on the X-chromosome. A `-'
 indicates that the indivdual is filtered out at that rate of
@@ -556,7 +566,7 @@ def detailedSexAnalysis(pfrm,missing_sex_columns):
        for grpname, gg in g:
            tbl = tbl+detSexGroup(gg,grpname,missing_sex_columns)
     return \
-        det_sex_analysis%(sex_fname,args.pheno_col.replace('_',' ')) +\
+            det_sex_analysis%{'sex_fname':sex_fname,'pheno_col':args.pheno_col.replace('_',' '),'f_lo_male':args.f_lo_male, 'f_hi_female':args.f_hi_female} +\
         det_table%(header+(tbl,args.pheno_col))
 
        
@@ -566,7 +576,7 @@ def backslashify(text):
 def getBatchAnalysis():
 # Show the missingness by batch
    debug("In getBatchAnalysis") #DBG
-   if "${params.batch}" in no_response:
+   if args.param_batch in no_response:
        print("Making fake batch file",ifrm.columns," index is ",ifrm.index.names)  # DBG
        args.batch_col = 'all'
        bfrm = DataFrame([1]*len(ifrm),index=ifrm.index,columns=['all'])
@@ -578,7 +588,7 @@ def getBatchAnalysis():
        debug("Read in batch file",bfrm.columns," index is ",bfrm.index.names) #DBG
        res_text = "Table *-ref{table:batchrep:%(bname)s} on page *-pageref{table:batchrep:%(bname)s} shows the error "\
                   " rate as shown by *-url{%(bname)s} as found in file *-url{%(fname)s}."\
-                   %({'bname':args.batch_col,'fname':args.batch})
+                   %({'bname':args.batch_col,'fname':args.param_batch})
    
    problems = ifrm.index.difference(bfrm.index).to_series().values
    problems = list(filter(lambda fn: "_replicate_" not in fn[0] and (not fn[1].startswith("_MSK_")), problems))
@@ -596,8 +606,8 @@ def getBatchAnalysis():
 def getPhenoAnalysis():
     pfrm = got_frame = False
     res_text = ""
-    if  "${params.phenotype}" in no_response:
-        if "${params.batch}" not in no_response:
+    if  args.param_phenotype in no_response:
+        if args.param_batch not in no_response:
             debug("Making fake phenotype file") #DBG
             args.pheno_col = 'all'
             pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])

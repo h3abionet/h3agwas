@@ -35,6 +35,6 @@ for x in plinks:
 
 f=open(args.out,"w")
 for (fn,md) in md5s:
-    f.write("%s\\t%s\\n"%(fn,md))
+    f.write("%s\t%s\n"%(fn,md))
 f.close()
 

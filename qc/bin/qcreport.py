@@ -64,27 +64,58 @@ if len(kpsewhich)>1:
 # must define BASE
 # NB: only for a Nextflow template -- you could also directly call from a Nextflow
 # script if this script is on the path -- in which case the parameters should be passed
-if len(sys.argv)==1:
-   sys.argv = [sys.argv[0],"$orig","$base","$cbim","$cfam","$missingvhetpdf","$mafpdf","$dupf","$fsex","$indmisspdf","$snpmisspdf"]
 
+def getdic_params(fparams) :
+    readp=open(fparams)
+    params={}
+    for line in readp :
+        spl=line.split('\t')
+        if len(spl) >1 :
+         params[spl[0]] = spl[1]
+    return params
 
 def parseArguments():
     parser=argparse.ArgumentParser()
-    parser.add_argument('orig', type=str),
-    parser.add_argument('base', type=str),
-    parser.add_argument('cbim', metavar='CBIM', type=str,help='clean bim'),
-    parser.add_argument('cfam', metavar='CFAM', type=str,help='cleanfam'),
-    parser.add_argument('missingvhetpdf', type=str),
-    parser.add_argument('mafpdf', type=str),
-    parser.add_argument('dupf', type=str),
-    parser.add_argument('fsex', type=str),
-    parser.add_argument('indmisspdf', type=str),
-    parser.add_argument('snpmisspdf', type=str),        
+    parser.add_argument('--orig', type=str, required=True),
+    parser.add_argument('--base', type=str, required=True),
+    parser.add_argument('--bfilef', type=str, required=True),
+    parser.add_argument('--missingvhetpdf', type=str, required=True),
+    parser.add_argument('--mafpdf', type=str, required=True),
+    parser.add_argument('--dupf', type=str, required=True),
+    parser.add_argument('--fsex', type=str, required=True),
+    parser.add_argument('--indmisspdf', type=str, required=True),
+    parser.add_argument('--snpmisspdf', type=str, required=True),        
+    parser.add_argument('--diffmisspdf', type=str,required=True),
+    parser.add_argument('--diffmiss', type=str,required=True),        
+    parser.add_argument('--params', type=str, required=True),        
+    parser.add_argument('--workflow', type=str,required=True),        
+    parser.add_argument('--inpmd5', type=str,required=True),        
+    parser.add_argument('--misshetremf', type=str,required=True),        
+    parser.add_argument('--initmaftex', type=str,required=True),        
+    parser.add_argument('--inithwetex', type=str,required=True),        
+    parser.add_argument('--config_text', type=str,required=True),        
+    parser.add_argument('--ilog', type=str,required=True),        
+    parser.add_argument('--irem', type=str,required=True),        
+    parser.add_argument('--qc1', type=str,required=True),        
+    parser.add_argument('--cut_het_high', type=str,required=True),        
+    parser.add_argument('--batch_tex', type=str,required=True),        
+    parser.add_argument('--outmd5', type=str,required=True),        
+    parser.add_argument('--pcapdf', type=str,required=True),        
+    parser.add_argument('--eigenvalpdf', type=str,required=True),        
+    parser.add_argument('--hwepdf', type=str,required=True),        
+    parser.add_argument('--nextflowversion', type=str,required=True),        
+    parser.add_argument('--wflowversion', type=str,required=True),        
     args = parser.parse_args()
     return args
 
 args = parseArguments()
+params=getdic_params(args.params)
+workflow=getdic_params(args.workflow)
 pdict = vars(args)
+
+readf=open(args.config_text)
+config_text="\n".join(readf.readlines())
+readf.close()
 
 
 diff_miss_text_exists = """
@@ -93,14 +124,14 @@ cases and controls, showing the SNP-wise p-value, unadjusted for multiple testin
 
 *-ourfig{fig:diffP}{The plot shows differential missingness for each
   (log) level of significance, the number of SNPs with p-value of at
-  least this significance. The flatter the better.}{$diffmisspdf}
+  least this significance. The flatter the better.}{%(diffmisspdf)s}
 
 For removal of SNPs, we compute the p-value adjusted for multiple
 testing, by performing permutation testing (1000 rounds) using the
 PLINK mperm maxT option.  SNPs are removed from the data set if their
 adjusted (EMP2) differential missingness p-value is less than
-${params.cut_diff_miss}. The SNPs that are removed can be found in the
-file *-url{$diffmiss}
+%(cut_diff_miss)s. The SNPs that are removed can be found in the
+file *-url{%(diffmiss)s}
 """
 
 diff_miss_text_not_exists = """
@@ -185,14 +216,14 @@ This phase only removes SNPs which are duplicated (based on SNP name). No other 
 
 Figure *-ref{fig:snpmiss} shows the spread of missingness per SNP across the sample, whereas Figure *-ref{fig:indmiss} shows the spread of missingness per individual across the sample. Note that this shows missingness before any filtering or cleaning up of the data.
 
-*-ourfig{fig:snpmiss}{SNP missingness: For each level of missingness specified on the ##x## axis, the corresponding ##y##-value shows the proportion of SNPs which have missingness *-emph{less} than this.}{{%(snpmisspdf)s}}
+*-ourfig{fig:snpmiss}{SNP missingness: For each level of missingness specified on the ##x## axis, the corresponding ##y##-value shows the proportion of SNPs which have missingness *-emph{less} than this.}{%(snpmisspdf)s}
 
-*-ourfig{fig:indmiss}{Missingness per indvididual: For each level of missingness specified on the ##x## axis, the corresponding ##y##-value shows the proportion of individuals which have missingness *-emph{less} than this.}{{%(indmisspdf)s}}
+*-ourfig{fig:indmiss}{Missingness per indvididual: For each level of missingness specified on the ##x## axis, the corresponding ##y##-value shows the proportion of individuals which have missingness *-emph{less} than this.}{%(indmisspdf)s}
 
 
-*-input $initmaftex
+*-input %(initmaftex)s
 
-*-input $inithwetex
+*-input %(inithwetex)s
 
 *-clearpage
 *-input plates/crgc10.tex
@@ -204,19 +235,19 @@ The details of the final filtering can be found in the Nextflow script. Note tha
 *-begin{enumerate}
 *-item Only autosomal SNPs are included
 *-item SNPs and individuals that have been very poorly genotyped (missingness exceeding 10 per cent) are removed.
-*-item Individuals with missingness greater than ${params.cut_mind} are removed (by filtering out very badly genotyped individuals or SNPs) in the previous steps we *-emph{may} save a few individuals in this step;
-*-item SNP with missingness greater than ${params.cut_geno} are removed ;
-*-item minor allele frequency less than ${params.cut_maf} (and greater than 1-${params.cut_maf}) are removed;
-*-item HWE adjusted p-value less than ${params.cut_hwe} are removed
+*-item Individuals with missingness greater than %(cut_mind)s are removed (by filtering out very badly genotyped individuals or SNPs) in the previous steps we *-emph{may} save a few individuals in this step;
+*-item SNP with missingness greater than %(cut_geno)s are removed ;
+*-item minor allele frequency less than %(cut_maf)s (and greater than 1-%(cut_maf)s) are removed;
+*-item HWE adjusted p-value less than %(cut_hwe)s are removed
 *-end{enumerate}
 
 *-noindent
 
-*-input $qc1
+*-input %(qc1)s
 
 
 
-*-input $batch_tex
+*-input %(batch_tex)s
 
 *-clearpage
 
@@ -232,17 +263,17 @@ contamination, lower may indicate inbreeding. However, each set of
 data must be treated on its own merits and the analyst must apply
 their mind the problem. Missingness should be low.
 
-*-ourfig{fig:missvhet}{Missingness versus heterozygosity: the lines show the mean heterozygosity plus/minus standard deviations (the brighter the colours, the greater the density). If there is zero missingness, only heterozygosity is shown in a violin  plot.}{{%(missingvhetpdf)s}}
+*-ourfig{fig:missvhet}{Missingness versus heterozygosity: the lines show the mean heterozygosity plus/minus standard deviations (the brighter the colours, the greater the density). If there is zero missingness, only heterozygosity is shown in a violin  plot.}{%(missingvhetpdf)s}
 
 Individuals out of range heterozygosity were removed. Any indviduals with heterozygosity:
 
 *-begin{itemize}
-*-item less than ${params.cut_het_low} are removed. This may indicate inbreeding.
-*-item greater than ${params.cut_het_high} are removed. This may indicate sample contamination.
+*-item less than %(cut_het_low)s are removed. This may indicate inbreeding.
+*-item greater than %(cut_het_high)s are removed. This may indicate sample contamination.
 *-end{itemize}
  
 *-noindent
-Overall %(numhetrem)s individuals were removed. These individuals, if any, can be found in the file *-url{$misshetremf}.
+Overall %(numhetrem)s individuals were removed. These individuals, if any, can be found in the file *-url{%(misshetremf)s}.
 
 
 
@@ -251,10 +282,10 @@ Overall %(numhetrem)s individuals were removed. These individuals, if any, can b
 *-section{Minor Allele Frequency Spread}
 
 Figure~*-ref{fig:maf} shows the cumulative distribution of minor
-allele frequency in the data *-textbf{after} quality control (the figures shown in Section *-ref{sec:phasezero} show the MAF before QC. The MAF cut-off should be chosen high enough that one is sure that the variants seen are real (so this would depend on the size of the sample and the quality of the genotyping and whether some of the data is imputed). In this analysis the cut off was ${params.cut_maf}. Again, note that the *-emph{minor} allele is determined with respect to the frequency spectrum in this data -- `minor' is not synonym for alternate or non-reference allele, or the allele that has minor frequency in some other data set. Under this definition the MAF is always ##*-leq 0.5##.
+allele frequency in the data *-textbf{after} quality control (the figures shown in Section *-ref{sec:phasezero} show the MAF before QC. The MAF cut-off should be chosen high enough that one is sure that the variants seen are real (so this would depend on the size of the sample and the quality of the genotyping and whether some of the data is imputed). In this analysis the cut off was %(cut_maf)s. Again, note that the *-emph{minor} allele is determined with respect to the frequency spectrum in this data -- `minor' is not synonym for alternate or non-reference allele, or the allele that has minor frequency in some other data set. Under this definition the MAF is always ##*-leq 0.5##.
 
 
-*-ourfig{fig:maf}{Minor allele frequency distribution}{{%(mafpdf)s}}
+*-ourfig{fig:maf}{Minor allele frequency distribution}{%(mafpdf)s}
 
 *-clearpage
 
@@ -280,9 +311,9 @@ Moreover should there be any significant clusters or outliers, association
 testing should take into account stratification. Statistical testing could also
 be done. Figure~*-ref{fig:pcaeigen} shows for each principal component what the corresponding eigenvalue is. The shape of the curve may indicate if there is any structure in the data. Informally, the ``broken stick" model sees two processes generating PCs -- population structure and random fluctuation. The eigenvalue is a function of both -- the former has a major impact but drops relatively rapidly; the latter has less effect but drops more slowly. If (!) the model is correct then you will see an inflection point in the graph, where the random effects become the leading factor in the change.  More formal analysis may be desirable, e.g., using the Tracy-Widom statistic or Velicer's MAP test.
 
-*-ourfig{fig:pca}{Principal Component Analysis of Cases Versus Controls}{{$pcapdf}}
+*-ourfig{fig:pca}{Principal Component Analysis of Cases Versus Controls}{%(pcapdf)s}
 
-*-ourfig{fig:pcaeigen}{Eigenvalues for each principal component: the shape of the curve gives some indication of how many PCs are important}{{$eigenvalpdf}}
+*-ourfig{fig:pcaeigen}{Eigenvalues for each principal component: the shape of the curve gives some indication of how many PCs are important}{%(eigenvalpdf)s}
 
 *-clearpage
 *-section{Hardy-Weinberg Equilibrium}
@@ -290,7 +321,7 @@ be done. Figure~*-ref{fig:pcaeigen} shows for each principal component what the 
 Deviation for Hardy-Weinberg Equilibrium (HWE) may indicate sample contamination. However, this need not apply to cases, nor in a situation where there is admixture. For each SNP, we compute  the probability of the null hypothesis (that  the deviation from HWE is by chance alone).  Figure~*-ref{fig:hwe} shows a plot of the corresponding p-value versus the frequency of occurrence.
 
 *-ourfig{fig:hwe}{The plot shows for each level of significance, the number of SNPs with H
-WE p-value}{{$hwepdf}}
+WE p-value}{%(hwepdf)s}
 
 
 
@@ -308,11 +339,11 @@ The final, cleaned result contains:
 *-end{itemize}
 
 *-noindent
-The final output files are 
+The final output files are
 *-begin{itemize}
-*-item *-url{$cbed}, 
-*-item *-url{$cbim}, and 
-*-item *-url{$cfam}.
+*-item *-url{%(cbed)s}, 
+*-item *-url{%(cbim)s}, and 
+*-item *-url{%(cfam)s}
 *-end{itemize}
 
 The ouput files' md5 sums are shown below
@@ -331,13 +362,13 @@ The following tools were used:
 
 *-begin{itemize}
 *-item %(plinkversion)s  [Chang et al 2015]
-*-item $nextflowversion [Di Tommaso et al, 2017]
-*-item $wflowversion
+*-item %(nextflowversion)s [Di Tommaso et al, 2017]
+*-item %(wflowversion)s
 *-item The command line below was called [NB: if the command line is long, the linebreak may break oddly after a hyphen or dash so take care.]
 *-begin{lstlisting}
-${workflow.commandLine}
+%(commandLine)s
 *-end{lstlisting}
-*-item The profile ${workflow.profile} was used%(dockerimages)s
+*-item The profile %(profile)s was used%(dockerimages)s
 *-item The full configuration can be found in the appendix.
 *-end{itemize}
 
@@ -398,9 +429,9 @@ def getImages(images):
    return result
 
 
-s=os.stat("$diffmisspdf")
+s=os.stat(args.diffmisspdf)
 
-diff_miss_text = diff_miss_text_exists if s.st_size>0 else diff_miss_text_not_exists
+diff_miss_text = diff_miss_text_exists%{'diffmisspdf':args.diffmisspdf, 'cut_diff_miss':params['cut_diff_miss'], 'diffmiss':args.diffmiss} if s.st_size>0 else diff_miss_text_not_exists
 pdict["diff_miss_text"] = diff_miss_text
  
 f=open(args.orig)
@@ -408,28 +439,74 @@ pdict['numrsnps'] = f.readline().split()[0]
 pdict['numrfam']  = f.readline().split()[0]
 f.close()
 
-f=open("$ilog")
+f=open(args.ilog)
 pdict['plinkversion']=f.readline()
 f.close()
 
 
-pdict['numhetrem'] =  countLines("$misshetremf")
-pdict['numcsnps'] =  countLines(args.cbim)
-pdict['numcfam']  =  countLines(args.cfam)
+pdict['numhetrem'] =  countLines(args.misshetremf)
+pdict['diffmiss'] =  args.diffmiss
+pdict['diffmisspdf'] =  args.diffmisspdf
+pdict['numcsnps'] =  countLines(args.bfilef+'.bim')
+pdict['numcfam']  =  countLines(args.bfilef+'.fam')
 pdict['numdups']  =  countLines(args.dupf)
-pdict['numdiffmiss'] = countLines("$diffmiss")
-pdict['irem']       = "$irem"
+pdict['dupf']  =  args.dupf
+pdict['numdiffmiss'] = countLines(args.diffmiss)
+pdict['irem']       = args.irem
 
-pdict['inpmd5']= readLines("$inpmd5")
-pdict['outmd5']= readLines("$outmd5")
+pdict['inpmd5']= readLines(args.inpmd5)
+pdict['outmd5']= readLines(args.outmd5)
+pdict['inithwetex']= args.inithwetex
+pdict['diffmisspdf'] =  args.diffmisspdf
+pdict['numcsnps'] =  countLines(args.bfilef+'.bim')
+pdict['numcfam']  =  countLines(args.bfilef+'.fam')
+pdict['numdups']  =  countLines(args.dupf)
+pdict['numdiffmiss'] = countLines(args.diffmiss)
+pdict['irem']       = args.irem
+
+#pdict['inpmd5']= readLines(args.inpmd5)
+#pdict['outmd5']= readLines(args.outmd5)
+pdict['inithwetex']= args.inithwetex
+pdict['cut_diff_miss']= params['cut_diff_miss']
+pdict['cut_mind']= params['cut_mind']
+pdict['cut_geno']= params['cut_geno']
+pdict['cut_hwe']= params['cut_hwe']
+pdict['cut_het_low']= params['cut_het_low']
+pdict['commandLine']= workflow['commandLine']
+pdict['profile']= workflow['profile']
+pdict['qc1']= args.qc1
+pdict['batch_tex']= args.batch_tex
+pdict['misshetremf']= args.misshetremf
+pdict['eigenvalpdf']= args.eigenvalpdf
+pdict['hwepdf']= args.hwepdf
+pdict['cfam']= args.bfilef+'.fam'
+pdict['cbim']= args.bfilef+'.bim'
+pdict['cbed']= args.bfilef+'.bed'
+pdict['nextflowversion']= args.nextflowversion
+pdict['base']= args.base
+pdict['wflowversion']= args.wflowversion
+pdict['bed']= args.base+'.bed'
+pdict['fam']= args.base+'.fam'
+pdict['bim']= args.base+'.bim'
+pdict['orig']= args.orig
 
 
-pdict['configuration']="""$config_text""".replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10))
+pdict['configuration']=config_text.replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10))
 
-if "${workflow.container}"=="[:]":
+if workflow["container"]=="[:]":
    pdict["dockerimages"] = ": locally installed binaries used"
 else:
-   images = getImages("${workflow.container}")
+   images = getImages(workflow["container"])
+   pdict["dockerimages"] = ": the docker images used are found in "+images
+pdict['cut_maf']= params['cut_maf']
+
+
+pdict['configuration']=config_text.replace("*-",chr(92)).replace("##",chr(36)).replace("@.@",chr(10))
+
+if workflow["container"]=="[:]":
+   pdict["dockerimages"] = ": locally installed binaries used"
+else:
+   images = getImages(workflow["container"])
    pdict["dockerimages"] = ": the docker images used are found in "+images
 
 
@@ -437,6 +514,14 @@ pdict["dockerimages"]=pdict["dockerimages"].replace(chr(36),"")
 
 # changed to support Python 3.5 and before
 pdict["date"]=check_output("date").strip()
+pdict["fsex"]=args.fsex
+pdict["snpmisspdf"]=args.snpmisspdf
+pdict["indmisspdf"]=args.indmisspdf
+pdict["initmaftex"]=args.initmaftex
+pdict["missingvhetpdf"]=args.missingvhetpdf
+pdict["cut_het_high"]=args.cut_het_high
+pdict["mafpdf"]=args.mafpdf
+pdict["pcapdf"]=args.pcapdf
 
 
 num_fs = countLines(args.fsex)

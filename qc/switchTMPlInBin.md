@@ -40,5 +40,8 @@
    * tested : yes
 * batchProc
  * batchReport.py: change in script for variable and option to save fig 
- * add in nextflwo script : $rem_indivs
-
+*
+ * bin/qcreport.py
+ * bin/batchReport.py
+ * change in each variable locally in script or file give as argument
+ * add process 

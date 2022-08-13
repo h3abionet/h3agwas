@@ -348,7 +348,6 @@ process inMD5 {
      file plink from checked_input.inpmd5ch
   output:
      file(out) into report_inpmd5_ch
-  echo true
   script:
        bfile= plink[0].baseName
        out  = "${bfile}.md5"
@@ -358,7 +357,6 @@ process inMD5 {
 }
 
 
-println samplesheet
 if (samplesheet != "0")  {
   sample_sheet_ch = file(samplesheet)
 
@@ -553,7 +551,6 @@ process generateSnpMissingnessPlot {
   output:
      file(output) into report_snpmiss_ch
 
-  echo true
   script:
     input  = lmissf
     base   = lmissf.baseName
@@ -941,11 +938,11 @@ process calculateMaf {
   publishDir "${params.output_dir}/snps/maf", overwrite:true, mode:'copy', pattern: "*.frq"
 
   output:
-    file "${base}.frq" into maf_plot_ch
+    file "${out}.frq" into maf_plot_ch
 
   script:
     base = bed.baseName
-    out  = base.replace(".","_")
+    out  = base.replace(".","_")+"_maf2"
     """
       plink --bfile $base $sexinfo  --freq --out $out
     """
@@ -1016,7 +1013,6 @@ process outMD5 {
      tuple file(bed), file(bim), file(fam), file(log) from qc4B_ch
   output:
      file(out) into report_outmd5_ch
-  echo true
   script:
        out  = "${bed.baseName}.md5"
        bfile=bed.baseName
@@ -1050,8 +1046,11 @@ process batchProc {
     base = eigenval.baseName
     batch_col = params.batch_col
     pheno_col = params.pheno_col
+    extrasexinfo2=(extrasexinfo=="") ? "" : " --extrasexinfo $extrasexinfo " 
     """
-    batchReport.py $base $batch $batch_col $phenotype $pheno_col $imiss $sexcheck_report $eigenvec   $genome   $pkl $rem_indivs
+    echo "$extrasexinfo" > extrasexinfo 
+    batchReport.py --base $base --batch $batch --batch_col $batch_col --phenotype $phenotype --pheno_col $pheno_col --imiss $imiss --sexcheck_report $sexcheck_report --eigenvec $eigenvec   --genome $genome   --pkl $pkl --rem_indivs $rem_indivs --pi_hat $pi_hat --super_pi_hat ${super_pi_hat} --extrasexinfo extrasexinfo   --f_lo_male $f_lo_male --f_hi_female $f_hi_female  --param_batch params.batch --param_phenotype params.phenotype
+
     """
 }
 
@@ -1060,6 +1059,44 @@ process batchProc {
 
 repnames = ["dups","cleaned","misshet","mafpdf","snpmiss","indmisspdf","failedsex","misshetremf","diffmissP","diffmiss","pca","hwepdf","related","inpmd5","outmd5","batch"]
 
+
+text=""
+params.each{entry ->text=text+"$entry.key\t$entry.value;"}
+
+process write_params{
+  input :
+     val(listparams) from channel.from(text)
+   publishDir "${params.output_dir}/config/", overwrite:true, mode:'copy'
+   output :
+     path("params.par") into params_merge_ch
+   script :
+      """
+      echo "$listparams" |awk -F';' '{for(x=1;x<=NF;x++)print \$x}'> params.par
+      """
+}
+text=""
+//wfmanif=["scriptId","scriptName","scriptFile","repository","commitId","revision","projectDir","launchDir","workDir","homeDir","userName","configFiles","container","containerEngine","commandLine","profile","runName","sessionId","resume","stubRun","start","manifest"]
+//wfmanif="$scriptId $scriptName $scriptFile $repository $commitId $revision $projectDir $launchDir $workDir $homeDir $userName $configFiles $container $containerEngine $commandLine $profile $runName $sessionId $resume $stubRun $start $manifest"
+text=workflow.with{"scriptId\t$scriptId;scriptName\t$scriptName;scriptFile\t$scriptFile;repository\t$repository;commitId\t$commitId;revision\t$revision;projectDir\t$projectDir;launchDir\t$launchDir;workDir\t$workDir;homeDir\t$homeDir;userName\t$userName;configFiles\t$configFiles;container\t$container;containerEngine\t$containerEngine;commandLine\t$commandLine;profile\t$profile;runName\t$runName;sessionId\t$sessionId;resume\t$resume;stubRun\t$stubRun;start\t$start;manifest\t$manifest"}
+println text
+process write_workflows{
+  input :
+     val(listparams) from channel.from(text)
+   publishDir "${params.output_dir}/config/", overwrite:true, mode:'copy'
+   output :
+     path("workflow.par") into worklow_merge_ch
+   script :
+      """
+      echo "$listparams" |awk -F';' '{for(x=1;x<=NF;x++)print \$x}'> workflow.par
+      """
+}
+
+
+File file = new File(".config.tmp.tex")
+config_text = getConfig()
+file.write(config_text)
+
+configtex=channel.fromPath(".config.tmp.tex")
 
 
 process produceReports {
@@ -1087,13 +1124,17 @@ process produceReports {
     file(batch_tex)  from report_batch_report_ch
     file(poorgc)     from report_poorgc10_ch
     tuple file(bpdfs), file(bcsvs) from report_batch_aux_ch
+    path(fileparam) from params_merge_ch
+    path(worklow) from worklow_merge_ch
+    path(configtex_tmp) from configtex
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${base}.pdf") into final_ch
    script:
      base = params.output
-     config_text = getConfig()
-     template "qcreport.py"
+     """
+     qcreport.py  --orig $orig   --base $base      --missingvhetpdf $missingvhetpdf   --mafpdf $mafpdf   --dupf $dupf   --fsex $fsex   --indmisspdf $indmisspdf   --snpmisspdf $snpmisspdf  --diffmisspdf $diffmisspdf --param $fileparam --inpmd5 $inpmd5 --misshetremf $misshetremf --initmaftex $initmaftex --inithwetex $inithwetex --config_text ${configtex_tmp} --workflow $worklow --ilog $ilog --qc1 $qc1 --irem $irem --batch_tex ${batch_tex} --diffmiss $diffmiss --outmd5 $outmd5 --cut_het_high  ${params.cut_het_high} --pcapdf $pcapdf --eigenvalpdf $eigenvalpdf --hwepdf $hwepdf --bfilef ${cbed.baseName} --nextflowversion $nextflowversion --wflowversion ${nextflow.version} 
+     """
 }
 
 
