@@ -88,7 +88,7 @@ def helps = [ 'help' : 'help' ]
 
 allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta64_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" ]
 allowed_params=allowed_params_input
-allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'fastlmm_num_cores', 'saige_num_cores',"regenie_num_cores", "fastgwa_num_cores"]
+allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'fastlmm_num_cores', 'saige_num_cores',"regenie_num_cores", "fastgwa_num_cores", "max_cores"]
 allowed_params+=allowed_params_cores
 allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_bsize_step2", "grm_nbpart", "thin"]
 allowed_params+=allowed_params_intother
@@ -96,7 +96,7 @@ allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_
 allowed_params+=allowed_params_bolother
 allowed_params_float=["cut_maf", "bgen_mininfo", "regenie_mafstep1"]
 allowed_params+=allowed_params_float
-allowed_params_memory=["gemma_mem_req" , "plink_mem_req", "other_mem_req", "bolt_mem_req", 'fastlmm_mem_req', 'saige_mem_req', "regenie_mem_req", "fastgwa_mem_req", "bootStorageSize", "bootStorageSize", "boot-storage-size", "sharedStorageMount"]
+allowed_params_memory=["gemma_mem_req" , "plink_mem_req", "other_mem_req", "bolt_mem_req", 'fastlmm_mem_req', 'saige_mem_req', "regenie_mem_req", "fastgwa_mem_req", "bootStorageSize", "bootStorageSize", "boot-storage-size", "sharedStorageMount", "max_mex_req"]
 allowed_params+=allowed_params_memory
 allowed_params_test=["gemma", "linear","logistic","assoc","fisher",  "saige", "boltlmm", 'gemma_gxe', 'plink_gxe', 'fastlmm', "regenie", "fastgwa"]
 allowed_params+=allowed_params_test
@@ -149,7 +149,7 @@ params.regenie_otheropt_step1=""
 params.regenie_otheropt_step2=""
 params.regenie_loco=1
 params.regenie_num_cores=6
-params.regenie_mem_req="20GB"
+params.regenie_mem_req="10GB"
 params.regenie_mafstep1=0.01
 params.regenie=0
 

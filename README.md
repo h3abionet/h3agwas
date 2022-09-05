@@ -231,7 +231,10 @@ The following code needs to be installed and placed in a directory on the user's
 * LaTeX. A standard installation of texlive should have all the packages you need. If you are installing a lightweight TeX version, you need the following pacakges which are part of texlive.: fancyhdr, datetime, geometry, graphicx, subfig, listings, longtable, array, booktabs, float, url.
 * python 3.6 or later. pandas, numpy, scipy, matplotlib and openpyxl need to be installed. You can instally these by saying: `pip3 install pandas`  etc
 
-If you want to run the `assoc` pipeline then you should install gemma,fastlmm if you are using those options.
+If you want to run other scripts than qc then you should install various software of association, finemaping etc...
+
+[you can find in h3agwas-example a dictatorial to installsoftwares on ubuntu platform](https://github.com/h3abionet/h3agwas-examples/tree/main/requirement/ubuntu)
+
 
 ## 2.5 Installing the workflow
 

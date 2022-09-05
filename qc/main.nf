@@ -628,13 +628,13 @@ process removeQCPhase1 {
      # remove really realy bad SNPs and really bad individuals
      plink $K --autosome --bfile $base $sexinfo --mind 0.1 --geno 0.1 --make-bed --out temp1
      plink $K --bfile temp1  $sexinfo --mind $params.cut_mind --make-bed --out temp2
-     /bin/rm temp1*
+     /bin/rm temp1.{bim,fam,bed}
      plink $K --bfile temp2  $sexinfo --geno $params.cut_geno --make-bed --out temp3
-     /bin/rm temp2*
+     /bin/rm temp2.{bim,fam,bed}
      plink $K --bfile temp3  $sexinfo --maf $params.cut_maf --make-bed --out temp4
-     /bin/rm temp3*
+     /bin/rm temp3.{bim,fam,bed}
      plink $K --bfile temp4  $sexinfo --hwe $params.cut_hwe --make-bed  --out $output
-     /bin/rm temp4*
+     /bin/rm temp4.{bim,fam,bed}
      cat *log > logfile
      touch tmp.irem
      cat *.irem > ${output}.irem
@@ -1007,7 +1007,7 @@ process batchProc {
     file genome    from batch_rel_ch    // pruneForIBD
     file pkl       from x_analy_res_ch  // analyseX
     file rem_indivs from related_indivs_ch2 // findRel
-  publishDir "${params.output_dir}/samples/batch", pattern: "*{csv,pdf}", \
+  publishDir "${params.output_dir}/batch", pattern: "*{csv,pdf}", \
              overwrite:true, mode:'copy'
   output:
       file("${base}-batch.tex")      into report_batch_report_ch
