@@ -984,6 +984,7 @@ if (params.boltlmm == 1) {
     output:
       file(outbolt)
       set val(base), val(our_pheno), file("$outf") into bolt_manhatten_ch
+      path("$base-${our_pheno2}.boltstd*")
     script:
       base = plinksbed.baseName
       our_pheno2         = this_pheno.replaceAll(/^[0-9]+@@@/,"")
@@ -1015,7 +1016,8 @@ if (params.boltlmm == 1) {
       fi
       BoltNbMaxSnps=`cat  ${SnpChoiceMod}|wc -l`
       bolt.py ${params.bolt_bin} $type_lmm --bfile=$base  --phenoFile=${phef} --phenoCol=${our_pheno3}  --numThreads=$params.bolt_num_cores $cov_bolt $covar_file_bolt --statsFile=$outbolt $missing_cov $bgen $boltimpute $ld_score_cmd $exclude_snp  $model_snp $geneticmap  ${params.bolt_otheropt} --maxModelSnps=\$BoltNbMaxSnps --lmmForceNonInf
-   
+      cp tmp.stderr $base-${our_pheno2}.boltsterr
+      cp .command.out $base-${our_pheno2}.boltstdout
       """
   }
 
