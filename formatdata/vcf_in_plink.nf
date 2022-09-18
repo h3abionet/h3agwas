@@ -167,7 +167,7 @@ process checkfasta{
     cp $fasta $fasta2                                                           
     mv $fasta".fai"  $fasta2".fai"                                              
     else                                                                        
-    zcat $fasta | bgzip -@ ${params.max_plink_cores} -c > $fasta2               
+    zcat $fasta | awk '{print \$1}' | bgzip -@ ${params.max_plink_cores} -c > $fasta2               
     samtools faidx $fasta2                                                      
     fi                                                                          
     """                                                                         
