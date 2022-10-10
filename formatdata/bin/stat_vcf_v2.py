@@ -102,14 +102,14 @@ def obtainstatfile(filel):
    readf.close()
 
    def splitfreq(splline):
-     return(float(splline[5]))
+     return(float(splline[6]))
 
    def cmpfreq(splline):
-       return(float(spll[6])/float(spll[5]))
+       return(float(spll[7])/float(spll[6]))
 
-   if len(linetest)==6:
+   if len(linetest)==7:
       funcfreq=splitfreq
-   elif len(linetest)==7:
+   elif len(linetest)==8:
       funcfreq=cmpfreq
    else :
       print(linetest)
@@ -118,12 +118,15 @@ def obtainstatfile(filel):
       
    listfreq=[]
    listscore=[]
+   nb_genotype=0
    readf=open(filel)
    for line in readf :
       spll=line.split()
       listfreq.append(funcfreq(spll))
-      listscore.append(float(spll[4]))
-   return (listfreq, listscore) 
+      if spll[4]!='.' :
+         nb_genotype+=1
+      listscore.append(float(spll[5]))
+   return (listfreq, listscore, nb_genotype) 
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='extract annotation for specific position')
@@ -140,13 +143,14 @@ minscore=args.min_score
 out=args.out
 
 writestatfile=open(out+'.chro.stat', 'w')
-writestatfile.write('File\tnbfreqnonnull\tnbscoreupper\tnbscorehighfreqnonnull\ttotal\n')
+writestatfile.write('File\tnbfreqnonnull\tnbscoreupper\tnbscorehighfreqnonnull\tnb_genotype\ttotal\n')
 
 allstatfreq=[]
 allstatscore=[]
 statresume=[]
+nb_genotype_all=0
 for filel in lspl :
-   (listfreq, listscore)=obtainstatfile(filel)
+   (listfreq, listscore, nb_genotype)=obtainstatfile(filel)
    allstatfreq+=listfreq
    allstatscore+=listscore
    nbnonnullfreq=0
@@ -162,13 +166,15 @@ for filel in lspl :
    #nbnonnullfreq=len([x for x in listfreq if x>0])
    #nbscoregood=len([x for x in listscore if x>minscore])
    nball=len(listfreq)
-   statchro=[filel,nbnonnullfreq,nbscoregood,nbnonnullfreqscoregood,nball]
+   statchro=[filel,nbnonnullfreq,nbscoregood,nbnonnullfreqscoregood,nb_genotype,nball]
    writestatfile.write("\t".join([str(x) for x in statchro])+'\n')
    statresume.append(statchro)
+   nb_genotype_all+=nb_genotype
 
 nbnonnullfreq=0
 nbscoregood=0
 nbnonnullfreqscoregood=0
+nb_genotype=0
 for cmt in range(len(allstatfreq)) :
    if allstatfreq[cmt]>0:
      nbnonnullfreq+=1
@@ -177,7 +183,7 @@ for cmt in range(len(allstatfreq)) :
    if allstatfreq[cmt]>0 and allstatscore[cmt]>minscore :
      nbnonnullfreqscoregood+=1
 nball=len(listfreq)
-statchro=["Total",nbnonnullfreq,nbscoregood,nbnonnullfreqscoregood,nball]
+statchro=["Total",nbnonnullfreq,nbscoregood,nbnonnullfreqscoregood,nb_genotype_all,nball]
 writestatfile.write("\t".join([str(x) for x in statchro])+'\n')
 statresume.append(statchro)
 

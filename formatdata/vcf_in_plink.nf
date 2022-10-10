@@ -69,7 +69,8 @@ params.do_stat=true
 params.unzip_zip=0
 params.unzip_password=""
 params.reffasta=""
-
+params.data=''
+params.genotype_pat="TYPED"
 
 
 if(params.file_listvcf==""){
@@ -110,7 +111,7 @@ process computedstat{
   script :
     Ent=vcf.baseName+".stat"
     """
-    bcftools query -f '%CHROM %REF %ALT %POS %INFO/${params.score_imp} ${params.statfreq_vcf}\n' $vcf > $Ent
+    bcftools query -f '%CHROM %REF %ALT %POS %INFO/$params.genotype_pat %INFO/${params.score_imp} ${params.statfreq_vcf}\n' $vcf > $Ent
     """
 }
 statmerg=listchrostat.collect()
@@ -127,7 +128,7 @@ process dostat{
   fileout=params.output_pat+"_report"
   allfile=allstat.join(',') 
   """
-  stat_vcf.py  --out $fileout --min_score ${params.min_scoreinfo} --list_files $allfile
+  stat_vcf_v2.py  --out $fileout --min_score ${params.min_scoreinfo} --list_files $allfile
   """
 }
 process texfile{
@@ -340,6 +341,29 @@ process MergePlink{
        """
 }
 
+if(params.data!=''){
+
+data_ch=channel.fromPath(params.data, checkIfExists:true)
+process update_name{
+  label 'R'
+  cpus params.max_plink_cores
+  memory params.plink_mem_req
+ input : 
+   tuple path(bed), path(bim), path(fam) from plinkformatf
+   path(data) from data_ch 
+ output :
+     tuple path("${params.output_pat}_idupdate.bed"), path("${params.output_pat}_idupdate.bim"),path("${params.output_pat}_idupdate.fam") into plinkformatf_chgid
+     path("${out}.log")
+ script :
+     out=params.output_pat+"_idupdate"
+     bfile=bed.baseName
+     """
+     change_updateidplink.r $fam $data update_id
+     plink -bfile $bfile -make-bed --keep-allele-order --update-ids update_id -out $out
+     """
+}
+
+}
 
 
 
