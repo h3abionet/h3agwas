@@ -3,7 +3,7 @@
 
 These are supplementary instructions for setting up AWS Batch in order
 to use our workflow. These instructions assume that you understand the
-basics of AWS.
+basics of AWS and particularly AWS Batch. As a warning, this is not for the faint of heart, and we provide some guidance.
 
 In summary you must
 * do the set-up (this need only be done once -- unless your data set sizes vary very considerably or you change region)
@@ -23,12 +23,11 @@ In summary you must
 
 Log into your AWS console.
 
-Choose the AWS region based on what is convenient for you and has a the best pricing. It probably doesn't make a big difference. Our University's ethics committee prefers us to run on `af-south-1` since these are subject to South African privacy laws. Remember that any buckets you use must be in the same region.
+Choose the AWS region based on what is convenient for you and has a the best pricing. It probably doesn't make a big difference. Our University's ethics committee prefers us to run on `af-south-1` since these are subject to South African privacy laws but your requirements may well be different. Remember that any buckets you use must be in the same region.
 
 You need to have a bucket that can be used for temporary storage. It could be an existing bucket. Make sure you are the only person who can read and write to it.
 
-
-
+Make sure you have a suitable VPC (Virtual Private Cloud) for Batch to run in. If you haven't done this before, consider following our instructions in Section 5 (Addendum below) *before* setting up the Batch Compute environment.
 
 
 
@@ -38,7 +37,7 @@ This defines what resources you need for your workflow.  There are a number of s
 
 ### 2.1 Disk space
 
-By default, AWS instances that run batch jobs are 30GB in size. We think that you need an image that is at least 4x bigger than the input data size to run   safely. <b>If your need less than 30GB, there's no problem _and you can skip the rest of 2.1_</b>. If not, there's an extra configuration step in the configuration to set up an environment with disks of the correct size
+By default, AWS instances that run batch jobs are 30GB in size. We think that you need an image that is at least 4x bigger than the input data size to run   safely. <b>If your need is less than 30GB, there's no problem _and you can skip the rest of 2.1_</b>. If not, there's an extra configuration step in the configuration to set up an environment with disks of the correct size
 
 The easiest way of doing this is to set up a _launch template_. You can do this using the console but in my experience it is more complex than using  the command line tools.
 
@@ -91,7 +90,7 @@ Choose
   * Under _Additional settings_ (if you have ever defined a launch template for this region)  
      * pick _none_ or a template you have defined if you need to. Note for each template you need to define a new environment. (See section 2.1 above). If you haven't defined a template for this region there will be nothing for you to do and you won't be able to select an option; that's OK.
     * You don't need to to pick an AMI and should do so only if you really know what you are doing.
-* Under networking you can pick the defaults -- note that under additonal settings are the definitions of the securty groups which define access
+* Under networking add a VPC  -- note that under additonal settings are the definitions of the securty groups which define access
 * Add tags if you want to  : may be helpful for tracking resources
 
 
@@ -164,3 +163,32 @@ nextflow run h3agwas/qc/main.nf \
 ## 4 Clean up
 
 Note the work bucket you give will start to fill up (as will any output buckets). If you do lots of analysis it's possible for the work bucket to quickly get to the hundreds of GB level. There may be some sensitive data and AWS will also charge you for this, so remember to regularly delete objects from your work bucket.
+
+
+## 5 Addendum setting up A VPC
+
+We have found that one of the reasons for Batch not working is that the networking for Batch is not set up correctly. For those who are not very familiar with AWS, these instructions may be useful. If you find that your workflow just hangs, one possible reason is that you have not set up networking properly.  *These are instructions are better done before setting up the environment*
+
+Your batch jobs will run in a VPC (Virtual Private Cloud). This VPC needs to communicate with you and S3. There are many ways of doing this and although not in scope of our instructions you may find this useful. As  a warning, our instructions use public IP addresses -- this should be secure but you may want consider using private IP addresses only -- this is really out of scope of our documentation.
+
+1. In the Console Services choose "VPC" 
+2. Choose _Create VPC_
+3. Select _VPC + more_
+   * Name your VPC meaningfully -- you will need this name
+   * Use an IPv4 CIDR block: I've  used 10.0.0.0/8 and 172.31.0.0/16 but any sensible choice of private IP range should work
+   * Select the number of availability zones AZ: default of 2 is probably good
+   * Choose public subnets, using same number as AZs as you chose. Do *not* create private subnets
+   * Don't add a NAT
+   * *Create*
+4. The creation of the VPC will also create an internet gateway -- it's ID will start "igw-" and will have as part of the name the name you gave your VPC.
+5. Once the VPC has been created, select it and look for the main routitng table -- it will start with "rtb". Select that
+   * Click on "routes" and "Edit Routes"
+   * Choose "Add Routes"
+   * Add the entry 0.0.0.0/0 and then under Target choose "Internet gateway" and select the gateway that has created
+   * Save
+6. While still on the "VPC Dashboard", click on _Subnets_ in the panel on the left. For each of the subnets that belong to the VPC
+  - Select the subnet from the _Actions_ menu option and select _Edit subnet settings_
+  - Tick _Enable auto-assign public IPv4 address_
+  - _Save_
+
+When you create your Batch environment use this VPC
