@@ -104,6 +104,8 @@ param_Metal+=["",""]
 
 if args.inv_var_weigth[0]=='T' :
    param_Metal.append("SCHEME STDERR")
+else :
+   param_Metal.append("SCHEME SAMPLESIZE")
 
 
 if args.inv_var_weigth!='o':
