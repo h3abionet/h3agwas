@@ -228,7 +228,7 @@ process extract_rs_file{
     memory ma_mem_req
     input :
       set file(file_assoc), val(info_file), val(num) from liste_filesforref_ch
-    publishDir "${params.output_dir}/", mode:'copy'
+    publishDir "${params.output_dir}/rsinfo/", mode:'copy'
     output  :
        //file(file_rs) into file_rs_ref_chan, file_ref_rs_metal
        file(file_rs) into file_rs_formerge
@@ -245,6 +245,7 @@ process extract_allrs{
     memory params.ma_mem_req_utils
    input :
      path(filers)  from file_rs_formerge_m
+   publishDir "${params.output_dir}/rsinfo/", mode:'copy'
    output :
      path(listrs) into file_rs_ref_chan, file_ref_rs_metal
    script :
@@ -346,7 +347,7 @@ if(params.mrmega==1){
   }
   process showMRMEGA {
     memory ma_mem_req
-    publishDir params.output_dir, mode:'copy'
+    publishDir "${params.output_dir}/mrmega", mode:'copy'
     input:
       file(assoc) from res_mrmega
     output:
@@ -378,6 +379,8 @@ if(params.metal==1){
       file("${out}1.stat") into res_metal
       tuple file("${out}1.stat"), file("${out}1.stat.info")
       file("${out}_metal.format")
+      file("${out}.log")
+      file("${metal_config}")
     script :
       out = "metal_res"
       lfile=list_file.join("\t")
@@ -388,13 +391,13 @@ if(params.metal==1){
       """
       echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
       ma_get_configmetal.py --filelist fileListe  --output_configmetal $metal_config  $gc  $vw --out_file_metal $out $sov
-      ${params.metal_bin} $metal_config
+      ${params.metal_bin} $metal_config &> ${out}.log
       merge_summarystat.py --input_file ${out}1.stat --info_file $file_ref_rs --out_file $out"_metal.format"
       """
   }
   process showMetal {
     memory ma_mem_req
-    publishDir params.output_dir,  mode:'copy'
+    publishDir "${params.output_dir}/metal",  mode:'copy'
     input:
       file(assoc) from res_metal
     output:
@@ -479,7 +482,7 @@ if(params.metasoft==1){
     label 'metaanalyse'
     time params.big_time
     memory metasoft_mem_req
-    publishDir params.output_dir,  mode:'copy'
+    publishDir "${params.output_dir}/metasoft",mode:'copy'
     input:
       file(assoc) from res_metasoft
     output:
@@ -519,7 +522,7 @@ if(params.plink==1){
   process showPlink {
     time params.big_time
     memory ma_mem_req
-    publishDir params.output_dir,  mode:'copy'
+    publishDir "${params.output_dir}/plink", mode:'copy'
     input:
       file(assoc) from res_plink
     output:

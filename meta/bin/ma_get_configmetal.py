@@ -64,6 +64,11 @@ param_MetalI=[]
 if args.overlap[0] == "T":
   param_MetalI.append("##overlap\nOVERLAP ON")
   param_MetalI.append("SCHEME SAMPLESIZE")
+else :
+ if args.inv_var_weigth[0]=='T' :
+   param_MetalI.append("SCHEME STDERR")
+ else :
+   param_MetalI.append("SCHEME SAMPLESIZE")
 
 if args.genomic_control[0]=="T" :
       param_MetalI.append("GENOMICCONTROL ON")
@@ -102,10 +107,6 @@ if nbfreq > 0 :
 param_Metal=param_MetalI+param_Metal
 param_Metal+=["",""]
 
-if args.inv_var_weigth[0]=='T' :
-   param_Metal.append("SCHEME STDERR")
-else :
-   param_Metal.append("SCHEME SAMPLESIZE")
 
 
 if args.inv_var_weigth!='o':
