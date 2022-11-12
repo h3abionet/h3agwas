@@ -6,6 +6,8 @@ import argparse
 import math
 
 def formatrs(chro, bp,a1,a2) :
+  a1=a1.upper()
+  a2=a2.upper()
   if a1 > a2 :
      AA1=a1
      AA2=a2

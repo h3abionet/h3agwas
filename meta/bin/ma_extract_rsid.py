@@ -79,6 +79,8 @@ if args.ldsc :
    if balisechro==False :
     for ligne in readfile :
      spl=ligne.replace('\n','').split(sep)
+     spl[PosA1]=spl[PosA1].upper()
+     spl[PosA2]=spl[PosA2].upper()
      if spl[PosRs]!='.' :
         writenew.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\n')
    else :
@@ -90,6 +92,8 @@ elif  balisechro == True  :
    writenew.write('rsID\tChro\tPos\tA1\tA2\tnewRs\n')
    for ligne in readfile :
      spl=ligne.replace('\n','').split(sep)
+     spl[PosA1]=spl[PosA1].upper()
+     spl[PosA2]=spl[PosA2].upper()
      if spl[PosA1] > spl[PosA2] :
          AA1=spl[PosA1]
          AA2=spl[PosA2]
