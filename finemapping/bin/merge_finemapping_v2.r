@@ -11,6 +11,7 @@ PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL
  datainworkplot$col<-ColInitial
  datainworkplot$baldiff<-F
  datainworkplot$col[datainworkplot$gwascat]<-ColGWASCat
+ table(datainworkplot$gwascat)
  datainworkplot$baldiff[datainworkplot$gwascat]<-T
  datainworkplot$col[datainwork$is_cred]<-ColCred
  datainworkplot$baldiff[datainwork$is_cred]<-T
@@ -25,11 +26,11 @@ PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL
  if(!is.null(paintfile))pdf(FilePdf, width = 7, height = 7*1.5) else pdf(FilePdf,width = 7, height = 7)
  if(!is.null(paintfile))layout(matrix(c(1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,3,4,4), 9, 2, byrow = TRUE)) else layout(matrix(c(1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,3), 8, 2, byrow = TRUE))
  par(mar=c(0,5,2,1))
- plot(datainworkplot$bp_cm[!datainworkplot$baldiff],-log10(datainworkplot$p[!datainworkplot$baldiff]), xlab='bp (cm)', ylab='-log10(Pi)', pch=datainworkplot$pch, cex=1.2, bg=datainworkplot$col[!datainworkplot$baldiff], col=datainworkplot$col[!datainworkplot$baldiff], xaxt='n',ylim=range(-log10(datainworkplot$p))*1.1, frame.plot = FALSE, cex.axis=2,cex.lab=2)
+ print(table(datainworkplot$IsSig))
+ #plot(datainworkplot$bp_cm[!datainworkplot$baldiff],-log10(datainworkplot$p[!datainworkplot$baldiff]), xlab='bp (cm)', ylab='-log10(Pi)', pch=datainworkplot$pch[!datainworkplot$baldiff], cex=1.2, bg=datainworkplot$col[!datainworkplot$baldiff], col=datainworkplot$col[!datainworkplot$baldiff], xaxt='n',ylim=range(-log10(datainworkplot$p))*1.1, frame.plot = FALSE, cex.axis=2,cex.lab=2)
+ plot(datainworkplot$bp_cm,-log10(datainworkplot$p), xlab='bp (cm)', ylab='-log10(Pi)', pch=datainworkplot$pch, cex=1.2, bg=datainworkplot$col, col=datainworkplot$col, xaxt='n',ylim=range(-log10(datainworkplot$p))*1.1, frame.plot = FALSE, cex.axis=2,cex.lab=2)
  points(datainworkplot$bp_cm[datainworkplot$baldiff],-log10(datainworkplot$p[datainworkplot$baldiff]), pch=datainworkplot$pch, cex=1.5, bg=datainworkplot$col[datainworkplot$baldiff], col=datainworkplot$col[datainworkplot$baldiff])
  if(any(datainworkplot$gwascat))text(datainworkplot$bp_cm[datainworkplot$gwascat], -log10(datainworkplot$p[datainworkplot$gwascat]), datainworkplot$rsid[datainworkplot$gwascat],  srt=45,col=ColGWASCat, cex=0.8,pos=4)
-  print(table(datainworkplot$IsSig))
-  print(datainworkplot$rsid[datainworkplot$IsSig])
  text(datainworkplot$bp_cm[datainworkplot$IsSig], -log10(datainworkplot$p[datainworkplot$IsSig]), datainworkplot$rsid[datainworkplot$IsSig],  srt=45,col='darkblue', cex=1.2,pos=4)
  if(any(datainworkplot$is_cred))text(datainworkplot$bp_cm[datainworkplot$is_cred], -log10(datainworkplot$p[datainworkplot$is_cred]), datainworkplot$rsid[datainworkplot$is_cred],  srt=45,col='grey', cex=1.2,pos=4)
  par(mar=c(0,5,0,1))
@@ -151,6 +152,7 @@ getpaintor<-function(datainwork, opt){
   names(datapaint)<-c('num', head)
   listhead<-c(listhead, head)
   datainwork<-merge(datainwork , datapaint,by='num',all=T)
+  cat('paintor ', table(datainwork[,head]>0.5))
   datainwork$IsSig[datainwork[,head]>0.5]<-T
  }
  }else{
@@ -178,6 +180,7 @@ getfm<-function(datainwork, opt){
    datafinemap<-datafinemap[,c('rsid','chromosome','position','prob','log10bf','mean','sd','mean_incl','sd_incl')]
    names(datafinemap)[-c(1:3)]<-paste(names(datafinemap)[-c(1:3)],'_fm','_',Head,sep='')
    datainwork=merge(datainwork,datafinemap, by=c('rsid','chromosome','position'), all=T)
+  cat('paintor ', table(!is.infinite(datainwork$log10bf_fm)&datainwork$prob_fm>0.5&datainwork$log10bf_fm>=2))
    datainwork$IsSig[(!is.infinite(datainwork$log10bf_fm)&datainwork$prob_fm>0.5&datainwork$log10bf_fm>=2)]<-T
    listhead<-c(listhead,paste('log10bf_fm','_',Head,sep=''))
    }
@@ -289,7 +292,6 @@ datainwork$IsSig[!is.na(datainwork$pJ)]<-T
 
 if(!is.null(opt[['paintor_fileannot']]) & !(opt[['paintor_fileannot']] %in% c('NOFILE', "0","00","01"))){
 	DataAnnot<-read.table(opt[['paintor_fileannot']], header=T)
-        print(!is.null(opt[['paintor_annot']]))
 	if(is.null(opt[['paintor_annot']])) HeadAnnot = names(DataAnnot)
         else {
           if(opt[['paintor_annot']] %in% c('NOFILE', "0","00","01","02"))  HeadAnnot = names(DataAnnot)
@@ -309,9 +311,7 @@ if(!is.null(opt[['listfinemap_cred']])){
   infofile<-read.table(as.character(listcred[cmt,2]), header=T,stringsAsFactors=F)
   head<-paste('cred_',listcred[cmt,2],sep='')
   datainwork[,head]<-F
-  print(as.vector(as.matrix(infofile)))
   datainwork[datainwork$rsid %in% as.vector(as.matrix(infofile)),head]<-T
-  print(table(datainwork[,head]))
   listcred_head<-c(listcred_head,head)
  }
  datainwork$is_cred<-F 
