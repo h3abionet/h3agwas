@@ -3,7 +3,8 @@ library("optparse")
 library(data.table)
 PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL, listpval=c('bf_caviar', 'log10bf_fm', 'Posterior_Prob_paint'), listheadprint=c('caviar', 'fm', 'paint'), gwascat=NULL){
  ## defined c
- if(paintfile %in% c('NOFILE',"0","00","01","02", "03","04","05"))paintfile=NULL
+ if(is.null(paintfile)) { paintfile=NULL } else{
+     if(paintfile %in% c('NOFILE',"0","00","01","02", "03","04","05"))paintfile=NULL}
  ColI="blue";ColInitial=t_col(ColI,70)
  ColGWASCat=t_col("red4",30);ColFineMap='black';ColCred<-t_col('grey',30)
  datainworkplot<-datainwork
@@ -27,8 +28,9 @@ PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL
  if(!is.null(paintfile))layout(matrix(c(1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,3,4,4), 9, 2, byrow = TRUE)) else layout(matrix(c(1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,3), 8, 2, byrow = TRUE))
  par(mar=c(0,5,2,1))
  print(table(datainworkplot$IsSig))
- #plot(datainworkplot$bp_cm[!datainworkplot$baldiff],-log10(datainworkplot$p[!datainworkplot$baldiff]), xlab='bp (cm)', ylab='-log10(Pi)', pch=datainworkplot$pch[!datainworkplot$baldiff], cex=1.2, bg=datainworkplot$col[!datainworkplot$baldiff], col=datainworkplot$col[!datainworkplot$baldiff], xaxt='n',ylim=range(-log10(datainworkplot$p))*1.1, frame.plot = FALSE, cex.axis=2,cex.lab=2)
+# plot(datainworkplot$bp_cm[!datainworkplot$baldiff],-log10(datainworkplot$p[!datainworkplot$baldiff]), xlab='bp (cm)', ylab='-log10(Pi)', pch=datainworkplot$pch[!datainworkplot$baldiff], cex=1.2, bg=datainworkplot$col[!datainworkplot$baldiff], col=datainworkplot$col[!datainworkplot$baldiff], xaxt='n',ylim=range(-log10(datainworkplot$p))*1.1, frame.plot = FALSE, cex.axis=2,cex.lab=2)
  plot(datainworkplot$bp_cm,-log10(datainworkplot$p), xlab='bp (cm)', ylab='-log10(Pi)', pch=datainworkplot$pch, cex=1.2, bg=datainworkplot$col, col=datainworkplot$col, xaxt='n',ylim=range(-log10(datainworkplot$p))*1.1, frame.plot = FALSE, cex.axis=2,cex.lab=2)
+
  points(datainworkplot$bp_cm[datainworkplot$baldiff],-log10(datainworkplot$p[datainworkplot$baldiff]), pch=datainworkplot$pch, cex=1.5, bg=datainworkplot$col[datainworkplot$baldiff], col=datainworkplot$col[datainworkplot$baldiff])
  if(any(datainworkplot$gwascat))text(datainworkplot$bp_cm[datainworkplot$gwascat], -log10(datainworkplot$p[datainworkplot$gwascat]), datainworkplot$rsid[datainworkplot$gwascat],  srt=45,col=ColGWASCat, cex=0.8,pos=4)
  text(datainworkplot$bp_cm[datainworkplot$IsSig], -log10(datainworkplot$p[datainworkplot$IsSig]), datainworkplot$rsid[datainworkplot$IsSig],  srt=45,col='darkblue', cex=1.2,pos=4)
@@ -277,20 +279,22 @@ datainwork<-tmpfm[['data']]
 listheadprint=c(listheadprint , 'fm (sss)')
 listheadplot<-c(listheadplot,tmpfm[['listhead']])
 ##
-infopaint<-getpaintor(datainwork, opt)
-datainwork<-infopaint[['data']]
-listheadprint=c(listheadprint ,'paintor')
-listheadplot<-c(listheadplot, infopaint[['listhead']])
-
-## data for  gcta
 headgcta=opt[['cojo']]
 datagcta2<-read.table(headgcta,header=T)
 datagcta2$logpJ<- -log10(datagcta2$pJ)
 datainwork<-merge(datainwork,datagcta2[,c('Chr','SNP','bp', 'bJ','bJ_se','pJ','LD_r', 'logpJ')], by=c('rsid','chromosome','position'), by.y=c('SNP','Chr','bp'), all=T)
 datainwork$IsSig[!is.na(datainwork$pJ)]<-T
+if(!is.null(opt[['paintor']]) | !is.null(opt[['listpaintor']])){
+infopaint<-getpaintor(datainwork, opt)
+datainwork<-infopaint[['data']]
+listheadprint=c(listheadprint ,'paintor')
+listheadplot<-c(listheadplot, infopaint[['listhead']])
+}
 
+## data for  gcta
 
-if(!is.null(opt[['paintor_fileannot']]) & !(opt[['paintor_fileannot']] %in% c('NOFILE', "0","00","01"))){
+if(!is.null(opt[['paintor_fileannot']])){
+  if(!(opt[['paintor_fileannot']] %in% c('NOFILE', "0","00","01"))){
 	DataAnnot<-read.table(opt[['paintor_fileannot']], header=T)
 	if(is.null(opt[['paintor_annot']])) HeadAnnot = names(DataAnnot)
         else {
@@ -302,6 +306,7 @@ if(!is.null(opt[['paintor_fileannot']]) & !(opt[['paintor_fileannot']] %in% c('N
 	DataAnnot<-merge(datainwork[,c('num','rsid','chromosome','position')], DataAnnot[,c('num',HeadAnnot2)], by='num')
 	DataAnnotPerc<-data.frame(num=DataAnnot[,c('num')], PercAnnot=apply(DataAnnot[,-c(1:4)],1, function(x)sum(x)/length(x)*100))
 	datainwork=merge(datainwork,DataAnnotPerc, by='num', all=T)
+ }
 }
 datainwork$is_cred<-F
 if(!is.null(opt[['listfinemap_cred']])){

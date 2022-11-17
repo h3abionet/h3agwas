@@ -54,7 +54,7 @@ def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, n
    if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
    }
    }
-    errormess(messageerror,-1)
+   errormess(messageerror,3)
 }
 
 
@@ -67,7 +67,7 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
      messageerror+="param :"+param+" not initialize\n" 
    }
  }
- errormess(messageerror, -1)
+ errormess(messageerror, 2)
 }
 
 
@@ -280,7 +280,7 @@ params.each { parm ->
 
 checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
-checkmultiparam(params,allowed_params_bin, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+//checkmultiparam(params,allowed_params_bin, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
@@ -556,6 +556,7 @@ process paintor_format{
       file(finem) from paintor_gwas_annot_2
    output :
       tuple val(pos), path(finem) into paintor_gwas_annot
+      val(pos) into (list_pos_paint_ch1, list_pos_paint_ch2)
    script :
        spl=finem.baseName.split('_')
        pos=spl[0]+'_'+spl[1]
@@ -566,11 +567,11 @@ process paintor_format{
 
 
 NCausalSnp=Channel.from(1..params.n_causal_snp)
-if(params.paintor_bin!="0" & params.paintor_bin!=0){
- baliseannotpaint=0
+baliseannotpaint=0
+if(params.paintor_bin!="0" & params.paintor_bin!=0 & params.paintor_bin!=""){
  if(params.paintor_fileannot!=""){
-  paintor_fileannot=Channel.fromPath(params.paintor_fileannot)
-  paintor_fileannotplot=Channel.fromPath(params.paintor_fileannot)
+  paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath("${dummy_dir}/01", checkIfExists:true))
+  paintor_fileannotplot=pos_tonalyse_ch_2.combine(Channel.fromPath("${dummy_dir}/02"))
   baliseannotpaint=1
  }else{
   if(params.paintor_listfileannot!=""){
@@ -606,7 +607,7 @@ if(params.paintor_bin!="0" & params.paintor_bin!=0){
   pos_tonalyse_ch_1=postonanalyse_tmp1.flatMap { list_str -> list_str.split() }
   paintor_fileannot=pos_tonalyse_ch_1.combine(Channel.fromPath("${dummy_dir}/00", checkIfExists:true))
   pos_tonalyse_ch_2=postonanalyse_tmp2.flatMap { list_str -> list_str.split() }
-  paintor_fileannotplot=pos_tonalyse_ch_2.combine(Channel.fromPath("${dummy_dir}/00"))
+  paintor_fileannotplot=pos_tonalyse_ch_2.combine(Channel.fromPath("${dummy_dir}/01"))
   pos_tonalyse_ch_3=postonanalyse_tmp3.flatMap { list_str -> list_str.split() }
   annotname=pos_tonalyse_ch_3.combine(Channel.value("N"))
   }
@@ -662,25 +663,26 @@ paintor_gwas_2=paintor_gwas_i.flatMap{it}
     """
  }
 }else{
-  ld_paintor_group=ld_paintor.join(paintor_gwas)
+ ld_paintor_group=ld_paintor.combine(channel.from("00"))
  process ComputedPaintor_null{
   input :
    set val(pos), file(ld),file(filez) from ld_paintor_group
   output :
      set val(pos),file("${output}.results") into res_paintor_ch
      set val(pos),file(FileInfo) into infores_paintor_ch
+     set val(pos), file(BayesFactor) into res_paintor_ch_bf
   script :
     output=pos+"_paintor_null"
     FileInfo=output+".info"
-     BayesFactor=output+".BayesFactor"
+    BayesFactor=output+".BayesFactor"
      """
      touch $output".results"
      touch $BayesFactor
      touch $FileInfo
      """
  }
-paintor_fileannot=file("${dummy_dir}/00")
-paintor_fileannotplot=file("${dummy_dir}/00")
+paintor_fileannot=list_pos_paint_ch1.combine(channel.fromPath("${dummy_dir}/02"))
+paintor_fileannotplot=list_pos_paint_ch2.combine(channel.fromPath("${dummy_dir}/03"))
 annotname=Channel.from("N")
 
 }
@@ -773,8 +775,8 @@ process MergeResult{
     script :
       out=params.output+'_'+pos
       infopaint=infopaintor.join(" ")
-      pfileannot= (baliseannotpaint=="0" | params.paintor_bin==0) ? "":" --paintor_fileannot $pfileannoti "
-      paintor = (params.paintor_bin=="0") ? "" : "--listpaintor  infopaintori"
+      pfileannot= (baliseannotpaint=="0" | params.paintor_bin==0 | params.paintor_bin=="" ) ? "":" --paintor_fileannot $pfileannoti "
+      paintor = (params.paintor_bin==0 | params.paintor_bin=="") ? "" : "--listpaintor  infopaintor"
       
       """
        cat $infopaintor > infopaintor
@@ -782,7 +784,7 @@ process MergeResult{
        echo "sss $fmssscred" > infofinemapcred
        echo "cond $fmcond" >> infofinemap 
        echo "cond $fmcondcred" >> infofinemapcred
-       merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred
+       merge_finemapping_v2.r --out $out $paintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred
        echo "merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred" > run.bash
       """
 }

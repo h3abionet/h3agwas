@@ -4,6 +4,7 @@
 # What\'s new :
 
 ##V3.3.0
+* finemapping, version 3.3.0 paintor  install on docker singularity image, if paintor_bin=0, paintor will be discarded of workflow
 * general : 
   *add nextflow.enable.dsl = 1 to all nf script for compatibility new version of nextflow.
  * add control of arguments input of `assoc/main.nf`, `finemapping/main.nf`, `finemapping/cond-assos.nf`, `finemapping/finemap_region.nf` and `meta/main.nf`
