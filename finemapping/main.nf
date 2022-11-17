@@ -223,7 +223,6 @@ params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwa
 params.list_chro="1-22"
 params.list_phenogc=""
 params.pheno=""
-params.data=""
 params.covariates=""
 
 
