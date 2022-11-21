@@ -74,8 +74,13 @@ params.genotype_pat="TYPED"
 
 
 if(params.file_listvcf==""){
-error('params.file_listvcf : file contains list vcf not found')
+error('--file_listvcf : file contains list vcf not found')
 }
+
+if(params.reffasta==""){
+error('--reffasta,: file reference fasta must be initialise')
+}
+
 /*read file to have list of channel for each vcf*/
 
 if(params.unzip_zip){
