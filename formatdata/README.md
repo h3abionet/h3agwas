@@ -210,10 +210,15 @@ transform vcf in bimbam format after filters for quality.
     * `poshead_rs_inforef` : position of column where rs in file  [default : 2]
 * `deleted_notref` : deleted position s not found in `file_ref_gzip`
 * `reffasta` : fasta reference, if present do control of vcf file :
- * checkVCF.py
- * bcftools : used plugin of +fixref see `BCFTOOLS_PLUGINS=bcftools/plugins/`
- 
+* checkVCF.py
+* bcftools : used plugin of +fixref see `BCFTOOLS_PLUGINS=bcftools/plugins/`
+* `michigan_qc` : apply migigan qc [default 0]
+ * see : [prepare you data](https://imputationserver.readthedocs.io/en/latest/prepare-your-data/)
+ * `dataref_michigan` : data ref used by michigan, if empty dowload [default : ""]
+ * `ftp_dataref_michigan` : dl data from michigan [default : ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1-1/HRC.r1-1.GRCh37.wgs.mac5.sites.tab.gz]
+ * `bin_checkmich` perl script [default : "HRC-1000G-check-bim.pl"]
 
+```
 # General requirement 
 * bcftools
 * plink 
@@ -223,7 +228,11 @@ transform vcf in bimbam format after filters for quality.
 * samtools
 * for control of vcf 
  * checkVCF.py is present in binary of nextflow pipeline (https://github.com/zhanxw/checkVCF)
+ * if michigan qc apply, need data set of michigan and perl script (see [here](https://imputationserver.readthedocs.io/en/latest/prepare-your-data/))
 
-#Example 
+### Example 
 
 see [h3agwas-example github](https://github.com/h3abionet/h3agwas-examples)
+```
+
+```

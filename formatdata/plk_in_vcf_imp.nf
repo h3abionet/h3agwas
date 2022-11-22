@@ -58,12 +58,16 @@ params.bin_samtools="samtools"
 params.bcftools_mem_req="30GB"
 params.tmpdir="tmp/"
 
+params.michigan_qc = 0
+params.ftp_dataref_michigan="ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1-1/HRC.r1-1.GRCh37.wgs.mac5.sites.tab.gz"
+params.dataref_michigan=""
+params.bin_checkmich="HRC-1000G-check-bim.pl"
+
 params.plink_mem_req="10GB"
 params.max_plink_cores="5"
 
 
 inpat = "${params.input_dir}/${params.input_pat}"
-println inpat
 plkinit=Channel.create()
 biminitial=Channel.create()
 biminitial_extractref=Channel.create()
@@ -154,7 +158,7 @@ process refallele{
     tuple path(bed), path(bim), path(fam) from plk_noindel
     path(infors) from l_infors2
    output :
-    tuple path("${out}.bed"),path("${out}.bim"),path("${out}.fam") into (plk_alleleref, plk_chrocount)
+    tuple path("${out}.bed"),path("${out}.bim"),path("${out}.fam") into (michigan_check_clean, michigan_check_qc)
   script :
     plk=bed.baseName
     out=plk+"_refal"
@@ -188,6 +192,79 @@ process checkfasta{
     fi
     """
 }
+
+if(params.michigan_qc==1){
+if(params.dataref_michigan==""){
+ process dl_dataref_michigan{
+    publishDir "${params.output_dir}/checkmichigan/data", overwrite:true, mode:'copy'
+    output :
+      path("*.tab") into ch_dataref_mich
+    script :
+    """ 
+    wget ${params.ftp_dataref_michigan}
+    gunzip `basename ${params.ftp_dataref_michigan}` 
+    """
+ }
+
+
+}else{
+ch_dataref_mich = channel.fromPath(params.dataref_michigan, checkIfExists:true)
+}
+
+ process getfrequency{
+ input :
+     tuple path(bed), path(bim), path(fam) from michigan_check_clean
+ publishDir "${params.output_dir}/checkmichigan/frq", overwrite:true, mode:'copy'
+ output :
+     tuple path(bim),path("${bfile}.frq") into  frq_michigan_check_frq
+ script :
+    bfile=bed.baseName
+    """
+    plink --freq -bfile $bfile  -out $bfile
+    """ 
+ }
+ bin_checkmich=Channel.fromPath(params.bin_checkmich)
+ process michigan_qc {
+  label 'py3utils'
+  input :
+      tuple path(bim), path(frq) from frq_michigan_check_frq 
+      path(binmich) from  bin_checkmich
+      path(datamich) from ch_dataref_mich
+  publishDir "${params.output_dir}/checkmichigan/output", overwrite:true, mode:'copy'
+  output :
+      path("LOG-$base*")
+      tuple path("Exclude-$base-HRC.txt"), path("Chromosome-*-HRC.txt"), path("Position-$base-HRC.txt"), path("Strand*HRC.txt"), path("Force-*-HRC.txt") into resmich_qc
+  script :
+    base=bim.baseName
+    """
+    $binmich -b $bim -f $frq -r $datamich -h
+    """
+ }
+ process clean_michigan{
+  input :
+    tuple path(exc), path(chro), path(pos), path(strand), path(Force) from resmich_qc
+    tuple path(bed), path(bim), path(fam) from michigan_check_qc
+  output :
+    tuple path("${out}.bed"), path("${out}.bim"), path("${out}.fam") into  (plk_alleleref, plk_chrocount)
+  script :
+  base=bed.baseName
+  out=base+"_updated"
+  """
+  plink --bfile $base --exclude $exc --make-bed --out TEMP1
+  plink --bfile TEMP1 --update-map $chro --update-chr --make-bed --out TEMP2
+  plink --bfile TEMP2 --update-map $chro --make-bed --out TEMP3
+  plink --bfile TEMP3 --flip $strand --make-bed --out TEMP4
+  plink --bfile TEMP4 --reference-allele $Force --make-bed --out $out
+  rm TEMP*
+  """
+ }
+
+}else{
+plk_alleleref=Channel.create() 
+plk_chrocount=Channel.create()
+michigan_check_clean.into(plk_alleleref, plk_chrocount) 
+}
+//}
 
 if(params.parralchro==0){
 plink_mem_req_max=params.bcftools_mem_req.replace('GB','000').replace('Gigabytes','000').replace('KB','').replace('Kilobytes','').replace(' ','')
@@ -314,4 +391,3 @@ process checkVCF{
     """
 }
 
-//}

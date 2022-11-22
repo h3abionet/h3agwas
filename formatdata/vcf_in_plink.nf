@@ -27,6 +27,11 @@ import java.security.MessageDigest;
 nextflow.enable.dsl = 1
 
 
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+
 
 def helps = [ 'help' : 'help' ]
 allowed_params = ['file_listvcf', 'min_scoreinfo', "output_pat", "output_dir", "do_stat"]
@@ -71,6 +76,7 @@ params.unzip_password=""
 params.reffasta=""
 params.data=''
 params.genotype_pat="TYPED"
+params.lim_used_ram=0
 
 
 if(params.file_listvcf==""){
@@ -181,26 +187,68 @@ process checkfasta{
 list_vcf=ref_ch.combine(list_vcf)
 
 if(params.min_scoreinfo>0){
-process formatvcfscore{
-  label 'py3utils'
-  cpus params.max_plink_cores
-  memory params.plink_mem_req
-  time   params.big_time
-  input :
+ if(params.lim_used_ram==0){
+  process formatvcfscore{
+   label 'py3utils'
+   cpus params.max_plink_cores
+   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+   maxRetries 10
+   time   params.big_time
+   input :
+      set file(ref), file(refidx),file(vcf) from list_vcf
+   publishDir "${params.output_dir}/bcf_filter", overwrite:true, mode:'copy', pattern: "*.bcf"
+   output :
+      set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
+      file("${Ent}.bim") into listbimplink
+      set val(Ent), file("${Ent}.bcf") into bcf_ch
+   script :
+     Ent=vcf.baseName.replaceAll(/.vcf$/, '')
+     threadn=params.max_plink_cores/ 5
+     threadn = threadn.round()
+     """
+     hostname
+     bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf --threads $threadn | bcftools norm -Ou -m -any --threads  $threadn | bcftools norm -Ou -f $ref --threads $threadn  |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' --threads  $threadn > $Ent".bcf"
+   cat $Ent".bcf" |plink --bcf /dev/stdin \
+     --keep-allele-order \
+     --vcf-idspace-to _ \
+     --const-fid \
+     --allow-extra-chr 0 \
+     --make-bed \
+     --out ${Ent}
+     cp ${Ent}.bim ${Ent}.save.bim
+     awk \'{if(\$2==\".\"){\$2=\$1\":\"\$4\"_\"\$5\"_\"\$6};\$2=substr(\$2,1,20);print \$0}\' ${Ent}.save.bim > ${Ent}.bim
+     """
+   }
+  }else {
+  process formatvcfscore_lowram{
+   label 'py3utils'
+   cpus params.max_plink_cores
+   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+   maxRetries 10
+   time   params.big_time
+   input :
      set file(ref), file(refidx),file(vcf) from list_vcf
-  publishDir "${params.output_dir}/bcf_filter", overwrite:true, mode:'copy', pattern: "*.bcf"
-  output :
+   publishDir "${params.output_dir}/bcf_filter", overwrite:true, mode:'copy', pattern: "*.bcf"
+   output :
      set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
      file("${Ent}.bim") into listbimplink
      set val(Ent), file("${Ent}.bcf") into bcf_ch
-  script :
+   script :
     Ent=vcf.baseName.replaceAll(/.vcf$/, '')
-    threadn=params.max_plink_cores/ 5
-    threadn = threadn.round()
+    //threadn=params.max_plink_cores/ 5
+    threadn = params.max_plink_cores
     """
     hostname
-    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf --threads $threadn | bcftools norm -Ou -m -any --threads  $threadn | bcftools norm -Ou -f $ref --threads $threadn  --threads  $threadn |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' --threads  $threadn > $Ent".bcf"
-  cat $Ent".bcf" |plink --bcf /dev/stdin \
+    bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf --threads $threadn > vcftmp1
+   cat vcftmp1 | bcftools norm -Ou -m -any --threads  $threadn > vcftmp2
+   rm -f vcftmp1
+   cat vcftmp2 | bcftools norm -Ou -f $ref --threads $threadn > vcftmp3  
+   rm -f vcftmp2
+   cat vcftmp3 |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' --threads  $threadn > $Ent".bcf"
+   rm vcftmp3
+   cat $Ent".bcf" |plink --bcf /dev/stdin \
     --keep-allele-order \
     --vcf-idspace-to _ \
     --const-fid \
@@ -210,7 +258,8 @@ process formatvcfscore{
     cp ${Ent}.bim ${Ent}.save.bim
     awk \'{if(\$2==\".\"){\$2=\$1\":\"\$4\"_\"\$5\"_\"\$6};\$2=substr(\$2,1,20);print \$0}\' ${Ent}.save.bim > ${Ent}.bim
     """
-}
+  }
+ }
 
 process convertbcf_invcf{
   label 'py3utils'

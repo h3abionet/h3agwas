@@ -3,6 +3,9 @@
 
 # What\'s new :
 
+### V3.4.0
+ * `plk_in_vcf_imp.nf` : add steps of michigan quality control as option
+
 ##V3.3.0
 * finemapping, version 3.3.0 paintor  install on docker singularity image, if paintor_bin=0, paintor will be discarded of workflow
 * general : 
