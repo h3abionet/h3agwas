@@ -95,6 +95,8 @@ def read_sumstat(filesumstat, clumpres, wind, chro_header, pos_header, a1_header
         val=listval[posindex] 
         if Type :
           if Type=='p' :
+            if val.lower() == 'na':
+               return None
             val = float(val)
             if val >1 or val<0 :
                   print(' val from ', p_header, ' >1 or < 0', str(val))
@@ -246,6 +248,9 @@ def checksumstat(sumstat,maf) :
          #[getval(spl,a1head), getval(spl,a2head), getval(spl,betahead), getval(spl,sehead),getval(spl,zhead) , getval(spl,nhead), getval(spl,afhead)]
          [a1,a2,beta, se, z, n, af, p, rsbim]=sumstat[chro][bp]
          af=float(af) 
+         if not p :
+           del sumstat[chro][bp]
+           continue 
          n = float(n)
          p = float(p)
          if args.z_pval==1 :

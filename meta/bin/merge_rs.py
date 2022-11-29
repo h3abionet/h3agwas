@@ -15,11 +15,11 @@ def parseArguments():
 args=parseArguments()
 splfile=args.list_file.split(',')
 DicByRs={}
-listRs=list([])
+listRs=set([])
 listChrBp={}
 rsissue=''
-listrsissue=list([])
-listchrissue=list([])
+listrsissue=set([])
+listchrissue=set([])
 
 for File in splfile :
    print(File)
@@ -28,56 +28,74 @@ for File in splfile :
    Fread.close()
    Fread=open(File)
    if len(FreadL)==3 :
+     print(3)
      for line in Fread :
       splt=line.replace('\n', '').split()
       if splt[0] not in listRs :
          DicByRs[splt[0]]=[None,None,splt[1],splt[2],None]
       else :
-         RsInfo=DirRes[splt[0]]
-         ##  
-         print(RsInfo)
+         RsInfo=DicByRs[splt[0]]
          balisegood= (splt[1]==RsInfo[2] and splt[2]==RsInfo[3]) or  (splt[1]==RsInfo[3] and splt[2]==RsInfo[2])
          if balisegood ==False:
-              listrsissue.add(splt[1]) 
+              listrsissue.add(splt[0]) 
+      listRs.add(splt[0])            
    elif len(FreadL)==6:
-       #   writenew.write('rsID\tChro\tPos\tA1\tA2\tnewRs\n')
+       print(6)
        for line in Fread :
           splt=line.replace('\n', '').split() 
           NewRs=splt[5]
           if splt[0] not in listRs :  
                DicByRs[splt[0]]=[splt[1],splt[2],splt[3],splt[4], splt[5]]
           else :
-             balisegood= (splt[1]==RsInfo[2] and splt[2]==RsInfo[3]) or  (splt[1]==RsInfo[3] and splt[2]==RsInfo[2])
-             RsInfo=DirRes[splt[0]]
+             RsInfo=DicByRs[splt[0]]
+             balisegood= (splt[3]==RsInfo[2] and splt[4]==RsInfo[3]) or  (splt[3]==RsInfo[3] and splt[4]==RsInfo[2])
              if balisegood ==False:
-               listrsissue.add(splt[1]) 
-               listchrissue.add()
+               print(splt, RsInfo)
+               listrsissue.add(splt[0]) 
              # check pos and chr
              if RsInfo[0] :
                if RsInfo[0] != splt[1] and RsInfo[1] != splt[2] :
+                 print(RsInfo, splt)
                  listrsissue.add(splt[0]) 
              else :
+                print("aaa")
                 RsInfo[0]=splt[1] 
                 RsInfo[1]=splt[2] 
                 RsInfo[4]=splt[5] 
+          listRs.add(splt[0])            
    else :
      print("colomn error number :"+str(len(FreadL)))
      sys.exit(3)
-               
+   print(len(listrsissue))
+   print(len(listRs))
+
+
 writeRs=open(args.out, 'w')
 writeRs2=open(args.out+'_allinfo', 'w')
+def checknone(x) :
+  if x :
+    return x
+  return "NA"
+
 for rs in DicByRs:
   RsInfo=DicByRs[rs]
   if rs not in listrsissue :
      if args.use_rs==1 : 
           writeRs.write(rs+'\t'+RsInfo[3]+'\t'+RsInfo[4]+'\n') 
      else :
-          writeRs.write(rs+'\t'+'\t'.join(RsInfo)+'\n') 
-     writeRs2.write(rs+'\t'+'\t'.join(RsInfo)+'\n') 
+       if RsInfo[0] :
+         writeRs.write(rs+'\t'+'\t'.join([checknone(x) for x in RsInfo])+'\n') 
+         writeRs2.write(rs+'\t'+'\t'.join([checknone(x) for x in RsInfo])+'\n') 
+       else :
+         listrsissue.add(rs)
+
+writeRs.close()
+writeRs2.close()
 
 writeRsError=open(args.out+'_issue', 'w')
 for rs in listrsissue :
     RsInfo=DicByRs[rs]
-    writeRs.write(rs+'\t'+'\t'.join(RsInfo)+'\n')
+    writeRsError.write(rs+'\t'+'\t'.join([checknone(x) for x in RsInfo])+'\n')
+writeRsError.close()
 
  

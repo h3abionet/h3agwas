@@ -133,7 +133,7 @@ if(args.rs_ref) :
      for l in open_rs :
         rsspl=l.replace('\n', '').split()
         ls_rs.add(rsspl[0])
-        ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2], rsspl[3],rsspl[4]]
+        ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2], rsspl[3],rsspl[4], rsspl[5]]
         if rsspl[1] not in ls_chrps_dic :
           ls_chrps_dic[rsspl[1]]={} 
         ls_chrps_dic[rsspl[1]][int(rsspl[2])]=[rsspl,rsspl[5]]
@@ -145,7 +145,6 @@ if(args.rs_ref) :
        balise_use_chrps=True
 
      
-
   
 head_inp=read.readline().replace('\n','').split(sep)
 ps_rsId_inp=head_inp.index(rsId_inp)
@@ -162,22 +161,28 @@ if balise_use_rs :
      del l_oldhead[HeadChroI]
      del l_newhead[HeadChroI]
 
+balise_use_dicrs=False
 if balise_use_chrps :
   if 'Pos' in l_newhead :
      HeadPosI=l_newhead.index('Pos')
      HeadPos=head_inp.index(l_oldhead[HeadPosI])
   else :
+    balise_use_dicrs=True
     balise_use_chrps=False
   if 'Chro' in l_newhead :
      HeadChroI=l_newhead.index('Chro')
      HeadChro=head_inp.index(l_oldhead[HeadChroI])
   else :
+    balise_use_dicrs=True
     balise_use_chrps=False
   if 'rsID' in l_newhead :
     PosIndexI=l_newhead.index('rsID')
     del l_oldhead[PosIndexI]
     del l_newhead[PosIndexI]
     print("deleted index")
+
+print("balise_use_rs",balise_use_rs)
+print("balise_use_chrps",balise_use_chrps)
 
 ps_head=GetPosHead(head_inp,l_oldhead)
 
@@ -192,6 +197,7 @@ if 'A2' in l_newhead :
   A2_inp=l_oldhead[l_newhead.index('A2')]
   ps_A2_inp=head_inp.index(A2_inp)
   balchangA2=True
+
 listposfloat=[]
 headplk=['RSID','CHR','BP','FREQ','BETA', 'SE', 'P', 'N']
 headlist=['SNP','Chro','Pos','freqA1', 'Beta', 'Se', 'Pval', 'N']
@@ -209,7 +215,8 @@ for head in headlist:
 #print(l_newhead)
 
 l_newheadplk=[x.upper() for x in l_newheadplk]
-if balise_use_rs and ('SNP' not in l_newheadplk):
+if balise_use_rs and ('RSID' not in l_newheadplk):
+   print(l_newheadplk)
    sys.exit('not rsid found')
 
 if balise_use_chrps and ('CHR' not in l_newheadplk) and ('BP' not in l_newheadplk):
@@ -235,7 +242,35 @@ write=open(args.out_file,'w')
 writeplk=open(args.out_file+'.plk','w')
 writeinfo=open(args.out_file+'.info','w')
 ## merge by rs
-if balise_use_rs :
+if balise_use_dicrs :
+   print("balise_use_dicrs")
+   l_newhead+=["rsID","CHRO", "POS"]
+   l_newheadplk+=["SNP","CHR", "BP"]
+   headtmp=[x.upper() for x in l_newhead]
+   headtmpplk=[x.upper() for x in l_newheadplk]
+   if Ncount :
+      headtmp.append('N')
+      headtmpplk.append('N')
+   write.write(sep_out.join(headtmp)+"\n")
+   writeplk.write(sep_out.join(headtmpplk)+"\n")
+   for line in read :
+     spl=line.replace('\n','').split(sep)
+     print(spl[ps_rsId_inp])
+     if  spl[ps_rsId_inp] in ls_rs :
+       spl=checkfloat(spl, listposfloat)
+       if balchangA1 :
+          spl[ps_A1_inp]=spl[ps_A1_inp].upper()
+       if balchangA2 :
+          spl[ps_A2_inp]=spl[ps_A2_inp].upper()
+       tmp=[checknull(spl[x]) for x in ps_head]
+       #ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2], rsspl[3],rsspl[4]]
+       tmprsdic=ls_rs_dic[spl[ps_rsId_inp]]
+       tmp+=[tmprsdic[4],tmprsdic[0],tmprsdic[1]]
+       if Ncount  :
+         tmp.append(Ncount)
+       write.write(sep_out.join(tmp)+"\n")
+       writeplk.write(sep_out.join(tmp)+"\n")
+elif balise_use_rs :
    l_newhead+=["CHRO", "POS"]
    l_newheadplk+=["CHR", "BP"]
    headtmp=[x.upper() for x in l_newhead]
@@ -265,8 +300,6 @@ elif balise_use_chrps :
    l_newheadplk+=['SNP']
    headtmp=[x.upper() for x in l_newhead]
    headtmpplk=[x.upper() for x in l_newheadplk]
-   #headtmpplk[HeadChro]= 'CHR'
-   #headtmpplk[HeadPos]= 'BP'
    if Ncount :
       headtmp.append('N')
       headtmpplk.append('N')

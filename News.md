@@ -4,12 +4,16 @@
 # What\'s new :
 
 ### V3.4.0
- * `plk_in_vcf_imp.nf` : add steps of michigan quality control as option
+* finemapping :
+ * [finemapping/main.nf](finemapping/README.md) : when p-value are NA, lines are not considered anymore
+ * bug deleted in plot for finemaping
+* [formatdata/plk_in_vcf_imp.nf](formatdata/README.md) : add steps to perform michigan quality control as option (see : [michigan manual](https://imputationserver.readthedocs.io/en/latest/prepare-your-data/))
+* meta : bug fixed when some file do not have chromosome and position.
 
 ##V3.3.0
 * finemapping, version 3.3.0 paintor  install on docker singularity image, if paintor_bin=0, paintor will be discarded of workflow
 * general : 
-  *add nextflow.enable.dsl = 1 to all nf script for compatibility new version of nextflow.
+ * add nextflow.enable.dsl = 1 to all nf script for compatibility new version of nextflow.
  * add control of arguments input of `assoc/main.nf`, `finemapping/main.nf`, `finemapping/cond-assos.nf`, `finemapping/finemap_region.nf` and `meta/main.nf`
 * association :
   * add regenie software for association [assoc](assoc/README.md) 
