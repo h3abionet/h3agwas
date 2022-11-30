@@ -93,4 +93,3 @@ else :
      #if len(chrolist)==0 :
      #  break
 
-print("nb pos not found "+str(len(chrolist))+'\n')

@@ -87,6 +87,9 @@ if args.bfile and (args.N_head==None or args.freq_head==None):
    gwasres=addedplkinfo(args, gwasres, ChroHead,BPHead) 
 elif args.N_value and args.N_head==None:
   gwasres[args.Nnew_head]=args.N_value
+del gwasres[args.a1_head+'_tmp']
+del gwasres[args.a2_head+'_tmp']
+del gwasres['a1_old']
 gwasres.to_csv(args.out_file,sep=" ",header=True,index=False,na_rep="NA")
 
 

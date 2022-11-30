@@ -28,7 +28,7 @@ nextflow.enable.dsl = 1
 
 filescript=file(workflow.scriptFile)
 projectdir="${filescript.getParent()}"
-dummy_dir="${projectdir}/../../qc/input"
+dummy_dir="${projectdir}/../qc/input"
 
 
 // Checks if the file exists
@@ -72,7 +72,7 @@ params.headnew_pval = ""
 params.headnew_freq = ""
 params.headnew_bp = ""
 params.headnew_chr = ""
-params.headnew_rs = "rs"
+params.headnew_rs = ""
 params.headnew_beta=""
 params.headnew_se=""
 params.headnew_A1=""
@@ -92,8 +92,6 @@ error('params.file_gwas: file contains gwas not found')
 
 headnew_freq=params.headnew_freq
 headnew_pval=params.headnew_pval
-headnew_bp=params.headnew_bp
-headnew_chr=params.headnew_chr
 headnew_beta=params.headnew_beta
 headnew_A1=params.headnew_A1
 headnew_A2=params.headnew_A2
@@ -103,125 +101,201 @@ headnew_se=params.headnew_N
 
 if(headnew_pval=="")headnew_pval=params.head_pval 
 if(headnew_freq=="")headnew_freq=params.head_freq 
-if(headnew_bp=="")headnew_bp=params.head_bp 
-if(headnew_chr=="")headnew_chr=params.head_chr 
 if(headnew_beta=="")headnew_beta=params.head_beta 
 if(headnew_se=="")headnew_se=params.head_se 
 if(headnew_A1=="")headnew_A1=params.head_A1 
 if(headnew_A2=="")headnew_A2=params.head_A2 
 //if(params.headnew_N=="")params.headnew_N=params.head_N 
 
+ if(params.input_dir!="" || params.input_pat!=''){
+ print("used plink file")
+ bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+ bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+ fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+ }else{
+ bed="${dummy_dir}/00"
+ bim="${dummy_dir}/01"
+ fam="${dummy_dir}/02"
+ }
+ fileplk= Channel.create()
+ Channel
+     .from(file(bed),file(bim),file(fam))
+     .buffer(size:3)
+     .map { a -> [a[0], a[1], a[2]] }
+     .set { fileplk }
+
 
 gwas_chrolist = Channel.fromPath(params.file_gwas)
-gwas_chrolist_ext = Channel.fromPath(params.file_gwas)
-gwas_chrolist_ext = Channel.fromPath(params.file_gwas)
-process getListeChro{
-        input :
-          file(gwas_res) from gwas_chrolist
-        output :
-          file("filechro") into chrolist
-        script:
-         sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
+
+if(params.head_chr!=""){
+ headnew_bp=params.headnew_bp
+ headnew_chr=params.headnew_chr
+ if(headnew_bp=="")headnew_bp=params.head_bp 
+ if(headnew_chr=="")headnew_chr=params.head_chr 
+ headnew_rs="rs"
+ if(params.head_rs!="")headnew_rs=params.head_rs
+ if(params.headnew_rs!="") headnew_rs=params.head_rs 
+ gwas_chrolist_ext = Channel.fromPath(params.file_gwas)
+ process getListeChro{
+         input :
+           file(gwas_res) from gwas_chrolist
+         output :
+           file("filechro") into chrolist
+         script:
+          sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
+          """
+          extractlistchro.py --input_file $gwas_res --chro_header ${params.head_chr} $sep > filechro
          """
-         extractlistchro.py --input_file $gwas_res --chro_header ${params.head_chr} $sep > filechro
-        """
-}
+ }
+ 
+ 
 
 
-chrolist2=Channel.create()
-chrolist.flatMap { list_str -> list_str.readLines()[0].split() }.set { chrolist2 }
+ chrolist2=Channel.create()
+ chrolist.flatMap { list_str -> list_str.readLines()[0].split() }.set { chrolist2 }
+ 
+ process ExtractChroGWAS{
+     memory params.mem_req 
+     input :
+       file(gwas) from gwas_chrolist_ext
+     each chro from  chrolist2
+     output :
+       set val(chro), file(gwas_out) into gwas_format_chro
+     script :
+       gwas_out=gwas.baseName+"_"+chro+".gwas"
+       sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
+       infofile="Chro:${params.head_chr}:${headnew_chr},Pos:${params.head_bp}:${headnew_bp},A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},af:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${params.headnew_N},SNP:${params.head_rs}:${params.headnew_rs}"
+       """
+       extractandformat_gwas.py --input_file $gwas --out_file ${gwas_out} --chr $chro --info_file $infofile
+       """
+ }
+ if(params.file_ref_gzip==""){
+ error('params.file_ref_gzip : file contains information for rs notnot found')
+ }
+ gwas_format_chro_rs=gwas_format_chro.combine(Channel.fromPath(params.file_ref_gzip))
+ if(params.head_rs==""){ 
+   process ExtractRsIDChro{
+     memory params.mem_req 
+     input :
+      set val(chro), file(gwas), file(rsinfo) from gwas_format_chro_rs
+     output :
+       set val(chro), file(gwas),file(outrs) into rsinfo_chro
+     script :
+       outrs="info_rs_"+chro+".rs"
+     """
+     zcat $rsinfo | extractrsid_bypos.py --file_chrbp $gwas --out_file $outrs --ref_file stdin --chr $chro --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef} 
+     """ 
+  }
+ }else{
+  rsinfo_chro=gwas_format_chro.combine(channel.fromPath('${dummy_dir}/03') )
+ }
+ 
+ 
+ rsinfo_chroplk=rsinfo_chro.combine(fileplk)
+ process MergeRsGwasChro{
+     memory params.mem_req 
+     input :
+       set val(chro), file(gwas),file(chrors), file(bed), file(bim), file(fam) from rsinfo_chroplk
+     output :
+       file(outmerge) into gwas_rsmerge
+     script :
+      outmerge="merge_"+chro+".gwas"
+      bfileopt= (params.input_pat!="" || params.input_dir!="") ?  " --bfile "+bed.baseName : ""
+      Nheadopt=(params.head_N!="") ? " --N_head ${params.head_N} " : ""
+      Freqheadopt=(params.head_freq!="") ? " --freq_head ${params.head_freq} " : ""
+ 
+      NheadNewopt=(params.headnew_N!="") ? " --Nnew_head ${params.headnew_N} " : ""
+      FreqNewheadopt=(headnew_freq!="") ? " --freqnew_head ${headnew_freq} " : ""
+      addrsopt=(params.head_rs=="") ? " --input_rs $chrors " : ""
+      """
+      mergeforrs.py --input_gwas $gwas $addrsopt   --out_file $outmerge --chro_head  ${headnew_chr} --bp_head  ${headnew_bp} --rs_head ${headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt  --a1_head ${headnew_A1} --a2_head  ${headnew_A2}
+      """
+ 
+ }
 
-process ExtractChroGWAS{
+ gwas_rsmerge_all=gwas_rsmerge.collect()
+ 
+ process MergeAll{
     memory params.mem_req 
     input :
-      file(gwas) from gwas_chrolist_ext
-    each chro from  chrolist2
+       file(allfile) from gwas_rsmerge_all
+    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
     output :
-      set val(chro), file(gwas_out) into gwas_format_chro
+       file(fileout) 
     script :
-      gwas_out=gwas.baseName+"_"+chro+".gwas"
-      sep=(params.sep!="") ?  "" : ""
-      infofile="Chro:${params.head_chr}:${headnew_chr},Pos:${params.head_bp}:${headnew_bp},A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},af:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${params.headnew_N}"
+      file1=allfile[0]
+      listefiles=allfile.join(" ")
+      fileout=params.output
       """
-      extractandformat_gwas.py --input_file $gwas --out_file ${gwas_out} --chr $chro --info_file $infofile
+      head -1 $file1 > $fileout
+      ls $listefiles  | xargs -n 1 tail -n +2 >> $fileout
       """
-}
-if(params.file_ref_gzip==""){
-error('params.file_ref_gzip : file contains information for rs notnot found')
-}
-gwas_format_chro_rs=gwas_format_chro.combine(Channel.fromPath(params.file_ref_gzip))
-
-process ExtractRsIDChro{
-    memory params.mem_req 
-    input :
-     set val(chro), file(gwas), file(rsinfo) from gwas_format_chro_rs
-    output :
-      set val(chro), file(gwas),file(outrs) into rsinfo_chro
-    script :
-      outrs="info_rs_"+chro+".rs"
-    """
-    zcat $rsinfo | extractrsid_bypos.py --file_chrbp $gwas --out_file $outrs --ref_file stdin --chr $chro --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef} 
-    """ 
-}
-
-if(params.input_dir!="" || params.input_pat!=''){
-print("used plink file")
-bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-bim = Paths.get(params.input_dir,"${params.input_pat}.bim").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
-
-
+ 
+ }
+ 
 }else{
-bed=file('${dummy_dir}/00')
-bim=file('${dummy_dir}/01')
-fam=file('${dummy_dir}/02')
-}
 
-fileplk= Channel.create()
-Channel
-    .from(file(bed),file(bim),file(fam))
-    .buffer(size:3)
-    .map { a -> [a[0], a[1], a[2]] }
-    .set { fileplk }
+ headnew_chr="chr"
+ if(params.head_chr!="")headnew_chr=params.head_chr
+ if(params.headnew_chr!="") headnew_chr=params.headnew_chr
 
-rsinfo_chroplk=rsinfo_chro.combine(fileplk)
-process MergeRsGwasChro{
-    memory params.mem_req 
-    input :
-      set val(chro), file(gwas),file(chrors), file(bed), file(bim), file(fam) from rsinfo_chroplk
-    output :
-      file(outmerge) into gwas_rsmerge
-    script :
-     outmerge="merge_"+chro+".gwas"
-     bfileopt= (params.input_pat!="" || params.input_dir!="") ?  " --bfile "+bed.baseName : ""
-     Nheadopt=(params.head_N!="") ? " --N_head ${params.head_N} " : ""
-     Freqheadopt=(params.head_freq!="") ? " --freq_head ${params.head_freq} " : ""
+ headnew_rs="rs"
+ if(params.head_rs!="")headnew_rs=params.head_rs
+ if(params.headnew_rs!="") headnew_rs=params.headnew_rs
 
-     NheadNewopt=(params.headnew_N!="") ? " --Nnew_head ${params.headnew_N} " : ""
-     FreqNewheadopt=(headnew_freq!="") ? " --freqnew_head ${headnew_freq} " : ""
-     """
-     mergeforrs.py --input_gwas $gwas --input_rs $chrors  --out_file $outmerge --chro_head  ${headnew_chr} --bp_head  ${headnew_bp} --rs_head ${params.headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt  --a1_head ${headnew_A1} --a2_head  ${headnew_A2}
-     """
+ headnew_bp="bp"
+ if(params.head_bp!="")headnew_bp=params.head_bp
+ if(params.headnew_bp!="") headnew_bp=params.headnew_bp
 
-}
-gwas_rsmerge_all=gwas_rsmerge.collect()
+ gwas_ch= Channel.fromPath(params.file_gwas)
+ gwas_ch2= Channel.fromPath(params.file_gwas)
+ rsinfo_ch=Channel.fromPath(params.file_ref_gzip)
 
-process MergeAll{
-   memory params.mem_req 
+ process format_sumstat{
+     memory params.mem_req
+     input :
+       file(gwas) from gwas_ch2
+     output :
+       file(gwas_out) into gwas_format
+     script :
+       gwas_out=gwas.baseName+"_tmp.gwas"
+       sep=(params.sep!="") ?  "--sep ${params.sep}" : ""
+       infofile="A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},af:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${params.headnew_N},SNP:${params.head_rs}:${headnew_rs}"
+       """
+       extractandformat_gwas.py --input_file $gwas --out_file ${gwas_out}  --info_file $infofile
+       """
+ }
+
+ process extract_rsid{
+  memory params.mem_req
+  input :
+     file(gwas) from gwas_ch
+     file(rsinfo) from rsinfo_ch
+   output :
+      file(outrs) into rsout_ch
+   script:
+      sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
+      outrs="chrbp_rs.out"
+      """
+     zcat $rsinfo | extractchrpos_byrs.py --gwas $gwas --out_file $outrs --ref_file stdin  --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef} $sep --rs_head ${params.head_rs}  --a1_head ${params.head_A1} --a2_head ${params.head_A2}
+      """
+ }
+ process add_rsid{
    input :
-      file(allfile) from gwas_rsmerge_all
+      file(gwas) from gwas_format
+      file(outrs) from rsout_ch
    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
    output :
-      file(fileout) 
+       file("$gwasf*")
    script :
-     file1=allfile[0]
-     listefiles=allfile.join(" ")
-     fileout=params.output
+     gwasf=params.output
      """
-     head -1 $file1 > $fileout
-     ls $listefiles  | xargs -n 1 tail -n +2 >> $fileout
+     add_chrbp_byrsid.py --gwas  $gwas --chrbp_info $outrs --rs_head ${params.head_rs} --chronew_head ${headnew_chr} --bpnew_head ${headnew_bp} --out $gwasf
      """
+ }
 
 }
 
 
+
+ 
