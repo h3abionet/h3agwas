@@ -317,7 +317,7 @@ def fileColExists = { fname, pname, cname ->
 
 fileColExists(params.data,"${params.data} - covariates", params.covariates)
 fileColExists(params.data,"${params.data} - phenotypes", params.pheno)
-fileColExists(params.data,"${params.gxe} - gxe", params.gxe)
+fileColExists(params.data,"${params.data} - gxe", params.gxe)
 
 covs =  params.covariates.split(",")
 params.pheno.split(",").each { p ->

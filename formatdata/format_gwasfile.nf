@@ -24,6 +24,46 @@ import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
 nextflow.enable.dsl = 1
 
+/*definition*/
+def errormess(message,exitn=0){
+    if(message=="")return(0)
+    println(message)
+    System.exit(exitn)
+}
+
+
+def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, notpossibleval=null) {
+  messageerror=""
+  if(param==null){
+    messageerror+="error :--"+namesparam+" is null "
+  } else {
+    if(!(param.getClass() in type)){
+   messageerror+="error :--"+namesparam+" must be a "+ type
+     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     else messageerror+=" but type is "+param.getClass()+" value "+ param
+   }else{
+   if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
+   if(max && param>max)messageerror+="\nerror : --"+namesparam +"> maxvalue :" + param+" > "+max
+   if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
+   }
+   }
+    errormess(messageerror,2)
+}
+
+
+def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=null, notpossibleval=null){
+ messageerror=""
+ for(param in listparams){
+   if(params.containsKey(param)){
+     checkparams(params[param], param, type, min=min, max=max, possibleval=possibleval, notpossibleval=notpossibleval)
+   }else{
+     messageerror+="param :"+param+" not initialize\n"
+   }
+ }
+ errormess(messageerror, 2)
+}
+
+
 
 
 filescript=file(workflow.scriptFile)
@@ -40,13 +80,16 @@ checker = { fn ->
 }
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ['file_gwas', 'file_ref_gzip', "output_dir","output", "input_dir", "input_pat"]
+allowed_params_file = ['file_gwas', 'file_ref_gzip', "output_dir","output"]
 allowed_header = ['head_pval', 'head_freq', 'head_bp', 'head_chr', 'head_rs', 'head_beta', 'head_se', 'head_A1', 'head_A2', 'sep']
-allowed_headnewernew = ['headnew_pval', 'headnew_freq', 'headnew_bp', 'headnew_chr', 'headnew_rs', 'headnew_beta', 'headnew_se', 'headnew_A1', 'headnew_A2']
+allowed_headernew = ['headnew_pval', 'headnew_freq', 'headnew_bp', 'headnew_chr', 'headnew_rs', 'headnew_beta', 'headnew_se', 'headnew_A1', 'headnew_A2']
+optional_param=["input_dir", "input_pat"]
 //chro_ps 0 --bp_ps 1 --rs_ps 
 allowed_posfilref=['poshead_chro_inforef', 'poshead_bp_inforef','poshead_rs_inforef']
+allowed_params=allowed_params_file
 allowed_params+=allowed_header
-allowed_params+=allowed_headnewernew
+allowed_params+=allowed_headernew
+
 
 
 params.mem_req = '2GB' // how much plink needs for this
@@ -90,6 +133,12 @@ error('params.file_gwas: file contains gwas not found')
 }
 
 
+checkmultiparam(params,allowed_params_file, java.lang.String, min=null, max=null, possibleval=null, notpossibleval="")
+checkmultiparam(params,allowed_header, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_headernew, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,optional_param, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_posfilref, [java.lang.String,java.lang.Integer], min=null, max=null, possibleval=null, notpossibleval=null)
+
 headnew_freq=params.headnew_freq
 headnew_pval=params.headnew_pval
 headnew_beta=params.headnew_beta
@@ -125,7 +174,7 @@ if(headnew_A2=="")headnew_A2=params.head_A2
      .set { fileplk }
 
 
-gwas_chrolist = Channel.fromPath(params.file_gwas)
+gwas_chrolist = Channel.fromPath(params.file_gwas, checkIfExists:true)
 
 if(params.head_chr!=""){
  headnew_bp=params.headnew_bp
@@ -172,7 +221,7 @@ if(params.head_chr!=""){
  if(params.file_ref_gzip==""){
  error('params.file_ref_gzip : file contains information for rs notnot found')
  }
- gwas_format_chro_rs=gwas_format_chro.combine(Channel.fromPath(params.file_ref_gzip))
+ gwas_format_chro_rs=gwas_format_chro.combine(Channel.fromPath(params.file_ref_gzip, checkIfExists:true))
  if(params.head_rs==""){ 
    process ExtractRsIDChro{
      memory params.mem_req 
@@ -247,9 +296,9 @@ if(params.head_chr!=""){
  if(params.head_bp!="")headnew_bp=params.head_bp
  if(params.headnew_bp!="") headnew_bp=params.headnew_bp
 
- gwas_ch= Channel.fromPath(params.file_gwas)
- gwas_ch2= Channel.fromPath(params.file_gwas)
- rsinfo_ch=Channel.fromPath(params.file_ref_gzip)
+ gwas_ch= Channel.fromPath(params.file_gwas, checkIfExists:true)
+ gwas_ch2= Channel.fromPath(params.file_gwas, checkIfExists:true)
+ rsinfo_ch=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
 
  process format_sumstat{
      memory params.mem_req
