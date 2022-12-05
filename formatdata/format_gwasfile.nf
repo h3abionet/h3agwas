@@ -94,10 +94,6 @@ allowed_params+=allowed_headernew
 
 params.mem_req = '2GB' // how much plink needs for this
 params.file_gwas=""
-params.output_dir="out"
-params.output="output"
-params.input_dir=""
-params.input_pat=""
 
 params.head_pval = ""
 params.head_freq = ""
@@ -338,6 +334,7 @@ if(params.head_chr!=""){
        file("$gwasf*")
    script :
      gwasf=params.output
+     println gwasf
      """
      add_chrbp_byrsid.py --gwas  $gwas --chrbp_info $outrs --rs_head ${params.head_rs} --chronew_head ${headnew_chr} --bpnew_head ${headnew_bp} --out $gwasf
      """
