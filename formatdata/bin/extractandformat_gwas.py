@@ -92,6 +92,7 @@ else :
 
 
 head_inp=read.readline().replace('\n','').split(sep)
+nbcol_head=len(head_inp)
 ## sear
 if 'Chro' in l_infof :
    pos_chro=head_inp.index(l_oldheadf[l_infof.index('Chro')])
@@ -135,6 +136,9 @@ if ChroSel :
   for line in read :
     spl=line.replace('\n','').split(sep)
     if spl[pos_chro]==ChroSel :
+       if len(spl)!=nbcol_head :
+         print('warning column number are not exact')
+         continue
        spl=checkfloat(spl, listposfloat)
        if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
@@ -144,6 +148,9 @@ if ChroSel :
 else :
    for line in read :
      spl=line.replace('\n','').split(sep)
+     if len(spl)!=nbcol_head :
+         print('warning column number are not exact')
+         continue
      spl=checkfloat(spl, listposfloat)
      if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()

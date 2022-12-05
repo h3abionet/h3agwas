@@ -32,7 +32,7 @@ def read_rs(filegwas, rs_head,a1_head, a2_head, splitgwas) :
     for line in read :
       spl=line.replace('\n','').split(splitgwas)
       listrs.add(spl[posrs]) 
-      dicrs[spl[posrs]]=[spl[posa1],spl[posa2]]
+      dicrs[spl[posrs]]=[spl[posa1].upper(),spl[posa2].upper()]
     return (listrs, dicrs)
 
 
@@ -65,6 +65,7 @@ else :
    read=open(args.ref_file)
 
 (list_rs,dicrs)=read_rs(args.gwas, args.rs_head, args.a1_head, args.a2_head,GetSep(args.sep))
+print(list_rs)
 write=open(args.out_file, 'w')
 write2=open(args.out_file+'.init', 'w')
 ##
