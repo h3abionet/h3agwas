@@ -74,7 +74,8 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head,  PosB
           return (True,NVal, FreqVal)
        elif A1Pivot == snp[PosA2Head] and A2Pivot == snp[PosA1Head]:
             # SIMPLE FLIP
-            FreqVal = 1 - FreqVal
+            if FreqVal :
+               FreqVal = 1 - FreqVal
        elif A1Pivot == comple[snp[PosA1Head]] and A2Pivot == comple[snp[PosA2Head]]:
                         # STRAND INCONSIS., BUT GOOD
             flog.write('FLIP_STRAND %s in study %d\n'%(rsid,studyindex))
