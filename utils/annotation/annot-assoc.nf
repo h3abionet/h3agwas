@@ -258,6 +258,7 @@ process ExtractAllRs{
 
 listdb2=Channel.from(params.list_db_anovar.split(','))
 process getannovar_db {
+  label 'annovar'
   input : 
       val(db) from listdb2
   publishDir "${params.output_dir}/dbzip/", mode:'copy'

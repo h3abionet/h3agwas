@@ -9,14 +9,35 @@ import pandas as pd
 import sys
 import os
 
-def ExtractLines(read_anno, write_anno, listpos) :
+def define_sep(fileannot):
+  for sep in [None , '\t', ' ']:
+      lireannot=open(fileannot)
+      counannot=set([])
+      Cmt=0
+      for line in lireannot :
+         counannot.add(len(line.split(sep)))
+         if Cmt>10000 :
+           break
+         Cmt+=1
+      lireannot.close()
+      counannot=[x for x in list(counannot) if x > 0]
+      if len(counannot)==1 and counannot[0]>1 :
+         return sep 
+
+def ExtractLines(read_anno, write_anno, listpos,sepanno) :
    CmtL=0
    lissave=set([])
    for Line in read_anno :
-     Pos=int(Line.split()[1])
+     try :
+       Pos=int(Line.split(sepanno)[1])
+     except :
+       print(Line)
+       print('warning : line '+str(CmtL)+' column 1 is not a integer '+Line.split(sepanno)[1])
+       continue
      if Pos in listpos and Line not in lissave:
         write_anno.write(Line) 
         lissave.add(Line)
+     CmtL+=1
 
 def GetPosSearch(File) :
    read_listpos=open(File)
@@ -43,14 +64,15 @@ def GetPosSearch_int(File, write) :
                 listinfo.append(allinfo[cmt2][cmt])
              Chaine+="\t"+";".join(list(set(listinfo)))
           write.write(Chaine+"\n")
+   read_listpos.close() 
 
-def ReadIntervalFile(read_anno) :
+def ReadIntervalFile(read_anno, sepannot) :
    #listposbeg=[]
    #listposend=[]
    #listposinf=[]
    listall=[]
    for line in read_anno :
-      spl=line.replace('\n','').split()
+      spl=line.replace('\n','').split(sepanno)
       listall.append([int(spl[1]),int(spl[2]),spl[3::]])
       #listposbeg.append(int(spl[1])) 
       #listposend.append(int(spl[2])) 
@@ -72,8 +94,9 @@ args = parseArguments()
 
 #listpos.sort()
 typeannov="f"
+sepanno=define_sep(args.annov_file)
 read_anno=open(args.annov_file)
-tmphead=read_anno.readline().split()
+tmphead=read_anno.readline().split(sepanno)
 balisef=True
 if "Chr" not in tmphead[0] :
   typeannov="g"
@@ -123,7 +146,7 @@ def getmax(ll):
 
 infotype=[{'rs':0, 'freq':0, 'N':0, 'bp':0, 'on':0, 'oc':0, 'all':0} for x in range(len(tmphead))]
 for line in read_anno :
-   spl=line.split()
+   spl=line.split(sepanno)
    if isnum(spl[2]) and int(spl[2]) -int(spl[1])>1 :
      Cmt+=1
    Cmt2+=1
@@ -144,7 +167,7 @@ if typeannov=="f" :
   print('f')
   listpos=GetPosSearch(args.list_pos)
   write_anno.write(read_anno.readline())
-  ExtractLines(read_anno, write_anno, listpos)
+  ExtractLines(read_anno, write_anno, listpos, sepanno)
 elif typeannov=="g":
   print('g')
   listpos=GetPosSearch(args.list_pos)
@@ -160,10 +183,10 @@ elif typeannov=="g":
      print(getmax(infotype[cmcol]))
      Tmp+="\t"+getmax(infotype[cmcol])+"_"+Ent
   write_anno.write(Tmp+"\n")
-  ExtractLines(read_anno, write_anno, listpos)
+  ExtractLines(read_anno, write_anno, listpos, sepanno)
 elif typeannov=="fx" :
     print('fx')
-    head=read_anno.readline().replace('\n','').split()
+    head=read_anno.readline().replace('\n','').split(sepanno)
     Tmp="#Chr\tStart\tEnd\tRef\tAlt\t"+"\t"+"\t".join(head[3::])+"\n"
     write_anno.write(Tmp)
     listall=ReadIntervalFile(read_anno)
