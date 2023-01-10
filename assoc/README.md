@@ -121,6 +121,23 @@ The key options are:
   * `bolt_impute2fidiid` : list of individual in same order than `bolt_impute2filelist`
 * bgen : see bgen previously
 
+if bolt-LMM output are empty, algoritm canno't converge can be due to :
+ * check .stdout and .stderr error
+ * low sample size with less than 5000 individuals (bolt-LMM is recommended for 5000 individuals`
+
+example of error :
+```
+ERROR: Heritability estimate is close to 0; LMM may not correct confounding
+    Instead, use PC-corrected linear/logistic regression on unrelateds"
+```
+ * documentation of bolt-lmm : When a heritability estimate reaches 0, then linear mixed model association tests (including BOLT-LMM and other methods) all degenerate to simple linear regression, hence the error message. This situation is dangerous because the “mixed model” will no longer correct for population stratification and relatedness. 
+
+```
+“ERROR: Heritability estimate is close to 1; algorithm may not converge. Analysis may be unsuitable due to low sample size or case ascertainment.” 
+```
+
+* documentation of bolt-lmm :  This error most frequently arises when sample size is low, resulting in estimated heritability having a very large standard error (perhaps even greater than 1) such that the estimate could be anywhere in the range 0 to 1 and might hit one of the boundaries. BOLT-LMM is not recommended for analyses of smaller samples; in this situation, we recommend trying other software packages such as GEMMA or GCTA. 
+
 ### 4. fastlmm Option
 *  `fastlmm`: should fastlmm be used?
  *  see [manual](https://github.com/MicrosoftGenomics/FaST-LMM)
