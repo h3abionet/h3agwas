@@ -189,7 +189,7 @@ params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
         println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
   }
-    System.exit(exitn)
+    System.exit(2)
 
 }
 

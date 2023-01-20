@@ -189,6 +189,7 @@ params.file_phenogc = ""
 params.file_gwas=""
 
 params.prob_cred_set=0.95
+params.covariates=""
 
 params.other_mem_req="20GB"
 
@@ -223,7 +224,6 @@ params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwa
 params.list_chro="1-22"
 params.list_phenogc=""
 params.pheno=""
-params.covariates=""
 
 
 
@@ -314,7 +314,7 @@ process extract_inddata{
   script :
        newkeep=data+"_keep"
        pheno=(params.pheno=="") ? "" : " --pheno ${params.pheno}"
-       cov=(params.covariates=="") ? "" : " --cov ${params.covariate} "
+       cov=(params.covariates=="") ? "" : " --cov ${params.covariates} "
        """
        extract_indplink.r --data $data $pheno --out $newkeep $cov
        """
