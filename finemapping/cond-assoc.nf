@@ -76,12 +76,12 @@ if (!workflow.resume) {
 def helps = [ 'help' : 'help' ]
 //allowed_params = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts", "max_forks", "high_ld_regions_fname", "sexinfo_available", "cut_het_high", "cut_het_low", "cut_diff_miss", "cut_maf", "cut_mind", "cut_geno", "cut_hwe", "pi_hat", "super_pi_hat", "f_lo_male", "f_hi_female", "case_control", "case_control_col", "phenotype", "pheno_col", "batch", "batch_col", "samplesize", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key", "region", "AMI", "instanceType", "instance-type", "bootStorageSize", "boot-storage-size", "maxInstances", "max-instances", "other_mem_req", "sharedStorageMount", "shared-storage-mount", "max_plink_cores", "pheno","big_time","thin"]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp",   "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", "pheno", "covariates","pos_cond" ,"file_rs_buildrelat","rs_list","gemma_bin","gemma_mat_rel","sample_snps_rel_paramplkl"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp",   "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", "pheno", "covariates","file_rs_buildrelat","rs_list","gemma_bin","gemma_mat_rel","sample_snps_rel_paramplkl"]
 
 allowed_params=allowed_params_input
 allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores',"gemma_num_cores"]
 allowed_params+=allowed_params_cores
-allowed_params_intother=["max_forks", "pos_ref", "around","gemma_relopt"]
+allowed_params_intother=["max_forks", "pos_ref", "around","gemma_relopt", "pos_cond"]
 allowed_params+=allowed_params_intother
 allowed_params_bolother=["sample_snps_rel"]
 allowed_params+=allowed_params_bolother
@@ -188,8 +188,8 @@ checker = { fn ->
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
         println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
-  }
     System.exit(2)
+  }
 
 }
 
