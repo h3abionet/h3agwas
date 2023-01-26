@@ -23,7 +23,7 @@ authors:
   given-names: Scott
   orcid: https://orcid.org/0000-0002-0581-149X
 title: "H3AGWAS : A portable workflow for Genome Wide Association Studies"
-doi: https://doi.org/10.1101/2022.05.02.490206 
+doi: https://doi.org/10.1186/s12859-022-05034-w
 version: 3.0
 date-released: 2019-12-18
 url: "https://github.com/h3abionet/h3agwas"
