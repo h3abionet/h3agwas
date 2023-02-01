@@ -140,7 +140,7 @@ checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro
 #datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
 datagwascat$begin<-datagwascat[,headbpcat]-wind
 datagwascat$end<-datagwascat[,headbpcat]+wind
-datagwas<-read.table(opt[['gwas']], header=T)
+datagwas<-read.table(opt[['gwas']], header=T, comment.char='')
 checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
 
 

@@ -146,7 +146,7 @@ outhead=opt[['out']]
 
 datagwascat=read.csv(opt[['gwascat']])
 #datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
-datagwas<-read.table(opt[['gwas']], header=T)
+datagwas<-read.table(opt[['gwas']], header=T,comment.char="")
 checkhead(headpval, datagwas,'pval');checkhead(headps, datagwas,'bp');checkhead(headchr, datagwas, 'chr');
 
 if(!is.null(headaf)){

@@ -96,7 +96,7 @@ headbeta=gopt('beta_gwas');headse=gopt('se_gwas');headz=gopt('z_gwas')
 
 datagwascat=read.csv(opt[['gwascat']])
 #datagwascat[,heada1cat]<-sapply(strsplit(as.character(datagwascat[,heada1catrs]),split='-'),function(x)x[2])
-datagwas<-read.table(opt[['gwas']], header=T)
+datagwas<-read.table(opt[['gwas']], header=T,comment.char="")
 checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');

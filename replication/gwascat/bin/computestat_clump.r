@@ -113,7 +113,7 @@ filegwascat<-opt[['gwascat']];filegwas=opt[['gwas']];fileclump=opt[['clump_file'
 
 
 datagwascat=read.csv(filegwascat)
-datagwas<-read.table(filegwas, header=T)
+datagwas<-read.table(filegwas, header=T,comment.char="")
 checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
 
 checkhead(headbpcat,datagwascat,'bp cat');checkhead(headchrcat,datagwascat,'chro cat');

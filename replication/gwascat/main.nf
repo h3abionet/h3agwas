@@ -335,8 +335,10 @@ if(params.data!=""){
 }
 
 process sub_plk{
-    cpus max_plink_cores
-    memory plink_mem_req
+  cpus max_plink_cores
+  errorStrategy { task.exitStatus in 1..3 ? 'retry' : 'terminate' }
+  memory { strmem(plink_mem_req) + 5.GB * (task.attempt -1) }
+
   input :
       path(filegwascat) from gwascat_rangebed
       path(filegwas) from gwas_rangebed_subplk
