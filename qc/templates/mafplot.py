@@ -26,7 +26,7 @@ def parseArguments():
 
 def getPic(frm):
     mafs = np.sort(frm['MAF'])
-    n = np.arange(1,len(mafs)+1) / np.float(len(mafs))
+    n = np.arange(1,len(mafs)+1) / np.float64(len(mafs))
     fig,ax = plt.subplots()
     ax.step(mafs,n)
     matplotlib.rcParams['xtick.labelsize']=13

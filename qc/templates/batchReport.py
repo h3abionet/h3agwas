@@ -266,7 +266,7 @@ def plotPCs(base,eigs,pfrm,pheno_col,batch,batch_col):
         plt.tight_layout()
         fn = "%s-%s.pdf"%(base,site)
         allplots.append((fn, pheno_col+" "+str(site)))
-        plt.savefig(fn,type="pdf")
+        plt.savefig(fn)
     return allplots
 
        

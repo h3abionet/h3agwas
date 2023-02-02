@@ -26,7 +26,7 @@ fig,ax = plt.subplots(figsize=(8,6))
 
 data = pd.read_csv(args.input,delim_whitespace=True)
 vals = np.sort(np.log10(data["P"]))[1:]
-n = np.arange(1,len(vals)+1) / np.float(len(vals))
+n = np.arange(1,len(vals)+1) / np.float64(len(vals))
 ax.step(vals,n)
 ax.set_xlabel("logP (HWE)")
 ax.set_ylabel("Proportion of SNPs")

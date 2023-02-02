@@ -108,7 +108,7 @@ def getPic(frm,test,pdfout):
    if big > max(0.95*len(hwe),100):
        hwe = hwe[hwe<big]
    hwe = np.sort(hwe)
-   n = np.arange(1,len(hwe)+1) / np.float(len(hwe))
+   n = np.arange(1,len(hwe)+1) / np.float64(len(hwe))
    ax.step(hwe,n)
    ax.set_xlabel("HWE p score",fontsize=14)
    ax.set_ylabel("Proportion of SNPs with HWE p-value or less",fontsize=14)

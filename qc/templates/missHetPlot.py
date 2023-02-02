@@ -89,4 +89,4 @@ else:
 
 
 plt.tight_layout()
-plt.savefig(args.output,type="pdf")
+plt.savefig(args.output)

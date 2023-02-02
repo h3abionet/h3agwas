@@ -61,7 +61,7 @@ def getEigens():
     plt.ylabel("Eigenvalue",fontsize=15)
     plt.xticks(range(len(evals)+1), list(map(lambda x : x+1, range(len(evals))) )+[""])
     plt.tight_layout()
-    plt.savefig("eigenvalue.pdf",type="pdf")
+    plt.savefig("eigenvalue.pdf")
     pc1 = 100*evals[0]/evals[:10].sum()
     pc2 = 100*evals[1]/evals[:10].sum()
     pcs = list(map(lambda x: "PC%d"%(x+1),range(len(evals))))
@@ -94,7 +94,7 @@ def draw(pc1,pc2,evecs,labels,phe):
    plt.xlabel("PC1 (variation %4.1f %%)"%pc1,fontsize=15)
    plt.ylabel("PC2 (variation %4.1f %%)"%pc2,fontsize=15)
    plt.tight_layout()
-   plt.savefig(args.output,type="pdf")
+   plt.savefig(args.output)
    fig, ax = plt.subplots(figsize=(10,8))
 
 

@@ -35,7 +35,7 @@ interesting = miss[miss<big]
 if len(interesting)>0.9 * len(miss):
     miss = interesting
 miss = np.sort(miss)
-n = np.arange(1,len(miss)+1) / np.float(len(miss))
+n = np.arange(1,len(miss)+1) / np.float64(len(miss))
 ax.step(miss,n)
 ax.set_xlabel("Missingness",fontsize=14)
 ax.set_ylabel("Proportion of %s"%args.label,fontsize=14)

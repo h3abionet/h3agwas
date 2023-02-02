@@ -34,7 +34,7 @@ if len(frq) >= 1:
   matplotlib.rcParams['xtick.labelsize']=15
   matplotlib.rcParams['ytick.labelsize']=15
   miss=np.sort(frq["logP"])[1:]
-  n = np.arange(1,len(miss)+1) / np.float(len(miss))
+  n = np.arange(1,len(miss)+1) / np.float64(len(miss))
   ax.step(miss,n)
   ax.set_xlabel("logP differential missingness",fontsize=14)
   ax.set_ylabel("Fraction of SNPs",fontsize=14)
