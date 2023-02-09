@@ -84,6 +84,7 @@ writerange_bed=open(args.out+'_range.bed','w')
 writepos_bed=open(args.out+'_pos.bed','w')
 writepos=open(args.out+'_pos.init','w')
 writepos_plk=open(args.out+'_pos.assoc','w')
+write_error=open(args.out+'_error.assoc','w')
 
 #writeall_plk=open(args.out+'_all.assoc','w')
 
@@ -103,6 +104,12 @@ for line in read_gwas :
      newrs=chro+"_"+str(pos)+"_"
      a1=spl[a1gwas].upper()
      a2=spl[a2gwas].upper()
+     try :
+       p=float(spl[pvalgwas])
+     except :
+       print(line)
+       write_error.write('error pval not numeric '+spl[pvalgwas]+'\n')
+       continue
      if a1 > a2 :
        newrs+=a1+"_"+a2
      else :

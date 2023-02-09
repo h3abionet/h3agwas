@@ -124,7 +124,9 @@ q('no',2)
 #--chr_gwas ${params.head_chr} --ps_gwas ${params.head_bp} --a1_gwas ${params.head_A1} --a2_gwas ${params.head_A2
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
-#opt=list(gwascat='out_all.csv',gwas='out_range.init',chr_gwas='chr',ps_gwas='ps',a1_gwas='allele1',a2_gwas='allele0',beta_gwas='beta',se_gwas='se',af_gwas='af',chr_gwascat='chrom',bp_gwascat='ps',p_gwas='p_wald',ps_gwascat='chromEnd',chr_gwascat='chrom',out='out_pos', wind=25, min_pval=0.01,info_gwascat="pubMedID;author;trait;initSample")
+#computestat_wind.r  --gwascat out_gwascat_all.csv --gwas out_gwas_range.init --chr_gwas CHR --ps_gwas BP --a1_gwas A1 --a2_gwas A2    --af_gwas AF_weight  --chr_gwascat chrom --bp_gwascat chromEnd --p_gwas PVALUE_BE --ps_gwascat chromEnd --chr_gwascat chrom --out out_wind --min_pval 1 --info_gwascat  "pubMedID;author;trait;initSample" --wind 500 --a1_gwascat riskAllele --merge_wind 1  --beta_gwas BETA_RE --se_gwas STD_RE
+
+#opt=list(gwascat='out_gwascat_all.csv',gwas='out_gwas_range.init',chr_gwas='CHR',ps_gwas='BP',a1_gwas='A1',a2_gwas='A2',beta_gwas='BETA_RE',se_gwas='STD_RE',af_gwas='AF_weight',chr_gwascat='chrom',bp_gwascat='ps',p_gwas='PVALUE_BE',ps_gwascat='chromEnd',chr_gwascat='chrom',out='out_pos', wind=500, min_pval=0.01,info_gwascat="pubMedID;author;trait;initSample", 'merge_wind'=1) 
 
 
 headse=gopt('se_gwas');headbp=gopt('ps_gwas');headchr=gopt('chr_gwas');heada1=gopt('a1_gwas');heada2=gopt('a2_gwas');headpval=gopt('p_gwas');headaf<-gopt('af_gwas')
@@ -142,6 +144,7 @@ datagwascat$begin<-datagwascat[,headbpcat]-wind
 datagwascat$end<-datagwascat[,headbpcat]+wind
 datagwas<-read.table(opt[['gwas']], header=T, comment.char='')
 checkhead(headpval, datagwas,'pval');checkhead(headbp, datagwas,'bp');checkhead(headchr, datagwas, 'chr')
+datagwas<-datagwas[!is.na(datagwas[headpval]),]
 
 
 
@@ -194,6 +197,7 @@ datagwas$wind_num<-NA
 for(Cmtwindcat in 1:nrow(AllWind)){
 windcat=AllWind[Cmtwindcat,]
 balise=datagwas[,headchr]==windcat[,headchrcat] & datagwas[,headbp] >=windcat$begin & datagwas[,headbp] <=windcat$end 
+#print(table(balise))
 datagwas$wind_num[balise]<-windcat$wind_num
 windcat$nbpos<-length(which(balise))
 windcat$nbpos_sig<-length(which(balise & datagwas[,headpval]<opt[['min_pval']]))
@@ -211,18 +215,21 @@ write.csv(best_windcat,file=paste(opt[['out']],'_bestgwaswind.csv',sep=''))
 
 infocat=strsplit(opt[['info_gwascat']],split=';')[[1]]
 balise<-TRUE
+if(nrow(best_windcat)>0){
 best_windcat$info_gwascat=""
 for(cat in infocat)best_windcat$info_gwascat[balise]<-paste(best_windcat$info_gwascat[balise],cat,':',best_windcat[balise,cat],',',sep='')
 
 tmpinfocat<-aggregate(info_gwascat~wind_num, data=best_windcat,FUN=paste, collapse=';')
 best_windcat_2<-merge(newwindcat,datagwas[!is.na(datagwas$wind_num) ,],by.x=c(headchrcat,'min_bp_gwas','wind_num'), by.y=c(headchr, headbp,'wind_num'))
 resumebest<-merge(best_windcat_2,tmpinfocat, by='wind_num')
-
 write.csv(resumebest,file=paste(opt[['out']],'_resume_bestgwaswind.csv',sep=''))
+}else{
+print(head(best_windcat))
+write.csv(best_windcat,file=paste(opt[['out']],'_resume_bestgwaswind.csv',sep=''))
+}
 
 
 
 
-#Allwingwasca<-merge(datagwascatf[,names(datagwascatf)!=c("begin","end")],merge(AllWind,newwindcat, by='wind_num'),by=c('wind_num'))
 
 
