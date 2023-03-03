@@ -166,12 +166,13 @@ process checkfasta{
   label 'py3utils'                                                              
   errorStrategy { task.exitStatus == 1 ? 'retry' : 'terminate' }                
   maxRetries 1                                                                  
+  publishDir "${params.output_dir}/fastaclean", overwrite:true, mode:'copy'
   input :                                                                       
      path(fasta) from hgrefi                                                    
   output :                                                                      
      tuple path("$fasta2"), path("${fasta2}.fai") into ref_ch
   script :                                                                      
-    fasta2="newfasta.gz"                                                        
+    fasta2=fasta.baseName+'_clean.fa.gz'
     """                                                                         
     if [ "${task.attempt}" -eq "1" ]                                            
     then                                                                        
