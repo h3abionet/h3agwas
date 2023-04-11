@@ -58,7 +58,11 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head,  PosB
       if snp[PosA2Head] not in vectortorbase:
          return (True,None, None)
     if PosN :  
-       NVal=float(snp[PosN])
+       try :
+         NVal=float(snp[PosN])
+       except :
+         print(snp)
+         return (False,None, None)
     else :
        NVal=None
     if PosFreq :  
@@ -102,6 +106,7 @@ CmtFile=0
 listrsall=set([])
 
 for f in files:
+    print(f)
     listrsfile=set([])
     study={}
     fin=open(f)

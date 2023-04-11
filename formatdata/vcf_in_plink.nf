@@ -18,13 +18,51 @@
  */
 
 
-
-//---- General definitions --------------------------------------------------//
-
 import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
 nextflow.enable.dsl = 1
+//---- General definitions --------------------------------------------------//
+
+/*definition*/
+def errormess(message,exitn=0){
+    if(message=="")return(0)
+    println(message)
+    System.exit(exitn)
+}
+
+
+def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, notpossibleval=null) {
+  messageerror=""
+  if(param==null){
+    messageerror+="error :--"+namesparam+" is null "
+  } else {
+    if(!(param.getClass() in type)){
+   messageerror+="error :--"+namesparam+" must be a "+ type
+     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     else messageerror+=" but type is "+param.getClass()+" value "+ param
+   }else{
+   if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
+   if(max && param>max)messageerror+="\nerror : --"+namesparam +"> maxvalue :" + param+" > "+max
+   if(possibleval && !(param in possibleval))messageerror+="\nerro : --"+namesparam +" must be one the value :"+possibleval.join(',')
+   }
+   }
+    errormess(messageerror,2)
+}
+
+def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=null, notpossibleval=null){
+ messageerror=""
+ for(param in listparams){
+   if(params.containsKey(param)){
+     checkparams(params[param], param, type, min=min, max=max, possibleval=possibleval, notpossibleval=notpossibleval)
+   }else{
+     messageerror+="param :"+param+" not initialize\n"
+   }
+ }
+ errormess(messageerror, 2)
+
+}
+
 
 
 def strmem(val){
@@ -34,12 +72,32 @@ def strmem(val){
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ['file_listvcf', 'min_scoreinfo', "output_pat", "output_dir", "do_stat"]
+allowed_params_str=['file_listvcf',  "output_pat", "output_dir",'reffasta', 'scripts','output', 'work_dir', 'input_dir','accessKey', 'access-key', 'secretKey','secret-key','region', 'AMI', 'instanceType', 'instance-type', 'bootStorageSize', 'boot-storage-size','sharedStorageMount','shared-storage-mount','queue','statfreq_vcf','score_imp', 'genetic_maps', 'input_pat', 'unzip_password','genotype_pat', 'data', 'big_time']
+allowed_params_mem=['plink_mem_req', 'other_mem_req']
+allowed_params_float=['min_scoreinfo']
+allowed_params_bol=["do_stat", 'help', 'unzip_zip', 'lim_used_ram']
+allowed_params_int=["max_forks", 'maxInstances', 'max-instances','max_plink_cores']
+allowed_params = allowed_params_str 
+allowed_params += allowed_params_float
+allowed_params += allowed_params_bol
+allowed_params += allowed_params_int
+allowed_params += allowed_params_mem
 
 
 params.help = false
 
 nextflowversion =nextflow.version
+
+if (!workflow.resume) {
+    def dir = new File(params.output_dir)
+    if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
+       println "\n\n============================================"
+       println "Unless you are doing a -resume, the output directory should be empty"
+       println "We do not want to overwrite something valuable in "+params.output_dir
+       println "Either clean your output directory or check if you meant to do a -resume"
+       System.exit(-1)
+    }
+}
 
 
 if (workflow.repository)
@@ -58,7 +116,6 @@ checker = { fn ->
 }
 
 params.queue    = 'batch'
-params.remove_on_bp  = 1
 
 params.file_listvcf=""
 params.min_scoreinfo=0.6
@@ -71,12 +128,13 @@ params.statfreq_vcf="%AN %AC"
 params.score_imp="INFO"
 params.genetic_maps=""
 params.do_stat=true
-params.unzip_zip=0
+params.unzip_zip=false
 params.unzip_password=""
 params.reffasta=""
 params.data=''
 params.genotype_pat="TYPED"
 params.lim_used_ram=0
+
 
 
 if(params.file_listvcf==""){
@@ -86,6 +144,22 @@ error('--file_listvcf : file contains list vcf not found')
 if(params.reffasta==""){
 error('--reffasta,: file reference fasta must be initialise')
 }
+
+checkmultiparam(params,allowed_params_str, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_mem, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_float, [java.lang.Float, java.lang.Integer, java.math.BigDecimal, java.lang.Double], min=0, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bol, [java.lang.Boolean, java.lang.Integer], min=null, max=null, possibleval=[true, false, 0, 1], notpossibleval=null)
+checkmultiparam(params,allowed_params_int, java.lang.Integer, min=null, max=null, possibleval=null, notpossibleval=null)
+
+
+params.each { parm ->
+  if (! allowed_params.contains(parm.key)) {
+    println "\nUnknown parameter : Check parameter <$parm>\n";
+  }
+}
+
+
+
 
 /*read file to have list of channel for each vcf*/
 
@@ -406,6 +480,7 @@ process update_name{
  input : 
    tuple path(bed), path(bim), path(fam) from plinkformatf
    path(data) from data_ch 
+  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
  output :
      tuple path("${params.output_pat}_idupdate.bed"), path("${params.output_pat}_idupdate.bim"),path("${params.output_pat}_idupdate.fam") into plinkformatf_chgid
      path("${out}.log")
