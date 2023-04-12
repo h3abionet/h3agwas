@@ -116,7 +116,7 @@ params.ldsc_mem_req="6GB"
 params.ldsc_h2opt=""
 params.dir_ref_ld_chr=""
 //params for gcta
-params.gcta_bin="gcta64"
+params.gcta_bin="gcta"
 params.gcta_h2=0
 params.gcta_h2_multi=0
 params.gcta_mem_req="15GB"

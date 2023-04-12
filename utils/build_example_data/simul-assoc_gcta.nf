@@ -42,7 +42,7 @@ params.list_chro_pheno=""
 
 params.simu_hsq=0.3
 params.simu_rep=10
-params.gcta_bin="gcta64"
+params.gcta_bin="gcta"
 params.cut_maf=0.01
 
 

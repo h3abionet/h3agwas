@@ -86,7 +86,7 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta64_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" ]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" ]
 allowed_params=allowed_params_input
 allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'fastlmm_num_cores', 'saige_num_cores',"regenie_num_cores", "fastgwa_num_cores"]
 allowed_params+=allowed_params_cores
@@ -233,7 +233,7 @@ params.fastgwa_mem_req="10G"
 params.fastgwa_num_cores=5
 params.grm_nbpart=100
 params.grm_maf = 0.01
-params.gcta64_bin = "gcta64"
+params.gcta_bin = "gcta"
 params.fastgwa_type="--fastGWA-mlm-exact"
 params.grm_cutoff =  0.05
 params.covariates_type=""
@@ -1643,7 +1643,7 @@ if(params.fastgwa==1){
 	base   = bed.baseName
 	"""
 	hostname
-	${params.gcta64_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_num_cores} --out mgrm $rs_list --maf  ${params.grm_maf}
+	${params.gcta_bin} --bfile $base --make-grm-part  ${params.grm_nbpart} $mpart --thread-num ${params.fastgwa_num_cores} --out mgrm $rs_list --maf  ${params.grm_maf}
 	"""
     }
 
@@ -1668,7 +1668,7 @@ if(params.fastgwa==1){
 	 cat mgrm.part_*_*.grm.id > test_grm.grm.id
 	 cat mgrm.part_*_*.grm.bin > test_grm.grm.bin
 	 cat mgrm.part_*_*.grm.N.bin > test_grm.grm.N.bin
-	 ${params.gcta64_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_num_cores}
+	 ${params.gcta_bin} --grm test_grm --make-bK-sparse ${params.grm_cutoff} --out $head --thread-num ${params.fastgwa_num_cores}
 	 """
      }
    }else{
@@ -1727,7 +1727,7 @@ if(params.fastgwa==1){
         ls *.bgen > $listbgen
         fi
 	all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
-	${params.gcta64_bin} $genet ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa --maf ${params.cut_maf}
+	${params.gcta_bin} $genet ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa --maf ${params.cut_maf}
 	"""
    }
 
