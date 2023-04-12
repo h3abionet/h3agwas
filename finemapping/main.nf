@@ -238,7 +238,7 @@ listchro=getlistchro(params.list_chro)
 if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
 if(params.file_phenogc=="")phenogc_ch=channel.fromPath("${dummy_dir}/01")
-else phenogc_ch=channel.fromPath(params.file_phenogc)
+else phenogc_ch=channel.fromPath(params.file_phenogc, checkIfExists:true)
 
 process GwasCatDl{
     label 'R'

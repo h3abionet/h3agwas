@@ -61,8 +61,7 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head,  PosB
        try :
          NVal=float(snp[PosN])
        except :
-         print(snp)
-         return (False,None, None)
+         NVal=None
     else :
        NVal=None
     if PosFreq :  
