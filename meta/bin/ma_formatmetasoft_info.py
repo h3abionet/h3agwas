@@ -33,7 +33,6 @@ out=sys.argv[1]
 files=sys.argv[2:]
 
 # MERGE STUDIES
-fout=open(out+'.meta','w')
 foutN=open(out+'.N','w')
 #fmap=open(out+'.mmap','w')
 flog=open(out+'.log','w')
@@ -203,7 +202,7 @@ def getsumandfreq(N, freq):
     else :
      StrN+="NA\t"
      if freq[cmt] :
-       StrFrq += str(freq[cmt])
+       StrFrq += str(freq[cmt])+'\t'
      else :
       StrFrq+="NA\t"
     cmt+=1

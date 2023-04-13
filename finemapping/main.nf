@@ -465,7 +465,7 @@ process ComputedFineMapCond{
   memory params.fm_mem_req
   input :
     set val(pos),file(ld),file(filez), val(n) from ld_fmcond_group
-  publishDir "${params.output_dir}/$pos/fm_cond",  mode:'copy'
+  publishDir "${params.output_dir}/fm/$pos/fm_cond",  mode:'copy'
   output :
     set val(pos), file("${out}.snp"),file("${out}.cred") into res_fmcond
    set file("${out}.config"), file("${out}.cred"), file("${out}.log_cond")
@@ -502,7 +502,7 @@ process ComputedFineMapSSS{
   cpus params.fm_cpus_req
   input :
      set val(pos),file(ld),file(filez),val(n) from ld_fmss_group
-  publishDir "${params.output_dir}/$pos/fm_sss",  mode:'copy'
+  publishDir "${params.output_dir}/fm/$pos/fm_sss",  mode:'copy'
   output :
     set val(pos),file("${out}.snp"), file("${out}.cred${params.n_causal_snp}") into res_fmsss
     set file("${out}.config"), file("${out}.cred${params.n_causal_snp}"), file("${out}.log_sss")
@@ -537,7 +537,7 @@ process ComputedCaviarBF{
   label 'finemapping'
   input :
      set val(pos),file(ld),file(filez), val(n) from ld_caviarbf_group
-  publishDir "${params.output_dir}/$pos/caviarbf",  mode:'copy'
+  publishDir "${params.output_dir}/fm/$pos/caviarbf",  mode:'copy'
   output :
    set val(pos), file("${output}.marginal") into res_caviarbf
    set file("$output"), file("${output}.statistics")
@@ -580,7 +580,7 @@ if(params.paintor_bin!="0" & params.paintor_bin!=0 & params.paintor_bin!=""){
    process paintor_selectannot{
     input :
      set val(pos),file(list_loc), file(listinfo) from paintor_gwas_annot2
-    publishDir "${params.output_dir}/$pos/paintor/annot", mode:'copy'
+    publishDir "${params.output_dir}/fm/$pos/paintor/annot", mode:'copy'
     output :
      set val(pos),file(out) into (paintor_fileannot, paintor_fileannotplot, paintor_fileannot2)
     script :
@@ -634,7 +634,7 @@ paintor_gwas_2=paintor_gwas_i.flatMap{it}
    memory params.paintor_mem_req
    input :
     set val(pos),file(ld),file(filez), file(fileannot), val(annot_name),val(n) from ld_paintor_group
-  publishDir "${params.output_dir}/$pos/paintor/",  mode:'copy'
+  publishDir "${params.output_dir}/fm/$pos/paintor/",  mode:'copy'
   output :
       set val(pos),file("${output}.results") into res_paintor_ch
       set val(pos),file(FileInfo) into infores_paintor_ch
@@ -710,7 +710,7 @@ process ComputedCojo{
    cpus params.gcta_cpus_req
    input :
      set val(pos),file(filez), file(bed),file(bim),file(fam) from gcta_gwas_join
-   publishDir "${params.output_dir}/$pos/cojo_gcta",  mode:'copy'
+   publishDir "${params.output_dir}/fm/$pos/cojo_gcta",  mode:'copy'
    output :
      set val(pos), file("${output}.jma.cojo")  into res_cojo
      set file("${output}.cma.cojo"), file("${output}.ldr.cojo"), file("${output}.log")

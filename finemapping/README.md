@@ -145,13 +145,37 @@ The key options are:
   * `fm_mem_req ` [default : "20G"]
   * `plink_mem_req` [default :"6GB"]
 * annotations parameter :
-  * `paintor_fileannot)`  : file contains annotation (see paintor manual)
+  * `paintor_fileannot`  : file contains annotation (see paintor manual)
 
 ### Installation
 need locuszoom, _R_ : ggplot2, python3, finemap, paintor, gcta, plink
 
+### Output 
+* $output/clump/clump_output.clumped result of clump by plink 
+* $output/gwascat : file of gwas catalog format
+* $output/data : gene dowmloaded
+* $output/fm/$chr\_$bp : each positions where finemapping had been apply :
+  * caviarbf :result of caviarbf
+  * cojo_gcta :  result a stepwise model selection procedure to select independently associated SNPs. showing the LD correlations between the SNPs. using gcta
+  * fm\_cond : finemap software using option using `--cond` 
+  * fm\_sss  : finemap software using option `--sss`
+  * paintor : paintor output 
+  * $output/$chr\_$bp/Finemapping\_.all.out : result merge of all result
+    * information relative at position : rsid    chromosome      position        allele1 allele2 rsid    chromosome      position        allele1 allele2
+    * result of association : beta, se, p (if used `used_pval_z = 1`, beta and se had been computed using p-value, otherwise orignel)
+    * gcta result, givin your independant : bj   bJ_se    pJ    LD_r    logpJ 
+    * value of your association rsid	chromosome	position	allele1	allele2	maf	beta	se
+    * `IsSig` : position significant
+    * `is_cred` : is in credible interval set using finemap with `--sss` 
+    * `cred_$chr_$bp_cond.cred` : is in credible of finemap for finemap software with option `--cond`
+    * `cred_$chr_$bp_sss.cred` : is in credible of finemap for finemap software with option `--sss`
+    * `finemap` sss result : `prob_fm_sss`, `log10bf_fm_sss`,	`mean_fm_sss`, `sd_fm_sss`,`mean_incl_fm_sss`,	`sd_incl_fm_sss`
 
-###For example
+
+
+   
+
+### Example
 
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
@@ -163,8 +187,7 @@ nextflow run  h3abioneth3agwas/finemapping/main.nf --head_pval p_wald --head_bp 
 
 
 ## Conditional & joint (COJO) analysis of GWAS summary statistic
-
-this section describes a pipeline in devloment, objectives is doing a Stepwise model selection procedure to select independently associated SNPs on full summary statistics
+this section describes a pipeline in devlopment, objectives is doing a Stepwise model selection procedure to select independently associated SNPs on full summary statistics
 see [cojo](https://cnsgenomics.com/software/gcta/#COJO)
 
 ### Installation
