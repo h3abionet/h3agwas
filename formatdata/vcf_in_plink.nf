@@ -74,7 +74,7 @@ def strmem(val){
 def helps = [ 'help' : 'help' ]
 allowed_params_str=['file_listvcf',  "output_pat", "output_dir",'reffasta', 'scripts','output', 'work_dir', 'input_dir','accessKey', 'access-key', 'secretKey','secret-key','region', 'AMI', 'instanceType', 'instance-type', 'bootStorageSize', 'boot-storage-size','sharedStorageMount','shared-storage-mount','queue','statfreq_vcf','score_imp', 'genetic_maps', 'input_pat', 'unzip_password','genotype_pat', 'data', 'big_time']
 allowed_params_mem=['plink_mem_req', 'other_mem_req']
-allowed_params_float=['min_scoreinfo']
+allowed_params_float=['min_scoreinfo', 'cut_maf', 'cut_hwe', "cut_mind", "cut_geno"]
 allowed_params_bol=["do_stat", 'help', 'unzip_zip', 'lim_used_ram']
 allowed_params_int=["max_forks", 'maxInstances', 'max-instances','max_plink_cores']
 allowed_params = allowed_params_str 
@@ -136,6 +136,10 @@ params.genotype_pat="TYPED"
 params.lim_used_ram=0
 
 
+params.cut_maf=0
+params.cut_hwe=0
+params.cut_geno=0
+params.cut_mind=0
 
 if(params.file_listvcf==""){
 error('--file_listvcf : file contains list vcf not found')
@@ -144,6 +148,8 @@ error('--file_listvcf : file contains list vcf not found')
 if(params.reffasta==""){
 error('--reffasta,: file reference fasta must be initialise')
 }
+
+plink_kao = "--keep-allele-order"
 
 checkmultiparam(params,allowed_params_str, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_mem, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
@@ -235,6 +241,7 @@ process texfile{
 
 
 hgrefi=Channel.fromPath(params.reffasta, checkIfExists:true)                    
+
 process checkfasta{                                                             
   cpus params.max_plink_cores                                                   
   label 'py3utils'                                                              
@@ -259,6 +266,24 @@ process checkfasta{
     fi                                                                          
     """                                                                         
 } 
+/*
+process checkfasta {
+  cpus params.max_plink_cores                                                   
+  label 'py3utils'                                                              
+  publishDir "${params.output_dir}/fastaclean", overwrite:true, mode:'copy'
+  input :
+    path(fasta) from hgrefi
+  output :                                                                      
+     tuple path("$fasta2"), path("${fasta2}.fai") into ref_ch
+  script :                                                                      
+    fasta2=fasta.baseName+'_clean.fa.gz'
+  """
+    zcat $fasta | awk '{print \$1}' | bgzip -@ ${params.max_plink_cores} -c > $fasta2
+    samtools faidx $fasta2
+  """
+}
+*/
+
 list_vcf=ref_ch.combine(list_vcf)
 
 if(params.min_scoreinfo>0){
@@ -271,21 +296,22 @@ if(params.min_scoreinfo>0){
    maxRetries 10
    time   params.big_time
    input :
-      set file(ref), file(refidx),file(vcf) from list_vcf
+      tuple path(ref), path(refidx),path(vcf) from list_vcf
    publishDir "${params.output_dir}/bcf_filter", overwrite:true, mode:'copy', pattern: "*.bcf"
    output :
-      set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
-      file("${Ent}.bim") into listbimplink
-      set val(Ent), file("${Ent}.bcf") into bcf_ch
+      tuple path("${Ent}.bed"), path("${Ent}.bim"), path("${Ent}.fam") into listchroplink
+      path ("${Ent}.bim") into listbimplink
+      tuple val(Ent), path("${Ent}.bcf") into bcf_ch
    script :
-     Ent=vcf.baseName.replaceAll(/.vcf$/, '')
+     Ent=vcf.baseName.replaceAll(/.vcf$/, '')+'_filter'
      threadn=params.max_plink_cores/ 5
      threadn = threadn.round()
      """
-     hostname
-     bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf --threads $threadn | bcftools norm -Ou -m -any --threads  $threadn | bcftools norm -Ou -f $ref --threads $threadn  |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' --threads  $threadn > $Ent".bcf"
+     ln -s $ref tmp.fasta.gz
+     cp $refidx tmp.fasta.gz.fai
+     bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf --threads $threadn | bcftools norm -Ou -m -any --threads  $threadn | bcftools norm -Ou -f tmp.fasta.gz --threads $threadn  |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' --threads  $threadn > $Ent".bcf"
    cat $Ent".bcf" |plink --bcf /dev/stdin \
-     --keep-allele-order \
+     $plink_kao \
      --vcf-idspace-to _ \
      --const-fid \
      --allow-extra-chr 0 \
@@ -311,20 +337,21 @@ if(params.min_scoreinfo>0){
      file("${Ent}.bim") into listbimplink
      set val(Ent), file("${Ent}.bcf") into bcf_ch
    script :
-    Ent=vcf.baseName.replaceAll(/.vcf$/, '')
+    Ent=vcf.baseName.replaceAll(/.vcf$/, '')+'_filter'
     //threadn=params.max_plink_cores/ 5
     threadn = params.max_plink_cores
     """
-    hostname
+    ln -s $ref tmp.fasta.gz
+    cp $refidx tmp.fasta.gz.fai
     bcftools view -Ou -i '${params.score_imp}>${params.min_scoreinfo}' $vcf --threads $threadn > vcftmp1
    cat vcftmp1 | bcftools norm -Ou -m -any --threads  $threadn > vcftmp2
    rm -f vcftmp1
-   cat vcftmp2 | bcftools norm -Ou -f $ref --threads $threadn > vcftmp3  
+   cat vcftmp2 | bcftools norm -Ou -f tmp.fasta.gz --threads $threadn > vcftmp3  
    rm -f vcftmp2
    cat vcftmp3 |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' --threads  $threadn > $Ent".bcf"
    rm vcftmp3
    cat $Ent".bcf" |plink --bcf /dev/stdin \
-    --keep-allele-order \
+    $plink_kao
     --vcf-idspace-to _ \
     --const-fid \
     --allow-extra-chr 0 \
@@ -359,17 +386,18 @@ process formatvcf{
   memory params.plink_mem_req
   time   params.big_time
   input :
-     tuple path(ref),path(vcf) from list_vcf
+     tuple path(ref),path(refidx),path(vcf) from list_vcf
   output :
      set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
      file("${Ent}.bim") into listbimplink
   script :
-    Ent=vcf.baseName
+    Ent=vcf.baseName+'_filter'
     """
-
-    bcftools view -Ou $vcf | bcftools norm -Ou -m -any | bcftools norm -Ou -f $ref |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' |
+    ln -s $ref tmp.fasta.gz
+    cp $refidx tmp.fasta.gz.fai
+    bcftools view -Ou $vcf | bcftools norm -Ou -m -any | bcftools norm -Ou -f tmp.fasta.gz |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' |
   plink --bcf /dev/stdin \
-    --keep-allele-order \
+    $plink_kao \
     --vcf-idspace-to _ \
     --const-fid \
     --allow-extra-chr 0 \
@@ -408,9 +436,13 @@ process TransformRsDup{
        header=bed.baseName 
        newheader=header+"_rsqc"
        """
-       cp $bim ${bim}.save
-       replacers_forbim.py ${bim}.save $rstochange $bim  
-       plink -bfile $header --keep-allele-order --make-bed -out $newheader --exclude range $delrange
+       cp $bed ${header}.save.bed
+       cp $bim ${header}.save.bim
+       cp $fam ${header}.save.fam
+       cp ${header}.save.bim  ${bim}.save
+       replacers_forbim.py ${bim}.save $rstochange ${header}.save.bim
+       plink -bfile ${header}.save $plink_kao --make-bed -out $newheader --exclude range $delrange
+       rm  ${header}.save.*
        """
 }
 if(params.genetic_maps!=""){
@@ -436,9 +468,10 @@ process AddedCM{
        chro=`head $bimi|awk '{print \$1}'|uniq`
        sed '1d' $map|awk -v chro=\$chro '{if(chro==\$1)print \$2"\\t"\$3"\\t"\$4}' >> $cm_shap
        awk '{print \$2}' $headeri".bim" | sort | uniq -d > duplicated_snps.snplist
-       plink --bfile $headeri --exclude duplicated_snps.snplist --make-bed --keep-allele-order --out $headeri"_tmp"
+       plink --bfile $headeri --exclude duplicated_snps.snplist --make-bed $plink_kao --out $headeri"_tmp"
        plink --bfile $headeri"_tmp" --list-duplicate-vars ids-only suppress-first
-       plink --bfile $headeri"_tmp" --keep-allele-order --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $header  --exclude plink.dupvar
+       plink --bfile $headeri"_tmp" $plink_kao --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $header  --exclude plink.dupvar
+       rm $headeri"_tmp"*
        """
 
 }
@@ -455,20 +488,76 @@ process MergePlink{
   memory params.plink_mem_req
   time   params.big_time
   input :
-       file(lplk) from listplinkinf
+       path(lplk) from listplinkinf
        val(hplk) from headplinkf
-  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/nofilter", overwrite:true, mode:'copy'
   output :
-     set file("${params.output_pat}.bed"), file("${params.output_pat}.bim"),file("${params.output_pat}.fam") into plinkformatf
+     set path("${output}.bed"), file("${output}.bim"),file("${output}.fam") into plinkformatf_merge
   script :
-       hplkFirst=hplk[0]
-       hplk.remove(0)
-       hplk2=hplk.join(',')
+       output=params.output_pat+"_beforefilter"
+       hplk2=lplk.join(',')
        """
-       echo $hplk2|awk -F\',\' \'{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt"\\n"}\' > fileplk
-       plink --bfile $hplkFirst --keep-allele-order --threads ${params.max_plink_cores} --merge-list fileplk --make-bed --out ${params.output_pat}
+       echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |sed '1d'> fileplk
+       hplkFirst=`echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |head -1`
+       plink --bfile \$hplkFirst --keep-allele-order --threads ${params.max_plink_cores} --merge-list fileplk --make-bed --out $output
        """
 }
+
+ process clean_plink {
+  cpus params.max_plink_cores
+  memory params.plink_mem_req
+  time   params.big_time
+  input:
+       tuple path(bed), path(bim), path(fam) from plinkformatf_merge
+  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+  output :
+     tuple path("${output}.bed"), path("${output}.bim"),path("${output}.fam") into plinkformatf
+  script :
+  plk=bed.baseName 
+  output = params.output_pat+'_clean'
+  sexinfo = "--allow-no-sex"
+  """
+  if [ $params.cut_mind -eq 0 ]
+  then
+  bfile=$plk
+  else 
+  plink $plink_kao --bfile $plk $sexinfo --mind $params.cut_mind --make-bed --out temp2
+  bfile=temp2
+  fi
+  if [ $params.cut_geno -eq 0 ]
+  then
+  bfile2=\$bfile
+  else
+  plink $plink_kao --bfile \$bfile   $sexinfo --geno $params.cut_geno --make-bed --out temp3
+  bfile2=temp3
+  /bin/rm -f temp2.{bim,fam,bed}
+  fi
+  if [ $params.cut_maf -eq 0 ]
+  then
+  bfile3=\$bfile2
+  else 
+  plink $plink_kao --bfile \$bfile2 $sexinfo --maf $params.cut_maf --make-bed --out temp4
+  /bin/rm -f temp3.{bim,fam,bed}
+  /bin/rm -f temp2.{bim,fam,bed}
+  bfile3=temp4
+  fi
+  if [ $params.cut_hwe -eq 0 ]
+  then
+  bfile4=\$bfile3
+  else 
+  plink $plink_kao --bfile \$bfile3 $sexinfo --hwe $params.cut_hwe --make-bed  --out temp5
+  /bin/rm -f temp4.{bim,fam,bed}
+  /bin/rm -f temp3.{bim,fam,bed}
+  /bin/rm -f temp2.{bim,fam,bed}
+  bfile4=temp5
+  fi
+  cp \$bfile4".bed" $output".bed" 
+  cp \$bfile4".bim" $output".bim" 
+  cp \$bfile4".fam" $output".fam" 
+  rm -f temp*.{bim,fam,bed}
+  """
+
+ }
 
 if(params.data!=''){
 
@@ -489,7 +578,7 @@ process update_name{
      bfile=bed.baseName
      """
      change_updateidplink.r $fam $data update_id
-     plink -bfile $bfile -make-bed --keep-allele-order --update-ids update_id -out $out
+     plink -bfile $bfile -make-bed $plink_kao --update-ids update_id -out $out
      """
 }
 
