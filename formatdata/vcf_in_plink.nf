@@ -351,7 +351,7 @@ if(params.min_scoreinfo>0){
    cat vcftmp3 |bcftools annotate -Ob -x ID -I +'%CHROM:%POS:%REF:%ALT' --threads  $threadn > $Ent".bcf"
    rm vcftmp3
    cat $Ent".bcf" |plink --bcf /dev/stdin \
-    $plink_kao
+    $plink_kao \
     --vcf-idspace-to _ \
     --const-fid \
     --allow-extra-chr 0 \

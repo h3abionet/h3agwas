@@ -21,9 +21,13 @@
 * `output_dir` : directory of output : [default : plink] 
 * `score_imp` : header of score imputation [default : INFO], for score info depend of software used on software of imptuation
  * PBWT : INFO
- * 
+* Filters done by plink :
+ * `cut_maf` : default 0
+ * `cut_hwe` : default 0
+ * `cut_geno`: default 0
+ * `cut_mind` : 
 * `do_stat` : by default true make stat using frequencies and score 
- * statfreq_vcf : 
+ * `statfreq_vcf` : 
   * pattern used in Info to computed frequencies  ([default : "%AN %AC" with AN total and AC alternative number]) 
   * can be two value NAll NAlt, where frequencies computed as Nalt/NAll
   * can be one value frequencies
