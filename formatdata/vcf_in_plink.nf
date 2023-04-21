@@ -73,10 +73,10 @@ def strmem(val){
 
 def helps = [ 'help' : 'help' ]
 allowed_params_str=['file_listvcf',  "output_pat", "output_dir",'reffasta', 'scripts','output', 'work_dir', 'input_dir','accessKey', 'access-key', 'secretKey','secret-key','region', 'AMI', 'instanceType', 'instance-type', 'bootStorageSize', 'boot-storage-size','sharedStorageMount','shared-storage-mount','queue','statfreq_vcf','score_imp', 'genetic_maps', 'input_pat', 'unzip_password','genotype_pat', 'data', 'big_time']
-allowed_params_mem=['plink_mem_req', 'other_mem_req']
+allowed_params_mem=['plink_mem_req', 'other_mem_req','plink_mem_req_merge']
 allowed_params_float=['min_scoreinfo', 'cut_maf', 'cut_hwe', "cut_mind", "cut_geno"]
 allowed_params_bol=["do_stat", 'help', 'unzip_zip', 'lim_used_ram']
-allowed_params_int=["max_forks", 'maxInstances', 'max-instances','max_plink_cores']
+allowed_params_int=["max_forks", 'maxInstances', 'max-instances','max_plink_cores', 'max_plink_cores_merge']
 allowed_params = allowed_params_str 
 allowed_params += allowed_params_float
 allowed_params += allowed_params_bol
@@ -85,6 +85,13 @@ allowed_params += allowed_params_mem
 
 
 params.help = false
+params.max_plink_cores_merge=-1
+params.plink_mem_req_merge=""
+
+plink_mem_req_merge=params.plink_mem_req_merge
+if(params.plink_mem_req_merge=="")plink_mem_req_merge=params.plink_mem_req
+max_plink_cores_merge=params.max_plink_cores_merge
+if(params.max_plink_cores_merge<=0)max_plink_cores_merge=params.max_plink_cores
 
 nextflowversion =nextflow.version
 
@@ -484,8 +491,8 @@ listplinkinf=listchroplinkrsf.collect()
 headplinkf=plinkheadf.collect()
 
 process MergePlink{
-  cpus params.max_plink_cores
-  memory params.plink_mem_req
+  cpus max_plink_cores_merge
+  memory plink_mem_req_merge
   time   params.big_time
   input :
        path(lplk) from listplinkinf
@@ -499,7 +506,7 @@ process MergePlink{
        """
        echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |sed '1d'> fileplk
        hplkFirst=`echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |head -1`
-       plink --bfile \$hplkFirst --keep-allele-order --threads ${params.max_plink_cores} --merge-list fileplk --make-bed --out $output
+       plink --bfile \$hplkFirst --keep-allele-order --threads ${max_plink_cores_merge} --merge-list fileplk --make-bed --out $output
        """
 }
 
