@@ -249,7 +249,7 @@ listchro=getlistchro(params.list_chro)
 if(params.file_pheno_gc!=''){
 file_pheno_gc_ch=channel.fromPath(params.file_pheno_gc, checkIfExists:true)
 }else{
-file_pheno_gc_ch=channel.fromPath('${dummy_dir}/00', checkIfExists:true)
+file_pheno_gc_ch=channel.fromPath("${dummy_dir}/00", checkIfExists:true)
 }
 process formatgwascat{
    label 'R'
