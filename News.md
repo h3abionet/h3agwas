@@ -1,7 +1,16 @@
-<img src="auxfiles/H3ABioNetlogo2.jpg"/>
+<img src="helperfiles/H3ABioNetlogo2.jpg"/>
 
 
 # What\'s new :
+### V3.4.1
+* python panda compatibility : minor update
+* singularity/docker image : update for plink1.9 last version 
+* `format/vcf_in_plink.nf`  : 
+  * `max_plink_cores_merge`, `plink_mem_req_merge` are now two news parameter can defined memory for merge process
+  * bug fixed, work with `-resume` 
+* `gcta_bin` parameters : change parameter for docker compatibility 
+* `meta/main.nf` : minor change to take account NA in summary statistics for p-value  and N
+* parameters check for file : `formatdata/format_gwasfile.nf`,  `formatdata/vcf_in_plink.nf`
 
 ### V3.4.0
 * finemapping :

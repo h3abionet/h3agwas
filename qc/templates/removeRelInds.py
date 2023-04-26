@@ -52,7 +52,7 @@ rel, deg = getDegrees(remove)
 
 candidates = deg[deg>=1].sort_values(ascending=False)
 
-for i,c in candidates.iteritems():
+for i,c in candidates.items():
     if deg[i]>0:
         remove.add(i)
         deg[i]=deg[i]-1

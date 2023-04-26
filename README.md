@@ -10,6 +10,21 @@
 [![Amazon aws](https://img.shields.io/badge/aws-pass-green)](Readme_AWS_Batch.md)
 ![version](https://img.shields.io/github/v/release/h3abionet/h3agwas)
 
+
+# Nextflow update
+***Nextflow 23.X  by default doesn't support anymore dsl1 to run pipeline you need to run NXF_VER=22.10.8 nextflow ...***
+
+for instance :
+```
+NXF_VER=22.10.8 ./nextflow run h3abionet/h3agwas/assoc/main.nf \
+ --input_dir data/imputed/ --input_pat imput_data \
+ --data data/pheno/pheno_test.all --pheno pheno_qt1,pheno_qt2 \
+ --output_dir assoc --output assoc \
+ --gemma 1 --sample_snps_rel 1 --linear 1 \
+  -profile singularity
+```
+
+
 The major change from Version 2 to Version 3 is the reorganisation of the repo so that the different workflows are in separate directories.
 
 

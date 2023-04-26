@@ -36,6 +36,11 @@
  * file for [hg17](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg17.txt.gz)
  * file for [hg18](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg18.txt.gz)
  * file for [hg38](https://data.broadinstitute.org/alkesgroup/Eagle/downloads/tables/genetic_map_hg38_withX.txt.gz)
+* memory and cpu :
+ *  `max_plink_cores_merge`, `plink_mem_req_merge` are now two news parameter can defined memory for merge process
+ * `plink_mem_req` : memory used for plink, bcftools
+ * `other_mem_req` : other memory 
+ * `max_plink_cores` : cpus for plink and bcftools
 
 ```
 chr position COMBINED_rate(cM/Mb) Genetic_Map(cM)
