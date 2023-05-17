@@ -70,6 +70,7 @@ def readsummarystat(sumstat, dickeyrs,listdup, listkey, rs_header,n_header, chr_
     pval_headerp=getposheader(pval_header, headersumstat)
     if maf is not None:
       mafupper= 1 - maf
+    n_value_default=n_value
     if n_value is None:
        n_value_default="NA"
     dicres={}
@@ -100,7 +101,7 @@ def readsummarystat(sumstat, dickeyrs,listdup, listkey, rs_header,n_header, chr_
              listnewkey.add(key)
     return (dicres, listnewkey)
 
-def ExtractFreqN(bfile, dicsumstat, listkey,dicbim,freq_header,rs_header, n_header, chr_header,bpval_header, bin_plk, keep, threads, memory) :
+def ExtractFreqN(bfile, dicsumstat, listkey,dicbim,freq_header,rs_header, n_header, chr_header,bpval_header, bin_plk, keep, threads, memory, nvalue, maf) :
    if (n_header or nvalue) and (freq_header is not None):
        return (dicsumstat, listkey)
    plkfreqfil=os.path.basename(bfile)
@@ -111,7 +112,7 @@ def ExtractFreqN(bfile, dicsumstat, listkey,dicbim,freq_header,rs_header, n_head
    Cmd=bin_plk+" -bfile "+bfile+" --freq --keep-allele-order "
    rangelist=out_range+".bed"
    writebed=open(rangelist, 'w') 
-   [writebed.write("\t".join([dicsumstat[key][2],dicsumstat[key][3], dicsumstat[key][4], dicsumstat[key][0]])+'\n') for key in listkey]
+   [writebed.write("\t".join([dicsumstat[key][2],dicsumstat[key][3], dicsumstat[key][3], dicsumstat[key][0]])+'\n') for key in listkey]
    writebed.close()
    if keep is not None:
      Cmd+=" --keep "+keep
@@ -120,7 +121,7 @@ def ExtractFreqN(bfile, dicsumstat, listkey,dicbim,freq_header,rs_header, n_head
    Cmd+=" --memory "+memory
    Cmd+=" --out "+plkfreqfil
    os.system(Cmd)
-   data_n=pd.read_csv(plkfreqfil+".frq",delim_whitespace=True)
+   #data_n=pd.read_csv(plkfreqfil+".frq",delim_whitespace=True)
    readfreq=open(plkfreqfil+".frq")
    #CHR	Chromosome code
    #SNP	Variant identifier
@@ -128,21 +129,25 @@ def ExtractFreqN(bfile, dicsumstat, listkey,dicbim,freq_header,rs_header, n_head
    #A2	Allele 2 (usually major)
   #MAF	Allele 1 frequency
   #NCHROBS	Number of allele observations
-   header=readfreq.replace('\n', '').split()
+   header=readfreq.readline().replace('\n', '').split()
    posrs=0
    posa1=1
    posa2=2
-   posaf=3
-   posn=4
+   posaf=4
+   posn=5
    if maf is not None:
       mafupper= 1 - maf
    newlistkey=set([])
    for line in readfreq :
       splline=line.replace('\n', '').split()
-      key=dicbim[splline[0]]
+      key=dicbim[splline[1]]
       # 0 SNP1, 1 SNP2, 2 CHR, 3 BP, 4 A1, 5 A2, 6 Z, 7 BETA, 8 SE, 9 AF, 10 N, P 11 
       if not freq_header : 
-        af=float(splline[posaf])
+        try :
+          af=float(splline[posaf])
+        except :
+          print(splline)
+          sys.exit('error af')
         balise=True
         if maf is not None:
            balise=af>=maf and af<=mafupper
@@ -249,7 +254,7 @@ def parseArguments():
     parser.add_argument('--keep',type=str,required=False,help="file of data used for if need to compute frequency or N", default=None)
     parser.add_argument('--used_p',type=int,required=False,help="file of data used for if need to compute frequency or N", default=0)
     parser.add_argument('--threads',type=int,required=False,help="", default=1)
-    parser.add_argument('--memory',type=int,required=False,help="", default="1000")
+    parser.add_argument('--memory',type=str,required=False,help="", default="1000")
     parser.add_argument('--n',required=False, help="bim file ")
     parser.add_argument('--out',type=str,default="out",help="b)")
     args = parser.parse_args()
@@ -269,7 +274,8 @@ print(" reading sumstat: begin")
 print(len(listkey))
 print(" reading sumstat: end")
 print(" reading add N and freq: begin")
-(dicsumstat,listkey)=ExtractFreqN(args.bfile, dicsumstat, listkey,dicrskey,args.freq_header,args.rs_header, args.n_header, args.chro_header,args.bp_header, args.bin_plk, args.keep, args.threads,args.memory)
+#def ExtractFreqN(bfile, dicsumstat, listkey,dicbim,freq_header,rs_header, n_header, chr_header,bpval_header, bin_plk, keep, threads, memory, nvalue, maf) :
+(dicsumstat,listkey)=ExtractFreqN(args.bfile, dicsumstat, listkey,dicrskey,args.freq_header,args.rs_header, args.n_header, args.chro_header,args.bp_header, args.bin_plk, args.keep, args.threads,args.memory, args.n, args.maf)
 print(len(listkey))
 print(" reading add N and freq: End")
 print(" reading add beta se")
