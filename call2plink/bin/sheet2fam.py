@@ -279,6 +279,9 @@ if ".xls" in args.samplesheet:
     allrows     = xlsxf[sheet_names[0]].rows
 elif ".csv" in args.samplesheet:
     allrows = getCSV(args.samplesheet)
+else :
+   print("error extension of samplesheet --samplesheet not .csv or .xlsx")
+   sys.exit(2)
 
 indivs, problems      =  parseSheet(allrows)
 shutil.copyfile(args.fam,"oldfam.fam")

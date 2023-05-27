@@ -73,6 +73,7 @@ bf = open(args.bim)
 out=open(args.output,"w")
 for line in bf:
     bdata = line.rstrip().split()
+    print("l"+line)
     if "rs99365" in bdata[1]: 
         print(bdata)
         alleles = extractValues(bdata)

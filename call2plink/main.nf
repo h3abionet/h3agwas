@@ -7,9 +7,17 @@
  Scott Hazelhust, 2017-2018
 */
 
+import java.nio.file.Paths;
+import sun.nio.fs.UnixPath;
+import java.security.MessageDigest;
+
 nextflow.enable.dsl = 1
 
-null_values = [0,"0",false,""]
+
+
+
+
+null_values = [0,"0",false,"", "false"]
 
 params.chipdescription = "/external/diskA/novartis/metadata/HumanOmni5-4v1_B_Physical-and-Genetic-Coordinates.txt"
 inpat = "${params.input_dir}/${params.input_pat}"
@@ -20,6 +28,7 @@ params.queue          = 'batch'
 params.output_align   = 'ref'
 params.mask_type      = 0
 params.sheet_columns  = 0
+params.plink = "0"
 
 params.idpat=0
 params.indiv_memory_req="2GB"
@@ -34,6 +43,19 @@ idpat = params.idpat
 
 mask_type = params.mask_type
 
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+dummy_dir="${projectdir}/../qc/input"
+
+// Checks if the file exists
+checker = { fn ->
+   if (fn.exists())
+       return fn;
+    else
+       error("\n\n------\nError in your config\nFile $fn does not exist\n\n---\n")
+}
+
+
 if (!null_values.contains(params.sheet_columns))
   sheet_cols_ch = Channel.fromPath(params.sheet_columns)
 else 
@@ -44,8 +66,7 @@ plink_src = Channel.create()
 
 
 
-if (! null_values.contains(params.samplesheet))
-  samplesheet = Channel.fromPath(params.samplesheet)
+if (! null_values.contains(params.samplesheet))samplesheet = Channel.fromPath(params.samplesheet) else   samplesheet = Channel.fromPath("${dummy_dir}/01")
 
 def condChannel = { parm, descr ->
   filename = "/tmp/emptyZ0${descr}.txt";
@@ -96,6 +117,7 @@ def gChrom= { x ->
 
 
   
+if(params.plink==0){
 
   process illumina2lgen {
     maxForks params.max_forks
@@ -159,6 +181,21 @@ def gChrom= { x ->
     """
  } 
 
+}else {
+/*case where you give just plink file */
+bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+fill_in_bim_ch= Channel.fromPath("${params.input_dir}/${params.input_pat}.bim")
+fam = Paths.get(params.input_dir,"${params.input_pat}.fam").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
+
+logtmp= Paths.get("${dummy_dir}/00")
+
+plink_src=Channel.create()
+Channel
+    .from(file(bed),file(fam),logtmp)
+    .buffer(size:3)
+    .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
+    .set { plink_src}
+}
   
 
 
@@ -172,6 +209,7 @@ def gChrom= { x ->
     script:
        "fill_in_bim.py ${params.output_align} $strand $manifest $inbim  raw.bim"
   }
+
 
 
  process getFlips {
@@ -241,7 +279,7 @@ def gChrom= { x ->
     }
     """
     ${delete_cmd}
-    plink --bfile $base $opt $remove  --flip $flips --make-bed --out $output
+    plink --bed  $base".bed" --bim $bim --fam $base".fam" $opt $remove  --flip $flips --make-bed --out $output
     mv ${output}.fam aligned.fam
     grep Impossible ${output}.log | tr -d . | sed 's/.*variant//'  > ${output}.badsnps
     touch  ${output}.badsnps
@@ -263,6 +301,7 @@ def gChrom= { x ->
 
 
 
+if (!null_values.contains(params.samplesheet)) {
   process fixFam {
    input:
      file(samplesheet)
@@ -289,7 +328,6 @@ def gChrom= { x ->
  } 
 
 
-  if (null_values.contains(params.samplesheet)) {
     fixedfam_ch.combine(aligned_ch).subscribe { 
       files =  it.collect { fn -> fn.getName().replace(".*/","") }
       println "The output can be found in ${params.output_dir}: files are ${files}"

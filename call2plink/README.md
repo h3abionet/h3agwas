@@ -39,6 +39,8 @@ e.g. `params.input_pat = "*gtReport*.csv.gz"`
 
 * `output`: the base name of the PLINK output file
 
+* `plink` : if value != 0, input_pat and outut_pat must be one plink bed, fam and bim see qc pipeline input
+
 e.g. `params.output = "cvd-rawcalls"`
 
 * `manifest`: The chip manifest file. This is crucial. You can find examples here: https://emea.illumina.com/products/by-type/microarray-kits.html, but you may have to ask Illumina for the correct vrsion.
