@@ -44,19 +44,31 @@ def extractinfobim(bimfile):
 
 def readsummarystat(sumstat, dickeyrs,listdup, listkey, rs_header,n_header, chr_header, bpval_header, beta_header, z_header, a1_header, a2_header, se_header, af_header, pval_header,n_value, maf, nlim, keep_genet) :
     def getposheader( head, headersumstat):
+        nheader=None
         if head is not None:
-         return headersumstat.index(head)
-        return None
+          head=head.lower()
+          try :
+           nheader=headersumstat.index(head)
+          except :
+            print(headersumstat)
+            print(head+" not found in "+" ".join(headersumstat))
+            sys.exit(2)
+        print('head '+str(head)+' found in column '+str(nheader))
+        return nheader
     def gv(infogwas, posheader, othervalue="NA", formatfct=str) :
        if posheader is not None:
-          val=infogwas[posheader]
+          try :
+             val=infogwas[posheader]
+          except :
+            print(infogwas, posheader, othervalue, formatfct)
+            sys.exit(2)
           try :
             return formatfct(val)
           except :
-            return othervalue 
+            return othervalue
        return othervalue
     readsummstat=open(sumstat)
-    headersumstat=readsummstat.readline().replace('\n','').split()
+    headersumstat=[x.lower() for x in readsummstat.readline().replace('\n','').split()]
     n_headerp=getposheader(n_header, headersumstat)
     se_headerp=getposheader(se_header, headersumstat)
     a2_headerp=getposheader(a2_header, headersumstat)
@@ -75,8 +87,13 @@ def readsummarystat(sumstat, dickeyrs,listdup, listkey, rs_header,n_header, chr_
     dicres={}
     listnewkey=set([])
     balisen=(nlim  is not None) and (n_headerp is not None)
+    ncol=len(headersumstat)
     for line in readsummstat :
         splline=line.replace('\n','').split()
+        if len(splline)!=ncol :
+           print(splline)
+           print("column number different between header and line\n")
+           continue
         key=formatrs(splline[chr_headerp],splline[bpval_headerp],splline[a1_headerp],splline[a2_headerp])
         key2=splline[chr_headerp]+':'+splline[bpval_headerp]
         balisersbim=key in dickeyrs
@@ -96,7 +113,7 @@ def readsummarystat(sumstat, dickeyrs,listdup, listkey, rs_header,n_header, chr_
                 keybim='NA'
              else :
                  keybim=dickeyrs[key]
-             dicres[key]=[keybim,gv(splline, rs_headerp, key), gv(splline, chr_headerp), gv(splline, bpval_headerp), gv(splline, a1_headerp).upper(), gv(splline, a2_headerp).upper(), gv(splline, z_headerp,formatfct=float), gv(splline, beta_headerp,formatfct=float), gv(splline, se_headerp,formatfct=float), gv(splline,af_headerp,formatfct=float), gv(splline, n_headerp, n_value_default,formatfct=float), gv(splline, pval_headerp, line,formatfct=float)]  
+             dicres[key]=[keybim,gv(splline, rs_headerp, key), gv(splline, chr_headerp), gv(splline, bpval_headerp), gv(splline, a1_headerp).upper(), gv(splline, a2_headerp).upper(), gv(splline, z_headerp,formatfct=float), gv(splline, beta_headerp,formatfct=float), gv(splline, se_headerp,formatfct=float), gv(splline,af_headerp,formatfct=float), gv(splline, n_headerp, n_value_default,formatfct=float), gv(splline, pval_headerp, 'NA',formatfct=float)]  
              listnewkey.add(key)
     return (dicres, listnewkey)
 
