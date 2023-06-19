@@ -31,6 +31,8 @@
     * `poshead_chro_inforef` psotion of column chromosome in file  [default : 0]
     * `poshead_bp_inforef` : position of column where bp in file [default : 1]
     * `poshead_rs_inforef` : position of column where rs in file  [default : 2]
+    * `poshead_a1_inforef` : position of column where rs in file  [default : 3]
+    * `poshead_a2_inforef` : position of column where rs in file  [default : 4]
 * `do_stat` : by default true make stat using frequencies and score 
  * `statfreq_vcf` : 
   * pattern used in Info to computed frequencies  ([default : "%AN %AC" with AN total and AC alternative number]) 

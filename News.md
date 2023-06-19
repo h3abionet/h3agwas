@@ -3,6 +3,7 @@
 
 # What\'s new :
 ### V3.4.1
+* `vcf_in_plink` : add option to udpate rs id 
 * python panda compatibility : minor update
 * singularity/docker image : update for plink1.9 last version 
 * `format/vcf_in_plink.nf`  : 
