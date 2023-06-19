@@ -10,10 +10,26 @@ def read_chrbp(file_chrbp) :
     listchro=set([])
     listchro2={}
     for line in read :
-      spl=line.split()
+      spl=line.replace('\n','').split()
       listchro.add(spl[0]+" "+spl[1])  
-      listchro2[spl[0]+" "+spl[1]]=[spl[2], spl[3]]
+      listchro2[spl[0]+" "+spl[1]]=[spl[2], spl[3], None]
     return (listchro, listchro2)
+
+#3 3:61662:T:C 0 61662 C T
+def  read_bim(bim) :
+   read=open(bim)
+   listchro=set([])
+   listchro2={}
+   for line in read :
+      spl=line.replace('\n','').split()
+      listchro.add(spl[0]+" "+spl[3])
+      if spl[1]=='.' :
+         rs=None
+      else :
+         rs=spl[1]
+      listchro2[spl[0]+" "+spl[3]]=[spl[4], spl[5], spl[1]]
+   return (listchro, listchro2)
+
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='transform file and header')
@@ -25,7 +41,8 @@ def parseArguments():
     parser.add_argument('--a1_ps',type=int,required=True,help="a1 of file to extract bp")
     parser.add_argument('--a2_ps',type=int,required=True,help="a2 of file to extract bp")
     parser.add_argument('--chr',type=str,required=False,help="specific chromosome to extract")
-    parser.add_argument('--file_chrbp',type=str, required=True)
+    parser.add_argument('--file_chrbp',type=str, required=False, default=None)
+    parser.add_argument('--bim',type=str, required=False, default=None)
     args = parser.parse_args()
     return args
 
@@ -46,7 +63,12 @@ else :
    #else :
    read=open(args.ref_file)
 
-(chrolist,chrodic)=read_chrbp(args.file_chrbp)
+if args.file_chrbp :
+  (chrolist,chrodic)=read_chrbp(args.file_chrbp)
+else :
+  print('reading bim')
+  (chrolist,chrodic)=read_bim(args.bim)
+
 print("nb pos to found "+str(len(chrolist))+'\n')
 write=open(args.out_file, 'w')
 write2=open(args.out_file+'.init', 'w')
@@ -56,6 +78,10 @@ posbp=args.bp_ps
 posrs=args.rs_ps
 posa1=args.a1_ps
 posa2=args.a2_ps
+if args.bim :
+  listrsnew=set([])
+  listrsold=set([])
+  write_rs=open(args.out_file+'.rs','w')
 
 if args.chr :
   chro=args.chr
@@ -74,8 +100,11 @@ if args.chr :
           write2.write(line)
           write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs] +" "+spl[posa1]+'\n')
           chrolist.remove(infopos)
-     #if len(chrolist)==0 :
-     #  break
+          if args.bim and chrodic[infopos][2]:
+             if (chrodic[infopos][2] not in listrsold) and (spl[posrs] not in listrsnew):
+                write_rs.write(chrodic[infopos][2]+'\t'+spl[posrs]+'\t'+'\n')
+                listrsold.add(chrodic[infopos][2])
+                listrsnew.add(spl[posrs])
 else :
   for line in read :
      if line[0]=='#' :
@@ -90,6 +119,8 @@ else :
          write2.write(line)
          write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs]+" "+spl[posa1]+'\n')
          chrolist.remove(infopos)
-     #if len(chrolist)==0 :
-     #  break
-
+         if args.bim and chrodic[infopos][2]:
+             if (chrodic[infopos][2] not in listrsold) and (spl[posrs] not in listrsnew):
+                write_rs.write(chrodic[infopos][2]+'\t'+spl[posrs]+'\t'+'\n')
+                listrsold.add(chrodic[infopos][2])
+                listrsnew.add(spl[posrs])

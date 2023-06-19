@@ -84,20 +84,28 @@ Channel
 
 rs_infogz=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
 process extractrsname{
+  memory params.plink_mem_req
+  cpus params.max_plink_cores
   input :
-    file(bim) from biminitial
     file(rsinfo) from rs_infogz
+    set file(bed), file(bim), file(fam) from plkinit
+  publishDir "${params.output_dir}/rsclean", overwrite:true, mode:'copy'
   output :
-    file(outrs) into (l_infors1,l_infors2) 
+    file(outrs) into l_infors2 
+    set file("${out}.bed"),file("${out}.bim"),file("${out}.fam") into plk_newrs
   script :
-    outrs="tmps_rsinfo"
+    plk=bed.baseName
+    outrs=plk+"_updaters"
+    out=plk+"_updaters"
+    extract=params.deleted_notref=='F' ? "" : " --extract range keep"
     """
-    awk '{print \$1" "\$4" "\$5" "\$6}' $bim > temp_pos
-    zcat $rsinfo | extractrsid_bypos.py --file_chrbp temp_pos --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
+    zcat $rsinfo | extractrsid_bypos.py --bim $bim --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
+    awk '{print \$1"\t"\$2"\t"\$2"\t"\$5}' $outrs > keep
+    plink --keep-allele-order $extract --bfile $plk --make-bed --out $out --update-name $outrs".rs" -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
     """
 }
 
-fastaextractref=Channel.fromPath(params.reffasta,checkIfExists:true)
+/*fastaextractref=Channel.fromPath(params.reffasta,checkIfExists:true)
 process extractpositionfasta{
  input :
     file(bim) from biminitial_extractref
@@ -106,31 +114,8 @@ process extractpositionfasta{
     """
     extract_ref_bimf.py --bim $bim --fasta $fasta --out tmp
     """
-}
+}*/
 
-process convertrsname{
-  memory params.plink_mem_req
-  cpus params.max_plink_cores
-  input :
-    file(rsinfo) from l_infors1
-    set file(bed), file(bim), file(fam) from plkinit
-  output :
-    set file("${out}.bed"),file("${out}.bim"),file("${out}.fam") into plk_newrs
-  script :
-  tmpnewrs="newnamers"
-  plk=bed.baseName
-  out=plk+"_newrs"
-  tmprs="filers"
-  tmprsnodup="filers_nodup"
-  extract=params.deleted_notref=='F' ? "" : " --extract range keep"
-  """
-  awk '{print \$1"\t"\$4}' $rsinfo > $tmprs
-  biv_del_dup.py $tmprs  $tmprsnodup
-  #awk '{print \$5}' $rsinfo > keep
-  awk '{print \$1"\t"\$2"\t"\$2"\t"\$5}' $rsinfo > keep
-  plink --keep-allele-order --noweb $extract --bfile $plk --make-bed --out $out --update-name $tmprsnodup -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
-  """
-}
 
 //remove multi allelic snps:
 

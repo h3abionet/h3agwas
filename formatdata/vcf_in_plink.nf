@@ -72,11 +72,11 @@ def strmem(val){
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params_str=['file_listvcf',  "output_pat", "output_dir",'reffasta', 'scripts','output', 'work_dir', 'input_dir','accessKey', 'access-key', 'secretKey','secret-key','region', 'AMI', 'instanceType', 'instance-type', 'bootStorageSize', 'boot-storage-size','sharedStorageMount','shared-storage-mount','queue','statfreq_vcf','score_imp', 'genetic_maps', 'input_pat', 'unzip_password','genotype_pat', 'data', 'big_time']
-allowed_params_mem=['plink_mem_req', 'other_mem_req','plink_mem_req_merge']
+allowed_params_str=['file_listvcf',  "output_pat", "output_dir",'reffasta', 'scripts','output', 'work_dir', 'input_dir','accessKey', 'access-key', 'secretKey','secret-key','region', 'AMI', 'instanceType', 'instance-type', 'bootStorageSize', 'boot-storage-size','sharedStorageMount','shared-storage-mount','queue','statfreq_vcf','score_imp', 'genetic_maps', 'input_pat', 'unzip_password','genotype_pat', 'data', 'big_time', 'file_ref_gzip', 'deleted_notref']
+allowed_params_mem=['plink_mem_req', 'other_mem_req','plink_mem_req_merge', 'bcftools_mem_req']
 allowed_params_float=['min_scoreinfo', 'cut_maf', 'cut_hwe', "cut_mind", "cut_geno"]
 allowed_params_bol=["do_stat", 'help', 'unzip_zip', 'lim_used_ram']
-allowed_params_int=["max_forks", 'maxInstances', 'max-instances','max_plink_cores', 'max_plink_cores_merge']
+allowed_params_int=["max_forks", 'maxInstances', 'max-instances','max_plink_cores', 'max_plink_cores_merge', 'poshead_chro_inforef', 'poshead_bp_inforef', 'poshead_a1_inforef', 'poshead_a2_inforef', 'poshead_rs_inforef']
 allowed_params = allowed_params_str 
 allowed_params += allowed_params_float
 allowed_params += allowed_params_bol
@@ -141,6 +141,16 @@ params.reffasta=""
 params.data=''
 params.genotype_pat="TYPED"
 params.lim_used_ram=0
+params.poshead_bp_inforef=1
+params.poshead_rs_inforef=2
+params.poshead_a1_inforef=3
+params.poshead_a2_inforef=4
+params.poshead_chro_inforef=0
+params.file_ref_gzip=""
+params.deleted_notref = "T"
+params.bcftools_mem_req = '10GB'
+
+
 
 
 params.cut_maf=0
@@ -200,7 +210,7 @@ list_vcf2=Channel.fromPath(file(params.file_listvcf).readLines())
 if(params.do_stat){
 process computedstat{
  label 'py3utils'
- memory params.plink_mem_req
+ memory params.bcftools_mem_req
   time   params.big_time
   input :
      file(vcf) from list_vcf2
@@ -215,7 +225,7 @@ process computedstat{
 statmerg=listchrostat.collect()
 
 process dostat{
- memory params.plink_mem_req
+ memory params.other_mem_req
  input :
     file(allstat) from statmerg
  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
@@ -298,7 +308,7 @@ if(params.min_scoreinfo>0){
   process formatvcfscore{
    label 'py3utils'
    cpus params.max_plink_cores
-   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+   memory { strmem(params.bcftools_mem_req) + 5.GB * (task.attempt -1) }
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 10
    time   params.big_time
@@ -306,8 +316,8 @@ if(params.min_scoreinfo>0){
       tuple path(ref), path(refidx),path(vcf) from list_vcf
    publishDir "${params.output_dir}/bcf_filter", overwrite:true, mode:'copy', pattern: "*.bcf"
    output :
-      tuple path("${Ent}.bed"), path("${Ent}.bim"), path("${Ent}.fam") into listchroplink
-      path ("${Ent}.bim") into listbimplink
+      tuple path("${Ent}.bed"), path("${Ent}.bim"), path("${Ent}.fam") into listchroplink_init
+      path ("${Ent}.bim") into listbimplink_init
       tuple val(Ent), path("${Ent}.bcf") into bcf_ch
    script :
      Ent=vcf.baseName.replaceAll(/.vcf$/, '')+'_filter'
@@ -332,7 +342,7 @@ if(params.min_scoreinfo>0){
   process formatvcfscore_lowram{
    label 'py3utils'
    cpus params.max_plink_cores
-   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+   memory { strmem(params.bcftools_mem_req) + 5.GB * (task.attempt -1) }
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 10
    time   params.big_time
@@ -340,8 +350,8 @@ if(params.min_scoreinfo>0){
      set file(ref), file(refidx),file(vcf) from list_vcf
    publishDir "${params.output_dir}/bcf_filter", overwrite:true, mode:'copy', pattern: "*.bcf"
    output :
-     set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
-     file("${Ent}.bim") into listbimplink
+     set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink_init
+     file("${Ent}.bim") into listbimplink_init
      set val(Ent), file("${Ent}.bcf") into bcf_ch
    script :
     Ent=vcf.baseName.replaceAll(/.vcf$/, '')+'_filter'
@@ -373,6 +383,7 @@ if(params.min_scoreinfo>0){
 process convertbcf_invcf{
   label 'py3utils'
   time   params.big_time
+  memory params.bcftools_mem_req
   publishDir "${params.output_dir}/vcf_filter", overwrite:true, mode:'copy', pattern: "*.vcf.gz"
   input :
       set val(Ent), file(bcf) from bcf_ch
@@ -390,13 +401,13 @@ process convertbcf_invcf{
 process formatvcf{
   label 'py3utils'
   cpus params.max_plink_cores
-  memory params.plink_mem_req
+  memory params.bcftools_mem_req
   time   params.big_time
   input :
      tuple path(ref),path(refidx),path(vcf) from list_vcf
   output :
-     set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink
-     file("${Ent}.bim") into listbimplink
+     set file("${Ent}.bed"), file("${Ent}.bim"), file("${Ent}.fam") into listchroplink_init
+     file("${Ent}.bim") into listbimplink_init
   script :
     Ent=vcf.baseName+'_filter'
     """
@@ -417,11 +428,46 @@ process formatvcf{
     """
 }
 }
+
+if(params.file_ref_gzip!=""){
+ rs_infogz=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
+listchroplink_init_ch2=listchroplink_init.combine(rs_infogz)
+ process extractrsname{
+  memory params.plink_mem_req
+  cpus params.max_plink_cores
+  input :
+    set file(bed), file(bim), file(fam), file(rsinfo) from listchroplink_init_ch2
+  publishDir "${params.output_dir}/rs/extractrsname", overwrite:true, mode:'copy', pattern: "*_pos"
+  output :
+    set path("${out}.bed"), path("${out}.bim"), path("${out}.fam") into listchroplink
+    path("${out}.bim") into listbimplink
+    path("$outrs*")
+  script :
+    plk=bed.baseName
+    out=plk+'_rsupdate' 
+    outrs=bed.baseName+'_pos'
+    extract=params.deleted_notref=='F' ? "" : " --extract range keep"
+    """
+   zcat $rsinfo | extractrsid_bypos.py --bim $bim --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
+   awk '{print \$1"\t"\$2"\t"\$2"\t"\$5}' $outrs > keep
+   plink --keep-allele-order --noweb $extract --bfile $plk --make-bed --out $out --update-name $outrs".rs" -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
+    """
+ }
+
+  
+}else{
+listbimplink=listbimplink_init
+listchroplink=listchroplink_init
+}
+
+
+
 bimmerg=listbimplink.collect()
 process GetRsDup{
     memory params.other_mem_req
     input :
       file(bim) from bimmerg
+    publishDir "${params.output_dir}/rs/getrsdup", overwrite:true, mode:'copy'
     output :
       set file(outdel),file(out) into duplicat
     script :
@@ -436,6 +482,7 @@ listchroplinkinf=duplicat.combine(listchroplink)
 process TransformRsDup{
     input :
      set file(delrange),file(rstochange), file(bed),file(bim),file(fam) from listchroplinkinf
+    publishDir "${params.output_dir}/rs/transformrsdup", overwrite:true, mode:'copy'
     output :
        set file("${newheader}.bed"),file("${newheader}.bim"),file("${newheader}.fam") into listchroplinkrs
        val(newheader) into plinkhead
@@ -452,6 +499,8 @@ process TransformRsDup{
        rm  ${header}.save.*
        """
 }
+
+
 if(params.genetic_maps!=""){
 GMMap=Channel.fromPath(params.genetic_maps, checkIfExists:true)
 listchroplinkrsmap=GMMap.combine(listchroplinkrs)

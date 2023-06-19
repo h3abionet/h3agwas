@@ -26,6 +26,11 @@
  * `cut_hwe` : default 0
  * `cut_geno`: default 0
  * `cut_mind` : 
+* file to extract rsinfomation with position :
+  * `file_ref_gzip` : must be in gzip example of file used : [here](ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/All_20180423.vcf.gz)
+    * `poshead_chro_inforef` psotion of column chromosome in file  [default : 0]
+    * `poshead_bp_inforef` : position of column where bp in file [default : 1]
+    * `poshead_rs_inforef` : position of column where rs in file  [default : 2]
 * `do_stat` : by default true make stat using frequencies and score 
  * `statfreq_vcf` : 
   * pattern used in Info to computed frequencies  ([default : "%AN %AC" with AN total and AC alternative number]) 
