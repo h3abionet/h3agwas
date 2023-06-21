@@ -87,7 +87,12 @@ if args.ldsc :
     for ligne in readfile :
      spl=ligne.replace('\n','').split(sep)
      writenew.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\n')
-     writenew2.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\t'+spl[PosChro]+'\t'+spl[PosPos]+'\n')
+     pos=int(float(spl[PosPos]))
+     if pos <=1 :
+       print('warning : position <=0'+spl[PosPos]+'\n'+ '\t'.join(spl))
+     else :
+       spl[PosPos]=str(pos)
+       writenew2.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\t'+spl[PosChro]+'\t'+spl[PosPos]+'\n')
 elif  balisechro == True  :
    writenew.write('rsID\tChro\tPos\tA1\tA2\tnewRs\n')
    for ligne in readfile :
@@ -100,9 +105,14 @@ elif  balisechro == True  :
      else :
          AA1=spl[PosA2]
          AA2=spl[PosA1]
-     newrs=spl[PosChro]+'_'+spl[PosPos]+'_'+AA1+'_'+AA2
-     if spl[PosRs]!='.' :
-        writenew.write(spl[PosRs]+"\t"+spl[PosChro]+"\t"+spl[PosPos]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+"\t"+newrs+'\n')
+     pos=int(float(spl[PosPos]))
+     if pos <=1 :
+       print('warning : position <=0'+spl[PosPos]+'\n'+ '\t'.join(spl))
+     else :
+       spl[PosPos]=str(pos)
+       newrs=spl[PosChro]+'_'+spl[PosPos]+'_'+AA1+'_'+AA2
+       if spl[PosRs]!='.' :
+         writenew.write(spl[PosRs]+"\t"+spl[PosChro]+"\t"+spl[PosPos]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+"\t"+newrs+'\n')
 else :
    writenew.write('rsID\tA1\tA2\n')
    for ligne in readfile :

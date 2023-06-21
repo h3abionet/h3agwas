@@ -136,7 +136,11 @@ if(args.rs_ref) :
         ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2], rsspl[3],rsspl[4], rsspl[5]]
         if rsspl[1] not in ls_chrps_dic :
           ls_chrps_dic[rsspl[1]]={} 
-        ls_chrps_dic[rsspl[1]][int(rsspl[2])]=[rsspl,rsspl[5]]
+        try :
+          ls_chrps_dic[rsspl[1]][int(rsspl[2])]=[rsspl,rsspl[5]]
+        except :
+           print(rsspl[1], rsspl[2], rsspl)
+           sys.exit('error in position')
      if args.use_rs==1:
        ## will replace chro pos using rs
        balise_use_rs=True   
@@ -307,7 +311,7 @@ elif balise_use_chrps :
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
-     bp=int(spl[HeadPos])
+     bp=int(float(spl[HeadPos]))
      if  (spl[HeadChro] in ls_chrps_dic) and bp in ls_chrps_dic[spl[HeadChro]]:
        desRS=ls_chrps_dic[spl[HeadChro]][bp]
        #spl[ps_rsId_inp]=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
@@ -318,7 +322,7 @@ elif balise_use_chrps :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        tmp=[checknull(spl[x]) for x in ps_head]
        #tmp.append(ls_chrps_dic[spl[HeadChro]][spl[HeadPos]])
-       newrs=formatrs(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
+       newrs=formatrs(spl[HeadChro], str(bp), spl[ps_A1_inp], spl[ps_A2_inp])
        if newrs ==  desRS[1] :
          tmp.append(newrs)
          infors2="\t".join(desRS[0])+"\t"+newrs
