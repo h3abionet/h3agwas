@@ -99,9 +99,9 @@ The key options are:
 *  see [manual](www.xzlab.org/software/GEMMAmanual.pdf)
 * relatdness :
   *  `gemma_mat_rel` : file contains in gemma format matrix relatdness used by gemma  (format 1, see manual), matrix must be in same order than fam file. Avoid computation of relatdness by pipeline. 
- 
 * ressource usage :
  * `gemma_num_cores`: if gemma is used set this up to 8
+ * `gemma_mem_req` : memory for gemma 
  * `gemma_multi` : option run gemma by chromosome separately (is not a loco). to increase time computation and used more cpus, 0 no 1 yes [default : 0 (No)]
 
 ### 3. Bolt-LMM option
@@ -172,6 +172,8 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
 * `vcf_field` : vcf field used for association [default : DS] :
   * GT : used genotype
   * DS : used dosage of imputation
+* `saige_imputed_data` : if data need to be imputed, individual with  [default : 1]
+ * `saige_impute_method` : Imputation method for missing dosages. best_guess, mean or minor.  ['best_guess']
 * bin :
  * step 1 `saige_bin_fitmodel` : binary R for saige and fit model : [default : step1_fitNULLGLMM.R]
  * step2 `saige_bin_spatest` : binary R for saige and do association : [default : step2_SPAtests.R]

@@ -86,13 +86,13 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" ]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method"]
 allowed_params=allowed_params_input
 allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'fastlmm_num_cores', 'saige_num_cores',"regenie_num_cores", "fastgwa_num_cores"]
 allowed_params+=allowed_params_cores
 allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_bsize_step2", "grm_nbpart", "thin"]
 allowed_params+=allowed_params_intother
-allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_cov", 'gemma_multi', 'pheno_bin', 'fastlmm_multi', "regenie_loco", "sexinfo_available", "print_pca", "saige_loco"]
+allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_cov", 'gemma_multi', 'pheno_bin', 'fastlmm_multi', "regenie_loco", "sexinfo_available", "print_pca", "saige_loco","saige_imputed_data"]
 allowed_params+=allowed_params_bolother
 allowed_params_float=["cut_maf", "bgen_mininfo", "regenie_mafstep1"]
 allowed_params+=allowed_params_float
@@ -133,7 +133,7 @@ params.file_rs_buildrelat = ""
 params.genetic_map_file = ""
 params.list_vcf=""
 params.vcf_field="DS"
-params.vcf_minmac=1
+params.vcf_minmac=0.5
 outfname = params.output_testing
 params.bgen=""
 params.bgen_sample=""
@@ -152,6 +152,8 @@ params.regenie_num_cores=6
 params.regenie_mem_req="10GB"
 params.regenie_mafstep1=0.01
 params.regenie=0
+params.saige_imputed_data=1
+params.saige_impute_method="best_guess" //best_guess, mean or minor
 
 
 /* Defines the path where any scripts to be executed can be found.
@@ -1815,8 +1817,8 @@ if(params.saige==1){
       bfile=bed.baseName
       bfileupdate=bfile+'_idsaige'
       """
-      zcat $vcf |head -1000 |grep "#"| awk '{for(Cmt=10;Cmt<=NF;Cmt++)print \$Cmt}' > fileind
-      format_saige_pheno.r --data $covariates --ind_vcf fileind --out ${covariates_form}
+      zcat $vcf |head -1000 |grep "#"| tail -1|awk '{for(Cmt=10;Cmt<=NF;Cmt++)print \$Cmt}' > fileind
+      format_saige_pheno.r --data $covariates --ind_vcf fileind --out ${covariates_form} --pheno ${params.pheno}  --pheno_bin ${params.pheno_bin}
       plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid"
       """
    }
@@ -1836,7 +1838,7 @@ if(params.saige==1){
       bfileupdate=bfile+'_idsaige'
       indnbgen=(params.bgen!='') ? "--ind_bgen $bgensample" : ""
       """
-      format_saige_pheno.r --data $covariates $indnbgen --out ${covariates_form}
+      format_saige_pheno.r --data $covariates $indnbgen --out ${covariates_form}  --pheno ${params.pheno}  --pheno_bin ${params.pheno_bin}
       plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid"
       """
    }
@@ -1918,7 +1920,10 @@ if(params.saige==1){
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
     script :
      output=vcf.baseName+".res"
-     bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
+     imputed=(params.saige_imputed_data==1) ? "--is_imputed_data=TRUE --impute_method=${params.saige_impute_method}  " : '--is_imputed_data=FALSE' 
+     moredetail=(params.pheno_bin==1) ? " --is_output_moreDetails=TRUE " : ""
      """
       Chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
       ${params.saige_bin_spatest} \
@@ -1930,7 +1935,7 @@ if(params.saige==1){
         --chrom=\$Chro \
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output ${bin_option_saige}
+        --SAIGEOutputFile=$output $Loco $imputed  $moredetail
      """
    }
  }else if(params.bgen!=''){
@@ -1946,9 +1951,12 @@ if(params.saige==1){
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
     script :
      output=bgen.baseName+"_"+Chro+".saige"
-     bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
      Chro=Chro.replace(' ','')
      Chro=(Chro=="23") ? "X": "$Chro"
+     Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
+     imputed=(params.saige_imputed_data==1) ? "--is_imputed_data=TRUE --impute_method=${params.saige_impute_method} " : '--is_imputed_data=FALSE' 
+     moredetail=(params.pheno_bin==1) ? " --is_output_moreDetails=TRUE " : ""
      """
       ${params.saige_bin_spatest} \
         --bgenFile=$bgen    \
@@ -1959,8 +1967,7 @@ if(params.saige==1){
         --minMAF=${params.cut_maf}\
         --minMAC=${params.vcf_minmac} \
         --GMMATmodelFile=$rda \
-        --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output ${bin_option_saige}
+	--SAIGEOutputFile=$output $imputed $Loco $moredetail
      """
    }
 
@@ -1988,7 +1995,10 @@ if(params.saige==1){
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
     script :
      output=bgen.baseName+"_"+Chro+".saige"
-     bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
+     imputed=(params.saige_imputed_data==1) ? "--is_imputed_data=TRUE --impute_method=${params.saige_impute_method}" : '--is_imputed_data=FALSE' 
+     moredetail=(params.pheno_bin==1) ? " --is_output_moreDetails=TRUE " : ""
      """
       ${params.saige_bin_spatest} \
         --bgenFile=$bgen    \
@@ -2000,7 +2010,7 @@ if(params.saige==1){
         --minMAC=${params.vcf_minmac} \
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output ${bin_option_saige}
+        --SAIGEOutputFile=$output ${Loco} $imputed  $moredetail
      """
    }
 
@@ -2021,8 +2031,12 @@ if(params.saige==1){
       tuple val(our_pheno),file("$output"), val(base) into ch_saige_bychro
     script :
      output=bed.baseName+'_'+Chro+".saige"
-     bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
+     //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
+     imputed=(params.saige_imputed_data==1) ? "--is_imputed_data=TRUE --impute_method=${params.saige_impute_method} " : '--is_imputed_data=FALSE' 
+     moredetail=(params.pheno_bin==1) ? " --is_output_moreDetails=TRUE " : ""
      """
+
       ${params.saige_bin_spatest} \
         --bedFile=$bed \
         --bimFile=$bim \
@@ -2033,7 +2047,7 @@ if(params.saige==1){
         --minMAC=${params.vcf_minmac} \
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output ${bin_option_saige}
+        --SAIGEOutputFile=$output $Loco $imputed  $moredetail
      """
    }
 
