@@ -68,15 +68,15 @@ The key options are:
     * grm done using genotype of plink
     * bgen priotise on plink
 
-| Software | plink | vcf | bgen | impute 2 |
+| Software | plink | vcf | bgen | impute 2 | allele effect |
 | --- | --- | --- | --- | --- |
-| gemma | yes |  no | no | no |
-| plink association | yes |  no | no | no |
-| gcta/fastGWA | yes |  no | yes | no |
-| saige | yes |  yes | yes | no |
-| bolt-LMM | yes |  no | yes | yes |
-| fast-lmm | yes |  no | no | no |
-| regenie | yes |  no | yes | no |
+| gemma | yes |  no | no | no | allele1 | todefine |
+| plink association | yes |  no | no | no | A1 |
+| gcta/fastGWA | yes |  no | yes | no | todefine |
+| saige | yes |  yes | yes | no | allele2 |
+| bolt-LMM | yes |  no | yes | yes | ALLELE1 |
+| fast-lmm | yes |  no | no | no | |
+| regenie | yes |  no | yes | no | Allele1 |
 | --- | --- | --- | --- | --- |
 | description | genotype |  dosage | dosage | dosage |
 | --- | --- | --- | --- | --- |

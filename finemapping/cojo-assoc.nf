@@ -115,7 +115,6 @@ params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
 params.output_testing = "cleaned"
 params.covariates = ""
-params.gcta_bin="gcta"
 outfname = params.output_testing
 
 params.head_pval = "P_BOLT_LMM"

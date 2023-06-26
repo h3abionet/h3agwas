@@ -41,6 +41,7 @@ params.score_imp="INFO"
 params.bgen_type="bgen"
 params.other_opt=""
 params.bgen_bits=8
+params.cut_hwe=0
 
 
 
@@ -52,7 +53,26 @@ error('params.file_listvcf : file contains list vcf not found')
 }
 list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
 
-process formatvcfinbgen{
+if(params.cut_hwe>0){
+ process formatvcfinbgen{
+  label 'py3utils'
+  cpus params.max_plink_cores
+  memory params.plink_mem_req
+  time   params.big_time
+  input :
+     file(vcf) from list_vcf
+  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+  output :
+     file("${Ent}.bgen")
+     file("${Ent}.sample")
+  script :
+    Ent=vcf.baseName
+    """
+    vcftools --gzvcf $vcf --hwe ${params.cut_hwe}  --recode --recode-INFO-all --stdout  | ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt}  -bgen-bits ${params.bgen_bits}
+    """
+ }
+}else {
+ process formatvcfinbgen_nohwe{
   label 'py3utils'
   cpus params.max_plink_cores
   memory params.plink_mem_req
@@ -68,6 +88,7 @@ process formatvcfinbgen{
     """
     ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf |${params.qctoolsv2_bin} -g - -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt}  -bgen-bits ${params.bgen_bits}
     """
+ }
 }
 
 

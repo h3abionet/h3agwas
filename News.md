@@ -3,8 +3,11 @@
 
 # What\'s new :
 ### V3.4.1
+* `format/vcf_in_[bimbam,bgen*,impute2].nf` :
+ * add option cut_hwe : limit optional for hwe 
+ * add file ind for impute2
 * saige : update of code for last version of saige, add option `saige_imputed_data` and `saige_impute_method}`
-* `vcf_in_plink` : add option to udpate rs id 
+* `vcf_in_plink` : add option to udpate rs id using database 
 * python panda compatibility : minor update
 * singularity/docker image : update for plink1.9 last version 
 * `format/vcf_in_plink.nf`  : 

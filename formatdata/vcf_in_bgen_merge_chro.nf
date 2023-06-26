@@ -43,6 +43,7 @@ params.score_imp="INFO"
 params.bgen_type="bgen"
 params.other_opt=""
 params.bgen_bits=8
+params.cut_hwe = 0
 
 
 if(params.file_listvcf==""){
@@ -50,7 +51,28 @@ error('params.file_listvcf : file contains list vcf not found')
 }
 list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
 
-process filter_vcf{
+
+if(params.cut_hwe>0){
+ process filter_vcf{
+  label 'py3utils'
+  cpus params.max_cores
+  memory params.mem_req
+  time   params.big_time
+  input :
+     file(vcf) from list_vcf
+  output :
+     set env(chro), file("${Ent}"), file("${Ent}.csi") into list_vcf_filt
+  script :
+    Ent=vcf.baseName+"_filter.vcf.gz"
+    """
+    vcftools --gzvcf $vcf --hwe ${params.cut_hwe}  --recode --recode-INFO-all --stdout  | ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}'  -Oz --threads  ${params.max_cores} > $Ent
+    ${params.bcftools_bin} index $Ent
+    chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
+
+    """
+ }
+}else{
+ process filter_vcfnohwe{
   label 'py3utils'
   cpus params.max_cores
   memory params.mem_req
@@ -67,8 +89,8 @@ process filter_vcf{
     chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
 
     """
+ }
 }
-
 process formatvcfinbgen{
   label 'py3utils'
   time   params.big_time
@@ -86,25 +108,7 @@ process formatvcfinbgen{
     ${params.qctoolsv2_bin} -g $vcf -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${out}.bgen -filetype vcf -os ${out}.sample ${params.other_opt} -bgen-bits ${params.bgen_bits}
     """
 }
-/*
-process formatvcfinbgen{
-  label 'py3utils'
-  memory params.mem_req
-  time   params.big_time
-  input :
-     file(vcf) from list_bgen
-  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
-  output :
-     file("${Ent}.bgen")
-     file("${Ent}.sample")
-  script :
-    Ent="${params.output}"
-    """
-    ${params.qctoolsv2_bin} -g $vcf -vcf-genotype-field ${params.genotype_field} -ofiletype ${params.bgen_type} -og ${Ent}.bgen -filetype vcf -os ${Ent}.sample ${params.other_opt} -bgen-bits ${params.bgen_bits}
-    """
-}
 
-*/
 lbgen=list_bgen.collect()
 lsample=list_bgen_sample.collect()
 process format_mergebgen{

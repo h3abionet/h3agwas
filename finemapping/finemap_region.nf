@@ -163,7 +163,6 @@ params.genes_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/r
 params.output="finemap"
 params.file_phenogc=""
 
-params.gcta_bin="gcta"
 
 // paramater
 params.n_pop=0

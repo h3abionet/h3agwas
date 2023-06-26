@@ -235,7 +235,7 @@ params.fastgwa_mem_req="10G"
 params.fastgwa_num_cores=5
 params.grm_nbpart=100
 params.grm_maf = 0.01
-params.gcta_bin = "gcta"
+params.gcta_bin = "gcta64"
 params.fastgwa_type="--fastGWA-mlm-exact"
 params.grm_cutoff =  0.05
 params.covariates_type=""
@@ -1583,7 +1583,7 @@ if (params.plink_gxe==1) {
   report_plink_gxe=Channel.empty()
 }
 
-if(params.bgen!="" && params.fastgwa+params.saige >1){
+if(params.bgen!="" && (params.fastgwa+params.saige) >0){
      bgen_ch_fastgwa_i=Channel.fromPath(params.bgen, checkIfExists:true)
      process indexbgen {
       label 'utils'

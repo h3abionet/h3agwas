@@ -162,7 +162,6 @@ params.genes_file=""
 params.genes_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
 params.output="finemap"
 
-params.gcta_bin="gcta"
 
 // paramater
 params.n_pop=0

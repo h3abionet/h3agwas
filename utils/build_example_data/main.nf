@@ -55,7 +55,7 @@ params.simu_rep=10
 params.gwas_cat=""
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
 params.list_pheno="Type 2 diabetes"
-params.gcta_bin="gcta"
+params.gcta_bin="gcta64"
 params.list_vcf=""
 
 params.sex_info_file="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel"

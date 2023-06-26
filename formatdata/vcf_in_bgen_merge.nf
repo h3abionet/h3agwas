@@ -43,6 +43,7 @@ params.score_imp="INFO"
 params.bgen_type="bgen"
 params.other_opt=""
 params.bgen_bits=8
+params.cut_hwe=0
 
 
 if(params.file_listvcf==""){
@@ -50,7 +51,26 @@ error('params.file_listvcf : file contains list vcf not found')
 }
 list_vcf=Channel.fromPath(file(params.file_listvcf).readLines())
 
-process filter_vcf{
+if(params.cut_hwe>0){
+ process filter_vcf{
+  label 'py3utils'
+  cpus params.max_cores
+  memory params.mem_req
+  time   params.big_time
+  input :
+     file(vcf) from list_vcf
+  output :
+     set file("${Ent}"), file("${Ent}.csi") into list_vcf_filt
+  script :
+    Ent=vcf.baseName+"_filter.vcf.gz"
+    """
+    vcftools --gzvcf $vcf --hwe ${params.cut_hwe}  --recode --recode-INFO-all --stdout  |  ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}'  -Oz --threads  ${params.max_cores} > $Ent
+    ${params.bcftools_bin} index $Ent
+    """
+ }
+}else{
+
+ process filter_vcf_nohwe{
   label 'py3utils'
   cpus params.max_cores
   memory params.mem_req
@@ -65,6 +85,7 @@ process filter_vcf{
     ${params.bcftools_bin} view -i '${params.score_imp}>${params.min_scoreinfo}' $vcf -Oz --threads  ${params.max_cores} > $Ent
     ${params.bcftools_bin} index $Ent
     """
+ }
 }
 lcf=list_vcf_filt.collect()
 
