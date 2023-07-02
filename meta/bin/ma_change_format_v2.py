@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import sys
+from scipy import stats
 import os
 import argparse
-import math
+from math import sqrt, isnan
 
 def formatrs(chro, bp,a1,a2) :
   a1=a1.upper()
@@ -17,6 +18,20 @@ def formatrs(chro, bp,a1,a2) :
   newrs=chro+'_'+bp+'_'+AA1+'_'+AA2
   return(newrs)
 
+def reestimate_betase(pinit, betainit,n, freq) :
+    if pinit=='NA' or betainit=='NA' or n=='NA' or freq=='NA' :
+       return ['NA', 'NA']
+    if float(betainit)> 0 :
+        sens=1
+    else :
+       sens = -1
+    pinit=float(pinit)
+    freq=float(freq)
+    n = float(n)
+    z=abs(stats.norm.ppf(1-pinit/2))*sens
+    b=z/sqrt(2*freq*(1-freq)*(n+z**2))
+    se=1/sqrt(2*freq*(1-freq)*(n+z**2))
+    return [str(b),str(se)]
 
 
 def GetSep(Sep):
@@ -66,6 +81,7 @@ def parseArguments():
     parser.add_argument('--sep_out',type=str,default="\t",help="separator output")
     parser.add_argument('--rs_ref',type=str,help="if need to be limited at some rs")
     parser.add_argument('--use_rs',type=str,help="if need to be limited at some rs", default=0)
+    parser.add_argument('--used_pvalue',type=int,help="if need to be limited at some rs", default=0)
     args = parser.parse_args()
     return args
  
@@ -185,8 +201,37 @@ if balise_use_chrps :
     del l_newhead[PosIndexI]
     print("deleted index")
 
+baliseN=False
+if 'N' in l_newhead :
+  baliseN=True
+
+if Ncount:
+  baliseN=True
+
+balise_usedpvalue=False
+if args.used_pvalue == 1 :
+ balise_usedpvalue=True
+ if (baliseN==False or ('freqA1' not in  l_newhead)  or ('Pval' not in l_newhead) or ('Beta' not in l_newhead)):
+   print('baliseN', baliseN)
+   print('freqA1 not in  l_newhead', 'freqA1' not in  l_newhead)
+   print('Pval not in  l_newhead', 'Pval' not in  l_newhead)
+   print('Beta not in  l_newhead', 'Beta' not in  l_newhead)
+   print('used_pvalue must be have Beta, freq and value for N') 
+   sys.exit(2)
+ balise_usedpvalue=True
+ if Ncount  :
+   PosN=None
+ else :
+   PosN=l_newhead.index('N')
+ PosBeta=head_inp.index(l_oldhead[l_newhead.index('Beta')])
+ PosPval=head_inp.index(l_oldhead[l_newhead.index('Pval')])
+ PosFreq=head_inp.index(l_oldhead[l_newhead.index('freqA1')])
+
+
+
 print("balise_use_rs",balise_use_rs)
 print("balise_use_chrps",balise_use_chrps)
+print('balise_usedpvalue',balise_usedpvalue)
 
 ps_head=GetPosHead(head_inp,l_oldhead)
 
@@ -203,8 +248,13 @@ if 'A2' in l_newhead :
   balchangA2=True
 
 listposfloat=[]
-headplk=['RSID','CHR','BP','FREQ','BETA', 'SE', 'P', 'N']
-headlist=['SNP','Chro','Pos','freqA1', 'Beta', 'Se', 'Pval', 'N']
+if  balise_usedpvalue  : 
+  headplk=['RSID','CHR','BP','FREQ', 'P', 'N']
+  headlist=['SNP','Chro','Pos','freqA1',  'Pval', 'N']
+else :
+  headplk=['RSID','CHR','BP','FREQ','BETA', 'SE', 'P', 'N']
+  headlist=['SNP','Chro','Pos','freqA1', 'Beta', 'Se', 'Pval', 'N']
+
 cmthead=0
 l_newheadplk=[x for x in l_newhead]
 for head in headlist:
@@ -215,8 +265,6 @@ for head in headlist:
        listposfloat.append(head_inp.index(newhead))
    cmthead+=1
 
-#print(l_newheadplk)
-#print(l_newhead)
 
 l_newheadplk=[x.upper() for x in l_newheadplk]
 if balise_use_rs and ('RSID' not in l_newheadplk):
@@ -236,7 +284,7 @@ def checkfloat(tmp, listposfloat):
    for x in listposfloat :
       try :
         resfl=float(tmp[x]) 
-        if math.isnan(resfl) or resfl==p_minf or resfl==p_pinf:
+        if isnan(resfl) or resfl==p_minf or resfl==p_pinf:
            tmp[x]="NA"
       except ValueError:
         tmp[x]="NA"
@@ -255,11 +303,12 @@ if balise_use_dicrs :
    if Ncount :
       headtmp.append('N')
       headtmpplk.append('N')
+   if balise_usedpvalue==1 :
+      headtmp+=["BETA", "SE"]
    write.write(sep_out.join(headtmp)+"\n")
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
      spl=line.replace('\n','').split(sep)
-     print(spl[ps_rsId_inp])
      if  spl[ps_rsId_inp] in ls_rs :
        spl=checkfloat(spl, listposfloat)
        if balchangA1 :
@@ -270,8 +319,13 @@ if balise_use_dicrs :
        #ls_rs_dic[rsspl[0]]=[rsspl[1],rsspl[2], rsspl[3],rsspl[4]]
        tmprsdic=ls_rs_dic[spl[ps_rsId_inp]]
        tmp+=[tmprsdic[4],tmprsdic[0],tmprsdic[1]]
-       if Ncount  :
-         tmp.append(Ncount)
+       if Ncount :
+            Nval=Ncount
+            tmp.append(Ncount)
+       elif baliseN :
+           Nval=spl[PosN]
+       if balise_usedpvalue==1 :
+           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
        write.write(sep_out.join(tmp)+"\n")
        writeplk.write(sep_out.join(tmp)+"\n")
 elif balise_use_rs :
@@ -282,6 +336,8 @@ elif balise_use_rs :
    if Ncount :
       headtmp.append('N')
       headtmpplk.append('N')
+   if balise_usedpvalue==1 :
+      headtmp+=["BETA", "SE"]
    write.write(sep_out.join(headtmp)+"\n")
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
@@ -294,8 +350,13 @@ elif balise_use_rs :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        tmp=[checknull(spl[x]) for x in ps_head]
        tmp+=ls_rs_dic[spl[ps_rsId_inp]]
-       if Ncount  :
-         tmp.append(Ncount)
+       if Ncount :
+            Nval=Ncount
+            tmp.append(Ncount)
+       elif baliseN :
+           Nval=spl[PosN]
+       if balise_usedpvalue==1 :
+           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
        write.write(sep_out.join(tmp)+"\n")
        writeplk.write(sep_out.join(tmp)+"\n")
 ## balise use chro and positoin
@@ -307,6 +368,8 @@ elif balise_use_chrps :
    if Ncount :
       headtmp.append('N')
       headtmpplk.append('N')
+   if balise_usedpvalue==1 :
+      headtmp+=["BETA", "SE"]
    write.write(sep_out.join(headtmp)+"\n")
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
@@ -327,8 +390,13 @@ elif balise_use_chrps :
          tmp.append(newrs)
          infors2="\t".join(desRS[0])+"\t"+newrs
          writeinfo.write(infors2+'\n')
-         if Ncount  :
-           tmp.append(Ncount)
+         if Ncount :
+            Nval=Ncount
+            tmp.append(Ncount)
+         elif baliseN :
+           Nval=spl[PosN]
+         if balise_usedpvalue==1 :
+           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
          write.write(sep_out.join(tmp)+"\n")
          writeplk.write(sep_out.join(tmp)+"\n")
        else :
@@ -342,6 +410,8 @@ elif args.rs_ref :
    if Ncount :
       headtmp.append('N')
       headtmpplk.append('N')
+   if balise_usedpvalue==1 :
+      headtmp+=["BETA", "SE"]
    write.write(sep_out.join(headtmp)+"\n")
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
@@ -354,7 +424,12 @@ elif args.rs_ref :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
        tmp=[checknull(spl[x]) for x in ps_head]
        if Ncount :
+          Nval=Ncount
           tmp.append(Ncount)
+       elif baliseN :
+          Nval=spl[PosN]
+       if balise_usedpvalue==1 :
+         tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
        write.write(sep_out.join(tmp)+"\n")
        writeplk.write(sep_out.join(tmp)+"\n")
 else :
@@ -363,6 +438,8 @@ else :
    if Ncount :
       headtmp.append('N')
       headtmpplk.append('N')
+   if balise_usedpvalue==1 :
+      headtmp+=["BETA", "SE"]
    write.write(sep_out.join(tmphead)+"\n")
    writeplk.write(sep_out.join(tmpheadplk)+"\n")
    for line in read :
@@ -374,9 +451,13 @@ else :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
      if use_chrbp :
         newrs=formatrs(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
-        spl
      tmp=[checknull(spl[x]) for x in ps_head]
      if Ncount :
+          Nval=Ncount
           tmp.append(Ncount)
+     elif baliseN :
+          Nval=spl[PosN]
+     if balise_usedpvalue==1 :
+       tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
      write.write(sep_out.join(tmp)+"\n")
      writeplk.write(sep_out.join(tmp)+"\n")

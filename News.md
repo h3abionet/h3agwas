@@ -3,6 +3,7 @@
 
 # What\'s new :
 ### V3.4.1
+* add option `used_pval_z` for meta analysis[meta/README.md]
 * `format/vcf_in_[bimbam,bgen*,impute2].nf` :
  * add option cut_hwe : limit optional for hwe 
  * add file ind for impute2

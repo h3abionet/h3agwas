@@ -89,7 +89,7 @@ allowed_params_float=[]
 allowed_params+=allowed_params_float
 allowed_params_memory=["mrmega_mem_req", "ma_mem_req", "gwama_mem_req","metasoft_mem_req","plink_mem_req","ma_mem_req_utils"]
 allowed_params+=allowed_params_memory
-allowed_params_test=["plink", "metal", "gwama", "mrmega", "metasoft"]
+allowed_params_test=["plink", "metal", "gwama", "mrmega", "metasoft", 'used_pval_z']
 allowed_params+=allowed_params_test
 
 
@@ -106,6 +106,7 @@ params.csv_sep=','
 params.plink=0
 params.mrmega=0
 params.pheno="meta"
+params.used_pval_z = 0
 
 // external binary definition
 params.metal_bin='metal'
@@ -263,14 +264,16 @@ process ChangeFormatFile {
     memory ma_mem_req
     input :
       set file(file_assoc), val(info_file), val(num),file(file_ref) from liste_filesi_ch
+    publishDir "${params.output_dir}/sumstat_format/", mode:'copy'
     output :
       file(newfile_assoc) into (liste_file_gwama, liste_file_metal, liste_file_metasoft, liste_file_mrmega, liste_file_metasoft_extractinfo)
       file(newfile_assocplk) into liste_file_plk
     script :
        newfile_assoc="${file_assoc}_${num}.modif"
        newfile_assocplk="${file_assoc}_${num}.modif.plk"
+       usedpval=(params.used_pval_z==1)? " --used_pvalue 1 " : ""
        """
-       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file  --sep_out TAB --use_rs ${params.use_rs} --rs_ref $file_ref
+       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file  --sep_out TAB --use_rs ${params.use_rs} --rs_ref $file_ref $usedpval
        """
 }
 

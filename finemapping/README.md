@@ -29,7 +29,7 @@ The key options are:
   * `begin_seq` : begin sequence to apply sequence
   * `end_seq` : end sequence to apply sequence
   * `prob_cred_set` :  prob of credible set [default : 0.95], for FINEMAP software
-  * `used_pval_z` : build pvalue using z (need to check) [defaul 0:no]
+  * `used_pval_z` : build beta and se using z or pvale [defaul 0:no]
 * `threshold_p` : treshold to used [default : 5E10-8]
 * genetics data :
   * 2 way are possible, data already in plink format (if possible same data that association has been done) or 1000 genome will be download

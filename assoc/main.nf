@@ -455,9 +455,9 @@ if(params.print_pca!=0){
 	 base = "cleaned"
 	 prune= "${base}-prune"
 	"""
-	plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
+	plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check --maf 0.01
 	plink --keep-allele-order --bfile ${base} --extract check.prune.in --make-bed --out $prune
-	plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname}
+	plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname} 
 	"""
    }
 

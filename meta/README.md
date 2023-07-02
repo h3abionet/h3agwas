@@ -51,7 +51,14 @@ The key options are:
        * metasoft_mem_req : metasoft memories ["20G"]
        * ma_mem_req : request for extraction of data, change format and plot of manhathan ["10G"]
        * mrmega_mem_req : mr mega memorie ["20GB"]
-     * cpu memorie :
+     * `used_pval_z` : computed beta and se usinf pvalue and sign of initial beta, n value and frequency [defaul 0:no]
+     * formula to computed beta and se
+```
+    z=abs(stats.norm.ppf(1-pinit/2))*sens
+    b=z/sqrt(2*freq*(1-freq)*(n+z**2))
+    se=1/sqrt(2*freq*(1-freq)*(n+z**2))
+```
+     * cpu and memories :
         * max_plink_cores : [default 4]
         * other used 1 cpus
      * binaries :
