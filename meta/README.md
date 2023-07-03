@@ -104,7 +104,7 @@ MR-MEGA need chromosomes, positions and N (sample number) for each position, so 
 | Gwama | [here](https://genomics.ut.ee/en/tools) | [here](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-288)| 
 | Mr Mega| [here](https://genomics.ut.ee/en/tools)|  [here](https://bmcbioinformatics.biomedcentral.com/track/pdf/10.1186/1471-2105-11-288.pdf)|
 | plink | [here](https://zzz.bwh.harvard.edu/plink/metaanal.shtml) | [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950838/)|
-| Metasof | [here](genetics.cs.ucla.edu/meta) | [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3146723/) |
+| Metasoft | [here](genetics.cs.ucla.edu/meta) | [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3146723/) |
 | --- | --- | --- |
 
 ### References
@@ -138,7 +138,7 @@ nextflow run ~/Travail/git/h3agwas/meta/meta-assoc.nf   --metal 1 --gwama 1 --me
 ### parameters
 
 * `file_gwas` : one ore more one file gwas of differents phenotype
-  *  ̀ head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+  *  ̀head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
   * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
   * `head_rs` : rs header column [default : "SNP"]
   * `head_beta` : beta header colum [default : "BETA"]
