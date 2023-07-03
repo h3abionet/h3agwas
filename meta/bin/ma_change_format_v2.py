@@ -160,7 +160,7 @@ if args.rs_ref :
         try :
           ls_chrps_dic[rsspl[1]][int(rsspl[2])]=[rsspl,rsspl[5]]
         except :
-           writemissing.write('error in position '+rsspl[1]+' '+rsspl[2] + ' '+rsspl+' in file '+args.rs_ref+'\n')
+           writemissing.write('error in position '+rsspl[1]+' '+rsspl[2] +' '+ rsspl[0]+' in file '+args.rs_ref+' line '+l.replace('\n','')+'\n')
      if args.use_rs==1:
        ## will replace chro pos using rs
        balise_use_rs=True   
