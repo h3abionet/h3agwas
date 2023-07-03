@@ -334,7 +334,7 @@ if balise_use_dicrs :
        if Ncount :
             Nval=Ncount
             tmp.append(Ncount)
-       elif baliseN :
+       elif baliseN and balise_usedpvalue :
            Nval=spl[PosN]
        if balise_usedpvalue==1 :
            tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
@@ -366,7 +366,7 @@ elif balise_use_rs :
        if Ncount :
             Nval=Ncount
             tmp.append(Ncount)
-       elif baliseN :
+       elif baliseN and balise_usedpvalue :
            Nval=spl[PosN]
        if balise_usedpvalue==1 :
            tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
@@ -407,7 +407,7 @@ elif balise_use_chrps :
          if Ncount :
             Nval=Ncount
             tmp.append(Ncount)
-         elif baliseN :
+         elif baliseN and balise_usedpvalue :
            Nval=spl[PosN]
          if balise_usedpvalue==1 :
            tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
@@ -440,7 +440,7 @@ elif args.rs_ref :
        if Ncount :
           Nval=Ncount
           tmp.append(Ncount)
-       elif baliseN :
+       elif baliseN and balise_usedpvalue :
           Nval=spl[PosN]
        if balise_usedpvalue==1 :
          tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
@@ -470,7 +470,7 @@ else :
      if Ncount :
           Nval=Ncount
           tmp.append(Ncount)
-     elif baliseN :
+     elif baliseN and balise_usedpvalue :
           Nval=spl[PosN]
      if balise_usedpvalue==1 :
        tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
