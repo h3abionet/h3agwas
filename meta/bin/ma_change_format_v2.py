@@ -223,10 +223,16 @@ if args.used_pvalue == 1 :
    PosN=None
  else :
    PosN=l_newhead.index('N')
- PosBeta=head_inp.index(l_oldhead[l_newhead.index('Beta')])
+ PosBetaI=l_newhead.index('Beta')
+ PosBeta=head_inp.index(l_oldhead[PosBetaI])
  PosPval=head_inp.index(l_oldhead[l_newhead.index('Pval')])
  PosFreq=head_inp.index(l_oldhead[l_newhead.index('freqA1')])
-
+ del l_oldhead[PosBetaI]
+ del l_newhead[PosBetaI]
+ if 'Se' in l_newhead:
+    PosSeI=l_newhead.index('Se')
+    del l_oldhead[PosSeI]
+    del l_newhead[PosSeI]
 
 
 print("balise_use_rs",balise_use_rs)
@@ -234,6 +240,7 @@ print("balise_use_chrps",balise_use_chrps)
 print('balise_usedpvalue',balise_usedpvalue)
 
 ps_head=GetPosHead(head_inp,l_oldhead)
+print(ps_head, head_inp,l_oldhead)
 
 balchangA1=False
 balchangA2=False
@@ -305,6 +312,7 @@ if balise_use_dicrs :
       headtmpplk.append('N')
    if balise_usedpvalue==1 :
       headtmp+=["BETA", "SE"]
+      headtmpplk+=["BETA", "SE"]
    write.write(sep_out.join(headtmp)+"\n")
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
@@ -338,6 +346,7 @@ elif balise_use_rs :
       headtmpplk.append('N')
    if balise_usedpvalue==1 :
       headtmp+=["BETA", "SE"]
+      headtmpplk+=["BETA", "SE"]
    write.write(sep_out.join(headtmp)+"\n")
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
@@ -370,6 +379,7 @@ elif balise_use_chrps :
       headtmpplk.append('N')
    if balise_usedpvalue==1 :
       headtmp+=["BETA", "SE"]
+      headtmpplk+=["BETA", "SE"]
    write.write(sep_out.join(headtmp)+"\n")
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
@@ -412,6 +422,7 @@ elif args.rs_ref :
       headtmpplk.append('N')
    if balise_usedpvalue==1 :
       headtmp+=["BETA", "SE"]
+      headtmpplk+=["BETA", "SE"]
    write.write(sep_out.join(headtmp)+"\n")
    writeplk.write(sep_out.join(headtmpplk)+"\n")
    for line in read :
@@ -440,6 +451,7 @@ else :
       headtmpplk.append('N')
    if balise_usedpvalue==1 :
       headtmp+=["BETA", "SE"]
+      headtmpplk+=["BETA", "SE"]
    write.write(sep_out.join(tmphead)+"\n")
    writeplk.write(sep_out.join(tmpheadplk)+"\n")
    for line in read :

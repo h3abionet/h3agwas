@@ -43,7 +43,7 @@ def parseArguments():
     parser.add_argument('--output_configmetal',type=str,required=True, help="input file association")
     parser.add_argument('--out_file_metal',type=str,default=".",help="output dir if change format")
     parser.add_argument("--genomic_control", help="genomic_control ON/OFF or values see metal manual", type=str, default='F')
-    parser.add_argument("--inv_var_weigth", help="if you want Inverse Variance Weighted Meta-analysis, y or n", type=str, default='F')
+    parser.add_argument("--weigthedz", help="if you want stderr and not based on sample size ", type=str, default='F')
     parser.add_argument("--overlap", help="if you want Inverse Variance Weighted Meta-analysis, y or n", type=str, default='F')
     args = parser.parse_args()
     return args
@@ -65,10 +65,10 @@ if args.overlap[0] == "T":
   param_MetalI.append("##overlap\nOVERLAP ON")
   param_MetalI.append("SCHEME SAMPLESIZE")
 else :
- if args.inv_var_weigth[0]=='T' :
-   param_MetalI.append("SCHEME STDERR")
- else :
+ if args.weigthedz[0]=='T' :
    param_MetalI.append("SCHEME SAMPLESIZE")
+ else :
+   param_MetalI.append("SCHEME STDERR")
 
 if args.genomic_control[0]=="T" :
       param_MetalI.append("GENOMICCONTROL ON")
@@ -109,7 +109,7 @@ param_Metal+=["",""]
 
 
 
-if args.inv_var_weigth!='o':
+if args.weigthedz!='o':
      param_Metal.append("OUTFILE "+args.out_file_metal+"  .stat")
      param_Metal.append("ANALYZE\n")
 

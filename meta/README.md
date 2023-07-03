@@ -70,8 +70,8 @@ The key options are:
      * options software :
        * `ma_metasoft_opt` : append other option in metasoft command line(default : null)
        * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
-       * `ma_inv_var_weigth`: do a invert variance weight usefull for metal (default, 0)
-       * `ma_overlap_sample`: do you have sample overlap? used by metal(default, 0)
+       * `ma_weigthedz`: used p-value and N params for plink and metal (default: 0), if 1 used pvalue and N otherwise used Beta and se
+       * `ma_overlap_sample`: do you have sample overlap? used by metal(default: 0)
        * `ma_random_effect` : do mixed model (default 1)
        * `ma_mrmega_pc` : how many pcs used for mrmega (default : 4)
        * `ma_mrmega_opt` : append other option in MR-MEGA command line (default : null)
@@ -83,9 +83,9 @@ MR-MEGA need chromosomes, positions and N (sample number) for each position, so 
 ### option comparaison software
 
 | | options | 
-| Software | `ma_genomic_cont` | `ma_inv_var_weigth` | `ma_overlap_sample` | `ma_random_effect` |
+| Software | `ma_genomic_cont` | `ma_weigthedz` | `ma_overlap_sample` | `ma_random_effect` |
 | --- | --- | --- | --- | --- |
-| descriptionus| genomic control | invert variance weight | sample overlap | Random Effect |
+| descriptionus| genomic control | used p-value and N (1) or beta and se (0) | sample overlap | Random Effect |
 | default | 0 | 0 | 0 | 0 |
 | metal | yes | yes  | yes | no |
 | gwama | yes | default  no | yes | 
@@ -94,7 +94,7 @@ MR-MEGA need chromosomes, positions and N (sample number) for each position, so 
 | Metasoft | no | no | no | default |
 | --- | --- | --- | --- | --- |
 
-1 'weighted-z' requests weighted Z-score-based p-values (as computed by the Abecasis Lab's METAL software)
+1 `ma_weigthedz` requests weighted Z-score-based p-values (as computed by the Abecasis Lab's METAL software)
 
 #### Ressource
 

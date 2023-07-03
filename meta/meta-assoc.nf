@@ -83,7 +83,7 @@ allowed_params_intother=["ma_mrmega_pc"]
 allowed_params+=allowed_params_intother
 allowed_params_bin=["GWAMA_bin", "plink_bin", "metal_bin", "gwama_bin", "mrmega_bin", "metasoft_bin"]
 allowed_params+=allowed_params_bin
-allowed_params_bolother=["ma_random_effect", "ma_genomic_cont", "ma_inv_var_weigth","use_rs","ma_overlap_sample"]
+allowed_params_bolother=["ma_random_effect", "ma_genomic_cont", "ma_weigthedz","use_rs","ma_overlap_sample"]
 allowed_params+=allowed_params_bolother
 allowed_params_float=[]
 allowed_params+=allowed_params_float
@@ -121,7 +121,7 @@ params.ma_mrmega_pc=2
 params.ma_random_effect=1
 params.mrmega_mem_req="20GB"
 params.ma_genomic_cont=0
-params.ma_inv_var_weigth=0
+params.ma_weigthedz=0
 params.ma_mem_req="10G"
 params.gwama_mem_req="20G"
 params.metasoft_mem_req="20G"
@@ -389,7 +389,7 @@ if(params.metal==1){
       lfile=list_file.join("\t")
       metal_config="metal_config.config"
       gc =  (params.ma_genomic_cont==1) ? " --genomic_control T " : "--genomic_control F"
-      vw =  (params.ma_inv_var_weigth==1) ? " --inv_var_weigth T " : "--inv_var_weigth F"
+      vw =  (params.ma_weigthedz==1) ? " --weigthedz T " : "--weigthedz F"
       sov=(params.ma_overlap_sample==1) ? " --overlap T " : " --overlap F "
       """
       echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
@@ -515,9 +515,9 @@ if(params.plink==1){
      lpk=listeplk.join(" ")
      out=params.output+'_plink'
      //weighted-z
-     vw =  (params.ma_inv_var_weigth==1) ? " + weighted-z " : ""
+     vw =  (params.ma_weigthedz==1) ? " weighted-z  --meta-analysis-ess-field N " : ""
      """
-     ${params.plink_bin} --meta-analysis $lpk + qt $vw -out $out --threads ${params.max_plink_cores} 
+     ${params.plink_bin} --meta-analysis $lpk + qt $vw -out $out --threads ${params.max_plink_cores}  
      """
 
   }
