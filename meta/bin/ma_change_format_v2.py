@@ -18,7 +18,7 @@ def formatrs(chro, bp,a1,a2) :
   newrs=chro+'_'+bp+'_'+AA1+'_'+AA2
   return(newrs)
 
-def reestimate_betase(pinit, betainit,n, freq) :
+def reestimate_betase(pinit, betainit,n, freq,writemissing) :
     if pinit=='NA' or betainit=='NA' or n=='NA' or freq=='NA' :
        return ['NA', 'NA']
     if float(betainit)> 0 :
@@ -28,10 +28,14 @@ def reestimate_betase(pinit, betainit,n, freq) :
     pinit=float(pinit)
     freq=float(freq)
     n = float(n)
-    z=abs(stats.norm.ppf(1-pinit/2))*sens
-    b=z/sqrt(2*freq*(1-freq)*(n+z**2))
-    se=1/sqrt(2*freq*(1-freq)*(n+z**2))
-    return [str(b),str(se)]
+    try :
+      z=abs(stats.norm.ppf(1-pinit/2))*sens
+      b=z/sqrt(2*freq*(1-freq)*(n+z**2))
+      se=1/sqrt(2*freq*(1-freq)*(n+z**2))
+      return [str(b),str(se)]
+    except :
+       writemissing.write('error computation '+ str(sens)+' '+ str(pinit) +' '+str(freq) + ' '+str(n)+' '+str(betainit)+'\n')
+       return ["NA","NA"]
 
 
 def GetSep(Sep):
@@ -133,7 +137,8 @@ else :
 rsId_inp=l_oldhead[l_newhead.index('rsID')]
 balise_use_rs=False
 balise_use_chrps=False
-if(args.rs_ref) :
+writemissing=open(args.out_file+'.error','w')
+if args.rs_ref :
   open_rs=open(args.rs_ref)
   head=open_rs.readline()
   ncolrs=len(head.split())
@@ -155,8 +160,7 @@ if(args.rs_ref) :
         try :
           ls_chrps_dic[rsspl[1]][int(rsspl[2])]=[rsspl,rsspl[5]]
         except :
-           print(rsspl[1], rsspl[2], rsspl)
-           sys.exit('error in position')
+           writemissing.write('error in position '+rsspl[1]+' '+rsspl[2] + ' '+rsspl+' in file '+args.rs_ref+'\n')
      if args.use_rs==1:
        ## will replace chro pos using rs
        balise_use_rs=True   
@@ -222,7 +226,7 @@ if args.used_pvalue == 1 :
  if Ncount  :
    PosN=None
  else :
-   PosN=l_newhead.index('N')
+   PosN=head_inp.index(l_oldhead[l_newhead.index('N')])
  PosBetaI=l_newhead.index('Beta')
  PosBeta=head_inp.index(l_oldhead[PosBetaI])
  PosPval=head_inp.index(l_oldhead[l_newhead.index('Pval')])
@@ -333,7 +337,7 @@ if balise_use_dicrs :
        elif baliseN :
            Nval=spl[PosN]
        if balise_usedpvalue==1 :
-           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
+           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
        write.write(sep_out.join(tmp)+"\n")
        writeplk.write(sep_out.join(tmp)+"\n")
 elif balise_use_rs :
@@ -365,7 +369,7 @@ elif balise_use_rs :
        elif baliseN :
            Nval=spl[PosN]
        if balise_usedpvalue==1 :
-           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
+           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
        write.write(sep_out.join(tmp)+"\n")
        writeplk.write(sep_out.join(tmp)+"\n")
 ## balise use chro and positoin
@@ -385,7 +389,7 @@ elif balise_use_chrps :
    for line in read :
      spl=line.replace('\n','').split(sep)
      bp=int(float(spl[HeadPos]))
-     if  (spl[HeadChro] in ls_chrps_dic) and bp in ls_chrps_dic[spl[HeadChro]]:
+     if  (spl[HeadChro] in ls_chrps_dic) and (bp in ls_chrps_dic[spl[HeadChro]]):
        desRS=ls_chrps_dic[spl[HeadChro]][bp]
        #spl[ps_rsId_inp]=ls_chrps_dic[spl[HeadChro]][spl[HeadPos]]
        spl=checkfloat(spl, listposfloat)
@@ -406,14 +410,13 @@ elif balise_use_chrps :
          elif baliseN :
            Nval=spl[PosN]
          if balise_usedpvalue==1 :
-           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
+           tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
          write.write(sep_out.join(tmp)+"\n")
          writeplk.write(sep_out.join(tmp)+"\n")
        else :
-           print(newrs)
-           print(desRS)
+           writemissing.write('error rs : '+newrs+' old rs '+desRS+'\n')
      else :
-        print(spl[HeadChro], bp)
+        writemissing.write('not found chr and bp :'+spl[HeadChro]+' '+str(bp)+'\n')
 elif args.rs_ref :
    headtmp=[x.upper() for x in l_newhead]
    headtmpplk=[x.upper() for x in l_newheadplk]
@@ -440,7 +443,7 @@ elif args.rs_ref :
        elif baliseN :
           Nval=spl[PosN]
        if balise_usedpvalue==1 :
-         tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
+         tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
        write.write(sep_out.join(tmp)+"\n")
        writeplk.write(sep_out.join(tmp)+"\n")
 else :
@@ -462,7 +465,7 @@ else :
      if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
      if use_chrbp :
-        newrs=formatrs(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp])
+        newrs=formatrs(spl[HeadChro], spl[HeadPos], spl[ps_A1_inp], spl[ps_A2_inp], writemissing)
      tmp=[checknull(spl[x]) for x in ps_head]
      if Ncount :
           Nval=Ncount
@@ -470,6 +473,6 @@ else :
      elif baliseN :
           Nval=spl[PosN]
      if balise_usedpvalue==1 :
-       tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq])
+       tmp+=reestimate_betase(spl[PosPval], spl[PosBeta],Nval, spl[PosFreq], writemissing)
      write.write(sep_out.join(tmp)+"\n")
      writeplk.write(sep_out.join(tmp)+"\n")

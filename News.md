@@ -2,6 +2,8 @@
 
 
 # What\'s new :
+### V3.5.0
+ * in dev
 ### V3.4.1
 * add option `used_pval_z` for meta analysis[meta/README.md]
 * `format/vcf_in_[bimbam,bgen*,impute2].nf` :
