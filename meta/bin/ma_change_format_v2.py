@@ -414,7 +414,7 @@ elif balise_use_chrps :
          write.write(sep_out.join(tmp)+"\n")
          writeplk.write(sep_out.join(tmp)+"\n")
        else :
-           writemissing.write('error rs : '+newrs+' old rs '+desRS+'\n')
+           writemissing.write('error rs : '+newrs+' old rs '+desRS[1]+'\n')
      else :
         writemissing.write('not found chr and bp :'+spl[HeadChro]+' '+str(bp)+'\n')
 elif args.rs_ref :
