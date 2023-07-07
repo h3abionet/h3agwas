@@ -135,6 +135,7 @@ for instance for bolt lmm format bgen must be :
     * `head_N`  [optional]
   * `sep` separator default space or tab, [optional], for comma : COM, tabulation : TAB and space "WHI"
 * header of your output :
+  * `out_gc` : prepared data for submission of gwas catalog
   * if not initialise : using output of your initial files
   * `headnew_pval` [optional]
   * `headnew_freq` [optional]
@@ -145,6 +146,8 @@ for instance for bolt lmm format bgen must be :
   * `headnew_A1` [optional]
   * `headnew_A2` [optional]
   * `headnew_N`  [optional]
+  * `sepout` : separator for your summary stat output [optional : default " "]
+  
 * file to extract rsinfomation with position :
   * `file_ref_gzip` : must be in gzip example of file used : [here](ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/All_20180423.vcf.gz)
     * `poshead_chro_inforef` psotion of column chromosome in file  [default : 0]

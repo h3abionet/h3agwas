@@ -271,7 +271,6 @@ if(params.head_chr!=""){
       bfileopt= (params.input_pat!="" || params.input_dir!="") ?  " --bfile "+bed.baseName+"" : ""
       Nheadopt=(params.head_N!="") ? " --N_head ${params.head_N} " : ""
       Freqheadopt=(params.head_freq!="") ? " --freq_head ${params.head_freq} " : ""
-      println headnew_N 
       NheadNewopt=(headnew_N!="") ? " --Nnew_head ${headnew_N} " : ""
       FreqNewheadopt=(headnew_freq!="") ? " --freqnew_head ${headnew_freq} " : ""
       addrsopt=(params.head_rs=="") ? " --input_rs $chrors " : ""
@@ -392,7 +391,8 @@ process check_gc {
    path("resume_gc.log")
  script :
  """
- gwas-ssf validate --min-rows 100 -e temp.csv.gz  ${gzsumstat} &> resume_gc.log
+ echo "noerror.gz" > noerror.gz
+ gwas-ssf validate --min-rows 100  ${gzsumstat} &> resume_gc.log
  """
 
 }
