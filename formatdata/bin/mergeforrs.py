@@ -6,6 +6,20 @@ import argparse
 import math
 import numpy as np
 import pandas as pd
+def GetSep(Sep, default=' '):
+   ListOfSep=["\t"," ",","]
+   if len(Sep)>2 :
+      Sep=Sep.upper()[:3]
+      if Sep=='COM' :
+         Sep=','
+      elif Sep=='TAB' :
+         Sep='\t'
+      elif Sep=='WHI' :
+         Sep=' '
+   if Sep not in ListOfSep :
+      return default
+   return Sep
+
 def addedplkinfo(args, datai, ChroHead, BpHead):
    bim=pd.read_csv(args.bfile+".bim", header=None,delim_whitespace=True)
    #1	1:725499	0	725499	T	A
@@ -34,6 +48,7 @@ def addedplkinfo(args, datai, ChroHead, BpHead):
    data_n['N']=data_n['NCHROBS']/2
    if args.N_head==None and args.freq_head==None:
       data_n=data_n[[ChroHead, BpHead,"N",'MAF']]
+      print("new", args.Nnew_head, args.freqnew_head)
       data_n.columns=[ChroHead, BpHead, args.Nnew_head, args.freqnew_head]
    elif args.N_head==None :
       data_n=data_n[[ChroHead, BpHead,"N"]]
@@ -50,7 +65,7 @@ def addedplkinfo(args, datai, ChroHead, BpHead):
 def parseArguments():
     parser = argparse.ArgumentParser(description='transform file and header')
     parser.add_argument('--input_gwas',type=str,required=True, help="input gwas")
-    parser.add_argument('--input_rs',type=str,required=True, help="input new rs")
+    parser.add_argument('--input_rs',type=str,required=False, help="input new rs")
     parser.add_argument('--out_file',type=str,required=True,help="output file")
     parser.add_argument('--chro',type=str,required=False,help="specific chromosome")
     parser.add_argument('--chro_head',type=str,required=True,help="header of chromosome")
@@ -66,7 +81,9 @@ def parseArguments():
     parser.add_argument('--keep',type=str,required=False,help="option keep for plink")
     parser.add_argument('--threads',type=str,default=1,required=False,help="option threads for plink")
     parser.add_argument('--N_value', type=str,required=False,help="added a N values")
+    parser.add_argument('--sep_out', type=str,required=False,help="added a N values")
     parser.add_argument('--bin_plk',type=str,required=False,help="plink binary", default='plink')
+    parser.add_argument('--gc_output',type=int,required=False,help="plink binary", default=0)
     args = parser.parse_args()
     return args
 
@@ -77,19 +94,41 @@ ChroHead=args.chro_head
 BPHead=args.bp_head
 RsHead=args.rs_head
 gwasres = pd.read_csv(args.input_gwas,delim_whitespace=True)
-inforrs=pd.read_csv(args.input_rs,header=None, delim_whitespace=True)
-inforrs.columns =[ChroHead,BPHead,args.a1_head+'_tmp', args.a2_head+'_tmp', RsHead, "a1_old"]
-gwasres=inforrs.merge(gwasres, how='right',on=[ChroHead,BPHead])
-balise=gwasres[RsHead].isnull() | ((((gwasres[args.a1_head]==gwasres[args.a1_head+'_tmp']) & (gwasres[args.a2_head]==gwasres[args.a2_head+'_tmp'])) | ((gwasres[args.a2_head]==gwasres[args.a1_head+'_tmp']) & (gwasres[args.a1_head]==gwasres[args.a2_head+'_tmp'])))==False)
-gwasres.loc[balise,RsHead]=gwasres.loc[balise,ChroHead].astype('str')+":"+gwasres.loc[balise,BPHead].astype('str')
+
+if args.input_rs :
+  inforrs=pd.read_csv(args.input_rs,header=None, delim_whitespace=True)
+  inforrs.columns =[ChroHead,BPHead,args.a1_head+'_tmp', args.a2_head+'_tmp', RsHead, "a1_old"]
+  gwasres=inforrs.merge(gwasres, how='right',on=[ChroHead,BPHead])
+  balise=gwasres[RsHead].isnull() | ((((gwasres[args.a1_head]==gwasres[args.a1_head+'_tmp']) & (gwasres[args.a2_head]==gwasres[args.a2_head+'_tmp'])) | ((gwasres[args.a2_head]==gwasres[args.a1_head+'_tmp']) & (gwasres[args.a1_head]==gwasres[args.a2_head+'_tmp'])))==False)
+else :
+ balise = gwasres[RsHead].isnull()
+
+if args.gc_output == 1 :
+  balise = balise | gwasres[RsHead].str.contains('^rs')==False
+  gwasres.loc[balise,RsHead]='NA'
+else :
+  gwasres.loc[balise,RsHead]=gwasres.loc[balise,ChroHead].astype('str')+":"+gwasres.loc[balise,BPHead].astype('str')
+
 gwasres[ChroHead]=gwasres[ChroHead].astype('str')
 if args.bfile and (args.N_head==None or args.freq_head==None):
    gwasres=addedplkinfo(args, gwasres, ChroHead,BPHead) 
 elif args.N_value and args.N_head==None:
   gwasres[args.Nnew_head]=args.N_value
-del gwasres[args.a1_head+'_tmp']
-del gwasres[args.a2_head+'_tmp']
-del gwasres['a1_old']
-gwasres.to_csv(args.out_file,sep=" ",header=True,index=False,na_rep="NA")
+if  args.input_rs :
+  del gwasres[args.a1_head+'_tmp']
+  del gwasres[args.a2_head+'_tmp']
+  del gwasres['a1_old']
 
+if args.gc_output == 1 :
+  listorder=['chromosome', 'base_pair_location','effect_allele','other_allele','beta','standard_error','effect_allele_frequency','p_value','variant_id','rs_id','info','ci_lower','ci_upper','ref_allele','n']
+  listcol=gwasres.columns.tolist()
+  newcol=[]
+  for col in listorder : 
+    if col in listcol :
+       newcol.append(col)
+  if 'n' in newcol :
+     gwasres['n'] = gwasres['n'].astype('int')
+  gwasres=gwasres[newcol]
+## change order 
+gwasres.to_csv(args.out_file,sep=GetSep(args.sep_out),header=True,index=False,na_rep="NA")
 

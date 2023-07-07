@@ -111,7 +111,7 @@ ps_head=GetPosHead(head_inp,l_oldheadf)
 
 listposfloat=[]
 listposfloat=[]
-for head in ['freqA1', 'Beta', 'Se', 'Pval', 'N']:
+for head in ['freqA1', 'Beta', 'Se', 'Pval', 'N', 'Info']:
    if head in l_infof :
        newhead=l_oldheadf[l_infof.index(head)]
        listposfloat.append(head_inp.index(newhead))

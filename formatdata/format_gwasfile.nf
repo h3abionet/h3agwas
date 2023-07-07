@@ -81,11 +81,11 @@ checker = { fn ->
 
 def helps = [ 'help' : 'help' ]
 allowed_params_file = ['file_gwas', 'file_ref_gzip', "output_dir","output"]
-allowed_header = ['head_pval', 'head_freq', 'head_bp', 'head_chr', 'head_rs', 'head_beta', 'head_se', 'head_A1', 'head_A2', 'sep']
-allowed_headernew = ['headnew_pval', 'headnew_freq', 'headnew_bp', 'headnew_chr', 'headnew_rs', 'headnew_beta', 'headnew_se', 'headnew_A1', 'headnew_A2']
+allowed_header = ['head_pval', 'head_freq', 'head_bp', 'head_chr', 'head_rs', 'head_beta', 'head_se', 'head_A1', 'head_A2', 'sep', 'head_info']
+allowed_headernew = ['headnew_pval', 'headnew_freq', 'headnew_bp', 'headnew_chr', 'headnew_rs', 'headnew_beta', 'headnew_se', 'headnew_A1', 'headnew_A2', 'headnew_info', 'sepout']
 optional_param=["input_dir", "input_pat"]
 //chro_ps 0 --bp_ps 1 --rs_ps 
-allowed_posfilref=['poshead_chro_inforef', 'poshead_bp_inforef','poshead_rs_inforef']
+allowed_posfilref=['poshead_chro_inforef', 'poshead_bp_inforef','poshead_rs_inforef', 'out_gc']
 allowed_params=allowed_params_file
 allowed_params+=allowed_header
 allowed_params+=allowed_headernew
@@ -105,7 +105,9 @@ params.head_se=""
 params.head_A1=""
 params.head_A2=""
 params.head_N=""
+params.head_info = ""
 params.sep=""
+
 
 params.headnew_pval = ""
 params.headnew_freq = ""
@@ -117,6 +119,9 @@ params.headnew_se=""
 params.headnew_A1=""
 params.headnew_A2=""
 params.headnew_N=""
+params.headnew_info=""
+params.sepout=''
+params.N_value=0
 
 params.poshead_chro_inforef=0
 params.poshead_bp_inforef=1
@@ -141,7 +146,29 @@ headnew_beta=params.headnew_beta
 headnew_A1=params.headnew_A1
 headnew_A2=params.headnew_A2
 headnew_N=params.headnew_N
-headnew_se=params.headnew_N
+headnew_se=params.headnew_se
+headnew_info=params.headnew_info
+headnew_bp = params.headnew_bp
+headnew_chr = params.headnew_chr
+headnew_rs = params.headnew_rs
+sepout=params.sep
+
+
+if(params.out_gc==1){
+if(params.head_pval!='' & headnew_pval=='')headnew_pval = "p_value"
+if(headnew_freq=='')headnew_freq = "effect_allele_frequency"
+if(headnew_bp=='')headnew_bp = "base_pair_location"
+if(headnew_chr=='')headnew_chr = "chromosome"
+if(headnew_rs=='')headnew_rs = "variant_id"
+if(params.head_beta!='' & headnew_beta=='')headnew_beta="beta"
+if(params.head_se!='' & headnew_se=='')headnew_se="standard_error"
+if(params.head_A1!='' & headnew_A1=='')headnew_A1="effect_allele"
+if(params.head_A2!='' & headnew_A2=='')headnew_A2="other_allele"
+if(headnew_N=='')headnew_N="n"
+if(params.head_info!='' & headnew_info=='')headnew_info="info"
+sepout='TAB'
+}
+
 
 
 if(headnew_pval=="")headnew_pval=params.head_pval 
@@ -173,13 +200,12 @@ if(headnew_A2=="")headnew_A2=params.head_A2
 gwas_chrolist = Channel.fromPath(params.file_gwas, checkIfExists:true)
 
 if(params.head_chr!=""){
- headnew_bp=params.headnew_bp
- headnew_chr=params.headnew_chr
+ if(headnew_bp=='')headnew_bp=params.headnew_bp
+ if(headnew_chr=='')headnew_chr=params.headnew_chr
  if(headnew_bp=="")headnew_bp=params.head_bp 
  if(headnew_chr=="")headnew_chr=params.head_chr 
- headnew_rs="rs"
- if(params.head_rs!="")headnew_rs=params.head_rs
- if(params.headnew_rs!="") headnew_rs=params.head_rs 
+ if(headnew_rs=="")headnew_rs="rs"
+ if(headnew_rs=='' && params.head_rs!="")headnew_rs=params.head_rs
  gwas_chrolist_ext = Channel.fromPath(params.file_gwas)
  process getListeChro{
          input :
@@ -193,9 +219,6 @@ if(params.head_chr!=""){
          """
  }
  
- 
-
-
  chrolist2=Channel.create()
  chrolist.flatMap { list_str -> list_str.readLines()[0].split() }.set { chrolist2 }
  
@@ -209,7 +232,7 @@ if(params.head_chr!=""){
      script :
        gwas_out=gwas.baseName+"_"+chro+".gwas"
        sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
-       infofile="Chro:${params.head_chr}:${headnew_chr},Pos:${params.head_bp}:${headnew_bp},A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},af:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${params.headnew_N},SNP:${params.head_rs}:${params.headnew_rs}"
+       infofile="Chro:${params.head_chr}:${headnew_chr},Pos:${params.head_bp}:${headnew_bp},A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},freqA1:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${headnew_N},SNP:${params.head_rs}:${headnew_rs},Info:${params.head_info}:${headnew_info}"
        """
        extractandformat_gwas.py --input_file $gwas --out_file ${gwas_out} --chr $chro --info_file $infofile
        """
@@ -217,8 +240,8 @@ if(params.head_chr!=""){
  if(params.file_ref_gzip==""){
  error('params.file_ref_gzip : file contains information for rs notnot found')
  }
- gwas_format_chro_rs=gwas_format_chro.combine(Channel.fromPath(params.file_ref_gzip, checkIfExists:true))
  if(params.head_rs==""){ 
+   gwas_format_chro_rs=gwas_format_chro.combine(Channel.fromPath(params.file_ref_gzip, checkIfExists:true))
    process ExtractRsIDChro{
      memory params.mem_req 
      input :
@@ -232,7 +255,7 @@ if(params.head_chr!=""){
      """ 
   }
  }else{
-  rsinfo_chro=gwas_format_chro.combine(channel.fromPath('${dummy_dir}/03') )
+  rsinfo_chro=gwas_format_chro.combine(channel.fromPath("${dummy_dir}/03") )
  }
  
  
@@ -245,17 +268,17 @@ if(params.head_chr!=""){
        file(outmerge) into gwas_rsmerge
      script :
       outmerge="merge_"+chro+".gwas"
-      bfileopt= (params.input_pat!="" || params.input_dir!="") ?  " --bfile "+bed.baseName : ""
+      bfileopt= (params.input_pat!="" || params.input_dir!="") ?  " --bfile "+bed.baseName+"" : ""
       Nheadopt=(params.head_N!="") ? " --N_head ${params.head_N} " : ""
       Freqheadopt=(params.head_freq!="") ? " --freq_head ${params.head_freq} " : ""
- 
-      NheadNewopt=(params.headnew_N!="") ? " --Nnew_head ${params.headnew_N} " : ""
+      println headnew_N 
+      NheadNewopt=(headnew_N!="") ? " --Nnew_head ${headnew_N} " : ""
       FreqNewheadopt=(headnew_freq!="") ? " --freqnew_head ${headnew_freq} " : ""
       addrsopt=(params.head_rs=="") ? " --input_rs $chrors " : ""
+      Nvalue=(headnew_N!="" & params.N_value>0) ? " --N_value ${params.N_value} " : ""
       """
-      mergeforrs.py --input_gwas $gwas $addrsopt   --out_file $outmerge --chro_head  ${headnew_chr} --bp_head  ${headnew_bp} --rs_head ${headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt  --a1_head ${headnew_A1} --a2_head  ${headnew_A2}
+      mergeforrs.py --input_gwas $gwas $addrsopt   --out_file $outmerge --chro_head  ${headnew_chr} --bp_head  ${headnew_bp} --rs_head ${headnew_rs} --chro $chro $bfileopt  $Nheadopt $Freqheadopt $NheadNewopt $FreqNewheadopt  --a1_head ${headnew_A1} --a2_head  ${headnew_A2} --sep_out $sepout --gc_output ${params.out_gc}  $Nvalue
       """
- 
  }
 
  gwas_rsmerge_all=gwas_rsmerge.collect()
@@ -266,7 +289,7 @@ if(params.head_chr!=""){
        file(allfile) from gwas_rsmerge_all
     publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
     output :
-       file(fileout) 
+       file(fileout) into result_sumstat
     script :
       file1=allfile[0]
       listefiles=allfile.join(" ")
@@ -305,7 +328,7 @@ if(params.head_chr!=""){
      script :
        gwas_out=gwas.baseName+"_tmp.gwas"
        sep=(params.sep!="") ?  "--sep ${params.sep}" : ""
-       infofile="A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},af:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${params.headnew_N},SNP:${params.head_rs}:${headnew_rs}"
+       infofile="A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},af:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${headnew_N},SNP:${params.head_rs}:${headnew_rs}"
        """
        extractandformat_gwas.py --input_file $gwas --out_file ${gwas_out}  --info_file $infofile
        """
@@ -332,9 +355,9 @@ if(params.head_chr!=""){
    publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
    output :
        file("$gwasf*")
+       file("$gwasf") into result_sumstat
    script :
      gwasf=params.output
-     println gwasf
      """
      add_chrbp_byrsid.py --gwas  $gwas --chrbp_info $outrs --rs_head ${params.head_rs} --chronew_head ${headnew_chr} --bpnew_head ${headnew_bp} --out $gwasf
      """
@@ -344,4 +367,35 @@ if(params.head_chr!=""){
 
 
 
- 
+
+if(params.out_gc==1){
+process gzipsumstat {
+ input :
+   path(sumstat)  from result_sumstat 
+ publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+ output :
+   path(gzsumstat) into gz_result_sumstat
+ script :
+   gzsumstat=sumstat.baseName+'.tsv.gz'
+   """
+   cat $sumstat |gzip -9 > $gzsumstat
+   """
+}
+
+process check_gc {
+ label 'gcvalidate' 
+ input :
+   path(gzsumstat) from gz_result_sumstat
+ publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+ output :
+   path("*.gz") 
+   path("resume_gc.log")
+ script :
+ """
+ gwas-ssf validate --min-rows 100 -e temp.csv.gz  ${gzsumstat} &> resume_gc.log
+ """
+
+}
+
+
+}
