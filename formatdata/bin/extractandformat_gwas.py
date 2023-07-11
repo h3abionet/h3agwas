@@ -63,6 +63,7 @@ def checknull(x):
 
 args = parseArguments()
 
+writediscarded=open(args.out_file+'.discarded','w')
 
 
 read=open(args.input_file)
@@ -73,7 +74,6 @@ l_infof=[]
 l_oldheadf=[]
 l_newheadf=[]
 for x in l_info :
-
   if len(x)==3 and ConfIsNotNull(x[0]) and ConfIsNotNull(x[1]) and ConfIsNotNull(x[2]) :
     l_infof.append(x[0]) 
     l_oldheadf.append(x[1]) 
@@ -86,6 +86,7 @@ if 'Sep' in l_infof :
    del l_oldheadf[PosSep]
    del l_infof[PosSep]
    del l_newheadf[PosSep]
+   sep_out=newsep
 else :
    sep =None
    sep_out='\t'
@@ -138,6 +139,7 @@ if ChroSel :
     if spl[pos_chro]==ChroSel :
        if len(spl)!=nbcol_head :
          print('warning column number are not exact')
+         writediscarded.write('NOTGODCol\t'+line)
          continue
        spl=checkfloat(spl, listposfloat)
        if balchangA1 :
@@ -149,6 +151,7 @@ else :
    for line in read :
      spl=line.replace('\n','').split(sep)
      if len(spl)!=nbcol_head :
+         writediscarded.write('NOTGODCol\t'+line)
          print('warning column number are not exact')
          continue
      spl=checkfloat(spl, listposfloat)

@@ -227,12 +227,14 @@ if(params.head_chr!=""){
      input :
        file(gwas) from gwas_chrolist_ext
      each chro from  chrolist2
+     publishDir "${params.output_dir}/bp_discarded/", overwrite:true, mode:'copy', pattern: "*.discarded"
      output :
        set val(chro), file(gwas_out) into gwas_format_chro
+       file("${gwas_out}.discarded")
      script :
        gwas_out=gwas.baseName+"_"+chro+".gwas"
-       sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
-       infofile="Chro:${params.head_chr}:${headnew_chr},Pos:${params.head_bp}:${headnew_bp},A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},freqA1:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${headnew_N},SNP:${params.head_rs}:${headnew_rs},Info:${params.head_info}:${headnew_info}"
+       //sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
+       infofile="Chro:${params.head_chr}:${headnew_chr},Pos:${params.head_bp}:${headnew_bp},A2:${params.head_A2}:${headnew_A2},A1:${params.head_A1}:${headnew_A1},freqA1:${params.head_freq}:${headnew_freq},Beta:${params.head_beta}:${headnew_beta},Se:${params.head_se}:${headnew_se},Pval:${params.head_pval}:${headnew_pval},N:${params.head_N}:${headnew_N},SNP:${params.head_rs}:${headnew_rs},Info:${params.head_info}:${headnew_info},Sep:${params.sep}:${params.sep}"
        """
        extractandformat_gwas.py --input_file $gwas --out_file ${gwas_out} --chr $chro --info_file $infofile
        """
@@ -322,8 +324,10 @@ if(params.head_chr!=""){
      memory params.mem_req
      input :
        file(gwas) from gwas_ch2
+     publishDir "${params.output_dir}/bp_discarded/", overwrite:true, mode:'copy', pattern: "*.discarded"
      output :
        file(gwas_out) into gwas_format
+       file(gwas_out+'.discarded')
      script :
        gwas_out=gwas.baseName+"_tmp.gwas"
        sep=(params.sep!="") ?  "--sep ${params.sep}" : ""
