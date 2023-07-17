@@ -46,10 +46,10 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
     snp[PosA2Head]=snp[PosA2Head].upper()
     studyindex=-1
     pivotstudyindex=-2
-    if PosA1Head : 
+    if PosA1Head>=0 : 
       if snp[PosA1Head] not in vectortorbase:
          return 'NA NA '
-    if PosA2Head : 
+    if PosA2Head>=0 : 
       if snp[PosA2Head] not in vectortorbase:
          return 'NA NA '
     beta=snp[PosBetHead]
@@ -63,7 +63,7 @@ def GetInfoRsGWAS(rsid, snp,A1Pivot, A2Pivot,CompSE, PosA1Head, PosA2Head, PosBe
     else :
          stderr=snp[PosSError]
     # CHECK ALLELE TO PIVOT
-    if PosA2Head and PosA1Head :
+    if PosA2Head>= 0 and PosA1Head >= 0 :
        if A1Pivot == snp[PosA1Head] and A2Pivot == snp[PosA2Head]:
           return beta+' '+stderr+' '
        elif A1Pivot == snp[PosA2Head] and A2Pivot == snp[PosA1Head]:
@@ -136,7 +136,7 @@ for f in files:
     PosBetHead=colnames.index(BetHead)
     PosRsHead=colnames.index(rsHead)
     for line in fin:
-        spll=line.split()
+        spll=line.replace('\n','').split()
         rsid=spll[PosRsHead]
         if rsid not in listrsall :
            listrsall.add(rsid)
