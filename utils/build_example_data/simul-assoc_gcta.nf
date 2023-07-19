@@ -39,11 +39,11 @@ def getlistchro(listchro){
 
 params.list_chro="1-22,X"
 params.list_chro_pheno=""
-
 params.simu_hsq=0.3
 params.simu_rep=10
 params.gcta_bin="gcta64"
 params.cut_maf=0.01
+params.used_effect=1
 
 
 params.gwas_cat=""
@@ -168,7 +168,7 @@ process format_simulated{
      plk=bed.baseName
      outeffect=params.output+".effect.rs"
      """
-     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb} --nb_snp ${params.nb_snp}
+     format_simulated.r --bfile $plk --gc_her $gwascat --out $outeffect --clump_p1 ${params.clump_p1} --clump_p2 ${params.clump_p2} --clump_r2 ${params.clump_r2} --clump_kb ${params.clump_kb} --nb_snp ${params.nb_snp} --used_effect ${params.used_effect}
      """
 }
 

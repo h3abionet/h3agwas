@@ -16,6 +16,8 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("-i", "--nb_snp"), type="integer", default=-1,
               help="dataset file name", metavar="character"),
+  make_option(c("--used_effect"), type="integer", default=1,
+              help="dataset file name", metavar="character"),
   make_option(c("-o", "--out"), type="character", default="out.txt",
               help="output file name [default= %default]", metavar="character")
 );
@@ -72,6 +74,8 @@ rsbest<-aggregate(z.cat.new~rs_bim, allinfo,function(x)x[which.max(abs(x))])
 nb_snp=opt[['nb_snp']]
 if(nb_snp>0 & nb_snp<=nrow(rsbest))rsbest<-rsbest[sample(1:nrow(rsbest), nb_snp),]
 
+if(opt[['used_effect']]==0)rsbest[,2]<-rnorm(nrow(rsbest))
 write.table(allinfo[allinfo$rs_bim %in% rsbest$rs_bim,], sep='\t', quote=F, file=paste(opt[['out']],'.infors',sep=''), row.names=F, col.names=F)
 write.table(rsbest, sep='\t', quote=F, file=opt[['out']], row.names=F, col.names=F)
+
 

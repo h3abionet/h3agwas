@@ -19,18 +19,18 @@ The key options are:
  * `gwas_cat_ftp` : file to download gwas catalog  
  * `list_pheno` : list pheno extracted from gwas catalog, split by one comma each pheno (default : "Type 2 diabetes")
 * extraction and simulation :
- * `simu_hsq` : see docutmentation of hsq
- * `simu_k` : see docutmentation of gcta 0.01
- * `simu_rep` : repettition
- * `gcta_bin` : gcta for simulation
+ * `simu_hsq` : variance explained of disease by genetics [default 0.3]
+ * `simu_k` :   Specify the disease prevalence for binary phenotype [default 0.1]
+ * `simu_rep` : repetition number using same snps and heriability effect [default 10]
+ * `used_effect` :  two behavious for effect, used gwas catalog effect (option 1) or simulated value using a normal law  (option 0) [default : 1]
  * clump position of gwas catalog :
   * `clump_p1` [default :0.0001]
   * `clump_p2` [default :0.01]
   * `clump_r2` [ default : 0.50]
   * `clump_kb` :[ default : 250 ]
 * other : 
- * `plk_cpus` : [default 10]
- * `gcta_bin` : [default gcta64]
+ * `plk_cpus` : cpus number used for plink and gcta[default 10]
+ * `gcta_bin` : binary for gcta [default gcta64]
 
 
 ### Example
@@ -51,7 +51,8 @@ tested for singularity image: yes
 
 
 #  Simulation using gcta and plink file : `utils/build_example_data/simul-assoc_gcta.nf`
-Pipeline used same argument than previous pipeline withou 1000 genomes dl
+Pipeline used same argument than previous pipeline without download 1000 genomes 
+
 
 ## Example 
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
