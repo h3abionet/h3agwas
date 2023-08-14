@@ -20,6 +20,11 @@ import java.nio.file.Paths
 
 nextflow.enable.dsl = 1
 
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+
 if (!workflow.resume) {
     def dir = new File(params.output_dir)
     if (dir.exists() && dir.directory && (!(dir.list() as List).empty)) {
@@ -261,7 +266,8 @@ liste_filesi_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.
 
 /*deletedd file_ref*/
 process ChangeFormatFile {
-    memory ma_mem_req
+    memory { strmem(ma_mem_req) + 5.GB * (task.attempt -1) }
+    errorStrategy { task.exitStatus in 135..144 ? 'retry' : 'terminate' }
     input :
       set file(file_assoc), val(info_file), val(num),file(file_ref) from liste_filesi_ch
     publishDir "${params.output_dir}/sumstat_format/", mode:'copy'
@@ -533,7 +539,7 @@ if(params.plink==1){
     script:
       out = "plink"
       """
-      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header SNP --pval_header "P" --beta_header "BETA" --info_prog "BETA"
+      metaanalyse_man.py  --inp $assoc --out ${out} --rs_header SNP --pval_header "P" --beta_header "BETA" --info_prog "Plink"
       """
   }
 

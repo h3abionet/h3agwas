@@ -69,13 +69,15 @@ Dataclump<-read.table(paste(opt[['out']], '_clump.clumped',sep=''), header=T)
 
 allinfo<-allinfo[allinfo$rs_bim %in% Dataclump$SNP ,]
 
-rsbest<-aggregate(z.cat.new~rs_bim, allinfo,function(x)x[which.max(abs(x))])
+rsbest<-aggregate(z.cat.new~rs_bim, allinfo,function(x)x[which.min(abs(x))])
 #rsbest$z.cat.new<-rsbest$z.cat.new*opt[['increase']]
 nb_snp=opt[['nb_snp']]
 if(nb_snp>0 & nb_snp<=nrow(rsbest))rsbest<-rsbest[sample(1:nrow(rsbest), nb_snp),]
 
 if(opt[['used_effect']]==0)rsbest[,2]<-rnorm(nrow(rsbest))
-write.table(allinfo[allinfo$rs_bim %in% rsbest$rs_bim,], sep='\t', quote=F, file=paste(opt[['out']],'.infors',sep=''), row.names=F, col.names=F)
+names(rsbest)<-c('rsid', 'z.simulated')
+allinfo<-merge(allinfo,rsbest,by.x='rs_bim', by.y='rsid',all=F)
+write.table(allinfo, sep='\t', quote=F, file=paste(opt[['out']],'.infors',sep=''), row.names=F, col.names=T)
 write.table(rsbest, sep='\t', quote=F, file=opt[['out']], row.names=F, col.names=F)
 
 
