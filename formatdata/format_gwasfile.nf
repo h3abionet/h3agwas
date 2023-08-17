@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
 nextflow.enable.dsl = 1
+params.nblines_check=100
 
 /*definition*/
 def errormess(message,exitn=0){
@@ -396,7 +397,7 @@ process check_gc {
  script :
  """
  echo "noerror.gz" > noerror.gz
- gwas-ssf validate --min-rows 100  ${gzsumstat} &> resume_gc.log
+ gwas-ssf validate --min-rows ${params.nblines_check}  ${gzsumstat} &> resume_gc.log
  """
 
 }
