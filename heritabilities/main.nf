@@ -1,4 +1,4 @@
-/*
+/* 
  * Authors       :
  *
  *
@@ -207,10 +207,11 @@ if(params.ldsc_h2==1){
        error("\n\n------\nheader_n in summary statisticws or Nind paramaters must be allowed\n\n---\n")
  }
  if(params.head_n==""){
-   splNind=params.Nind.split(',')
+   splNind=params.Nind.toString().split(',')
    if(splNind.size()==1)gwas_file_ldsc=gwas_file_ldsc_i.combine(channel.from(params.Nind))
    else {
      val_n_ch_ldsc=channel.from(splNind)
+     val_n_ch_gemma=channel.from(splNind)
      if(splNind.size()!=params.file_gwas.split(",").size()){
        error("\n\n------\nparams.Nind must be same size than gwas or 1 value used for all gwas\n\n---\n")
       }
@@ -227,7 +228,7 @@ if(params.ldsc_h2==1){
      }  
    }
  }else{
-  gwas_file_ldsc=gwas_file_ldsc_i.combine("")
+  gwas_file_ldsc=gwas_file_ldsc_i.combine(channel.from(-1))
  } 
  if(params.dir_ref_ld_chr==""){
        error("\n\n------\nno directory give for ld score, ldsc see : https://github.com/bulik/ldsc#where-can-i-get-ld-scores\n\n---\n")
@@ -305,14 +306,12 @@ process update_rsgwas{
   script :
     newgwas=gwas+'.updaters'
     newfilepos=gwas+'.listpos'
+    nval=(params.head_n=='') ? "" : " --af_header ${params.head_n}"
     """
-    updaters_gwasldsc.py --gwas $gwas --rstoupdate $rsupdate --a1_header ${params.head_A1} --a2_header ${params.head_A2} --chro_header ${params.head_chr} --bp_header ${params.head_bp} --out $newgwas  --rs_header ${params.head_rs} --out_pos $newfilepos
+    updaters_gwasldsc.py --gwas $gwas --rstoupdate $rsupdate --a1_header ${params.head_A1} --a2_header ${params.head_A2} --chro_header ${params.head_chr} --bp_header ${params.head_bp} --out $newgwas  --rs_header ${params.head_rs} --out_pos $newfilepos --beta_header ${params.head_beta} --se_header ${params.head_se} --af_header ${params.head_freq} $nval --p_header ${params.head_pval}
     """
 }
 
- //dir_ref_ld_chr_ch_ldsc = Channel.fromPath(params.dir_ref_ld_chr, type: 'dir' ,checkIfExists:true)
- //gwas_file_ldsc_withld=gwas_file_ldsc_update.combine(dir_ref_ld_chr_ch_ldsc)
- 
  process FormatLDSC{
    label 'py2ldsc'
    memory ldsc_mem_req
@@ -326,8 +325,8 @@ process update_rsgwas{
      out=gwas.baseName.replace('_','-')+"_mg"
      gwasf=gwas.baseName
      """
-     ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp ${params.head_rs} --p ${params.head_pval} \
-     --frq ${params.head_freq} --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 ${params.head_A1} --a2 ${params.head_A2}  --merge-alleles $infopos
+     ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp SNP --p P \
+     --frq FRQ --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 A1 --a2 A2 
      """ 
 }
 list_gwas_formatldsc1_a=list_gwas_formatldsc1.combine(Channel.fromPath(params.dir_ref_ld_chr, type: 'dir' ,checkIfExists:true))
@@ -516,7 +515,7 @@ if(params.bolt_h2){
     fam_ch_bolt = Channel.create()
     bim_ch_bolt = Channel.create()
     boltlmm_assoc_ch.separate (plink_ch_bolt, plink_ch_bolt_multi,fam_ch_bolt, bim_ch_bolt, bim_ch_bolt_snpchoice) { a -> [ a, a,a[2], a[1],a[1]] }
-    data_ch_bolt = Channel.fromPath(params.data)
+    data_ch_bolt = Channel.fromPath(params.data,checkIfExists:true)
     if (params.covariates)
      covariate_option = "--cov_list ${params.covariates}"
     else
@@ -554,8 +553,8 @@ if(params.bolt_h2){
 
   if(params.exclude_snps){
      println "snp exclude of files "+params.exclude_snps
-       rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps)
-       rs_ch_exclude_bolt_multi=Channel.fromPath(params.exclude_snps)
+       rs_ch_exclude_bolt=Channel.fromPath(params.exclude_snps,checkIfExists:true)
+       rs_ch_exclude_bolt_multi=Channel.fromPath(params.exclude_snps,checkIfExists:true)
   }else{
      println "no snp exclude"
      rs_ch_exclude_bolt=file("${dummy_dir}/00")
@@ -565,8 +564,8 @@ if(params.bolt_h2){
 
   if(params.bolt_ld_score_file!=""){
      println "bolt : ld files used : "+params.bolt_ld_score_file
-     Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file)
-     Bolt_ld_score_multi= Channel.fromPath(params.bolt_ld_score_file)
+     Bolt_ld_score= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
+     Bolt_ld_score_multi= Channel.fromPath(params.bolt_ld_score_file, checkIfExists:true)
   }else{
      println "no ld files used for bolt "
      Bolt_ld_score = file("${dummy_dir}/03")
@@ -575,8 +574,8 @@ if(params.bolt_h2){
 //genetic_map_file
   if(params.genetic_map_file!=""){
      println "genetic map used : "+params.genetic_map_file
-     Bolt_genetic_map= Channel.fromPath(params.genetic_map_file)
-     Bolt_genetic_map_multi= Channel.fromPath(params.genetic_map_file)
+     Bolt_genetic_map= Channel.fromPath(params.genetic_map_file, checkIfExists:true)
+     Bolt_genetic_map_multi= Channel.fromPath(params.genetic_map_file, checkIfExists:true)
   }else{
      println "no genetic maps used "
      Bolt_genetic_map = file("${dummy_dir}/04")
@@ -696,8 +695,8 @@ if(params.gcta_h2==1){
   fam_ch_gcta_mult = Channel.create()
   plink_ch_gcta_multigrm2 = Channel.create()
   h2gcta_assoc_ch.separate (plink_ch_gcta,plink_ch_gcta_grm ,plink_ch_gcta_multigrm,plink_ch_gcta_multigrm2,fam_ch_gcta, fam_ch_gcta_mult) { a -> [ a,a,a,a,a[2], a[2]] }
-  data_h2gcta1=Channel.fromPath(params.data)
-  data_h2gcta1_multi = Channel.fromPath(params.data)
+  data_h2gcta1=Channel.fromPath(params.data, checkIfExists:true)
+  data_h2gcta1_multi = Channel.fromPath(params.data,checkIfExists:true)
   check_gcta = Channel.create()
   pheno_cols_ch_gcta1=Channel.from(params.pheno.split(",").toList())
   pheno_cols_ch_gcta2=Channel.from(params.pheno.split(",").toList())
@@ -775,7 +774,7 @@ if(params.gcta_h2==1){
         """
    }
   }else{
-  gcta_grm=Channel.fromPath("${params.gcta_h2_grmfile}.grm.id").combine(Channel.fromPath("${params.gcta_h2_grmfile}.grm.bin")).combine(Channel.fromPath("${params.gcta_h2_grmfile}.grm.N.bin"))
+  gcta_grm=Channel.fromPath("${params.gcta_h2_grmfile}.grm.id",checkIfExists:true).combine(Channel.fromPath("${params.gcta_h2_grmfile}.grm.bin",checkIfExists:true)).combine(Channel.fromPath("${params.gcta_h2_grmfile}.grm.N.bin",checkIfExists:true))
   }
    filegrmcta_gcta=gcta_grm.combine(newdata_ch_gcta_grm)
    process doGRLEM_GCTA{
@@ -850,7 +849,7 @@ if(params.gcta_h2==1){
   if(params.gcta_h2_imp==1){
    //case of file with 
    if(params.gcta_h2_grmfile!=""){
-    filemultigrmcta_gctai= Channel.fromPath(params.gcta_h2_grmfile)
+    filemultigrmcta_gctai= Channel.fromPath(params.gcta_h2_grmfile,checkIfExists:true)
    }else{
        process GCTAComputeMultiGRM{
           label 'gcta'
@@ -1121,7 +1120,37 @@ if(params.gemma_h2_pval==1){
         .map { a -> [checker(a[0]), checker(a[1]), checker(a[2])] }
         .set { gemmapval_assoc_ch }
 
-gwas_file_gem=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it,checkIfExists:true)}.combine(gemmapval_assoc_ch)
+gwas_file_gem_i=Channel.from(params.file_gwas.split(",")).flatMap{it->file(it,checkIfExists:true)}.combine(gemmapval_assoc_ch)
+if(params.data!=""){
+  gwas_file_gem_i=gwas_file_gem_i.combine(channel.fromPath(params.data))
+}else{
+  gwas_file_gem_i=gwas_file_gem_i.combine(channel.fromPath("${dummy_dir}/02"))
+}
+ if(params.head_n==""){
+   splNind=params.Nind.toString().split(',')
+   if(splNind.size()==1)gwas_file_gem=gwas_file_gem_i.combine(channel.from(params.Nind))
+   else {
+     val_n_ch_gem=channel.from(splNind)
+     val_n_ch_gemma=channel.from(splNind)
+     if(splNind.size()!=params.file_gwas.split(",").size()){ 
+       error("\n\n------\nparams.Nind must be same size than gwas or 1 value used for all gwas\n\n---\n")
+      }
+      process combine_ngwasgem{
+         input :
+          tuple path(gwas), path(bed),path(bim),path(fam),path(data) from  gwas_file_gem_i
+          val(nind) from val_n_ch_gem
+         output :
+           tuple path(gwas), path(bed),path(bim),path(fam),path(data),val(nind) into gwas_file_gem
+         script :
+           """ 
+          echo $nind
+         """
+     }
+   }
+ }else{
+  gwas_file_gem=gwas_file_gem_i.combine(channel.from(-1))
+ }
+
 
 // for 2 we need a zcat file 
 
@@ -1131,32 +1160,33 @@ println "warning for hertitabilies with pvalue option 2 of gemma not implemented
 }
 //gwas_type_gem1=Channel.from(params.gemma_h2_typeest.split(",")).toList()
 gwas_type_gem2=Channel.from("1".split(",")).toList()
-//gwas_type_gem2=["1"]
-
 process DoGemmah2Pval{
    label 'gemma'
    memory params.gemma_mem_req
    cpus params.gemma_num_cores
    time   params.big_time
    input :
-      set file(gwas),file(bed),file(bim),file(fam) from gwas_file_gem
+      set path(gwas),path(bed),path(bim),path(fam), path(data),val(N) from gwas_file_gem
    publishDir "${params.output_dir}/gemmapval", overwrite:true, mode:'copy'
    each gemtype from gwas_type_gem2
    output :
        file("output/*")
        set val(gwasf), val("$out"), val("$gemtype"), file("output/${out}.log.txt") into gemmah2pval_stat
    script :
-     NInfo=params.head_n=="" ? " --n_header ${params.head_n}   " : ""
+     N=N.toInteger()
+     NInfo=params.head_n!="" ? " --n_header ${params.head_n}   " : ""
+     Nval=(params.head_n=='' && N>0) ?  " --n_value $N" : ""
      out=gwas.baseName+"_gemm_"+gemtype.replace('_','-')
      plkbas=bed.baseName
      newplkbas=plkbas+"_new"
      gwasf=gwas.baseName
-     //error! Number of columns in the wcat file does not match that of cat file.error! fail to read files. 
-     //WCAT=gemtype=="2" ? " --wcat "
-     //This analysis option requires marginal z-scores from the study and individual-level genotypes froma random subset of the study (or a separate reference panel).
+     af=(params.cut_maf>0 && params.head_freq !='') ? " --maf ${params.cut_maf} --af_header ${params.head_freq} " : ""
+     keep=(params.data=='') ? "" : " --keep keepind"
+     balisepheno=(params.data=='') ? 0 : 1
      """
-     gemma_format_pval.py --inp_asso $gwas --out $gwas".new"  --rs_header ${params.head_rs} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --chro_header ${params.head_chr} --beta_header ${params.head_beta} --bfile $plkbas --threads ${params.gemma_num_cores}
-     plink -bfile $plkbas --extract listrs.rs --make-bed  --out $newplkbas --keep-allele-order --threads ${params.gemma_num_cores} 
+     sed '1d' $data|awk '{print \$1"\t"\$2}' > keepind
+     gemma_format_pval.py --inp_asso $gwas --out $gwas".new"  --rs_header ${params.head_rs} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --chro_header ${params.head_chr} --beta_header ${params.head_beta} --bfile $plkbas --threads ${params.gemma_num_cores} $keep $af --bp_header ${params.head_bp} $NInfo $Nval
+     plink -bfile $plkbas --extract range listrs.rs --make-bed  --out $newplkbas --keep-allele-order --threads ${params.gemma_num_cores} $keep
      cp $newplkbas".fam" $newplkbas".fam.tmp" 
      awk \'{\$6=1;print \$0}\' $newplkbas".fam.tmp" > $newplkbas".fam"
      export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
@@ -1182,7 +1212,6 @@ process DoGemmah2Pval{
 
 }else{
 report_gemmah2=Channel.empty()
-
 }
 
 report_ch = report_ldsc.flatten().mix(report_gemma.flatten()).mix(report_bolt.flatten()).mix(report_gcta.flatten()).mix(report_gemmah2.flatten()).toList()

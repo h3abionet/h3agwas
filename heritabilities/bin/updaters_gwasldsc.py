@@ -13,10 +13,15 @@ def parseArguments():
     parser.add_argument('--gwas',type=str,required=True,help="", default=1)
     parser.add_argument('--rstoupdate',type=str,required=True,help="", default=1)
     parser.add_argument('--rs_header',type=str,required=True,help="rs header in inp files")
-    parser.add_argument('--a1_header',type=str,required=True,help="a1 header in inp files")
-    parser.add_argument('--a2_header',type=str,required=True,help="a2 header in inp files")
     parser.add_argument('--chro_header',type=str,help="n header in inp files", default="")
     parser.add_argument('--bp_header',type=str,required=True,help="beta header in inp files")
+    parser.add_argument('--p_header',type=str,required=True,help="p-value header in inp files")
+    parser.add_argument('--n_header',type=str,required=False,help="p-value header in inp files")
+    parser.add_argument('--a1_header',type=str,required=True,help="a1 header in inp files")
+    parser.add_argument('--a2_header',type=str,required=True,help="a2 header in inp files")
+    parser.add_argument('--af_header',type=str,required=True,help="a2 header in inp files")
+    parser.add_argument('--beta_header',type=str,required=True,help="a2 header in inp files")
+    parser.add_argument('--se_header',type=str,required=True,help="a2 header in inp files")
     parser.add_argument('--out',type=str,required=True,help="", default=1)
     parser.add_argument('--out_pos',type=str,required=True,help="", default=1)
     args = parser.parse_args()
@@ -61,9 +66,18 @@ listkeyrs=set(dic_rs)
 readgwas=open(args.gwas)
 headgwas=readgwas.readline()
 splhead=headgwas.replace('\n','').split()
-(rsidx, a1idx, a2idx, chridx, bpidx, rsidx)=gethead(splhead, [args.rs_header, args.a1_header, args.a2_header,args.chro_header, args.bp_header, args.rs_header])
+
+(rsidx, a1idx, a2idx, chridx, bpidx, rsidx, betaidx, seidx, pidx ,afidx)=gethead(splhead, [args.rs_header, args.a1_header, args.a2_header,args.chro_header, args.bp_header, args.rs_header, args.beta_header, args.se_header, args.p_header,args.af_header])
+balisen=False
+if args.n_header:
+  nidx=gethead(splhead, [args.rs_header])
+  balisen=True
+
 writegwas=open(args.out, 'w')
-writegwas.write(" ".join(splhead)+"\n")
+if balisen :
+  writegwas.write(" ".join(['SNP','CHR', 'BP','A1','A2','BETA', 'SE','P','FRQ','N'])+"\n")
+else :
+  writegwas.write(" ".join(['SNP','CHR', 'BP','A1','A2','BETA', 'SE','P','FRQ'])+"\n")
 writegwas2=open(args.out_pos, 'w')
 writegwas2.write('SNP\tA1\tA2\n')
 for line in  readgwas :
@@ -72,8 +86,11 @@ for line in  readgwas :
   spll[a2idx]=spll[a2idx].upper()
   newkey=getkey(spll[chridx], spll[bpidx], spll[a1idx], spll[a2idx])
   if newkey in listkeyrs :
-     spll[rsidx]=dic_rs[newkey] 
-  writegwas.write(" ".join(spll)+'\n')
-  writegwas2.write(spll[rsidx]+"\t"+spll[a1idx]+"\t"+spll[a2idx]+"\n")
+    spll[rsidx]=dic_rs[newkey] 
+    if balisen :
+      writegwas.write(" ".join([spll[rsidx],spll[chridx], spll[bpidx], spll[a1idx], spll[a2idx],spll[betaidx],spll[seidx],spll[pidx],spll[afidx],spll[nidx]])+'\n')
+    else :
+      writegwas.write(" ".join([spll[rsidx],spll[chridx], spll[bpidx], spll[a1idx], spll[a2idx],spll[betaidx],spll[seidx],spll[pidx],spll[afidx]])+'\n')
+    writegwas2.write(spll[rsidx]+"\t"+spll[a1idx]+"\t"+spll[a2idx]+"\n")
   
 
