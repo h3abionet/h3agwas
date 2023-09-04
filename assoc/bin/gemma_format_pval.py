@@ -21,6 +21,7 @@ def parseArguments():
     parser.add_argument('--a2_header',type=str,required=True,help="a2 header in inp files")
     parser.add_argument('--af_header',type=str,required=False,help="a2 header in inp files")
     parser.add_argument('--se_header',type=str,required=True,help="se header in inp files")
+    parser.add_argument('--info_header',type=str,required=False,help="se header in inp files")
     parser.add_argument('--n_header',type=str,help="n header in inp files", default=None)
     parser.add_argument('--n_value',type=str,help="n header in inp files", default=None)
     parser.add_argument('--chr',type=str,help="n header in inp files", default=None)
@@ -31,6 +32,7 @@ def parseArguments():
     parser.add_argument('--bfile',type=str,required=False,help="bfile if need to compute frequency or N", default=None)
     parser.add_argument('--keep',type=str,required=False,help="file of data used for if need to compute frequency or N", default=None)
     parser.add_argument('--maf',type=float,required=False,help="file of data used for if need to compute frequency or N", default=None)
+    parser.add_argument('--cut_info',type=float,required=False,help="file of data used for if need to compute frequency or N", default=None)
     parser.add_argument('--threads',type=int,required=False,help="", default=1)
     args = parser.parse_args()
     return args
@@ -58,6 +60,9 @@ if args.chr :
 if args.maf :
   maf2=1-args.maf
   result=result[(result[args.af_header]>args.maf) & (result[args.af_header]<maf2)]
+
+if args.info_header and args.cut_info :
+  result=result[(result[args.info_header]>args.cut_info)]
 
 if args.bfile :
   bimfile= pd.read_csv(args.bfile+'.bim', delim_whitespace=True)

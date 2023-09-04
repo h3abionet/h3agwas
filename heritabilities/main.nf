@@ -39,7 +39,7 @@ allowed_params+=h2_gcta
 allowed_params+=h2_ldsc
 
 
-allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2", "head_n"]
+allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2", "head_n", "head_info"]
 allowed_params+=allowed_params_head
 
 params.each { parm ->
@@ -76,6 +76,7 @@ params.head_beta=""
 params.head_se=""
 params.head_A1=""
 params.head_A2=""
+params.head_info=""
 
 //gcta grm option 
 params.grm_cutoff=0.025
@@ -103,7 +104,7 @@ params.cut_maf=0.01
 //pos with rsid pos chro
 params.list_snp=""
 //## info if need
-params.cut_info=0.6
+params.cut_info=0
 params.plink_mem_req="6GB"
 params.data=""
 
@@ -306,9 +307,10 @@ process update_rsgwas{
   script :
     newgwas=gwas+'.updaters'
     newfilepos=gwas+'.listpos'
-    nval=(params.head_n=='') ? "" : " --af_header ${params.head_n}"
+    nval=(params.head_n=='') ? "" : " --n_header ${params.head_n}"
+    info=(params.head_info=='') ? "" : " --info_header ${params.head_info} "
     """
-    updaters_gwasldsc.py --gwas $gwas --rstoupdate $rsupdate --a1_header ${params.head_A1} --a2_header ${params.head_A2} --chro_header ${params.head_chr} --bp_header ${params.head_bp} --out $newgwas  --rs_header ${params.head_rs} --out_pos $newfilepos --beta_header ${params.head_beta} --se_header ${params.head_se} --af_header ${params.head_freq} $nval --p_header ${params.head_pval}
+    updaters_gwasldsc.py --gwas $gwas --rstoupdate $rsupdate --a1_header ${params.head_A1} --a2_header ${params.head_A2} --chro_header ${params.head_chr} --bp_header ${params.head_bp} --out $newgwas  --rs_header ${params.head_rs} --out_pos $newfilepos --beta_header ${params.head_beta} --se_header ${params.head_se} --af_header ${params.head_freq} $nval --p_header ${params.head_pval}  $info
     """
 }
 
@@ -1183,9 +1185,10 @@ process DoGemmah2Pval{
      af=(params.cut_maf>0 && params.head_freq !='') ? " --maf ${params.cut_maf} --af_header ${params.head_freq} " : ""
      keep=(params.data=='') ? "" : " --keep keepind"
      balisepheno=(params.data=='') ? 0 : 1
+     info= (params.head_info=='' || params.cut_info>0 ) ? "" : " --cut_info $params.cut_info --info_header ${params.head_info}"
      """
      sed '1d' $data|awk '{print \$1"\t"\$2}' > keepind
-     gemma_format_pval.py --inp_asso $gwas --out $gwas".new"  --rs_header ${params.head_rs} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --chro_header ${params.head_chr} --beta_header ${params.head_beta} --bfile $plkbas --threads ${params.gemma_num_cores} $keep $af --bp_header ${params.head_bp} $NInfo $Nval
+     gemma_format_pval.py --inp_asso $gwas --out $gwas".new"  --rs_header ${params.head_rs} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --chro_header ${params.head_chr} --beta_header ${params.head_beta} --bfile $plkbas --threads ${params.gemma_num_cores} $keep $af --bp_header ${params.head_bp} $NInfo $Nval $info
      plink -bfile $plkbas --extract range listrs.rs --make-bed  --out $newplkbas --keep-allele-order --threads ${params.gemma_num_cores} $keep
      cp $newplkbas".fam" $newplkbas".fam.tmp" 
      awk \'{\$6=1;print \$0}\' $newplkbas".fam.tmp" > $newplkbas".fam"
