@@ -398,6 +398,7 @@ if(params.ldsc_h2_multi==1){
 }
 
 
+
 balise_filers_rel=1
 if(params.bolt_h2 || params.gcta_h2 || params.gemma_h2){
  bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString().replaceFirst(/^az:/, "az:/").replaceFirst(/^s3:/, "s3:/")
@@ -420,7 +421,7 @@ if(params.bolt_h2 || params.gcta_h2 || params.gemma_h2){
         base = bed.baseName
         prune= "${base}-prune"
         """
-        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} --autosome
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} --autosome --maf ${params.cut_maf}
         """
    }
  }else{
@@ -1036,7 +1037,7 @@ if(params.gemma_h2==1){
        """
        export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
        cat $famfile |awk '{print \$1"\t"\$2"\t"0.2}' > pheno
-       ${params.gemma_bin} -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list
+       ${params.gemma_bin} -bfile $base  -gk ${params.gemma_relopt} -o $base -p pheno -n 3 $rs_list 
        """
   }
   }else{
@@ -1087,7 +1088,7 @@ if(params.gemma_h2==1){
        """
        list_ind_nomissing.py --data $covariates --inp_fam $inp_fam $covariate_option --pheno $ourpheno3 --dataout $data_nomissing \
                              --lindout $list_ind_nomissing
-       gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing
+       gemma_relselind.py  --rel $rel --inp_fam $inp_fam --relout $rel_matrix --lind $list_ind_nomissing 
        plink --keep-allele-order --bfile $base --keep $list_ind_nomissing --make-bed --out $newbase 
        all_covariate.py --data  $data_nomissing --inp_fam  $newbase".fam" $covariate_option --cov_out $gemma_covariate \
                           --pheno $our_pheno2 --phe_out ${phef} --form_out 1
@@ -1189,7 +1190,7 @@ process DoGemmah2Pval{
      """
      sed '1d' $data|awk '{print \$1"\t"\$2}' > keepind
      gemma_format_pval.py --inp_asso $gwas --out $gwas".new"  --rs_header ${params.head_rs} --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --chro_header ${params.head_chr} --beta_header ${params.head_beta} --bfile $plkbas --threads ${params.gemma_num_cores} $keep $af --bp_header ${params.head_bp} $NInfo $Nval $info
-     plink -bfile $plkbas --extract range listrs.rs --make-bed  --out $newplkbas --keep-allele-order --threads ${params.gemma_num_cores} $keep
+     plink -bfile $plkbas --extract range listrs.rs --make-bed  --out $newplkbas --keep-allele-order --threads ${params.gemma_num_cores} $keep --maf ${params.cut_maf}
      cp $newplkbas".fam" $newplkbas".fam.tmp" 
      awk \'{\$6=1;print \$0}\' $newplkbas".fam.tmp" > $newplkbas".fam"
      export OPENBLAS_NUM_THREADS=${params.gemma_num_cores}
