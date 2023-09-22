@@ -66,8 +66,8 @@ writenew=open(args.out_file, 'w')
 writenewgwas=open(args.out_sumstat, 'w')
 
 header_line=readfile.readline()
-writenewgwas.write(header_line)
 headeri=header_line.replace('\n','').split(sep)
+writenewgwas.write('\t'.join(headeri)+'\n')
 PosRs=headeri.index(nomrs)
 PosA1=headeri.index(A1Nom)
 PosA2=headeri.index(A2Nom)
@@ -125,7 +125,7 @@ else :
      spl=line.replace('\n','').split(sep)
      if spl[PosRs]!='.' :
         writenew.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\n')
-        writenewgwas.write(line)
+        writenewgwas.write('\t'.join(spl)+'\n')
 writenew.close()
 writenewgwas.close()
 
