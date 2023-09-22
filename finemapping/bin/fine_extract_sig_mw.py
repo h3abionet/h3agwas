@@ -21,7 +21,6 @@ def readbim(bimfile, sumstat) :
       if (chro in sumstat) and (pos in sumstat[chro]):
        key=chro+':'+str(pos)
        if key in listsave :
-         print("multi present del "+chro+' '+st(pos))
          del dicchro_rs[chro][dicchro_pos[chro][pos][0]]
          del dicchro_pos[chro][pos]
          del sumstat[chro][pos]
@@ -40,7 +39,6 @@ def readbim(bimfile, sumstat) :
       listbp=list(sumstat[chro].keys())
       for bp in listbp:
         if bp not in dicchro_pos[chro] :
-          print("not found del  "+chro+' '+str(bp))
           del sumstat[chro][bp]
    return (dicchro_pos,dicchro_rs,sumstat)
        
@@ -226,12 +224,15 @@ def appendfreq(bfile, result,biminfo, freq_header,rs_header, n_header, nval, bin
        if n_header==None :
           result[chro][bp][5]=round(int(spll[posN])/2)
        if freq_header==None :
-          maf=float(spll[posMAF]) 
-          A1=spll[posA1]
-          A2=spll[posA2]
-          if A1 != result[chro][bp][0] :
-            maf=1 - maf 
-          result[chro][bp][6] = maf
+         try :
+            maf=float(spll[posMAF]) 
+            A1=spll[posA1]
+            A2=spll[posA2]
+            if A1 != result[chro][bp][0] :
+              maf=1 - maf 
+            result[chro][bp][6] = maf
+         except :
+            print("maf error "+ line+' '+spll[posMAF])
    for chro in result :
      listbp=list(result[chro].keys())
      for bp in listbp :
@@ -247,7 +248,6 @@ def checksumstat(sumstat,maf) :
       for bp in listbp_chro:
          #[getval(spl,a1head), getval(spl,a2head), getval(spl,betahead), getval(spl,sehead),getval(spl,zhead) , getval(spl,nhead), getval(spl,afhead)]
          [a1,a2,beta, se, z, n, af, p, rsbim]=sumstat[chro][bp]
-         af=float(af) 
          if not p :
            del sumstat[chro][bp]
            continue 
@@ -267,6 +267,7 @@ def checksumstat(sumstat,maf) :
              se=1/sqrt(2*p*(1-p)*(n+z**2))
          beta=float(beta)
          se=float(se)
+         af=float(af) 
          if af > 0.5 :
            af= 1 - af
            beta =  - beta

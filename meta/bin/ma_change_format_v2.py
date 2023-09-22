@@ -83,6 +83,7 @@ def parseArguments():
     parser.add_argument('--out_file',type=str,required=True,help="output file")
     parser.add_argument('--info_file',type=str,required=True,help="list of header to print and replace and new header oldheader1:newheader1,oldheader2:newheader2")
     parser.add_argument('--sep_out',type=str,default="\t",help="separator output")
+    parser.add_argument('--tab',type=int,default=0,help="separator output")
     parser.add_argument('--rs_ref',type=str,help="if need to be limited at some rs")
     parser.add_argument('--use_rs',type=str,help="if need to be limited at some rs", default=0)
     parser.add_argument('--used_pvalue',type=int,help="if need to be limited at some rs", default=0)
@@ -123,7 +124,14 @@ infohead=args.info_file.split(",")
 l_oldhead=[x.split(":")[1] for x in infohead if(ConfIsNotNull(x))]
 l_newhead=[x.split(":")[0] for x in infohead  if(ConfIsNotNull(x))]
 
-if 'Sep' in l_newhead :
+if args.tab == 1 :
+   sep='\t'
+   if 'Sep' in l_newhead :
+      PosSep=l_newhead.index('Sep')
+      del l_oldhead[PosSep]
+      del l_newhead[PosSep]
+
+elif 'Sep' in l_newhead :
    PosSep=l_newhead.index('Sep')
    sep=GetSep(l_oldhead[PosSep])
    del l_oldhead[PosSep]

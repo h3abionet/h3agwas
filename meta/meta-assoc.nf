@@ -238,10 +238,12 @@ process extract_rs_file{
     output  :
        //file(file_rs) into file_rs_ref_chan, file_ref_rs_metal
        file(file_rs) into file_rs_formerge
+       tuple file(fileoutsum), val(info_file) ,val(num) into file_sumstat_rsclean
     script :
         file_rs = num+"_"+file_assoc+".rs"
+        fileoutsum = num+"_"+file_assoc+".cleanrs"
         """
-        ma_extract_rsid.py --input_file $file_assoc --out_file $file_rs --info_file $info_file
+        ma_extract_rsid.py --input_file $file_assoc --out_file $file_rs --info_file $info_file --out_sumstat $fileoutsum
         """
 }
 
@@ -261,7 +263,7 @@ process extract_allrs{
       merge_rs.py --list_file $listfilers --out $listrs --use_rs ${params.use_rs}
       """
 }
-liste_filesi_ch=Channel.fromPath(info_file[0],checkIfExists:true).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[3])).combine(file_rs_ref_chan)
+liste_filesi_ch=file_sumstat_rsclean.combine(file_rs_ref_chan)
 
 
 /*deletedd file_ref*/
@@ -279,7 +281,7 @@ process ChangeFormatFile {
        newfile_assocplk="${file_assoc}_${num}.modif.plk"
        usedpval=(params.used_pval_z==1)? " --used_pvalue 1 " : ""
        """
-       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file  --sep_out TAB --use_rs ${params.use_rs} --rs_ref $file_ref $usedpval
+       ma_change_format_v2.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file  --sep_out TAB --use_rs ${params.use_rs} --rs_ref $file_ref $usedpval --tab 1
        """
 }
 

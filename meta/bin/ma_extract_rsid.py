@@ -28,6 +28,7 @@ def parseArguments():
     parser.add_argument('--out_file',type=str,help="output file",required=True)
     parser.add_argument("--info_file", help="", type=str,required=True)
     parser.add_argument("--ldsc", help="output format ldsc, default none",action="store_true")
+    parser.add_argument("--out_sumstat",help="", type=str)
     args = parser.parse_args()
     return args
 
@@ -62,8 +63,11 @@ A2Nom=l_filehead[l_infohead.index('A2')]
 
 readfile=open(args.input_file)
 writenew=open(args.out_file, 'w')
+writenewgwas=open(args.out_sumstat, 'w')
 
-headeri=readfile.readline().replace('\n','').split(sep)
+header_line=readfile.readline()
+writenewgwas.write(header_line)
+headeri=header_line.replace('\n','').split(sep)
 PosRs=headeri.index(nomrs)
 PosA1=headeri.index(A1Nom)
 PosA2=headeri.index(A2Nom)
@@ -77,15 +81,15 @@ if args.ldsc :
    writenew.write('SNP\tA1\tA2\n')
    writenew2.write('SNP\tA1\tA2\tChro\tBP\n')
    if balisechro==False :
-    for ligne in readfile :
-     spl=ligne.replace('\n','').split(sep)
+    for line in readfile :
+     spl=line.replace('\n','').split(sep)
      spl[PosA1]=spl[PosA1].upper()
      spl[PosA2]=spl[PosA2].upper()
      if spl[PosRs]!='.' :
         writenew.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\n')
    else :
-    for ligne in readfile :
-     spl=ligne.replace('\n','').split(sep)
+    for line in readfile :
+     spl=line.replace('\n','').split(sep)
      writenew.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\n')
      pos=int(float(spl[PosPos]))
      if pos <=1 :
@@ -95,8 +99,8 @@ if args.ldsc :
        writenew2.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\t'+spl[PosChro]+'\t'+spl[PosPos]+'\n')
 elif  balisechro == True  :
    writenew.write('rsID\tChro\tPos\tA1\tA2\tnewRs\n')
-   for ligne in readfile :
-     spl=ligne.replace('\n','').split(sep)
+   for line in readfile :
+     spl=line.replace('\n','').split(sep)
      spl[PosA1]=spl[PosA1].upper()
      spl[PosA2]=spl[PosA2].upper()
      if spl[PosA1] > spl[PosA2] :
@@ -111,15 +115,19 @@ elif  balisechro == True  :
      else :
        spl[PosPos]=str(pos)
        newrs=spl[PosChro]+'_'+spl[PosPos]+'_'+AA1+'_'+AA2
-       if spl[PosRs]!='.' :
-         writenew.write(spl[PosRs]+"\t"+spl[PosChro]+"\t"+spl[PosPos]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+"\t"+newrs+'\n')
+       if spl[PosRs]=='.' or spl[PosRs]=='NA' :
+         spl[PosRs]=spl[PosChro]+':'+spl[PosPos] 
+       writenewgwas.write('\t'.join(spl)+'\n')
+       writenew.write(spl[PosRs]+"\t"+spl[PosChro]+"\t"+spl[PosPos]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+"\t"+newrs+'\n')
 else :
    writenew.write('rsID\tA1\tA2\n')
-   for ligne in readfile :
-     spl=ligne.replace('\n','').split(sep)
+   for line in readfile :
+     spl=line.replace('\n','').split(sep)
      if spl[PosRs]!='.' :
         writenew.write(spl[PosRs]+"\t"+spl[PosA1]+"\t"+spl[PosA2]+'\n')
+        writenewgwas.write(line)
 writenew.close()
+writenewgwas.close()
 
    
 
