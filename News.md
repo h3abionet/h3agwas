@@ -4,6 +4,7 @@
 # What\'s new :
 ### V3.5.0
  * minor bug gemma with heritability using summary statistics: take account N value and header
+ * minor bug fixed when rs id was a dot (was discarded), fixed in meta analyses
 ### V3.4.1
 * add option `used_pval_z` for meta analysis[meta/README.md]
 * `format/vcf_in_[bimbam,bgen*,impute2].nf` :
