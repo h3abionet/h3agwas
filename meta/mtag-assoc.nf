@@ -142,7 +142,7 @@ process doFormatFile{
      headfreq=head_freq!="" ? " --freq_header  ${head_freq} " : ""
      headN=head_freq!="" ? " --freq_N  ${head_N} " : ""
      """
-     gcta_format.py --inp_asso $filegwas  --rs_header ${head_rs} --pval_header ${head_pval} $headfreq --a1_header ${head_A1} --a2_header ${head_A2} --se_header ${head_se} --beta_header ${head_beta} --chro_header ${head_chr}  --out $out --threads ${params.max_plink_cores} --bp_header ${head_bp}
+     gcta_format.py --inp_asso $filegwas  --rs_header ${head_rs} --pval_header ${head_pval} $headfreq --a1_header ${head_A1} --a2_header ${head_A2} --se_header ${head_se} --beta_header ${head_beta} --chro_header ${head_chr}  --out $out --threads ${params.max_plink_cores} --bp_header ${head_bp} $headN  
      """ 
 }
 Head_N="N"
