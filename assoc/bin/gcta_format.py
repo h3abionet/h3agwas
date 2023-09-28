@@ -26,7 +26,7 @@ def parseArguments():
     parser.add_argument('--n_header',type=str,help="n header in inp files", default=None)
     parser.add_argument('--chr',type=str,help="n header in inp files", default=None)
     parser.add_argument('--chro_header',type=str,required=True,help="n header in inp files")
-    parser.add_argument('--bp_header',type=str,help="bp header")
+    parser.add_argument('--bp_header',type=str,help="bp header", required = True)
     parser.add_argument('--beta_header',type=str,required=True,help="beta header in inp files")
     parser.add_argument('--bin_plk',type=str,required=False,help="plink binary", default="plink")
     parser.add_argument('--bfile',type=str,required=False,help="bfile if need to compute frequency or N", default=None)
@@ -65,7 +65,7 @@ if args.pos_list :
   if not args.chr :
      print("error option chro not found")
      sys.exit(2)
-  pos_list=[int(x) for x in pos_list.split(',')]
+  pos_list=[int(x) for x in args.pos_list.split(',')]
   result=result[(result[args.chro_header]==args.chr)]
   result=result[result[args.bp_header].isin(pos_list)]
 elif args.chr :
@@ -84,7 +84,7 @@ if (args.n_header==None or args.freq_header==None) and args.bfile :
    if args.keep :
      Cmd+=" --keep "+args.keep
    Cmd+=" --threads "+str(args.threads)
-   Cmd+=" --keep range a1234tmp.bed "
+   Cmd+=" --extract range a1234tmp.bed "
    Cmd+=" --out "+plkfreqfil
    os.system(Cmd)
    data_n=pd.read_csv(plkfreqfil+".frq",delim_whitespace=True)

@@ -281,10 +281,10 @@ process doFormatData{
       out=chro+".format"
       baseplk=bed.baseName
       headfreq=params.head_freq!="" ? " --freq_header ${params.head_freq}" : ""
-      headn=params.head_n!="" ? " --freq_header ${params.head_n}" : ""
+      headn=params.head_n!="" ? " --n_header ${params.head_n}" : ""
       headkeep=params.data!="" ? " --keep $keepind " : ""
       """
-      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval} $headfreq --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_beta} --chro_header ${params.head_chr} --chr $chro --bfile $baseplk --out $out --threads ${params.max_plink_cores}
+      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval} $headfreq --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_beta} --chro_header ${params.head_chr} --chr $chro --bfile $baseplk --out $out --threads ${params.max_plink_cores} --bp_header $params.head_bp $nheader
       """
 }
 if(params.cojo_slct){

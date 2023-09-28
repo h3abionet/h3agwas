@@ -100,7 +100,7 @@ params.output_dir = "${params.work_dir}/output"
 params.output = "out_cond"
 params.covariates = ""
 params.chro_cond      = ""
-params.pos_cond      = 0
+params.pos_cond     = 0
 params.around = 250000
 params.pos_ref = 0
 params.file_rs_buildrelat = ""
@@ -553,5 +553,6 @@ process plot_res{
       cond_plotresgemma.r --ld $ld --list_file_assoc $allrsgemma --file_I $gemmai --file_merge $gemmamerge --pos_ref $params.pos_ref  --out $out
      """ 
 }
+
 
 

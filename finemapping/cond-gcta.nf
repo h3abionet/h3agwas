@@ -79,13 +79,13 @@ if (!workflow.resume) {
 def helps = [ 'help' : 'help' ]
 
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp",   "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", "pheno", "covariates", "cojo_slct_other", "file_gwas"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp",   "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", "pheno", "covariates", "cojo_slct_other", "file_gwas", 'gcta_bin']
 allowed_params=allowed_params_input
 allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores']
 allowed_params+=allowed_params_cores
-allowed_params_intother=["max_forks", "n_pop","cojo_wind", "cojo_top_snps_chro"]
+allowed_params_intother=["max_forks", "n_pop","pos_cond", "pos_ref"]
 allowed_params+=allowed_params_intother
-allowed_params_bolother=["cojo_slct", "cojo_actual_geno","cojo_top_snps"]
+allowed_params_bolother=[ "cojo_actual_geno"]
 allowed_params+=allowed_params_bolother
 allowed_params_float=["cut_maf", "threshold_p", "cojo_p"]
 allowed_params+=allowed_params_float
@@ -93,6 +93,8 @@ allowed_params_memory=["gcta_mem_req" , "plink_mem_req", "other_mem_req", "boot-
 allowed_params+=allowed_params_memory
 params_filegwas=[ "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
 allowed_params+=params_filegwas
+params_strorint=["chro_cond"]
+allowed_params+=params_strorint
 
 
 
@@ -140,6 +142,7 @@ params.pheno=""
 params.pos_cond      = 0
 params.pos_ref = 0
 params.chro_cond      = ""
+params.cojo_actual_geno=0
 
 
 
@@ -181,9 +184,11 @@ checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=nul
 checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
-checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
 checkmultiparam(params,allowed_params_float, [java.lang.Double,java.lang.Float, java.lang.Integer, java.math.BigDecimal], min=0, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,params_filegwas, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,params_strorint, [java.lang.String,java.lang.Integer], min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_bolother, java.lang.Integer, min=0, max=null, possibleval=[0,1], notpossibleval=null)
+
 
 
 
@@ -204,8 +209,6 @@ plink_other=Channel.create()
 raw_src_ch.separate (plink_format, plink_cojo, plink_other) { a -> [ a, a, a] }
 
 
-check2 = Channel.create()
-chrolist=chrolist.flatMap { list_str -> list_str.split() }.tap ( check2)
 
 data_listind=Channel.fromPath(params.data)
 process getListInd{
@@ -251,15 +254,34 @@ process doFormatData{
    output :
         tuple path(keepind), path(bed), path(bim), path(fam), path(out) into gwas_chro_cojo,gwas_chro_topsnp
    script :
-      out=chro+".format"
+      out=params.output+".format"
       baseplk=bed.baseName
       headfreq=params.head_freq!="" ? " --freq_header ${params.head_freq}" : ""
-      headn=params.head_n!="" ? " --freq_header ${params.head_n}" : ""
+      headn=params.head_n!="" ? " --n_header ${params.head_n}" : ""
       headkeep=params.data!="" ? " --keep $keepind " : ""
       listpos=params.pos_ref+","+params.pos_cond
       """
-      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval} $headfreq --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_beta} --chro_header ${params.head_chr} --chr $chro --bfile $baseplk --out $out --threads ${params.max_plink_cores} --pos_list $listpos --updaters 1
+      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval} $headfreq --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_beta} --chro_header ${params.head_chr} --chr $params.chro_cond --bfile $baseplk --out $out --threads ${params.max_plink_cores} --pos_list $listpos --updaters 1 --bp_header ${params.head_bp} $headn
       """
 }
-
-
+/*
+list_cond=channel.of(params.pos_cond.split(','))
+process run_condgcta {
+   cpus params.gcta_cpus_req
+   memory params.gcta_mem_req
+   input :
+      tuple path(keepind), path(bed), path(bim), path(fam), path(gwas) from gwas_chro_cojo
+   each poscond from list_cond 
+   publishDir "${params.output_dir}/bp_res",  mode:'copy'
+   output :
+     file("$out*")
+   script :    
+      baseplk=bed.baseName
+      chro=params.chro_cond
+      out=poscond+'_cond'
+      cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
+      """
+      echo "$chro:$poscond" > listcond
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas}   --thread-num ${params.gcta_cpus_req} --cojo-cond listcond $cojoactu
+      """
+}*/

@@ -26,22 +26,23 @@ def parseArguments():
     return args
 
 args = parseArguments()
-inp     = args.inp_asso
 
 fileposbed="a1234tmp.bed"
 out=args.out
 writebed=open(fileposbed,'w')
-pos_list=[x for x in pos_list.split(',')]
+pos_list=[x for x in args.pos_list.split(',')]
 chro=args.chr
 for x in pos_list :
   writebed.write("\t".join([chro,x,x,chro+':'+x])+'\n')
 writebed.close()
 out=args.out
+Cmd=args.bin_plk+" -bfile "+args.bfile+"  --keep-allele-order --make-bed "
 if args.keep :
    Cmd+=" --keep "+args.keep
 Cmd+=" --threads "+str(args.threads)
-Cmd+=" --keep range  "+fileposbed
-Cmd+=" --out "+plkfreqfil
+Cmd+=" --extract range  "+fileposbed
+Cmd+=" --out "+ args.out
+print(Cmd)
 os.system(Cmd)
 
 readbim=open(args.out+'.bim')
@@ -49,6 +50,6 @@ bimlist=[x.replace('\n','').split() for x in readbim]
 readbim.close()
 writebim=open(args.out+'.bim','w')
 for x in bimlist :
- x[1]=c[0]+':'+x[3] 
- writebim.write("\t",join(x)+'\n')
+ x[1]=x[0]+':'+x[3] 
+ writebim.write("\t".join(x)+'\n')
 writebim.close()
