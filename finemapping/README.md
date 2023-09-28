@@ -173,8 +173,6 @@ need locuszoom, _R_ : ggplot2, python3, finemap, paintor, gcta, plink
 
 
 
-   
-
 ### Example
 
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)

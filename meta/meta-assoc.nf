@@ -239,6 +239,7 @@ process extract_rs_file{
        //file(file_rs) into file_rs_ref_chan, file_ref_rs_metal
        file(file_rs) into file_rs_formerge
        tuple file(fileoutsum), val(info_file) ,val(num) into file_sumstat_rsclean
+       path("${file_rs}.*")
     script :
         file_rs = num+"_"+file_assoc+".rs"
         fileoutsum = num+"_"+file_assoc+".cleanrs"

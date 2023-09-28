@@ -11,6 +11,7 @@ import pandas as pd
 import sys
 
 EOL = chr(10)
+TAB =chr(9)
 #SNP A1 A2 freq b se p N 
 def parseArguments():
     parser = argparse.ArgumentParser(description='format file for gcta, append N and frequencie if not present using bed file')
@@ -32,6 +33,8 @@ def parseArguments():
     parser.add_argument('--keep',type=str,required=False,help="file of data used for if need to compute frequency or N", default=None)
     parser.add_argument('--threads',type=int,required=False,help="", default=1)
     parser.add_argument('--print_pos',type=bool,required=False,help="", default=False)
+    parser.add_argument('--pos_list',type=str,required=False,help="", default=None)
+    parser.add_argument('--updaters',type=int,required=False,help="", default=0)
     args = parser.parse_args()
     return args
 
@@ -57,11 +60,23 @@ if n_head :
 ## first step : if
 result = pd.read_csv(inp,delim_whitespace=True)
 result[args.chro_header] = result[args.chro_header].astype(str)
+
+if args.pos_list :
+  if not args.chr :
+     print("error option chro not found")
+     sys.exit(2)
+  pos_list=[int(x) for x in pos_list.split(',')]
+  result=result[(result[args.chro_header]==args.chr)]
+  result=result[result[args.bp_header].isin(pos_list)]
+elif args.chr :
+   result=result[result[args.chro_header]==args.chr]
+
 if (args.n_header==None or args.freq_header==None) and args.bfile :
+   result.to_csv('a1234tmp.bed', sep=TAB, columns=[args.chro_header,args.bp_header, args.bp_header, args.bp_header], header=False)
    plkfreqfil=os.path.basename(args.bfile)
    if args.bfile==None :
      print("no header for n or freq and bfile")
-     sys.exit()
+     sys.exit(2)
    Cmd=args.bin_plk+" -bfile "+args.bfile+" --freq --keep-allele-order "
    if args.chr :
      Cmd+=" --chr "+args.chr
@@ -69,6 +84,7 @@ if (args.n_header==None or args.freq_header==None) and args.bfile :
    if args.keep :
      Cmd+=" --keep "+args.keep
    Cmd+=" --threads "+str(args.threads)
+   Cmd+=" --keep range a1234tmp.bed "
    Cmd+=" --out "+plkfreqfil
    os.system(Cmd)
    data_n=pd.read_csv(plkfreqfil+".frq",delim_whitespace=True)
@@ -90,19 +106,20 @@ if (args.n_header==None or args.freq_header==None) and args.bfile :
    result=result.merge(data_n,how="inner", left_on=rs_head, right_on="SNP")
 
 
-if args.chr :
-   result=result[result[args.chro_header]==args.chr]
 
 
 #Head=[rs_head, a1_head,a2_head,beta_head, se_head,pval_head]
-#NewHead=["SNP","A1","A2","b","se","p"]
+#NewHead=["SNsP","A1","A2","b","se","p"]
+print_pos=args.print_pos
+if args.updaters==1 :
+  print_pos=1 
 NewHead=["SNP"]
 Head=[rs_head]
-if args.chro_header and args.print_pos:
+if args.chro_header and print_pos:
   NewHead.append("chro")
   Head.append(args.chro_header)
 
-if args.bp_header and args.print_pos:
+if args.bp_header and print_pos:
   NewHead.append("bp")
   Head.append(args.bp_header)
 
@@ -128,6 +145,8 @@ Head.append('z')
 result=result[Head]
 result.columns=NewHead
 
+if args.updaters :
+  result['SNP']=result['chro']+':'+result['bp']
 
 result.to_csv(args.out,sep=" ",header=True,index=False,na_rep="NA")
 
