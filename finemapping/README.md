@@ -193,7 +193,7 @@ need python3, gcta
 tested for singularity image: yes
 
 ### Running
-The pipeline is run: `nextflow run assoc/annot-assoc.nf`
+The pipeline is run: `nextflow run finemapping/annot-assoc.nf`
 
 The key options are:
   * `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
@@ -226,14 +226,17 @@ The key options are:
 * Data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 ```
-nextflow run   h3abioneth3agwas/h3agwas/finemapping/cojo-assoc.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/  --input_pat imput_data  --output_dir cojo --data data/pheno/pheno_test.all --pheno pheno_qt1 --file_gwas data/summarystat/all_pheno.gemma  -resume   -profile slurmSingularity
+nextflow run   h3abionet/h3agwas/finemapping/cojo-assoc.nf --head_pval p_wald --head_bp ps --head_chr chr --head_rs rs --head_beta beta --head_se se --head_A1 allele1 --head_A2 allele0 --input_dir data/imputed/  --input_pat imput_data  --output_dir cojo --data data/pheno/pheno_test.all --pheno pheno_qt1 --file_gwas data/summarystat/all_pheno.gemma  -resume   -profile slurmSingularity
 ```
 
 ## Conditional analysis of GWAS using gemma
 
+`cond-assoc.nf`
+
 ### Installation
 need python3, gemma, R
 tested for singularity image: yes
+
 
 ### algorithm
 * pipeline used :
@@ -261,4 +264,5 @@ tested for singularity image: yes
 * pipeline will compute ld between your positions ref and cond and produce figure
 
 
+## Conditional analysis of GWAS using gcta
 

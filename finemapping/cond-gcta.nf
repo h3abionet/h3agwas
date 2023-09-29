@@ -83,7 +83,7 @@ allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem
 allowed_params=allowed_params_input
 allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores']
 allowed_params+=allowed_params_cores
-allowed_params_intother=["max_forks", "n_pop","pos_cond", "pos_ref"]
+allowed_params_intother=["max_forks", "n_pop","pos_cond", "pos_ref", 'around']
 allowed_params+=allowed_params_intother
 allowed_params_bolother=[ "cojo_actual_geno"]
 allowed_params+=allowed_params_bolother
@@ -143,6 +143,7 @@ params.pos_cond      = 0
 params.pos_ref = 0
 params.chro_cond      = ""
 params.cojo_actual_geno=0
+params.around=100000
 
 
 
@@ -210,7 +211,7 @@ raw_src_ch.separate (plink_format, plink_cojo, plink_other) { a -> [ a, a, a] }
 
 
 
-data_listind=Channel.fromPath(params.data)
+data_listind=Channel.fromPath(params.data,checkIfExists:true)
 process getListInd{
    input :
      file data from data_listind
@@ -225,27 +226,44 @@ process getListInd{
 }
 
 
-gwas_format = Channel.fromPath(params.file_gwas)
+gwas_format = Channel.fromPath(params.file_gwas,checkIfExists:true)
 
-process clean_plinik {
+if(params.pos_ref<1){
+ process clean_plinik {
    cpus params.max_plink_cores
    memory params.plink_mem_req
    input :
      path(keepind) from filekeepformat
      tuple path(bed), path(bim), path(fam) from plink_format
    output :
-      tuple path(keepind), path("${out}.bed"), path("${out}.bim"), path("${out}.fam") into clean_plink 
+      tuple path(keepind), path("${out}.bed"), path("${out}.bim"), path("${out}.fam") into clean_plink, clean_plink2,plk_pos_ch
    script :
      listpos=params.pos_ref+","+params.pos_cond
      baseplk=bed.baseName
      out=params.output+"_gt"
      headkeep=params.data!="" ? " --keep $keepind " : ""
+     chroC=params.chro_cond
+     posCmin=params.pos_cond.toString().split(',').collect{it as int }.min()
+     posCmax=params.pos_cond.toString().split(',').collect{it as int }.max()
+     posCmin=(params.pos_ref==0) ? "$posCmin" : "${[posCmin, params.pos_ref].min()}"
+     posCmax=(params.pos_ref==0) ? "$posCmax" : "${[posCmax, params.pos_ref].max()}"
+     filerange="bedfile"
      """
-     gcta_cleanplink.py --bfile $baseplk --chr $params.chro_cond $headkeep --out $out --threads ${params.max_plink_cores} --pos_list $listpos
+     begin=`expr $posCmin - ${params.around}`
+     end=`expr $posCmax + ${params.around}`
+    if [ "\$begin" -lt 1 ]
+     then
+     begin=1
+     fi
+     echo -e "$chroC\t\$begin\t\$end\t$chroC:$posCmin" > $filerange
+     plink --keep-allele-order --bfile $baseplk --make-bed --out $out --extract range $filerange --maf ${params.cut_maf} $headkeep
+     cp   $out".bim" $out".save.bim"
+     awk -F "\\t" 'OFS="\\t" {\$2=\$1":"\$4;print \$0}' $out".save.bim" > $out".bim"
      """
-}
+ }
 
-process doFormatData{
+
+ process format_data_wind{
    cpus params.max_plink_cores
    memory params.plink_mem_req
    input :
@@ -259,21 +277,108 @@ process doFormatData{
       headfreq=params.head_freq!="" ? " --freq_header ${params.head_freq}" : ""
       headn=params.head_n!="" ? " --n_header ${params.head_n}" : ""
       headkeep=params.data!="" ? " --keep $keepind " : ""
-      listpos=params.pos_ref+","+params.pos_cond
+     chroC=params.chro_cond
+     posCmin=params.pos_cond.toString().split(',').collect{it as int }.min()
+     posCmax=params.pos_cond.toString().split(',').collect{it as int }.max()
+     posCmin=(params.pos_ref==0) ? "$posCmin" : "${[posCmin, params.pos_ref].min()}"
+     posCmax=(params.pos_ref==0) ? "$posCmax" : "${[posCmax, params.pos_ref].max()}"
       """
-      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval} $headfreq --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_beta} --chro_header ${params.head_chr} --chr $params.chro_cond --bfile $baseplk --out $out --threads ${params.max_plink_cores} --pos_list $listpos --updaters 1 --bp_header ${params.head_bp} $headn
+      begin=`expr $posCmin - ${params.around}`
+      end=`expr $posCmax + ${params.around}`
+      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval}  --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_beta} --chro_header ${params.head_chr} --chr $params.chro_cond --bfile $baseplk --out $out --threads ${params.max_plink_cores} --begin \$begin --end \$end --updaters 1 --bp_header ${params.head_bp} $headn $headfreq --print_pos 0
       """
+ }
+}else{
+ process clean_plink_listpos {
+   cpus params.max_plink_cores
+   memory params.plink_mem_req
+   input :
+     path(keepind) from filekeepformat
+     tuple path(bed), path(bim), path(fam) from plink_format
+   output : 
+      tuple path(keepind), path("${out}.bed"), path("${out}.bim"), path("${out}.fam") into clean_plink, clean_plink2,plk_pos_ch
+   script :
+     listpos=params.pos_ref+","+params.pos_cond
+     baseplk=bed.baseName
+     out=params.output+"_gt"
+     headkeep=params.data!="" ? " --keep $keepind " : ""
+     chroC=params.chro_cond
+     listpos=params.pos_ref+','+params.pos_cond
+     """
+     gcta_cleanplink.py --out $out --chr $chroC --bfile $baseplk $headkeep --threads ${params.max_plink_cores} --pos_list $listpos
+     """
+ }
+ process format_data_wind_listpos{
+   cpus params.max_plink_cores
+   memory params.plink_mem_req
+   input :
+     tuple path(keepind), path(bed), path(bim), path(fam) from clean_plink
+      path(gwas) from gwas_format
+   output :
+        tuple path(keepind), path(bed), path(bim), path(fam), path(out) into gwas_chro_cojo,gwas_chro_topsnp
+   script :
+      out=params.output+".format"
+      baseplk=bed.baseName
+      headfreq=params.head_freq!="" ? " --freq_header ${params.head_freq}" : ""
+      headn=params.head_n!="" ? " --n_header ${params.head_n}" : ""
+      headkeep=params.data!="" ? " --keep $keepind " : ""
+      chroC=params.chro_cond
+      listpos=params.pos_ref+','+params.pos_cond
+      """
+      gcta_format.py --inp_asso $gwas  --rs_header ${params.head_rs} --pval_header ${params.head_pval}  --a1_header ${params.head_A1} --a2_header ${params.head_A2} --se_header ${params.head_se} --beta_header ${params.head_beta} --chro_header ${params.head_chr} --chr $params.chro_cond --bfile $baseplk --out $out --threads ${params.max_plink_cores} --updaters 1 --bp_header ${params.head_bp} $headn $headfreq --print_pos 0 --list_pos $listpos
+      """
+ }
+
 }
+process computed_ld{
+    input :
+      tuple path(keepind), path(bed), path(bim), path(fam) from clean_plink2
+    output :
+      file(ld) into ld_res_notsq
+      file(ld2) into ld_res_sq
+    publishDir "${params.output_dir}/ld/",  mode:'copy'
+    script :
+       listpos= (params.pos_ref==0) ?"${params.pos_cond} "  : "${params.pos_cond},${params.pos_ref}"
+       chr=params.chro_cond
+       base        =  bed.baseName
+       out = params.output
+       ld=params.output+'_notsq.ld'
+       ld2=params.output+'_sq.ld'
+       """
+       echo $listpos|awk -v chro=$chr -F"," '{for(Cmt=1;Cmt<=NF;Cmt++)print chro"\t"\$Cmt"\t"\$Cmt"\t"chro":"\$Cmt}' >ldlist
+       plink -bfile $base --r2           --ld-window 99999  --out ${params.output}_notsq    --ld-window-kb 10000 --ld-window-r2 0
+       plink -bfile $base --r2 square --out ${params.output}_sq
+       """
+}
+
 /*
-list_cond=channel.of(params.pos_cond.split(','))
+process plot_ld{
+   label 'R'
+  input :
+     file(ld2) from ld_res_sq
+     set path(keepind),file(bim), file(bed), file(fam) from plk_pos_ch
+  output :
+     file(fileout) into plot_ld
+  publishDir "${params.output_dir}/res/fig/",  mode:'copy'
+  script :
+      fileout=params.output+'_ld.pdf'
+      posref= (params.pos_ref<1) ?""  : " --pos_ref  ${params.pos_ref}"
+      """
+      cond_plotld.r --ld $ld2 --bim $bim --out $fileout  $posref
+      """
+}*/
+
+list_cond=channel.of(params.pos_cond.toString().split(','))
 process run_condgcta {
+   label 'gcta'
    cpus params.gcta_cpus_req
    memory params.gcta_mem_req
    input :
       tuple path(keepind), path(bed), path(bim), path(fam), path(gwas) from gwas_chro_cojo
    each poscond from list_cond 
-   publishDir "${params.output_dir}/bp_res",  mode:'copy'
+   publishDir "${params.output_dir}/condgcta/",  mode:'copy'
    output :
+     file("${out}.cma.cojo") into cond_pos
      file("$out*")
    script :    
       baseplk=bed.baseName
@@ -282,6 +387,22 @@ process run_condgcta {
       cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
       """
       echo "$chro:$poscond" > listcond
-      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas}   --thread-num ${params.gcta_cpus_req} --cojo-cond listcond $cojoactu
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas}   --thread-num ${params.gcta_cpus_req} --cojo-cond listcond $cojoactu 
       """
-}*/
+}
+cond_pos=cond_pos.collect()
+process merge_condld{
+   label 'R'
+   input :
+    path(allfile) from cond_pos 
+    path(ld) from ld_res_notsq
+   publishDir "${params.output_dir}/condgcta/",  mode:'copy'
+   output :
+      path("$out*")
+   script :
+     out=params.output+".csv"
+     allfile=allfile.join(",")
+     """
+     merge_gctacond.r --ld $ld --files_cond $allfile --out $out
+     """
+}

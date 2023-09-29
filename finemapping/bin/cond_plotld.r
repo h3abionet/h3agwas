@@ -117,7 +117,14 @@ print(write.snp.id.col)
 head(DataCol2)
 }else if(!is.null(opt[['pos_ref']])){
 write.snp.id.col=list('red'=DataBim$V2[DataBim$V4==opt[['pos_ref']]])
+print(write.snp.id.col)
 }
+print(dim(m))
 pdf(out)
+if(ncol(m)>2){
 LD.plot2(m, DataBim$V4, draw.chr=TRUE, write.snp.id=TRUE, write.snp.id.col=write.snp.id.col)
+}else{
+plot(1:10,type='n')
+text(1,5,'more than 2 positions')
+}
 dev.off()
