@@ -24,7 +24,9 @@ for(File in list_cond){
  chro=strsplit(rsinfo,split=':')[[1]]
  bp=chro[1]
  Data<-read.table(File,header=T)
- Data<-Data[Data$bp==pos_ref,]
+ if(!is.null(pos_ref)){
+  Data<-Data[Data$bp==pos_ref,]
+ }
  Data$refA[as.logical(Data$refA)]<-"T"
  Data$bp_cond<-bp
  Data$bp_cond<-as.character(Data$bp_cond)

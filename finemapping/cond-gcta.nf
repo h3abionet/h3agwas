@@ -425,7 +425,8 @@ process merge_condld{
    script :
      out=params.output+".csv"
      allfile=allfile.join(",")
+     posref=(args.pos_ref>0)? " --pos_ref ${params.pos_ref} " : ""
      """
-     merge_gctacond.r --ld $ld --files_cond $allfile --out $out --pos_ref ${params.pos_ref}
+     merge_gctacond.r --ld $ld --files_cond $allfile --out $out $posref
      """
 }
