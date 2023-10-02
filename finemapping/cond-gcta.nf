@@ -83,7 +83,7 @@ allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem
 allowed_params=allowed_params_input
 allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores']
 allowed_params+=allowed_params_cores
-allowed_params_intother=["max_forks", "n_pop","pos_cond", "pos_ref", 'around']
+allowed_params_intother=["max_forks", "n_pop", "pos_ref", 'around']
 allowed_params+=allowed_params_intother
 allowed_params_bolother=[ "cojo_actual_geno"]
 allowed_params+=allowed_params_bolother
@@ -93,7 +93,7 @@ allowed_params_memory=["gcta_mem_req" , "plink_mem_req", "other_mem_req", "boot-
 allowed_params+=allowed_params_memory
 params_filegwas=[ "head_beta", "head_se", "head_A1", "head_A2", "head_freq", "head_chr", "head_bp", "head_rs", "head_pval", "head_n"]
 allowed_params+=params_filegwas
-params_strorint=["chro_cond"]
+params_strorint=["chro_cond", 'pos_cond']
 allowed_params+=params_strorint
 
 
@@ -270,7 +270,7 @@ if(params.pos_ref<1){
      tuple path(keepind), path(bed), path(bim), path(fam) from clean_plink 
       path(gwas) from gwas_format
    output :
-        tuple path(keepind), path(bed), path(bim), path(fam), path(out) into gwas_chro_cojo,gwas_chro_topsnp
+        tuple path(keepind), path(bed), path(bim), path(fam), path(out) into (gwas_chro_cojo , gwas_chro_cojo_all)
    script :
       out=params.output+".format"
       baseplk=bed.baseName
@@ -315,7 +315,7 @@ if(params.pos_ref<1){
      tuple path(keepind), path(bed), path(bim), path(fam) from clean_plink
       path(gwas) from gwas_format
    output :
-        tuple path(keepind), path(bed), path(bim), path(fam), path(out) into gwas_chro_cojo,gwas_chro_topsnp
+        tuple path(keepind), path(bed), path(bim), path(fam), path(out) into gwas_chro_cojo,gwas_chro_cojo_all
    script :
       out=params.output+".format"
       baseplk=bed.baseName
@@ -387,10 +387,33 @@ process run_condgcta {
       cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
       """
       echo "$chro:$poscond" > listcond
-      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas}   --thread-num ${params.gcta_cpus_req} --cojo-cond listcond $cojoactu 
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas}   --thread-num ${params.gcta_cpus_req} --cojo-cond listcond $cojoactu  --cojo-collinear 0.99
       """
 }
 cond_pos=cond_pos.collect()
+if(params.pos_cond.toString().split(',').size()>1){
+process run_condgcta_all {
+   label 'gcta'
+   cpus params.gcta_cpus_req
+   memory params.gcta_mem_req
+   input :
+      tuple path(keepind), path(bed), path(bim), path(fam), path(gwas) from gwas_chro_cojo_all
+   publishDir "${params.output_dir}/condgcta/",  mode:'copy'
+   output :
+     file("${out}.cma.cojo") into cond_pos_all
+     file("$out*")
+   script :
+      baseplk=bed.baseName
+      chro=params.chro_cond
+      out='all_cond'
+      cojoactu=params.cojo_actual_geno==1 ? " --cojo-actual-geno " : ""
+      """
+      echo "${params.pos_cond}" |awk -F"," '{for(col=1;col<=NF;col++)print ${params.chro_cond}":"\$col}' > listcond
+      ${params.gcta_bin} --bfile $baseplk --chr $chro --out $out --cojo-file ${gwas}   --thread-num ${params.gcta_cpus_req} --cojo-cond listcond $cojoactu  --cojo-collinear 0.99
+      """
+}
+cond_pos=cond_pos.combine(cond_pos_all).collect()
+}
 process merge_condld{
    label 'R'
    input :
@@ -403,6 +426,6 @@ process merge_condld{
      out=params.output+".csv"
      allfile=allfile.join(",")
      """
-     merge_gctacond.r --ld $ld --files_cond $allfile --out $out
+     merge_gctacond.r --ld $ld --files_cond $allfile --out $out --pos_ref ${params.pos_ref}
      """
 }
