@@ -2,11 +2,12 @@
 
 # Finemaping 
 
-4 scripts to perform fine-mapping :
+5 scripts to perform fine-mapping :
   * run fine-mapping at one specific region `finemapping/finemap_region.nf` 
   * run fine-mapping on full summary statistics `finemapping/main.nf` 
   * Stepwise model selection procedure to select independently associated SNPs with  [cojo](https://cnsgenomics.com/software/gcta/#COJO) from gcta `finemapping/cojo.nf` 
-  * Conditional analysis of gwas using gemma `finemapping/cond-assoc.nf`
+  * Conditional analysis using gemma `finemapping/cond-assoc.nf`
+  * Conditional analysis using gcta and summary statistics `finemapping/cond-gcta.nf`
  
 ##  Finemapping a specific region using pipeline: `finemapping/finemap_region.nf`
 
@@ -200,7 +201,9 @@ The key options are:
   * `output_dir` : output directory
   * `output` : output pattern
   * `data` : same option that _assoc/main.nf_, file is optional, used if need select specific individus for gcta,  compute frequencies or N, if mission in `file_gwas`
-  * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+  * plink :
+   * `input_dir`, `output_dir`: where input and output goes to and comes from;
+   * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
   * `pheno` : optional, header in data, if present select individuals with no missiong individual to keep individuals for computed frequencie or gcta
   * `cut_maf` minor allele frequencies [ default : 0.0001]
   * ̀`file_gwas` : file contains gwas result, if N or frequencies is not available, it is computed with plink file and `data` file, to change format header must be defined :
@@ -265,4 +268,34 @@ tested for singularity image: yes
 
 
 ## Conditional analysis of GWAS using gcta
+
+need python3, gcta, R
+tested for singularity image: yes
+
+### algorithm
+pipeline will extract positions `pos_cond`, `pos_ref` from summary statistics and genetics data and apply options `--cojo-cond` of [gcta](https://yanglab.westlake.edu.cn/software/gcta/#COJO) . 
+### main options
+* pipeline used :
+ * plink file, summary statistics and optional file for individual to clean
+ * `pos_cond` : list position to be conditionned
+ * `chro_cond` : chromosome to be conditionned
+ * `pos_ref` : 1 position de reference where will be extracted positions of interrest
+ * `cojo_actual_geno`
+ * plink :
+  * `input_dir`, `output_dir`: where input and output goes to and comes from;
+  * `input_pat`: the base of set of PLINK bed,bim and fam files (this should only match one);
+ * `data` : same option that _assoc/main.nf_, file is optional, used if need select specific individus for gcta,  compute frequencies or N, if mission in `file_gwas`
+  * `phenotype`
+ * `pheno` : optional, header in data, if present select individuals with no missiong individual to keep individuals for computed frequencie or gcta
+ * `cut_maf` minor allele frequencies [ default : 0.0001]
+ * ̀`file_gwas` : file contains gwas result, if N or frequencies is not available, it is computed with plink file and `data` file, to change format header must be defined :
+  * `head_pval` : pvalue header [ default : "P_BOLT_LMM" ]
+  * `head_freq` : freq header [ default : None], if not present computed with plink, (and data/pheno if present)
+  * `head_n` : N (individuals number) [ default : None ], if not present computed with plink (and data/pheno if present)
+  * `head_rs` : rs header column [default : "SNP"]
+  * `head_beta` : beta header colum [default : "BETA"]
+  * `head_se`  : column for standard error of beta "SE"
+  * `head_A1` : column for A0 :[default : "ALLELE0" ]
+  * `head_A2` : column for A1 :[default : "ALLELE1" ]
+
 

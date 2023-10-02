@@ -72,6 +72,7 @@ The key options are:
        * `ma_genomic_cont` : use a genomic_control use in METAL and GWAMA(default, 0)
        * `ma_weigthedz`: used p-value and N params for plink and metal (default: 0), if 1 used pvalue and N otherwise used Beta and se
        * `ma_overlap_sample`: do you have sample overlap? used by metal(default: 0)
+       * `metal_het`: computed heterogenity option used by metal (default: 0)
        * `ma_random_effect` : do mixed model (default 1)
        * `ma_mrmega_pc` : how many pcs used for mrmega (default : 4)
        * `ma_mrmega_opt` : append other option in MR-MEGA command line (default : null)

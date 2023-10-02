@@ -85,7 +85,7 @@ allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plin
 allowed_params+=allowed_params_cores
 allowed_params_intother=["max_forks", "n_pop", "pos_ref", 'around']
 allowed_params+=allowed_params_intother
-allowed_params_bolother=[ "cojo_actual_geno"]
+allowed_params_bolother=[ "cojo_actual_geno", "multi_cond"]
 allowed_params+=allowed_params_bolother
 allowed_params_float=["cut_maf", "threshold_p", "cojo_p"]
 allowed_params+=allowed_params_float
@@ -144,6 +144,7 @@ params.pos_ref = 0
 params.chro_cond      = ""
 params.cojo_actual_geno=0
 params.around=100000
+params.multi_cond=1
 
 
 
@@ -391,7 +392,7 @@ process run_condgcta {
       """
 }
 cond_pos=cond_pos.collect()
-if(params.pos_cond.toString().split(',').size()>1){
+if(params.pos_cond.toString().split(',').size()>1 & params.multi_cond==1){
 process run_condgcta_all {
    label 'gcta'
    cpus params.gcta_cpus_req
@@ -425,7 +426,7 @@ process merge_condld{
    script :
      out=params.output+".csv"
      allfile=allfile.join(",")
-     posref=(args.pos_ref>0)? " --pos_ref ${params.pos_ref} " : ""
+     posref=(params.pos_ref>0)? " --pos_ref ${params.pos_ref} " : ""
      """
      merge_gctacond.r --ld $ld --files_cond $allfile --out $out $posref
      """

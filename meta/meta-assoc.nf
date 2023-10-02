@@ -88,7 +88,7 @@ allowed_params_intother=["ma_mrmega_pc"]
 allowed_params+=allowed_params_intother
 allowed_params_bin=["GWAMA_bin", "plink_bin", "metal_bin", "gwama_bin", "mrmega_bin", "metasoft_bin"]
 allowed_params+=allowed_params_bin
-allowed_params_bolother=["ma_random_effect", "ma_genomic_cont", "ma_weigthedz","use_rs","ma_overlap_sample"]
+allowed_params_bolother=["ma_random_effect", "ma_genomic_cont", "ma_weigthedz","use_rs","ma_overlap_sample","metal_het"]
 allowed_params+=allowed_params_bolother
 allowed_params_float=[]
 allowed_params+=allowed_params_float
@@ -120,6 +120,7 @@ params.mrmega_bin='MR-MEGA'
 params.metasoft_bin="/opt/bin/Metasoft.jar"
 params.plink_bin="plink"
 params.max_plink_cores=4
+params.metal_het = 0
 
 
 params.ma_mrmega_pc=2
@@ -400,9 +401,10 @@ if(params.metal==1){
       gc =  (params.ma_genomic_cont==1) ? " --genomic_control T " : "--genomic_control F"
       vw =  (params.ma_weigthedz==1) ? " --weigthedz T " : "--weigthedz F"
       sov=(params.ma_overlap_sample==1) ? " --overlap T " : " --overlap F "
+      het=(params.metal_het==1) ? " --het T " :  " --het F "
       """
       echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
-      ma_get_configmetal.py --filelist fileListe  --output_configmetal $metal_config  $gc  $vw --out_file_metal $out $sov
+      ma_get_configmetal.py --filelist fileListe  --output_configmetal $metal_config  $gc  $vw --out_file_metal $out $sov $het
       ${params.metal_bin} $metal_config &> ${out}.log
       merge_summarystat.py --input_file ${out}1.stat --info_file $file_ref_rs --out_file $out"_metal.format"
       """
