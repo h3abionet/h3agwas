@@ -391,11 +391,11 @@ if(params.metal==1){
     output :
       file("${out}1.stat") into res_metal
       tuple file("${out}1.stat"), file("${out}1.stat.info")
-      file("${out}_metal.format")
+      file("${out}.format")
       file("${out}.log")
       file("${metal_config}")
     script :
-      out = "metal_res"
+      out = "${params.output}_metal"
       lfile=list_file.join("\t")
       metal_config="metal_config.config"
       gc =  (params.ma_genomic_cont==1) ? " --genomic_control T " : "--genomic_control F"
@@ -406,7 +406,7 @@ if(params.metal==1){
       echo $lfile |awk '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' > fileListe
       ma_get_configmetal.py --filelist fileListe  --output_configmetal $metal_config  $gc  $vw --out_file_metal $out $sov $het
       ${params.metal_bin} $metal_config &> ${out}.log
-      merge_summarystat.py --input_file ${out}1.stat --info_file $file_ref_rs --out_file $out"_metal.format"
+      merge_summarystat.py --input_file ${out}1.stat --info_file $file_ref_rs --out_file $out".format" --metal 1
       """
   }
   process showMetal {

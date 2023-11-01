@@ -9,6 +9,9 @@
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/h3abionet/h3agwas)](https://quay.io/organization/h3abionet_org)
 [![Amazon aws](https://img.shields.io/badge/aws-pass-green)](Readme_AWS_Batch.md)
 ![version](https://img.shields.io/github/v/release/h3abionet/h3agwas)
+[![DOI](https://zenodo.org/badge/66284716.svg)](https://zenodo.org/doi/10.5281/zenodo.3235520)
+
+
 
 
 # Nextflow update
