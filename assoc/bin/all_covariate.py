@@ -129,6 +129,10 @@ famd  = pd.read_csv(args.inp_fam,header=None,delim_whitespace=True,names=["FID",
 #if args.lind :
 #   indtokepp=pd.read_csv(args.lind,delim_whitespace=True,header=None, names=["FID","IID"])
 #   famd=pd.merge(famd, indtokepp,how="inner",on=["FID","IID"])
+datad['FID']=datad['FID'].astype(str)
+datad['IID']=datad['IID'].astype(str)
+famd['FID']=famd['FID'].astype(str)
+famd['IID']=famd['IID'].astype(str)
 merge = pd.merge(famd,datad,how="left",suffixes=["_f",""],on=["FID","IID"])
 # for gemma
 if args.form_out == 1 : 
