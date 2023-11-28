@@ -393,13 +393,12 @@ process check_gc {
  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
  output :
    path("*.gz") 
-   path("resume_gc.log")
+   path("*.log")
  script :
  """
  echo "noerror.gz" > noerror.gz
- gwas-ssf validate --min-rows ${params.nblines_check}  ${gzsumstat} &> resume_gc.log
+ gwas-ssf validate --min-rows ${params.nblines_check}  ${gzsumstat} > >(tee -a stdout.log) 2> >(tee -a stderr.log >&2)
  """
-
 }
 
 
