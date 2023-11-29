@@ -43,6 +43,8 @@ def ChangeFile(File,FileOut ,old_header,new_header, sep, sepout):
     for line in read :
        spl=[x.replace(' ','') for x in line.replace('\n','').split(sep)]
        write.write(sepout.join([spl[x] for x in pos_head])+"\n")
+    write.close()
+    read.close()
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='transform file and header')
@@ -73,6 +75,7 @@ l_info=[x.split(':') for x in infohead]
 l_infof=[]
 l_oldheadf=[]
 l_newheadf=[]
+
 for x in l_info :
   if len(x)==3 and ConfIsNotNull(x[0]) and ConfIsNotNull(x[1]) and ConfIsNotNull(x[2]) :
     l_infof.append(x[0]) 
@@ -111,7 +114,6 @@ if 'A2' in l_infof :
 ps_head=GetPosHead(head_inp,l_oldheadf)
 
 listposfloat=[]
-listposfloat=[]
 for head in ['freqA1', 'Beta', 'Se', 'Pval', 'N', 'Info']:
    if head in l_infof :
        newhead=l_oldheadf[l_infof.index(head)]
@@ -121,18 +123,23 @@ for head in ['freqA1', 'Beta', 'Se', 'Pval', 'N', 'Info']:
 p_minf=float('-inf')
 p_pinf=float('inf')
 def checkfloat(tmp, listposfloat):
+   balise=True
    for x in listposfloat :
       try :
         resfl=float(tmp[x]) 
         if math.isnan(resfl) or resfl==p_minf or resfl==p_pinf:
+           balise=False
            tmp[x]="NA"
       except ValueError:
+        balise=False
         tmp[x]="NA"
-   return tmp
+   return (tmp, balise)
 
 write=open(args.out_file,'w')
 write.write(sep_out.join([x for x in l_newheadf])+"\n")
 ChroSel=args.chr
+
+
 if ChroSel :
   for line in read :
     spl=line.replace('\n','').split(sep)
@@ -141,7 +148,10 @@ if ChroSel :
          print('warning column number are not exact')
          writediscarded.write('NOTGODCol\t'+line)
          continue
-       spl=checkfloat(spl, listposfloat)
+       (spl,balgood)=checkfloat(spl, listposfloat)
+       if balgood ==False:
+          writediscarded.write("MISSING\t"+line)
+          continue
        if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
        if balchangA2 :
@@ -154,9 +164,15 @@ else :
          writediscarded.write('NOTGODCol\t'+line)
          print('warning column number are not exact')
          continue
-     spl=checkfloat(spl, listposfloat)
+     (spl,balgood)=checkfloat(spl, listposfloat)
+     if balgood == False:
+          writediscarded.write("MISSING\t"+line)
+          continue
      if balchangA1 :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
      if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
      write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
+
+write.close()
+writediscarded.close()
