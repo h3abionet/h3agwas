@@ -42,10 +42,6 @@ for line in readf :
   nbcase=float(spl[ncase])
   nbcontrol=float(spl[ncontrol])
   spl.append(str(int(nbcase+nbcontrol))) 
-  #afcase=float(spl[afcase])
-  #afcontrol=float(spl[afcontrol])
-  #afall=(afcase*ncase + afcontrol*ncontrol)/(ncase + ncontrol)
-  #spl.append(str(afall))
   writegwas.write("\t".join(spl)+'\n')
 
 writegwas.close()

@@ -450,7 +450,7 @@ process ExtractPositionGwas{
   script :
     freq= (params.head_freq=="") ? "":" --freq_header ${params.head_freq} "
     nheader= (params.head_n=="") ? "":" --n_header ${params.head_n}"
-    nvalue= (params.n_pop>0) ? "":" --n ${params.n_pop}"
+    nvalue= (params.n_pop<=1) ? "":" --n ${params.n_pop}"
     out=params.chro+"_"+params.begin_seq+"_"+params.end_seq
     bfile=bed.baseName
     plink_mem_req_max=params.plink_mem_req.replace('GB','000').replace('KB','').replace(' ','').replace('MB','').replace('Mb','')
