@@ -68,20 +68,19 @@ The key options are:
     * grm done using genotype of plink
     * bgen priotise on plink
 
-| Software | plink | vcf | bgen | impute 2 | allele effect |
-| --- | --- | --- | --- | --- |
-| gemma | yes |  no | no | no | allele1 | todefine |
-| plink association | yes |  no | no | no | A1 |
-| gcta/fastGWA | yes |  no | yes | no | todefine |
+      
+| Software | plink | vcf | bgen | impute 2 | allele effect|
+| --- | --- | --- | --- | --- | --- |
+| gemma | yes |  no | no | no | allele1 |
+| plink | yes |  no | no | no | A1 |
+| gcta/fastGWA | yes |  no | yes | no | - |
 | saige | yes |  yes | yes | no | allele2 |
 | bolt-LMM | yes |  no | yes | yes | ALLELE1 |
-| fast-lmm | yes |  no | no | no | |
-| regenie | yes |  no | yes | no | Allele1 |
-| --- | --- | --- | --- | --- |
-| description | genotype |  dosage | dosage | dosage |
-| --- | --- | --- | --- | --- |
-| Option | `--input_dir`/`--input_pat`| `--list_vcf` | `--bgen`/`--bgen_sample` | `bolt_impute2filelist`/`bolt_impute2fidiid` |
-| --- | --- | --- | --- | --- |
+| fast-lmm | yes |  no | no | no | - |
+| regenie | yes |  no | yes | - | - |
+| description | genotype |  dosage | dosage | dosage | - |
+| Option | `--input_dir`/`--input_pat` | `--list_vcf` | `--bgen`/`--bgen_sample` | `bolt_impute2filelist`/`bolt_impute2fidiid` | - |
+
 
 ## 3. Association software  option 
 ### 1. plink association
@@ -183,20 +182,20 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
 
 ### 7. Regnie option
 * [more information relative to regenie](https://rgcgithub.github.io/regenie/options/)
-*  `regenie_bin` : binary of regenie [default: regenie]
+* `regenie_bin` : binary of regenie [default: regenie]
 * `regenie` : perform a regenie analyse yes : 1, no : 0 [default : 0]
-* bsize :
- * `regenie_mafstep1` : maf for step 1
+* maf :
+ *  `regenie_mafstep1` : maf for step 1 
+* bsize (size of the genotype blocks) :
  * `regenie_bsize` : bsize used for step 1 and 2 if `regenie_bsize_step1` and `regenie_bsize_step2` are 0 [default 100]
- * `regenie_bsize_step1` : bsize for step 1 [default 0]
-* `regenie_bsize_step2` : bsize for step 2 [default 0]
+ * `regenie_bsize_step1`: bsize for step 1 [default 0]
+ * `regenie_bsize_step2` : bsize for step 2 [default 0]
 * `regenie_otheropt_step1` : other option in command line of step 1
 * `regenie_otheropt_step2` : other option in command line of step 2
 * `regenie_loco` : option loco for bgen, yes : 1, no : 0, [default 1]
 * `regenie_num_cores` : number of cpus used [default : 6]
 * `regenie_mem_req` : number of cpus used [default : 20GB ]
-with pipeline, do a GxE interaction with Gemma and Plink, arguments :
-
+  
 ### GXE option (gemma and Plink)
 * `gxe` : environmental variables to do gxe analysis with `pheno`, must be coded in 1 and 2 for plink
  * `gemma_gxe` : GxE interation with gemma [default : 0], see  `covariates` to add covariates in gemma models
