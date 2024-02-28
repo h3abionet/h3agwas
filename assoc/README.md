@@ -195,6 +195,8 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
 * `regenie_loco` : option loco for bgen, yes : 1, no : 0, [default 1]
 * `regenie_num_cores` : number of cpus used [default : 6]
 * `regenie_mem_req` : number of cpus used [default : 20GB ]
+* `covariates_type` : accept categorical and continuous : 0 continuous, 1 categorical comma between argument [""]
+ * ** bug ** : regenie doesn't accept just one categarical covariates
   
 ### GXE option (gemma and Plink)
 * `gxe` : environmental variables to do gxe analysis with `pheno`, must be coded in 1 and 2 for plink

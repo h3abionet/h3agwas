@@ -3,6 +3,7 @@
 
 # What\'s new :
 ### V3.5.0
+ * regenie : accept categorical values see option `covariates_type`
  * minor problem whith python when coloumn FID, IID was just int in pheno and str in plink file fixed
  * minor bug gemma with heritability using summary statistics: take account N value and header
  * minor bug fixed when rs id was a dot (was discarded), fixed in meta analyses

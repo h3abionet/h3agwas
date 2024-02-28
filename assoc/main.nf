@@ -86,8 +86,11 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col", "bolt_covariates_type", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','covariates_type','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col",  "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method"]
+
+allowed_params_input_mp = ["bolt_covariates_type", 'covariates_type']
 allowed_params=allowed_params_input
+allowed_params=allowed_params_input_mp
 allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'fastlmm_num_cores', 'saige_num_cores',"regenie_num_cores", "fastgwa_num_cores"]
 allowed_params+=allowed_params_cores
 allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_bsize_step2", "grm_nbpart", "thin"]
@@ -261,7 +264,9 @@ max_plink_cores = params.max_plink_cores
 params.help = false
 
 /*check param*/
+
 checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
+checkmultiparam(params,allowed_params_input_mp, [java.lang.String,java.lang.Integer], min=null, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_memory, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_cores, java.lang.Integer, min=1, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_intother, java.lang.Integer, min=0, max=null, possibleval=null, notpossibleval=null)
@@ -498,7 +503,7 @@ pheno     = ""
 
 /*Case where we sample builrelatdness*/
 balise_filers_rel=1
-if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params.gemma_gxe+params.saige>0){
+if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params.gemma_gxe+params.saige+params.regenie>0){
  if(params.file_rs_buildrelat=="" && params.sample_snps_rel==1){
   if(params.snps_include_rel!='') snpinclrel=channel.fromPath(params.snps_include_rel)
   else snpinclrel=channel.fromPath("${dummy_dir}/00")
@@ -844,6 +849,7 @@ if (params.fastlmm == 1) {
    def boltlmmCofact(args,infoargs) {
       //Method code
       splargs=args.split(",")
+      infoargs=""+infoargs
       splinfoargs=infoargs.split(",")
       if(splargs.size() != splinfoargs.size()){
 	 System.err.println("args and args type for Boltlmm was not same size : "+args+" "+infoargs)
@@ -1685,9 +1691,9 @@ if(params.fastgwa==1){
       covariate_option = "--cov_list ${params.covariates}"
    else
      covariate_option = ""
-
-   balqualcov=params.covariates_type!="" & params.covariates_type.split(',').contains('1') 
-   balquantcov=params.covariates_type!="" & params.covariates_type.split(',').contains('0') 
+   covariates_type=""+params.covariates_type
+   balqualcov=covariates_type!="" & covariates_type.split(',').contains('1') 
+   balquantcov=covariates_type!="" & covariates_type.split(',').contains('0') 
 
 
    process FastGWARun{
@@ -2093,6 +2099,48 @@ if(params.saige==1){
  report_saige_ch=Channel.empty()
 }
 
+   def regenieCofact(args,infoargs) {
+      //Method code
+      infoargs=""+infoargs
+      splargs=args.split(",")
+      splinfoargs=infoargs.split(",")
+      if(splinfoargs.size()==0){
+        cov="--covarColList "+args
+        return(cov)
+      }
+      if(splargs.size() != splinfoargs.size()){
+         System.err.println("args and args type for Boltlmm was not same size : "+args+" "+infoargs)
+         System.exit(-11)
+      }
+      Cofactqual=""
+      Cofactquant=""
+
+      for (i = 0; i <splargs.size(); i++) {
+          /*0 : for quantitatif */
+          /* 1 for qualitatif*/
+          if     (splinfoargs[i]=='1'){
+              if(Cofactqual=="")Cofactqual=splargs[i]
+              else Cofactqual+=","+splargs[i]
+
+          }else {
+           if(splinfoargs[i]=='0'){
+              if(Cofactquant=="")Cofactquant=splargs[i]
+              else Cofactquant+=","+splargs[i]
+           }else{
+             System.err.println("type args for "+splargs[i]+" doesn't know "+ splinfoargs[i]+"\n 1 for quantitatif arguments\n 0 for qualitatif arguments")
+             System.exit(-10)
+          }
+        }
+      }
+     CofactStr=""
+     if(Cofactqual!="")CofactStr=" --catCovarList "+Cofactqual
+     if(Cofactquant!="") CofactStr+=" --covarColList "+Cofactquant
+      return(CofactStr)
+   }
+
+
+                                                                        
+
 if(params.regenie==1){
 
  data_ch_regenie = Channel.fromPath(params.data, checkIfExists:true)
@@ -2118,6 +2166,8 @@ if(params.regenie==1){
 
 
 
+
+ covariable_regenie=regenieCofact(params.covariates, params.covariates_type)
    
 
  process regenie_step1{
@@ -2134,22 +2184,22 @@ if(params.regenie==1){
     path("${out}.log")
    script :
        our_pheno       = pheno.replaceAll(/\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
-
+      phef=pheno+".pheno"
       loco=(params.regenie_loco==0) ? "" : " --loocv "
       bfile=bed.baseName
       bfilesub=bfile+"_sub"
       keeppos=(rsrel=='00') ? ""   : " --extract $rsrel "
       covoption = (params.covariates=="") ? "" : " --cov_list ${params.covariates}"
-      covoption_regenie= (params.covariates=="") ? "" : " -covarFile $data  --covarColList ${params.covariates}"
+      covoption_regenie= (params.covariates=="") ? "" : " --covarFile $phef ${covariable_regenie} "
       bsize=(params.regenie_bsize_step1==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step1}"
       regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
-      phef=pheno+".pheno"
       out=phef+"_regenie"
+      println covoption_regenie
       """
       all_covariate.py --data  $data --inp_fam  $fam  $covoption \
                           --pheno $pheno --phe_out ${phef}  --form_out 2 --nona  1
       plink -bfile $bfile $keeppos --make-bed -out $bfilesub -maf ${params.regenie_mafstep1} --keep $phef
-      ${params.regenie_bin} --step 1   --bed $bfilesub    --phenoFile $phef  --phenoCol ${our_pheno} --bsize $bsize $regenie_loco --out  $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step1}
+      ${params.regenie_bin} --step 1   --bed $bfilesub    --phenoFile $phef  --phenoCol ${our_pheno} --bsize $bsize $regenie_loco --out  $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step1} $covoption_regenie
       if [ ! -f $out"_1.loco" ]
       then
       touch $out"_1.loco"
@@ -2167,7 +2217,7 @@ if(params.regenie==1){
    script :
     loco=(params.regenie_loco==0) ? "" : " --loocv "
     bfile=bed.baseName
-    covoption_regenie= (params.covariates=="") ? "" : " -covarFile $data  --covarColList ${params.covariates}"
+    covoption_regenie= (params.covariates=="") ? "" : " --covarFile $data   ${covariable_regenie} "
     bsize=(params.regenie_bsize_step2==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step2}"
     regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
     genet=(params.bgen=="")? " --bed $bfile " : " --bgen $bgen --sample $bgensample "
