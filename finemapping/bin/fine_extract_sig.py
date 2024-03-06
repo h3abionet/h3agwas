@@ -35,7 +35,7 @@ def extractinfobim(chro, begin, end,bimfile):
           listalt.append(splline[5])
    return (listpos, listref, listalt, listsnp)
 
-def appendfreq(bfile, result, freq_header,rs_header, n_header, chr_header,bp_header, bin_plk, keep, threads) :
+def appendfreq(bfile, result, freq_header,rs_header, n_header, chr_header,bp_header, a1_header, a2_header, bin_plk, keep, threads) :
    plkfreqfil=os.path.basename(bfile)
    out_range="tmp.frq"
    listcol=[chr_header,bp_header,bp_header,rs_header]
@@ -50,28 +50,31 @@ def appendfreq(bfile, result, freq_header,rs_header, n_header, chr_header,bp_hea
    Cmd+=" --out "+plkfreqfil
    os.system(Cmd)
    data_n=pd.read_csv(plkfreqfil+".frq",delim_whitespace=True)
+   data_n.columns= ["CHR","SNP","A1_tmp","A2_tmp","MAF","NCHROBS"]
    databim = pd.read_csv(bfile+".bim", delim_whitespace=True)
    #CHR            SNP   A1   A2
-   databim.columns = ["CHR","SNP", "Other","BP","A1", "A2"]
-   data_n=data_n.merge(databim,how="inner", on=["CHR","SNP","A1", "A2"])
+   databim.columns = ["CHR","SNP", "Other","BP","A1_tmp", "A2_tmp"]
+   data_n=data_n.merge(databim,how="inner", on=["CHR","SNP", "A1_tmp", "A2_tmp"])
    # CHR            SNP   A1   A2          MAF  NCHROBS
    #SNP A1 A2 freq b se p N
    data_n['N']=data_n['NCHROBS']/2
    if n_header==None and freq_header==None:
-      data_n=data_n[["CHR","BP","MAF","N"]]
+      data_n=data_n[["CHR","BP","MAF","N","A1_tmp",'A2_tmp']]
       freq_head="MAF"
       n_header="N"
    elif n_header==None :
       data_n=data_n[["CHR","BP","N"]]
       n_header="N"
    elif freq_header==None :
-      data_n=data_n[["CHR","BP","MAF"]]
+      data_n=data_n[["CHR","BP","MAF",'A1_tmp','A2_tmp']]
       freq_head="MAF"
    IsFreq=True
    IsN=True
    result[chr_header]=result[chr_header].astype(str)
    data_n['CHR']=data_n['CHR'].astype(str)
    result=result.merge(data_n,how="inner", left_on=[chr_header,bp_header], right_on=["CHR","BP"])
+   balise=result[a2_header] == result['A1_tmp']
+   result.loc[balise,'MAF']= 1 - result.loc[balise,'MAF']
    return (freq_head, n_header, result)
 
 EOL=chr(10)
@@ -148,7 +151,7 @@ if args.n :
   n_header='N'
 
 if (n_header==None or freq_header==None):
-  (freq_header, n_header, small)=appendfreq(args.bfile, small, freq_header,rs_header, n_header, args.chro_header,args.pos_header,args.bin_plk, args.keep, args.threads)
+  (freq_header, n_header, small)=appendfreq(args.bfile, small, freq_header,rs_header, n_header, args.chro_header,args.pos_header,args.a1_header, args.a2_header,args.bin_plk, args.keep, args.threads)
 print(small)
 
 PosCol=['snpbim232',args.chro_header, args.pos_header, args.a1_header, args.a2_header, freq_header, args.beta_header, args.se_header, args.p_header, n_header]

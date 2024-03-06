@@ -1864,6 +1864,7 @@ if(params.saige==1){
                           --pheno ${params.pheno} --phe_out ${phef}  --form_out 2
       """
   }
+  covariable_saige=regenieCofact(params.covariates, params.covariates_type,0)
 
   pheno_ch_saige = Channel.create()
   check = Channel.create()
@@ -1881,12 +1882,13 @@ if(params.saige==1){
    output :
      set val(our_pheno) ,file("${output}.rda"), file("${output}.varianceRatio.txt"), val(plkf) into file_varexp 
    script :
-     covoption = (params.covariates=="") ? "" : " --covarColList=${params.covariates}"
+     //covoption = (params.covariates=="") ? "" : " --covarColList=${params.covariates}"
      binpheno = (params.pheno_bin==1) ? " --traitType=binary " : " --traitType=quantitative --invNormalize=TRUE"
      Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
      plkf=bed.baseName
      our_pheno    = this_pheno.replaceAll(/|\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
      output=our_pheno+"_var"
+     covoption= (params.covariates=="") ? "" : "  ${covariable_saige} "
      """
      ${params.saige_bin_fitmodel} \
         --plinkFile=$plkf \
@@ -2099,7 +2101,7 @@ if(params.saige==1){
  report_saige_ch=Channel.empty()
 }
 
-   def regenieCofact(args,infoargs) {
+   def regenieCofact(args,infoargs, regenie) {
       //Method code
       infoargs=""+infoargs
       splargs=args.split(",")
@@ -2114,10 +2116,12 @@ if(params.saige==1){
       }
       Cofactqual=""
       Cofactquant=""
-
+      allcov=""
       for (i = 0; i <splargs.size(); i++) {
           /*0 : for quantitatif */
           /* 1 for qualitatif*/
+          if(allcov=="")allcov=splargs[i]
+          else allcov+=","+splargs[i]
           if     (splinfoargs[i]=='1'){
               if(Cofactqual=="")Cofactqual=splargs[i]
               else Cofactqual+=","+splargs[i]
@@ -2133,8 +2137,13 @@ if(params.saige==1){
         }
       }
      CofactStr=""
-     if(Cofactqual!="")CofactStr=" --catCovarList "+Cofactqual
-     if(Cofactquant!="") CofactStr+=" --covarColList "+Cofactquant
+     if(regenie==1){
+       if(Cofactqual!="")CofactStr=" --catCovarList "+Cofactqual
+        if(Cofactquant!="") CofactStr+=" --covarColList "+allcov
+     }else{
+       if(Cofactqual!="")CofactStr=" --qCovarColList  "+Cofactqual
+        CofactStr+=" --covarColList "+allcov
+     }
       return(CofactStr)
    }
 
@@ -2167,7 +2176,7 @@ if(params.regenie==1){
 
 
 
- covariable_regenie=regenieCofact(params.covariates, params.covariates_type)
+ covariable_regenie=regenieCofact(params.covariates, params.covariates_type,1)
    
 
  process regenie_step1{
