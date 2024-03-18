@@ -86,33 +86,28 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col",  "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col",  "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method", "gcta_grmfile","fastgwa_type", "snps_include_rel", "sample_snps_rel_paramplkl", "shared-storage-mount", "queue", 'output_testing', "chrom","regenie_bin" , "saige_bin_fitmodel", "saige_bin_spatest"]
 
 allowed_params_input_mp = ["bolt_covariates_type", 'covariates_type']
 allowed_params=allowed_params_input
-allowed_params=allowed_params_input_mp
+allowed_params+=allowed_params_input_mp
 allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'fastlmm_num_cores', 'saige_num_cores',"regenie_num_cores", "fastgwa_num_cores"]
 allowed_params+=allowed_params_cores
-allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_bsize_step2", "grm_nbpart", "thin"]
+allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_bsize_step2", "grm_nbpart", "thin", "regenie_bsize", "gemma_relopt", "gemma_lmmopt"]
 allowed_params+=allowed_params_intother
 allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_cov", 'gemma_multi', 'pheno_bin', 'fastlmm_multi', "regenie_loco", "sexinfo_available", "print_pca", "saige_loco","saige_imputed_data"]
 allowed_params+=allowed_params_bolother
-allowed_params_float=["cut_maf", "bgen_mininfo", "regenie_mafstep1"]
+allowed_params_float=["cut_maf", "bgen_mininfo", "regenie_mafstep1", "grm_cutoff", "grm_maf","vcf_minmac"]
 allowed_params+=allowed_params_float
-allowed_params_memory=["gemma_mem_req" , "plink_mem_req", "other_mem_req", "bolt_mem_req", 'fastlmm_mem_req', 'saige_mem_req', "regenie_mem_req", "fastgwa_mem_req", "bootStorageSize", "bootStorageSize", "boot-storage-size", "sharedStorageMount"]
+allowed_params_memory=["gemma_mem_req" , "plink_mem_req", "other_mem_req", "bolt_mem_req", 'fastlmm_mem_req', 'saige_mem_req', "regenie_mem_req", "fastgwa_mem_req", "bootStorageSize", "bootStorageSize", "boot-storage-size", "sharedStorageMount", "other_process_mem_req"]
 allowed_params+=allowed_params_memory
-allowed_params_test=["gemma", "linear","logistic","assoc","fisher",  "saige", "boltlmm", 'gemma_gxe', 'plink_gxe', 'fastlmm', "regenie", "fastgwa"]
+allowed_params_test=["gemma", "linear","logistic","assoc","fisher",  "saige", "boltlmm", 'gemma_gxe', 'plink_gxe', 'fastlmm', "regenie", "fastgwa", "regenie_gxe","cmh", "model"]
 allowed_params+=allowed_params_test
 
 
 
 
 
-params.each { parm ->
-  if (! allowed_params.contains(parm.key)) {
-    println "\nUnknown parameter : Check parameter <$parm>\n";
-  }
-}
 
 
 
@@ -228,6 +223,7 @@ params.gemma_bin ="gemma"
 /*gxe param : contains column of gxe*/
 params.gemma_gxe=0
 params.plink_gxe=0
+params.regenie_gxe=0
 params.max_plink_cores = 4
 params.rs_list=""
 params.gxe=""
@@ -264,6 +260,11 @@ max_plink_cores = params.max_plink_cores
 params.help = false
 
 /*check param*/
+params.each { parm ->
+  if (! allowed_params.contains(parm.key)) {
+    println "\nUnknown parameter : Check parameter <$parm>\n";
+  }
+}
 
 checkmultiparam(params,allowed_params_input, java.lang.String, min=null, max=null, possibleval=null, notpossibleval=null)
 checkmultiparam(params,allowed_params_input_mp, [java.lang.String,java.lang.Integer], min=null, max=null, possibleval=null, notpossibleval=null)
@@ -450,6 +451,8 @@ if(params.print_pca!=0){
      cpus max_plink_cores
      memory plink_mem_req
      time   params.big_time
+     memory { strmem(plink_mem_req) + 5.GB * (task.attempt -1) }
+     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
      input:
        set file('cleaned.bed'),file('cleaned.bim'),file('cleaned.fam') from pca_in_ch
      publishDir params.output_dir, overwrite:true, mode:'copy'
@@ -2187,32 +2190,39 @@ if(params.regenie==1){
      path(rsrel) from filers_matrel_regenie
      tuple path(bed), path(bim), path(fam) from ch_regenie_assoc
    each pheno from pheno_cols_ch_regenie
-   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.cmd"
+   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.list"
+   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.loco"
+   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.log"
    output : 
     tuple val(our_pheno), path("$phef"),path("${out}_pred.list"), path("${out}_1.loco"),path(bed), path(bim), path(fam)  into ch_regenie_pheno
     path("${out}.log")
+    path("*regenie_step1.cmd")
    script :
        our_pheno       = pheno.replaceAll(/\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
       phef=pheno+".pheno"
       loco=(params.regenie_loco==0) ? "" : " --loocv "
       bfile=bed.baseName
       bfilesub=bfile+"_sub"
-      keeppos=(rsrel=='00') ? ""   : " --extract $rsrel "
+      keeppos=(rsrel.toString()=='00') ? ""   : " --extract $rsrel "
+      print "keeppos $keeppos"
       covoption = (params.covariates=="") ? "" : " --cov_list ${params.covariates}"
       covoption_regenie= (params.covariates=="") ? "" : " --covarFile $phef ${covariable_regenie} "
       bsize=(params.regenie_bsize_step1==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step1}"
       regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
       out=phef+"_regenie"
       println covoption_regenie
+      gxe=(params.regenie_gxe==0) ? "" : " --gxe ${params.gxe} "
       """
       all_covariate.py --data  $data --inp_fam  $fam  $covoption \
-                          --pheno $pheno --phe_out ${phef}  --form_out 2 --nona  1
+                          --pheno $pheno --phe_out ${phef}  --form_out 2 --nona  1 $gxe
       plink -bfile $bfile $keeppos --make-bed -out $bfilesub -maf ${params.regenie_mafstep1} --keep $phef
       ${params.regenie_bin} --step 1   --bed $bfilesub    --phenoFile $phef  --phenoCol ${our_pheno} --bsize $bsize $regenie_loco --out  $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step1} $covoption_regenie
       if [ ! -f $out"_1.loco" ]
       then
       touch $out"_1.loco"
       fi
+      cp .command.sh "${our_pheno}"_regenie_step1.cmd
       """
  }
  ch_regenie_pheno_2=ch_regenie_pheno.combine(bgen_ch_regenie).combine(bgensample_ch_regenie)
@@ -2221,8 +2231,10 @@ if(params.regenie==1){
    memory params.regenie_mem_req
    input :
     tuple val(pheno), path(data),path(list), path(loco),path(bed), path(bim), path(fam),path(bgen), path(bgensample)  from ch_regenie_pheno_2
+   publishDir "${params.output_dir}/regenie/step2", overwrite:true, mode:'copy', pattern: "*.cmd"
    output :
      tuple val(pheno), path("${out}*${pheno}.regenie"),val(bfile) into regenie_manhatten_chi
+     path("*regenie_step2.cmd")
    script :
     loco=(params.regenie_loco==0) ? "" : " --loocv "
     bfile=bed.baseName
@@ -2234,8 +2246,10 @@ if(params.regenie==1){
     loco=(params.regenie_loco==0) ? "" : " --loocv "
     out=pheno+"_regenie_assoc"
     out=(params.list_bgen=="")? out: bgen.baseName
+    gxe=(params.regenie_gxe==0) ? "" : " --interaction ${params.gxe} "
     """
-     ${params.regenie_bin} --step 2  $genet   --phenoFile $data --phenoCol $pheno ${covoption_regenie} --bsize $bsize   --pred $list  $loco   --out $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step2}
+     ${params.regenie_bin} --step 2  $genet   --phenoFile $data --phenoCol $pheno ${covoption_regenie} --bsize $bsize   --pred $list  $loco   --out $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step2} $gxe
+     cp .command.sh "${pheno}"_regenie_step2.cmd
   """
  }
 

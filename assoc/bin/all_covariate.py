@@ -146,7 +146,7 @@ elif  args.form_out == 2 :
    if args.nona == 1:
       merge=merge.dropna()
    merge.reindex(["FID","IID"])
-   merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels+covariates,header=True,index=False,na_rep=MissingOut)
+   merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels+covariates+gxe,header=True,index=False,na_rep=MissingOut)
 elif  args.form_out == 3 :
    merge.reindex(["FID","IID"])
    merge.to_csv(args.phe_out,sep=TAB,columns=["FID","IID"]+pheno_labels,header=True,index=False,na_rep=MissingOut)
