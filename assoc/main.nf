@@ -18,6 +18,12 @@
  *
  */
 
+def strmem(val){
+ return val as nextflow.util.MemoryUnit
+}
+
+
+
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths;
@@ -2190,12 +2196,13 @@ if(params.regenie==1){
      path(rsrel) from filers_matrel_regenie
      tuple path(bed), path(bim), path(fam) from ch_regenie_assoc
    each pheno from pheno_cols_ch_regenie
+   errorStrategy { task.exitStatus == 1 ; return 'ignore' }
    publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.cmd"
    publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.list"
    publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.loco"
    publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.log"
    output : 
-    tuple val(our_pheno), path("$phef"),path("${out}_pred.list"), path("${out}_1.loco"),path(bed), path(bim), path(fam)  into ch_regenie_pheno
+    tuple val(our_pheno), path("$phef"),path("${out}_pred.list"), path("${out}_1.loco"),path(bed), path(bim), path(fam),  optional :true into ch_regenie_pheno
     path("${out}.log")
     path("*regenie_step1.cmd")
    script :
