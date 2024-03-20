@@ -40,6 +40,7 @@ The key options are:
   * you can used `sample_snps_rel` (default 0), will used plink to sample snps :
     * `sample_snps_rel_paramplkl` : parameter for plink to obtained independnat pairwise ([default : 100 20 0.1 --maf 0.01 ])
     * `snps_include_rel` : bed file (chro begin end rs) to include on plink command to defined independant snps [default : ""]
+    * `snp_rel_param_plk` : [default --maf 0.01 --mac 10]
   *  `file_rs_buildrelat` : file with rs list (one by lines) to build genetics models (relatdness), for gemma `-snps`,  boltlmm `--modelSnps`, regenie to build step 1
   
 ### other option 
@@ -185,7 +186,7 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
 * `regenie_bin` : binary of regenie [default: regenie]
 * `regenie` : perform a regenie analyse yes : 1, no : 0 [default : 0]
 * maf :
- *  `regenie_mafstep1` : maf for step 1 
+ * for step1 see : `snp_rel_param_plk`
 * bsize (size of the genotype blocks) :
  * `regenie_bsize` : bsize used for step 1 and 2 if `regenie_bsize_step1` and `regenie_bsize_step2` are 0 [default 100]
  * `regenie_bsize_step1`: bsize for step 1 [default 0]

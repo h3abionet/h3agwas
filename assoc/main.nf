@@ -92,7 +92,7 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col",  "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method", "gcta_grmfile","fastgwa_type", "snps_include_rel", "sample_snps_rel_paramplkl", "shared-storage-mount", "queue", 'output_testing', "chrom","regenie_bin" , "saige_bin_fitmodel", "saige_bin_spatest"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col",  "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method", "gcta_grmfile","fastgwa_type", "snps_include_rel", "sample_snps_rel_paramplkl", "shared-storage-mount", "queue", 'output_testing', "chrom","regenie_bin" , "saige_bin_fitmodel", "saige_bin_spatest", "snp_rel_param_plk"]
 
 allowed_params_input_mp = ["bolt_covariates_type", 'covariates_type']
 allowed_params=allowed_params_input
@@ -103,7 +103,7 @@ allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_b
 allowed_params+=allowed_params_intother
 allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_cov", 'gemma_multi', 'pheno_bin', 'fastlmm_multi', "regenie_loco", "sexinfo_available", "print_pca", "saige_loco","saige_imputed_data"]
 allowed_params+=allowed_params_bolother
-allowed_params_float=["cut_maf", "bgen_mininfo", "regenie_mafstep1", "grm_cutoff", "grm_maf","vcf_minmac"]
+allowed_params_float=["cut_maf", "bgen_mininfo",  "grm_cutoff", "grm_maf","vcf_minmac"]
 allowed_params+=allowed_params_float
 allowed_params_memory=["gemma_mem_req" , "plink_mem_req", "other_mem_req", "bolt_mem_req", 'fastlmm_mem_req', 'saige_mem_req', "regenie_mem_req", "fastgwa_mem_req", "bootStorageSize", "bootStorageSize", "boot-storage-size", "sharedStorageMount", "other_process_mem_req"]
 allowed_params+=allowed_params_memory
@@ -143,6 +143,7 @@ params.bgen=""
 params.bgen_sample=""
 params.bgen_mininfo=0.6
 params.list_bgen=""
+params.snp_rel_param_plk=" --maf 0.01 --mac 10 "
 
 
 params.regenie_bin="regenie"
@@ -154,7 +155,7 @@ params.regenie_otheropt_step2=""
 params.regenie_loco=1
 params.regenie_num_cores=6
 params.regenie_mem_req="10GB"
-params.regenie_mafstep1=0.01
+//params.regenie_mafstep1=0.01
 params.regenie=0
 params.saige_imputed_data=1
 params.saige_impute_method="best_guess" //best_guess, mean or minor
@@ -246,7 +247,7 @@ params.grm_cutoff =  0.05
 params.covariates_type=""
 params.gcta_grmfile=""
 params.sample_snps_rel=0
-params.sample_snps_rel_paramplkl="100 20 0.1 --maf 0.01"
+params.sample_snps_rel_paramplkl="100 20 0.1"
 params.pheno_bin=0
 params.snps_include_rel=""
 
@@ -284,6 +285,7 @@ checkmultiparam(params,allowed_params_float, [java.lang.Float, java.lang.Integer
 data_ch_pheno = Channel.fromPath(params.data, checkIfExists:true)
 data_ch_show = Channel.fromPath(params.data, checkIfExists:true)
 data_ch_gemma = Channel.fromPath(params.data, checkIfExists:true)
+data_ch_rsselect= Channel.fromPath(params.data, checkIfExists:true)
 
 if (params.help) {
     params.each {
@@ -522,6 +524,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params
      time   params.big_time
      input :
        tuple path(bed),path(bim), path(fam) from ch_select_rs_format
+       path(data) from  data_ch_rsselect
        path(snp_inclrel) from  snpinclrel
     output:
        file("${prune}.prune.in") into  filers_matrel_mat_fast, filers_matrel_mat_GWA, filers_matrel_mat_gem, filers_matrel_bolt, filers_count_line, filers_her_saige,filers_matrel_regenie
@@ -530,7 +533,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params
         prune= "${base}-prune"
         extract=(params.snps_include_rel=='')? "" : " -extract range $snp_inclrel "
         """
-        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} $extract --autosome
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} $extract --autosome --keep $data  ${params.snp_rel_param_plk}
         """
    }
    //BoltNbMaxSnps=filers_count_line.countLines()
@@ -1796,7 +1799,7 @@ if(params.saige==1){
        bfile=plk[1].baseName
        out=bfile+'_subrs'
        """
-       plink -bfile $bfile --extract $rs --make-bed -out $out --keep-allele-order
+       plink -bfile $bfile --extract $rs --make-bed -out $out --keep-allele-order ${params.snp_rel_param_plk}
        """
     }
    }else{
@@ -2196,15 +2199,14 @@ if(params.regenie==1){
      path(rsrel) from filers_matrel_regenie
      tuple path(bed), path(bim), path(fam) from ch_regenie_assoc
    each pheno from pheno_cols_ch_regenie
-   errorStrategy { task.exitStatus == 1 ; return 'ignore' }
-   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.cmd"
-   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.list"
+   //errorStrategy { task.exitStatus == 1 ; return 'ignore' }
    publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.loco"
-   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.log"
+   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.list"
+   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*regenie_step1.err*"
    output : 
     tuple val(our_pheno), path("$phef"),path("${out}_pred.list"), path("${out}_1.loco"),path(bed), path(bim), path(fam),  optional :true into ch_regenie_pheno
-    path("${out}.log")
-    path("*regenie_step1.cmd")
+    path("${out}.report")
+    path("*_regenie_step1*")
    script :
        our_pheno       = pheno.replaceAll(/\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
       phef=pheno+".pheno"
@@ -2223,13 +2225,15 @@ if(params.regenie==1){
       """
       all_covariate.py --data  $data --inp_fam  $fam  $covoption \
                           --pheno $pheno --phe_out ${phef}  --form_out 2 --nona  1 $gxe
-      plink -bfile $bfile $keeppos --make-bed -out $bfilesub -maf ${params.regenie_mafstep1} --keep $phef
+      plink -bfile $bfile $keeppos --make-bed -out $bfilesub --keep $phef ${params.snp_rel_param_plk}
       ${params.regenie_bin} --step 1   --bed $bfilesub    --phenoFile $phef  --phenoCol ${our_pheno} --bsize $bsize $regenie_loco --out  $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step1} $covoption_regenie
       if [ ! -f $out"_1.loco" ]
       then
       touch $out"_1.loco"
       fi
-      cp .command.sh "${our_pheno}"_regenie_step1.cmd
+      cp .command.sh "${our_pheno}"_regenie_step1.cmd.report
+      cp .command.log "${our_pheno}"_regenie_step1.log.report
+      cp .command.err "${our_pheno}"_regenie_step1.err.report
       """
  }
  ch_regenie_pheno_2=ch_regenie_pheno.combine(bgen_ch_regenie).combine(bgensample_ch_regenie)
