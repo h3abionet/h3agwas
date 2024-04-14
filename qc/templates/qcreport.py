@@ -65,7 +65,7 @@ if len(kpsewhich)>1:
 # NB: only for a Nextflow template -- you could also directly call from a Nextflow
 # script if this script is on the path -- in which case the parameters should be passed
 if len(sys.argv)==1:
-   sys.argv = [sys.argv[0],"$orig","$base","$cbim","$cfam","$missingvhetpdf","$mafpdf","$dupf","$fsex","$indmisspdf","$snpmisspdf"]
+   sys.argv = [sys.argv[0],"$orig","$base","$cbim","$cfam","$missingvhetpdf","$mafpdf","$dupf","$fsex","$indmisspdf","$snpmisspdf", "$qcx"]
 
 
 def parseArguments():
@@ -80,6 +80,7 @@ def parseArguments():
     parser.add_argument('fsex', type=str),
     parser.add_argument('indmisspdf', type=str),
     parser.add_argument('snpmisspdf', type=str),        
+    parser.add_argument('qcx', type=str),        
     args = parser.parse_args()
     return args
 
@@ -293,6 +294,9 @@ Deviation for Hardy-Weinberg Equilibrium (HWE) may indicate sample contamination
 WE p-value}{{$hwepdf}}
 
 
+*-section{QC X}
+
+%(qcx)s
 
 
 
@@ -412,6 +416,12 @@ f=open("$ilog")
 pdict['plinkversion']=f.readline()
 f.close()
 
+if os.path.isfile("$qcx") :
+ f=open("$qcx")
+ pdict['qcx']=f.read()
+ f.close()
+else :
+  pdict['qcx']="no analyse done on X quality chromosome"
 
 pdict['numhetrem'] =  countLines("$misshetremf")
 pdict['numcsnps'] =  countLines(args.cbim)

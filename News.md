@@ -2,7 +2,9 @@
 
 
 # What\'s new :
-### V3.5.0
+### V3.7.0
+ * pre release : integration of X chromosome in qc
+### V3.6.0
  * regenie : GxE available for Reginie
  * regenie : accept categorical values see option `covariates_type`
  * minor problem whith python when coloumn FID, IID was just int in pheno and str in plink file fixed
@@ -26,14 +28,14 @@
 * `meta/main.nf` : minor change to take account NA in summary statistics for p-value  and N
 * parameters check for file : `formatdata/format_gwasfile.nf`,  `formatdata/vcf_in_plink.nf`
 
-### V3.4.0
+### V3.5.0
 * finemapping :
  * [finemapping/main.nf](finemapping/README.md) : when p-value are NA, lines are not considered anymore
  * bug deleted in plot for finemaping
 * [formatdata/plk_in_vcf_imp.nf](formatdata/README.md) : add steps to perform michigan quality control as option (see : [michigan manual](https://imputationserver.readthedocs.io/en/latest/prepare-your-data/))
 * meta : bug fixed when some file do not have chromosome and position.
 
-##V3.3.0
+##V3.4.0
 * finemapping, version 3.3.0 paintor  install on docker singularity image, if paintor_bin=0, paintor will be discarded of workflow
 * general : 
  * add nextflow.enable.dsl = 1 to all nf script for compatibility new version of nextflow.

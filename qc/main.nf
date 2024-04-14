@@ -177,7 +177,7 @@ f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
 remove_on_bp    = params.remove_on_bp
 
-allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10"]
+allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10", "build_genome", "autosome_plink", "cut_maf_xfemale", "cut_maf_xmale", "cut_miss_xfemale", "cut_miss_xmale", "cut_diffmiss_x"]
 
 
 
@@ -320,6 +320,7 @@ Channel
          inpmd5ch : it
        }.set {checked_input}
 
+checked_input_x=Channel.from()
   
 
 
@@ -435,11 +436,11 @@ process removeDuplicateSNPs {
    file(dups) from  duplicates_ch
 
   output:
-    tuple  file("${nodup}.bed"),file("${nodup}.bim"),file("${nodup}.fam")\
-    into (qc1_ch,qc1B_ch,qc1C_ch,qc1D_ch,qc1E_ch)
-    tuple file("${base}.orig"), file(dups) into report_dups_ch
-    file ("${nodup}.lmiss") into snp_miss_ch
-    file ("${nodup}.imiss") into (ind_miss_ch1, ind_miss_ch2)
+    tuple  path("${nodup}.bed"),path("${nodup}.bim"),path("${nodup}.fam")\
+    into (checkx_ch, checkxy_ch, cleanx_ch)
+    tuple path("${base}.orig"), path(dups) into report_dups_ch
+    path ("${nodup}.lmiss") into snp_miss_ch
+    path ("${nodup}.imiss") into (ind_miss_ch1, ind_miss_ch2)
   script:
    base    = bed.baseName
    nodup   = "${base}-nd"
@@ -449,12 +450,61 @@ process removeDuplicateSNPs {
     wc -l ${base}.fam >> ${base}.orig
    """
 }
+/*process to check if X */
+process countXX {
+ input :
+  tuple path(bed), path(bim), path(fam)  from checkx_ch
+ output :
+   stdout into countxx
+ script :
+ """
+ awk '{if(\$1==23)print \$1}' $bim |wc -l
+ """
+}
+
+process countXY {
+ input :
+  tuple path(bed), path(bim), path(fam)  from checkxy_ch
+ output :
+   stdout into countxy
+ script :
+ """
+ awk '{if(\$1==25)print \$1}' $bim|wc -l
+ """
+}
 
 
+
+checkx=true
 missingness = [0.01,0.03,0.05]  // this is used by one of the templates
+process clean_x {
+  memory other_mem_req 
+  input :   
+    tuple path(bed), path(bim), path(fam)  from cleanx_ch
+    val(cxy) from countxy
+    val(cxx) from countxx
+  output :
+    tuple path("${baseout}.bed"), path("${baseout}.bim"), path("${baseout}.fam") into (qc1_ch,qc1B_ch,qc1C_ch,qc1D_ch,qc1E_ch, qcX_ch)
+  script :
+    base=bed.baseName
+   cxy=cxy.toInteger()
+   cxx=cxx.toInteger()
+    if(cxy==0 && cxx>0){
+        baseout=base+'_splx'
+        """
+        plink -bfile $base   --make-bed --out $baseout --split-x $params.build_genome --keep-allele-order
+        """
+    }else{
+       baseout=base
+       """
+       echo $baseout
+       """
+    }
+}
 
+cleanx=false
 if (extrasexinfo == "--must-have-sex") {
-
+    cleanx=true
 
    /* Detailed analysis of X-chromosome */
    process getX {
@@ -626,7 +676,7 @@ process removeQCPhase1 {
      output = "${base}-c".replace(".","_")
      """
      # remove really realy bad SNPs and really bad individuals
-     plink $K --autosome --bfile $base $sexinfo --mind 0.1 --geno 0.1 --make-bed --out temp1
+     plink $K ${params.autosome_plink} --bfile $base $sexinfo --mind 0.1 --geno 0.1 --make-bed --out temp1
      plink $K --bfile temp1  $sexinfo --mind $params.cut_mind --make-bed --out temp2
      /bin/rm temp1.{bim,fam,bed}
      plink $K --bfile temp2  $sexinfo --geno $params.cut_geno --make-bed --out temp3
@@ -810,8 +860,9 @@ process removeQCIndivs {
     file (poorgc)        from poorgc10_ch
     tuple file(bed), file(bim), file(fam) from qc2D_ch
   output:
-     file("${out}.{bed,bim,fam}") into\
+     path("${out}.{bed,bim,fam}") into\
         (qc3A_ch, qc3B_ch)
+     path("${out}.fam") into qc3_ch_ind
   script:
    base = bed.baseName
    out  = "${base}-c".replace(".","_")
@@ -842,7 +893,7 @@ process calculateSnpSkewStatus {
    phe   = plinks[3]
    """
     cp $phe cc.phe
-    plink --threads ${max_plink_cores} --autosome --bfile $base $sexinfo $diffpheno --test-missing mperm=10000 --hardy --out $out
+    plink --threads ${max_plink_cores} ${params.autosome_plink} --bfile $base $sexinfo $diffpheno --test-missing mperm=10000 --hardy --out $out
     if ! [ -e $mperm ]; then
        echo "$mperm_header" > $mperm
     fi
@@ -886,16 +937,15 @@ process findSnpExtremeDifferentialMissingness {
     template "select_diffmiss_qcplink.py"
 }
 
-
 process removeSkewSnps {
   memory plink_mem_req
   input:
     file (plinks) from qc3B_ch
     file(failed) from skewsnps_ch
-  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'  
+  //publishDir "${params.output_dir}/", overwrite:true, mode:'copy'  
   output:
     tuple file("${output}.bed"), file("${output}.bim"), file("${output}.fam"), file("${output}.log") \
-      into (qc4A_ch, qc4B_ch, qc4C_ch,  report_cleaned_ch)
+      into (qc4A_ch, qc4B_ch, qc4C_ch,   qc4_save)
   script:
   base = plinks[0].baseName
   output = params.output.replace(".","_")
@@ -904,6 +954,131 @@ process removeSkewSnps {
   """
 }
 
+
+//cleanx=true
+if(cleanx){
+ process splitX {
+  memory other_mem_req
+  input :
+   tuple path(bed), path(bim), path(fam) from qcX_ch
+   path(listind) from qc3_ch_ind
+  output :
+   tuple  path("${outputx}.bed"),path("${outputx}.bim"),path("${outputx}.fam") into (all_x,chr_x_clean)
+  script :
+   base = bed.baseName
+   outputx="{params.output}_x"
+   """
+   plink -bfile $base --chr 23 --make-bed --out $outputx --keep-allele-order
+   """
+ }
+ process cleanPlink_x {
+  memory other_mem_req
+  input :
+   tuple path(bed), path(bim), path(fam) from all_x
+  output :
+   tuple  path("${outputfem}.bed"),path("${outputfem}.bim"),path("${outputfem}.fam") into female_x
+   tuple  path("${outputmale}.bed"),path("${outputmale}.bim"),path("${outputmale}.fam") into male_x
+   tuple path("list_female"), path("list_male")
+  script  :
+   base = bed.baseName
+   outputx="{params.output}_x"
+   outputfem="{params.output}_x_female"
+   outputmale="{params.output}_x_male"
+   """
+   plink -bfile $base --chr 23 -make-bed --out $outputx
+   awk '{if(\$5==2)print \$1"\\t"\$2}' $outputx".fam"  > list_female
+   plink -bfile $base --keep list_female --chr 23 -make-bed --out $outputfem
+   awk '{if(\$5==1)print \$1"\\t"\$2}' $outputx".fam"  > list_male
+   plink -bfile $base --keep list_male --chr 23 -make-bed --out $outputmale --set-hh-missing
+   """ 
+ }
+
+ process computed_stat_female_x {
+  memory other_mem_req
+  input :
+   tuple path(bed), path(bim), path(fam) from female_x
+  publishDir "${params.output_dir}/qcX/female", overwrite:true, mode:'copy'
+  output :
+    tuple path("${output}.frq"), path("${output}.hwe"), path("${output}.imiss"),  path("${output}.lmiss") into female_x_stats
+  script :
+    base = bed.baseName
+    output=params.output+"_femalestat"
+    """
+    plink -bfile $base --missing  --freq  --hardy  -out $output
+    """
+  }
+ process computed_stat_male_x {
+  memory other_mem_req
+  input :
+   tuple path(bed), path(bim), path(fam) from male_x
+  publishDir "${params.output_dir}/qcX/male", overwrite:true, mode:'copy'
+  output :
+    tuple path("${output}.frq"), path("${output}.imiss"),  path("${output}.lmiss") into male_x_stats
+  script :
+    base = bed.baseName
+    output=params.output+"_malestat"
+    """
+    plink -bfile $base --missing  --freq    -out $output
+    """
+  }
+ //"cut_maf_xfemale", "cut_maf_xmale", "cut_miss_xfemale", "cut_miss_xmale", "cut_diffmiss_x"
+  process report_export_x {
+    input :
+      tuple path(frqmale),  path(maleimiss),  path(malelmiss) from male_x_stats
+      tuple path(frqfem), path(femhwe), path(femimiss),  path(femlmiss) from female_x_stats
+   publishDir "${params.output_dir}/qcX/"
+   output :
+     path("${output}.tex") into x_report
+     path("${output}.in") into listsnps
+     path("${output}_resume.csv") 
+   script :
+      basemal=frqmale.baseName
+      basefem=frqfem.baseName
+      output=params.output+"_xfilter"
+      """
+      stats_x.py --base_female  $basefem --base_male $basemal --out $output --maf_female ${params.cut_maf_xfemale} --maf_male ${params.cut_maf_xmale}  --miss_male ${params.cut_miss_xmale} --miss_female ${params.cut_miss_xfemale} --diff_miss ${params.cut_diffmiss_x}
+      """
+ }
+ process cleanandmerge {
+  input :
+   tuple path(bed), path(bim), path(fam), path(log) from qc4_save
+   tuple path(bedx), path(bimx), path(famx) from chr_x_clean
+   path(snpsx) from listsnps
+  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+  output :
+   tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") into (final_data_ch,report_cleaned_ch)
+
+  script :  
+    basex=bedx.baseName
+    base=bed.baseName
+    output=params.output
+    """
+    plink -bfile $basex --extract $snpsx --keep-allele-order  -out cleanx --make-bed
+    plink -bfile $base --bmerge cleanx  --keep-allele-order  -out $output --make-bed
+    """
+ }
+}else {
+  process report_export_x_tmp {
+   output :
+     path("noreport") into x_report
+   script :
+      """
+      echo "no x analyse " > noreport
+      """
+ }
+ process transfertdata{
+  input :
+   tuple path(bed), path(bim), path(fam),path(log) from qc4_save
+  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+  output :
+   tuple path(bed), path(bim), path(fam), path(log)  into (final_data_ch,report_cleaned_ch)
+  script :
+     println "no X analysis, save plink file" 
+
+ }
+
+
+}
 
 
 
@@ -984,7 +1159,7 @@ process generateHwePlot {
 process outMD5 {
   memory other_mem_req
   input:
-     tuple file(bed), file(bim), file(fam), file(log) from qc4B_ch
+     tuple file(bed), file(bim), file(fam),path(log) from final_data_ch
   output:
      file(out) into report_outmd5_ch
   echo true
@@ -1033,7 +1208,7 @@ process produceReports {
   label 'latex'
   input:
     tuple file(orig), file (dupf) from report_dups_ch
-    tuple file(cbed), file(cbim), file(cfam), file(ilog) from report_cleaned_ch
+    tuple file(cbed), file(cbim), file(cfam),file(ilog) from report_cleaned_ch
     file(missingvhetpdf) from report_misshet_ch
     file(mafpdf)         from report_mafpdf_ch
     file(snpmisspdf)     from report_snpmiss_ch
@@ -1053,6 +1228,7 @@ process produceReports {
     file(batch_tex)  from report_batch_report_ch
     file(poorgc)     from report_poorgc10_ch
     tuple file(bpdfs), file(bcsvs) from report_batch_aux_ch
+    file(qcx) from x_report
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${base}.pdf") into final_ch

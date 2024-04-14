@@ -2202,11 +2202,11 @@ if(params.regenie==1){
    //errorStrategy { task.exitStatus == 1 ; return 'ignore' }
    publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.loco"
    publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.list"
-   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*regenie_step1.err*"
+   publishDir "${params.output_dir}/regenie/step1", overwrite:true, mode:'copy', pattern: "*.report"
    output : 
     tuple val(our_pheno), path("$phef"),path("${out}_pred.list"), path("${out}_1.loco"),path(bed), path(bim), path(fam),  optional :true into ch_regenie_pheno
-    path("${out}.report")
-    path("*_regenie_step1*")
+    path("*.report")
+    path("*.log")
    script :
        our_pheno       = pheno.replaceAll(/\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
       phef=pheno+".pheno"

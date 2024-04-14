@@ -33,4 +33,3 @@ ax.set_ylabel("Proportion of SNPs")
 fig.tight_layout()
 plt.ylim(-0.01,1.01)
 plt.savefig(args.output)
-
