@@ -177,7 +177,7 @@ f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
 remove_on_bp    = params.remove_on_bp
 
-allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10", "build_genome", "autosome_plink", "cut_maf_xfemale", "cut_maf_xmale", "cut_miss_xfemale", "cut_miss_xmale", "cut_diffmiss_x"]
+allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10", "build_genome", "autosome_plink", "cut_maf_xfemale", "cut_maf_xmale", "cut_miss_xfemale", "cut_miss_xmale", "cut_diffmiss_x", "chrxx_plink", "chrxy_plink"]
 
 
 
@@ -458,7 +458,7 @@ process countXX {
    stdout into countxx
  script :
  """
- awk '{if(\$1==23)print \$1}' $bim |wc -l
+ awk '{if(\$1==${params.chrxx_plink})print \$1}' $bim |wc -l
  """
 }
 
@@ -469,7 +469,7 @@ process countXY {
    stdout into countxy
  script :
  """
- awk '{if(\$1==25)print \$1}' $bim|wc -l
+ awk '{if(\$1==${params.chrxy_plink})print \$1}' $bim|wc -l
  """
 }
 
@@ -516,8 +516,8 @@ if (extrasexinfo == "--must-have-sex") {
       script:
       base = plink[0].baseName
       """
-	if [[ `grep  "^23" *bim`  ]];  then
-	   plink --bfile $base --chr 23 --geno 0.04 --make-bed --out X
+	if [[ `grep  "^${params.chrxx_plink}" *bim`  ]];  then
+	   plink --bfile $base --chr ${params.chrxx_plink} --geno 0.04 --make-bed --out X
 	else
 	   echo ""
 	   echo "----------------------------------------"
@@ -968,7 +968,7 @@ if(cleanx){
    base = bed.baseName
    outputx="{params.output}_x"
    """
-   plink -bfile $base --chr 23 --make-bed --out $outputx --keep-allele-order --keep $listind
+   plink -bfile $base --chr ${params.chrxx_plink} --make-bed --out $outputx --keep-allele-order --keep $listind
    """
  }
  process cleanPlink_x {
@@ -985,11 +985,11 @@ if(cleanx){
    outputfem="{params.output}_x_female"
    outputmale="{params.output}_x_male"
    """
-   plink -bfile $base --chr 23 -make-bed --out $outputx
+   plink -bfile $base --chr ${params.chrxx_plink} -make-bed --out $outputx
    awk '{if(\$5==2)print \$1"\\t"\$2}' $outputx".fam"  > list_female
-   plink -bfile $base --keep list_female --chr 23 -make-bed --out $outputfem
+   plink -bfile $base --keep list_female --chr ${params.chrxx_plink} -make-bed --out $outputfem
    awk '{if(\$5==1)print \$1"\\t"\$2}' $outputx".fam"  > list_male
-   plink -bfile $base --keep list_male --chr 23 -make-bed --out $outputmale --set-hh-missing
+   plink -bfile $base --keep list_male --chr ${params.chrxx_plink} -make-bed --out $outputmale --set-hh-missing
    """ 
  }
 

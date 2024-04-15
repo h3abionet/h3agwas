@@ -90,7 +90,7 @@ for head in ['balise_maf_male', 'balise_maf_female', 'balise_miss_male', 'balise
 
 data_all.to_csv(args.out+'_resume.csv')
 
-data_all[["SNP"]].to_csv(args.out+'.in',header=False, index=False)
+data_all.loc[data_all.all_filter,["SNP"]].to_csv(args.out+'.in',header=False, index=False)
 
 pdfdic={}
 pdfdic["ni"]=len(data_all.CHR)
