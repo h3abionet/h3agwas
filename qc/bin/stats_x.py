@@ -3,12 +3,14 @@
  
 import pandas as   pd
 import numpy  as np
+import math
 import sys
 from matplotlib import use
 use('Agg')
 import argparse
 import matplotlib.pyplot as plt
 import sys
+import scipy.stats as stats 
  
 def parseArguments():
     parser = argparse.ArgumentParser(description='merge file statistics with file frequence generate by plink')
@@ -20,6 +22,7 @@ def parseArguments():
     parser.add_argument('--diff_miss',type=float,default=0.02, help="basename of file for female")
     parser.add_argument('--base_male',type=str,required=True, help="basename of file for female")
     parser.add_argument('--threshold_hwe',type=float, default=1e-4, help="basename of file for female")
+    parser.add_argument('--threshold_fisher_freq',type=float, default=1e-4, help="basename of file for female")
     parser.add_argument('--out', type=str,help="",default="out")
     args = parser.parse_args()
     return args
@@ -59,9 +62,30 @@ data_all=datafemale.merge(datamale,suffixes=["_female", "_male"], on=["CHR","SNP
 
 ## balise_miss_femal
 data_all['balise_diff_miss']=(data_all.F_MISS_female - data_all.F_MISS_male).abs() < args.diff_miss
+
+balise=data_all.A1_female != data_all.A1_male
+data_all.loc[balise,'MAF_male'] = 1 - data_all.loc[balise,'MAF_male'] 
+
+data_all['N_A1_male']=data_all['MAF_male']*data_all['N_GENO_male']
+data_all['N_A2_male']=data_all['N_GENO_male'] - data_all['N_A1_male']
+data_all['N_A1_female']=data_all['MAF_female']*data_all['N_GENO_female']
+data_all['N_A2_female']=data_all['N_GENO_female'] - data_all['N_A1_female']
+
+
+def fish2(x) :
+  if math.isnan(x['N_A1_male']) or math.isnan(x['N_A2_male']) or math.isnan(x['N_A1_female']) or math.isnan(x['N_A2_female']) :
+      return float('nan') 
+  odd_ratio, p_value = stats.fisher_exact([[int(x['N_A1_male']),int(x['N_A2_male'])],[int(x['N_A1_female']),int(x['N_A2_female'])]])
+  return p_value
+
+data_all['p_fisher']=data_all.apply(lambda row: fish2(row), axis=1)
+data_all['balise_p_fisher'] = data_all['p_fisher']  > args.threshold_fisher_freq
+
 data_all['all_filter'] =  True #data_all.balise_maf_male & data_all.balise_maf_female &
-for head in ['balise_maf_male', 'balise_maf_female', 'balise_miss_male', 'balise_miss_female', 'balise_hwe', 'balise_diff_miss'] :
+for head in ['balise_maf_male', 'balise_maf_female', 'balise_miss_male', 'balise_miss_female', 'balise_hwe', 'balise_diff_miss','balise_p_fisher'] :
   data_all['all_filter']=(data_all[head] & data_all['all_filter'])
+
+  
 
 
 data_all.to_csv(args.out+'_resume.csv')
@@ -79,6 +103,7 @@ pdfdic["filt_mal_miss"]=(data_all.balise_miss_male==False).sum()
 pdfdic["filt_femal_miss"]=(data_all.balise_miss_female==False).sum()
 pdfdic["filt_femal_hwe"]=(data_all.balise_hwe==False).sum()
 pdfdic["filt_diff_miss"]=(data_all.balise_diff_miss==False).sum()
+pdfdic["filt_fisher_freq"]=(data_all.balise_p_fisher==False).sum()
 pdfdic["allfilter"]=(data_all.all_filter==False).sum()
 
 pdfdic["mafmale"] = args.maf_male
@@ -86,6 +111,7 @@ pdfdic["maffemale"] = args.maf_female
 pdfdic["missmale"] = args.miss_male
 pdfdic["missfemale"] = args.miss_female
 pdfdic["threshold_hwe"] = args.threshold_hwe
+pdfdic["threshold_fisher"] = args.threshold_fisher_freq
 pdfdic["diffmiss"] = args.diff_miss
 pdfdic["resumecsv"]='*-protect*-url{'+args.out+'_resume.csv}'
 
@@ -111,7 +137,7 @@ Data description :
 
 *-begin{table}[h!]
 *-centering
-*-begin{tabular}{ c | c }
+*-begin{tabular}{c|c}
  *-hline
  Filters  &  Snps number discarded *-*-
 *-hline*-hline
@@ -120,6 +146,7 @@ Data description :
  Missingness *-textgreater  %(missmale)s in males & %(filt_mal_miss)s  *-*-
  Missingness *-textgreater %(missfemale)s in females & %(filt_femal_miss)s *-*- 
  P HWE *-textless %(threshold_hwe)s in females & %(filt_femal_hwe)s  *-*-
+ P fisher*-textless %(threshold_fisher)s of comparison between females and males of frequency & %(filt_fisher_freq)s  *-*-
  abs(Mif Male - Mif female) *-textgreater %(diffmiss)s in females & %(filt_diff_miss)s *-*-
  Final filter & %(allfilter)s *-*-
 *-hline

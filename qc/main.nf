@@ -968,7 +968,7 @@ if(cleanx){
    base = bed.baseName
    outputx="{params.output}_x"
    """
-   plink -bfile $base --chr 23 --make-bed --out $outputx --keep-allele-order
+   plink -bfile $base --chr 23 --make-bed --out $outputx --keep-allele-order --keep $listind
    """
  }
  process cleanPlink_x {
