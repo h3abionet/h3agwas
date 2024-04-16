@@ -17,6 +17,7 @@ def read_chrbp(file_chrbp) :
 
 #3 3:61662:T:C 0 61662 C T
 def  read_bim(bim) :
+   definechr=""
    read=open(bim)
    listchro=set([])
    listchro2={}
@@ -27,7 +28,12 @@ def  read_bim(bim) :
          rs=None
       else :
          rs=spl[1]
-      listchro2[spl[0]+" "+spl[3]]=[spl[4], spl[5], spl[1]]
+      chro=spl[0]
+      if "chr" in spl[0][0:3] :
+         definechr="chr"
+      if chro == '23' :
+        chro=definechr+'X'
+      listchro2[chro+" "+spl[3]]=[spl[4], spl[5], spl[1]]
    return (listchro, listchro2)
 
 

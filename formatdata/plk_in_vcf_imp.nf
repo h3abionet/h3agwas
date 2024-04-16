@@ -82,12 +82,34 @@ Channel
       .separate(plkinit, biminitial, biminitial_extractref) { a -> [a,a[1], a[1]] }
 
 
-rs_infogz=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
+
+rs_infogz_i=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
+
+File file = new File("${params.file_ref_gzip}.csi")
+
+if(file.exists()){
+rs_infogz=rs_infogz_i.combine(channel.fromPath(params.file_ref_gzip+'.csi',checkIfExists:true))
+}else{
+process index_vcf{
+ cpus params.max_plink_cores
+ input :
+   path(filegz) from rs_infogz_i
+ output :
+   tuple path(filegz), path(filegz+'.czi') into rs_infogz
+ output :
+   """
+   bcftools index  $filegz --threads 10
+   """
+}
+}
+
+
 process extractrsname{
+  label 'py3utils'
   memory params.plink_mem_req
   cpus params.max_plink_cores
   input :
-    file(rsinfo) from rs_infogz
+    tuple path(rsinfo), path(rsinfo_csi) from rs_infogz
     set file(bed), file(bim), file(fam) from plkinit
   publishDir "${params.output_dir}/rsclean", overwrite:true, mode:'copy'
   output :
@@ -99,8 +121,10 @@ process extractrsname{
     out=plk+"_updaters"
     extract=params.deleted_notref=='F' ? "" : " --extract range keep"
     """
-    zcat $rsinfo | extractrsid_bypos.py --bim $bim --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
-    awk '{print \$1"\t"\$2"\t"\$2"\t"\$5}' $outrs > keep
+    #awk '{if(\$1==23){\$1="X"}; print \$1"\t"\$4}' $bim > filebed
+    #bcftools view $rsinfo --threads ${params.max_plink_cores} -R filebed > "test.vcf"
+    zcat $rsinfo| extractrsid_bypos.py --bim $bim --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
+    awk '{if(\$1=="X" || \$1=="chrX"){\$1=23};print \$1"\t"\$2"\t"\$2"\t"\$5}' $outrs > keep
     plink --keep-allele-order $extract --bfile $plk --make-bed --out $out --update-name $outrs".rs" -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
     """
 }
@@ -161,10 +185,11 @@ process checkfasta{
   maxRetries 1
   input :
      path(fasta) from hgrefi
+ publishDir "${params.output_dir}/fasta/", overwrite:true, mode:'copy'
   output :
      tuple path("$fasta2"), path("${fasta2}.fai") into (hgref, hgref2, hgrefconv)
   script :
-    fasta2="newfasta.gz"
+    fasta2=fasta.baseName+"_clean.fa.gz"
     """
     if [ "${task.attempt}" -eq "1" ]
     then
