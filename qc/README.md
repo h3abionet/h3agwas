@@ -67,13 +67,16 @@ The following parameters control QC
 * `autosome_plink` : how to defined autosome of plink as option [default : --chr 1-22,25 ]
 * `chrxx_plink` : number of chr xx in plink format([23])
 * `chrxy_plink` : number of chr xx in plink format([25])
-* X chromome filters :
+* X chromosome filters :
  * `build_genome` : build genome used to split X and XY [default : hg19]
  * `cut_maf_xfemale` [0.01]
  * `cut_maf_xmale` [o.01]
  * `cut_miss_xfemale` [0.02] 
  * `cut_miss_xmale` [0.02] 
  * `cut_diffmiss_x` [0.02]
+* Y chromosome filters :
+ * `cut_maf_y` : [0.01]
+ * `cut_miss_y` : [0.02]
 
 Several of the above parameters make reference to a phenotype file. Of course, these can be to the same phenotype file, but probably using different columns.
 

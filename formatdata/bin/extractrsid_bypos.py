@@ -23,16 +23,16 @@ def  read_bim(bim) :
    listchro2={}
    for line in read :
       spl=line.replace('\n','').split()
-      listchro.add(spl[0]+" "+spl[3])
+      chro=spl[0]
+      if chro == '23' :
+        chro=definechr+'X'
+      listchro.add(chro+" "+spl[3])
       if spl[1]=='.' :
          rs=None
       else :
          rs=spl[1]
-      chro=spl[0]
       if "chr" in spl[0][0:3] :
          definechr="chr"
-      if chro == '23' :
-        chro=definechr+'X'
       listchro2[chro+" "+spl[3]]=[spl[4], spl[5], spl[1]]
    return (listchro, listchro2)
 
@@ -74,6 +74,7 @@ if args.file_chrbp :
 else :
   print('reading bim')
   (chrolist,chrodic)=read_bim(args.bim)
+
 
 print("nb pos to found "+str(len(chrolist))+'\n')
 write=open(args.out_file, 'w')
@@ -121,7 +122,7 @@ else :
      if infopos in chrolist :
        spla1=spl[posa1].split(',')
        spla2=spl[posa2].split(',')
-       if (chrodic[infopos][0] in spla1 and chrodic[infopos][1] in spla2) or  (chrodic[infopos][0] in spla2 and chrodic[infopos][1] in spla1) :
+       if ((chrodic[infopos][0] in spla1) and (chrodic[infopos][1] in spla2)) or  ((chrodic[infopos][0] in spla2) and (chrodic[infopos][1] in spla1)) :
          write2.write(line)
          write.write(infopos+" "+chrodic[infopos][0]+" "+chrodic[infopos][1]+" "+spl[posrs]+" "+spl[posa1]+'\n')
          chrolist.remove(infopos)

@@ -177,7 +177,7 @@ f_lo_male       = params.f_lo_male
 f_hi_female     = params.f_hi_female
 remove_on_bp    = params.remove_on_bp
 
-allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10", "build_genome", "autosome_plink", "cut_maf_xfemale", "cut_maf_xmale", "cut_miss_xfemale", "cut_miss_xmale", "cut_diffmiss_x", "chrxx_plink", "chrxy_plink"]
+allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","other_mem_req","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10", "build_genome", "autosome_plink", "cut_maf_xfemale", "cut_maf_xmale", "cut_miss_xfemale", "cut_miss_xmale", "cut_diffmiss_x", "chrxx_plink", "chrxy_plink", "chry_plink", "chrm_plink" ,"cut_maf_y", "cut_miss_y"]
 
 
 
@@ -437,7 +437,7 @@ process removeDuplicateSNPs {
 
   output:
     tuple  path("${nodup}.bed"),path("${nodup}.bim"),path("${nodup}.fam")\
-    into (checkx_ch, checkxy_ch, cleanx_ch)
+    into (checkx_ch, checkxy_ch, cleanx_ch, checky_ch)
     tuple path("${base}.orig"), path(dups) into report_dups_ch
     path ("${nodup}.lmiss") into snp_miss_ch
     path ("${nodup}.imiss") into (ind_miss_ch1, ind_miss_ch2)
@@ -462,6 +462,19 @@ process countXX {
  """
 }
 
+process countY {
+ input :
+  tuple path(bed), path(bim), path(fam)  from checky_ch
+ output :
+   stdout into county
+ script :
+ """
+ awk '{if(\$1==${params.chry_plink})print \$1}' $bim |wc -l
+ """
+}
+
+
+
 process countXY {
  input :
   tuple path(bed), path(bim), path(fam)  from checkxy_ch
@@ -484,7 +497,7 @@ process clean_x {
     val(cxy) from countxy
     val(cxx) from countxx
   output :
-    tuple path("${baseout}.bed"), path("${baseout}.bim"), path("${baseout}.fam") into (qc1_ch,qc1B_ch,qc1C_ch,qc1D_ch,qc1E_ch, qcX_ch)
+    tuple path("${baseout}.bed"), path("${baseout}.bim"), path("${baseout}.fam") into (qc1_ch,qc1B_ch,qc1C_ch,qc1D_ch,qc1E_ch, qcX_ch, qcY_ch)
   script :
     base=bed.baseName
    cxy=cxy.toInteger()
@@ -862,7 +875,7 @@ process removeQCIndivs {
   output:
      path("${out}.{bed,bim,fam}") into\
         (qc3A_ch, qc3B_ch)
-     path("${out}.fam") into qc3_ch_ind
+     path("${out}.fam") into (qc3_ch_ind, qc3_ch_indY)
   script:
    base = bed.baseName
    out  = "${base}-c".replace(".","_")
@@ -1026,59 +1039,141 @@ if(cleanx){
     input :
       tuple path(frqmale),  path(maleimiss),  path(malelmiss) from male_x_stats
       tuple path(frqfem), path(femhwe), path(femimiss),  path(femlmiss) from female_x_stats
-   publishDir "${params.output_dir}/qcX/"
-   output :
-     path("${output}.tex") into x_report
-     path("${output}.in") into listsnps
-     path("${output}_resume.csv") 
-   script :
-      basemal=frqmale.baseName
-      basefem=frqfem.baseName
-      output=params.output+"_xfilter"
-      """
-      stats_x.py --base_female  $basefem --base_male $basemal --out $output --maf_female ${params.cut_maf_xfemale} --maf_male ${params.cut_maf_xmale}  --miss_male ${params.cut_miss_xmale} --miss_female ${params.cut_miss_xfemale} --diff_miss ${params.cut_diffmiss_x}
-      """
- }
- process cleanandmerge {
-  input :
-   tuple path(bed), path(bim), path(fam), path(log) from qc4_save
-   tuple path(bedx), path(bimx), path(famx) from chr_x_clean
-   path(snpsx) from listsnps
-  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
-  output :
-   tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") into (final_data_ch,report_cleaned_ch)
+	   publishDir "${params.output_dir}/qcX/"
+	   output :
+	     path("${output}.tex") into x_report
+	     path("${output}.in") into listsnps
+	     path("${output}_resume.csv") 
+	   script :
+	      basemal=frqmale.baseName
+	      basefem=frqfem.baseName
+	      output=params.output+"_xfilter"
+	      """
+	      stats_x.py --base_female  $basefem --base_male $basemal --out $output --maf_female ${params.cut_maf_xfemale} --maf_male ${params.cut_maf_xmale}  --miss_male ${params.cut_miss_xmale} --miss_female ${params.cut_miss_xfemale} --diff_miss ${params.cut_diffmiss_x}
+	      """
+	 }
+	 process cleanandmerge_x {
+	  input :
+	   tuple path(bed), path(bim), path(fam), path(log) from qc4_save
+	   tuple path(bedx), path(bimx), path(famx) from chr_x_clean
+	   path(snpsx) from listsnps
+	  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+	  output :
+	   tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") into dataf_withx_ch//(final_data_ch,report_cleaned_ch)
 
-  script :  
-    basex=bedx.baseName
-    base=bed.baseName
-    output=params.output
-    """
-    plink -bfile $basex --extract $snpsx --keep-allele-order  -out cleanx --make-bed
-    plink -bfile $base --bmerge cleanx  --keep-allele-order  -out $output --make-bed
-    """
- }
-}else {
-  process report_export_x_tmp {
-   output :
-     path("noreport") into x_report
-   script :
-      """
-      echo "no x analyse " > noreport
-      """
- }
- process transfertdata{
-  input :
-   tuple path(bed), path(bim), path(fam),path(log) from qc4_save
-  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
-  output :
-   tuple path(bed), path(bim), path(fam), path(log)  into (final_data_ch,report_cleaned_ch)
-  script :
-     println "no X analysis, save plink file" 
+	  script :  
+	    basex=bedx.baseName
+	    base=bed.baseName
+	    output=params.output
+	    """
+	    plink -bfile $basex --extract $snpsx --keep-allele-order  -out cleanx --make-bed
+	    plink -bfile $base --bmerge cleanx  --keep-allele-order  -out $output --make-bed
+	    """
+	 }
+	}else {
+	  process report_export_x_tmp {
+	   output :
+	     path("noreport") into x_report
+	   script :
+	      """
+	      echo "no x analyse " > noreport
+	      """
+	 }
+        dataf_withx_ch = qc4_save
+ /*
+	 process transfertdata{
+	  input :
+	   tuple path(bed), path(bim), path(fam),path(log) from qc4_save
+	  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+	  output :
+	   tuple path(bed), path(bim), path(fam), path(log)  into (final_data_ch,report_cleaned_ch)
+	  script :
+	     println "no X analysis, save plink file" 
 
- }
+	 }
+*/
+
+	}
+
+	if(county.toList().get()[0].toInteger()>0){
+	process clean_y {
+	  memory other_mem_req
+	  input :
+	   tuple path(bed), path(bim), path(fam) from qcY_ch
+           path(listind) from qc3_ch_indY
+         publishDir "${params.output_dir}/qcY/", overwrite:true, mode:'copy'
+         output :
+            tuple path("${outputy}.bed"), path("${outputy}.bim"), path("${outputy}.fam") into y_qc
+            tuple path("${outputy}.lmiss"),  path("${outputy}.imiss"), path("${outputy}.frq") into y2_qc
+         script :
+           base=bed.baseName 
+           outputy=params.output+"_y"
+           """
+           awk '{if(\$5==1)print \$1"\\t"\$2}' $base".fam"  > list_male
+           plink -bfile $base --chr ${params.chry_plink} -make-bed --out tmp1 --keep $listind #list_male --set-hh-missing  
+           plink -bfile tmp1 --keep list_male --set-hh-missing  --out tmp --make-bed
+           plink -bfile tmp --missing  --freq  --out $outputy
+           plink -bfile tmp --maf ${params.cut_maf_y} --geno ${params.cut_miss_y} --make-bed --out tmpy
+           awk '{print \$2}' tmpy".bim" > rslist
+           plink -bfile $base --extract rslist --make-bed --set-hh-missing -out $outputy --keep-allele-order
+           """
+        }
+
+         process cleanandmerge_y {
+          input :
+           tuple path(bed), path(bim), path(fam), path(log) from dataf_withx_ch
+           tuple path(bedy), path(bimy), path(famy) from y_qc
+          publishDir "${params.output_dir}/qcY/", overwrite:true, mode:'copy'
+          output :
+           tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") into (final_data_ch,report_cleaned_ch)
+
+          script :
+            basey=bedy.baseName
+            base=bed.baseName
+            output=params.output
+            """
+            plink -bfile $base --bmerge $basey --keep-allele-order  -out $output --make-bed
+            """
+         }
+         process build_reporty{
+           input :
+            tuple path(lmiss),  path(imiss), path(frq) from y2_qc
+          publishDir "${params.output_dir}/qcY/", overwrite:true, mode:'copy'
+          output :
+             path("${output}.tex") into y_report
+             path("${output}.in") into y_listsnps
+             path("${output}_resume.csv")
+          script :
+             output=lmiss.baseName
+             """
+              stats_y.py --base $output --out $output --maf ${params.cut_maf_y} --miss ${params.cut_miss_y}
+             """
+         }
+
+      }else{
+
+        process transfertdata{
+          input :
+           tuple path(bed), path(bim), path(fam),path(log) from dataf_withx_ch
+          publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+          output :
+           tuple path(bed), path(bim), path(fam), path(log)  into (final_data_ch,report_cleaned_ch)
+          script :
+             println "no Y analysis, save plink file"
+
+         }
+
+          process report_export_y_tmp {
+           output :
+             path("noreport") into y_report
+           script :
+              """
+              echo "No Y analyse " > noreport
+              """
+         }
 
 
-}
+     }
 
 
 
@@ -1229,6 +1324,7 @@ process produceReports {
     file(poorgc)     from report_poorgc10_ch
     tuple file(bpdfs), file(bcsvs) from report_batch_aux_ch
     file(qcx) from x_report
+    file(qcy) from y_report
   publishDir params.output_dir, overwrite:true, mode:'copy'
   output:
     file("${base}.pdf") into final_ch

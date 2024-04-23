@@ -65,7 +65,7 @@ if len(kpsewhich)>1:
 # NB: only for a Nextflow template -- you could also directly call from a Nextflow
 # script if this script is on the path -- in which case the parameters should be passed
 if len(sys.argv)==1:
-   sys.argv = [sys.argv[0],"$orig","$base","$cbim","$cfam","$missingvhetpdf","$mafpdf","$dupf","$fsex","$indmisspdf","$snpmisspdf", "$qcx"]
+   sys.argv = [sys.argv[0],"$orig","$base","$cbim","$cfam","$missingvhetpdf","$mafpdf","$dupf","$fsex","$indmisspdf","$snpmisspdf", "$qcx", "$qcy"]
 
 
 def parseArguments():
@@ -81,6 +81,7 @@ def parseArguments():
     parser.add_argument('indmisspdf', type=str),
     parser.add_argument('snpmisspdf', type=str),        
     parser.add_argument('qcx', type=str),        
+    parser.add_argument('qcy', type=str),        
     args = parser.parse_args()
     return args
 
@@ -299,6 +300,19 @@ WE p-value}{{$hwepdf}}
 %(qcx)s
 
 
+*-section{QC Y}
+
+%(qcy)s
+
+
+*-section{QC Y}
+
+
+*-section{Final results}
+
+*-noindent
+The quality control procedures as described below were applied to the data. 
+The final, cleaned result contains:
 
 
 *-section{Final results}
@@ -422,6 +436,17 @@ if os.path.isfile("$qcx") :
  f.close()
 else :
   pdict['qcx']="no analyse done on X quality chromosome"
+
+
+if os.path.isfile("$qcy") :
+ f=open("$qcy")
+ pdict['qcy']=f.read()
+ f.close()
+else :
+  pdict['qcy']="no analyse done on X quality chromosome"
+
+
+
 
 pdict['numhetrem'] =  countLines("$misshetremf")
 pdict['numcsnps'] =  countLines(args.cbim)

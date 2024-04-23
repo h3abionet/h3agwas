@@ -91,11 +91,12 @@ if(file.exists()){
 rs_infogz=rs_infogz_i.combine(channel.fromPath(params.file_ref_gzip+'.csi',checkIfExists:true))
 }else{
 process index_vcf{
+ label 'py3utils'
  cpus params.max_plink_cores
  input :
    path(filegz) from rs_infogz_i
  output :
-   tuple path(filegz), path(filegz+'.czi') into rs_infogz
+   tuple path(filegz), path("${filegz}.csi") into rs_infogz
  output :
    """
    bcftools index  $filegz --threads 10
@@ -300,7 +301,7 @@ process convertInVcf {
      out="${params.output}"
      """
      mkdir -p ${params.tmpdir}
-     plink  --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
+     plink2  --bfile ${base}  --recode vcf-iid bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores} 
      ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort - -O z -T ${params.tmpdir} > ${out}_tmp.vcf.gz  
      rm -f ${out}.vcf.gz
      ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
@@ -342,7 +343,7 @@ process convertInVcfChro{
      out="${params.output}"+"_"+chro
      """
      mkdir -p ${params.tmpdir}
-     plink  --chr $chro --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
+     plink2  --chr $chro --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
      ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort -T ${params.tmpdir} - -O z > ${out}_tmp.vcf.gz
      rm -f ${out}.vcf.gz
      ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"
