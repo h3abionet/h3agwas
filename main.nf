@@ -1,1 +1,0 @@
-plink-qc.nf
