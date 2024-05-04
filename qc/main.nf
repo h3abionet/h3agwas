@@ -505,7 +505,7 @@ process clean_x {
     if(cxy==0 && cxx>0){
         baseout=base+'_splx'
         """
-        plink -bfile $base   --make-bed --out $baseout --split-x $params.build_genome --keep-allele-order
+        plink -bfile $base   --make-bed --out $baseout --split-x $params.build_genome 'no-fail' --keep-allele-order
         """
     }else{
        baseout=base
