@@ -1916,8 +1916,10 @@ if(params.saige==1){
   if(params.list_vcf!=''){
    listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines(), checkIfExists:true)
    process buildindex {
-     label 'utils'
-
+   memory { strmem(params.other_process_mem_req) + 5.GB * (task.attempt -1) }               
+   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }         
+   maxRetries 3                                                           
+    label 'utils'
     input :
        file(vcf) from listvcf_ch
     output :
