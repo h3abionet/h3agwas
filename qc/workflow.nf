@@ -99,12 +99,11 @@ drawPCA     checkSampleSheet(samplesheet)
   pi_hat=channel.of(params.pi_hat)
  emit :
   wflowversion = wflowversion
-  phenotype_ch = phenotype_ch   
+  phenotype_ch = phenotype_ch
   diffpheno = diffpheno
   batch_ch = batch_ch
   cc_ch = cc_ch
   col = col
-
   sexinfo = sexinfo
   extrasexinfo = extrasexinfo
   inpat = inpat
@@ -135,7 +134,7 @@ workflow qc {
  clean_x(removeDuplicateSNPs.out.plink, countxy, countxx)
  cleanx=false
  if(check_params.out.bal_sexinfo){
-  getX(clean_x.out) 
+  getX(clean_x.out)
   analyseX(clean_x.out)
   cleanx=true
    x_analy_res_ch=analyseX.out
@@ -144,16 +143,16 @@ workflow qc {
    x_analy_res_ch = Channel.fromPath("0")
  }
  identifyIndivDiscSexinfo(removeDuplicateSNPs.out.plink)
- // update should be before or after removeDuplicateSNPs? 
+ // update should be before or after removeDuplicateSNPs?
  generateSnpMissingnessPlot(removeDuplicateSNPs.out.lmiss)
- // update should be before or after removeDuplicateSNPs? 
+ // update should be before or after removeDuplicateSNPs?
  generateIndivMissingnessPlot(removeDuplicateSNPs.out.imiss)
  //
  getInitMAF(removeDuplicateSNPs.out.plink)
  showInitMAF(getInitMAF.out)
  showHWEStats(identifyIndivDiscSexinfo.out.hwe)
  removeQCPhase1(removeDuplicateSNPs.out.plink, check_params.out.sexinfo)
- // 
+ //
  compPCA(removeQCPhase1.out.plink)
  drawPCA(compPCA.out.eigen, check_params.out.cc_ch, check_params.out.col, check_params.out.diffpheno)
  if(params.high_ld_regions_fname != "")   ldreg_ch=Channel.fromPath(params.high_ld_regions_fname,  checkIfExists:true) else ldreg_ch = Channel.fromPath("$projectDir/assets/NO_FILE",   checkIfExists:true)
@@ -179,39 +178,67 @@ workflow qc {
   dataf_withx_ch = cleanandmerge_x.out
  }else{
   report_export_x_tmp()
-  report_x = report_export_x_tmp.out 
+  report_x = report_export_x_tmp.out
   dataf_withx_ch = removeSkewSnps.out
  }
-  
- clean_y(splitX.out,removeQCIndivs.out.fam, countY.out)  
+
+ clean_y(splitX.out,removeQCIndivs.out.fam, countY.out)
  cleanandmerge_y(dataf_withx_ch ,clean_y.out.plky_qc, countY.out)
- build_reporty(clean_y.out.stat_qc, countY.out) 
+ build_reporty(clean_y.out.stat_qc, countY.out)
  calculateMaf(removeSkewSnps.out, check_params.out.sexinfo) | generateMafPlot
  calculateSnpSkewStatus.out.hwe | findHWEofSNPs | generateHwePlot
- MD5_out(cleanandmerge_y.out)
+ MD5_out(cleanandmerge_y.out.plk_log)
  batchProc(compPCA.out.eigen, identifyIndivDiscSexinfo.out.stat, check_params.out.phenotype_ch, check_params.out.batch_ch,pruneForIBDLD.out, x_analy_res_ch,findRelatedIndiv.out, check_params.out.extrasexinfo)
  produceReports(
-      removeDuplicateSNPs.out.dups, 
-      cleanandmerge_y.out, 
-      generateMissHetPlot.out, 
-      generateMafPlot.out, 
-      generateSnpMissingnessPlot.out, 
-      generateIndivMissingnessPlot.out, 
+      removeDuplicateSNPs.out.dups,
+      cleanandmerge_y.out.plk_log,
+      generateMissHetPlot.out,
+      generateMafPlot.out,
+      generateSnpMissingnessPlot.out,
+      generateIndivMissingnessPlot.out,
       identifyIndivDiscSexinfo.out.log,
       getBadIndivsMissingHet.out,
       generateDifferentialMissingnessPlot.out,
       findSnpExtremeDifferentialMissingness.out.failed,
       drawPCA.out,
       generateHwePlot.out,
-      findRelatedIndiv.out, 
-      MD5_in.out, 
-      MD5_out.out, 
+      findRelatedIndiv.out,
+      MD5_in.out,
+      MD5_out.out,
       showInitMAF.out,
       showHWEStats.out,
       removeQCPhase1.out.log,
       batchProc.out.report_batch_report_ch,
-      sampleSheet.out.plates, 
+      sampleSheet.out.plates,
       batchProc.out.report_batch_aux_ch,
-      report_x, 
+      report_x,
       build_reporty.out.report)
+ emit :
+  plink=cleanandmerge_y.out.plk
+}
+
+
+include {dl_dataref_michigan;michigan_qc;clean_michigan} from './process_michigan.nf'
+include {getfrequency} from '../modules/utils_plink.nf'
+workflow qc_michigan {
+  take :
+   plink
+  main :
+   if (params.qc_michigan==1) {
+      bin_checkmich=Channel.fromPath(params.bin_checkmich)
+     if(params.dataref_michigan==""){
+       dl_dataref_michigan()
+       data_michigan =dl_dataref_michigan.out
+     }else {
+       data_michigan=  channel.fromPath(params.dataref_michigan, checkIfExists:true)
+     }
+    getfrequency(plink)
+    michigan_qc(getfrequency.out, bin_checkmich, data_michigan)
+    clean_michigan(michigan_qc.out.res, plink)
+    plinkf = clean_michigan.out
+   } else {
+     plinkf=plink
+  }
+  emit :
+    plink = plinkf
 }

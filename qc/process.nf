@@ -767,7 +767,7 @@ process splitX {
    tuple  path("${outputx}.bed"),path("${outputx}.bim"),path("${outputx}.fam") 
   script :
    base = bed.baseName
-   outputx="{params.output}_x"
+   outputx="${params.output}_x"
    """
    plink -bfile $base --chr ${params.chrxx_plink} --make-bed --out $outputx --keep-allele-order --keep $listind
    """
@@ -857,21 +857,20 @@ process report_export_x {
   maxRetries 3
  input :
    tuple path(bed), path(bim), path(fam), path(log) 
-	   tuple path(bedx), path(bimx), path(famx) 
-	   path(snpsx) 
-	  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+   tuple path(bedx), path(bimx), path(famx) 
+   path(snpsx) 
+  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
-	   tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") 
-
+   tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") 
   script :  
-	    basex=bedx.baseName
-	    base=bed.baseName
-	    output=params.output+"_withx"
-	    """
-	    plink -bfile $basex --extract $snpsx --keep-allele-order  -out cleanx --make-bed
-	    plink -bfile $base --bmerge cleanx  --keep-allele-order  -out $output --make-bed
-	    """
- }
+    basex=bedx.baseName
+    base=bed.baseName
+    output="${params.output}_withx"
+    """
+    plink -bfile $basex --extract $snpsx --keep-allele-order  -out cleanx --make-bed
+    plink -bfile $base --bmerge cleanx  --keep-allele-order  -out $output --make-bed
+    """
+}
 
   process report_export_x_tmp {
 	   output :
@@ -925,7 +924,8 @@ process cleanandmerge_y {
            val(county)
           publishDir "${params.output_dir}/qcY/", overwrite:true, mode:'copy'
           output :
-           tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") 
+           tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log"), emit : plk_log
+           tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), emit : plk
           script :
             basey=bedy.baseName
             base=bed.baseName

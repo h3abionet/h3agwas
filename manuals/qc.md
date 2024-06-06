@@ -1,6 +1,6 @@
 <img src="../helperfiles/H3ABioNetlogo2.jpg"/>
 
-# The QC arguments : `qc.nf`
+# Arguments for Quality Controls `
 
 This section describes the various ways in which the pipeline can be run and various options. Usually options are specified in the _nextflow.config_ file (or which ever file you use). However, you can also pass parameters to the Nextflow script on the command-line. Parameters on the command line over-ride any parameters specified in the config file. If you are a first time user of the pipeline you should read the discussion of the `nextflow.config` file in the parent README.
 
@@ -17,20 +17,7 @@ This version has been run on real data sets and works. However, not all cases ha
 * it is not robust when X chromosome data is not available
 * the reporting assumes you want to do batch/site analysis. If you don't the code works but the report may look a bit odd with some figures repeated.
 
-## 1 Input/Output :  PLINK format
-
-Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  The key Nextflow parameters to set are:
-
-* `work_dir` : the directory in which you will run the workflow. This will typically be the _h3agwas_ directory which you cloned;
-* input, output and script directories: the default is that these are subdirectories of the `work_dir` and there'll seldom be reason to change these;
-* `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
-* `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id).  Provide either absolute file path or relative to where you are running. In a previous version this was relative to input_dir, which is not right.
-See [https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)](https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)) for a discussion.
-
-* `output_dir`: the directory which the output should go to. The default is `output`.
-* `output`: the base name of the output files. *This cannot be the same as the input!!!*
-
-## 2 Overview of the workflow
+## 1. Overview of the workflow
 
 The QC process consists of:
 
@@ -42,7 +29,18 @@ The QC process consists of:
 * a PCA of the resultant data is computed;
 * a detailed report of the QC process is done.
 
-## 3 Additional QC Parameters
+## 2. Input/Output :
+
+Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  The key Nextflow parameters to set are:
+* plink input :
+ * `bfile` : basename of plink file, or see `input_pat` and `input_dir`
+ * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
+
+## Output 
+* `output_dir`: the directory which the output should go to. The default is `output`.
+* `output`: the base name of the output files. *This cannot be the same as the input!!!*
+
+## 3. Additional QC Parameters
 
 The following parameters control QC
 
@@ -63,9 +61,13 @@ The following parameters control QC
 * `pheno_col` is the column label of the column in  the phenotype file which should be used.
 *  `case_control` : This is the name of a PLINK-style phenotype file with labels in the first line. This is a compulsory parameter. The QC process uses the case/control status of individuals. A principal component analysis is done. We do not expect typically overall that there will be difference between cases and controls. The PC-analysis tests that this is so. Of course, you need to apply your mind to the result as YMMV. If your study has several case/control categories, choose an appropriate one that will give insight. If you only have continuous measures (e.g., BMI), then discretise and make an artificial case-control category. Remember, this is for QC purposes not to find interesting biology.
 * `case_control_col`: this is the label of the column.
+* `high_ld_regions_fname`: this is optional -- it is a list of regions which are in very high LD -- and are exclude when checking for relationships (https://www.cog-genomics.org/plink/1.9/filter#mrange_id).  Provide either absolute file path or relative to where you are running. In a previous version this was relative to input_dir, which is not right.
+See [https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)](https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(LD)) for a discussion.
+
+### Chromosome options  (new in version 4)
 * `autosome_plink` : how to defined autosome of plink as option [default : --chr 1-22,25 ]
 * `chrxx_plink` : number of chr xx in plink format([23])
-* `chrxy_plink` : number of chr xx in plink format([25])
+* `chrxy_plink` : number of chr xy in plink format([25])
 * X chromosome filters :
  * `build_genome` : build genome used to split X and XY [default : hg19]
  * `cut_maf_xfemale` [0.01]
@@ -95,16 +97,16 @@ To do this you need to give a file with the GC10 score (usually it will be in th
    * If you have something else, you'll have to figure out how to either create a better sample sheet or pick the right regex. For Pythonites, the regular expression should contain exactly one pair of parenthesis which will be used by Python's regex features to extract out the ID.
 
 
-## 4 Performance parameters
+### Performance parameters
 
 There are three parameters that are important control performance. You probably won't need to change this, but feel free.
 
 * `plink_mem_req` : specify in MB or GB how much memory your processes that use PLINK require;
-*  `other_mem_req` : specify how much other processes need;
-*  `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
+* `other_mem_req` : specify how much other processes need;
+* `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
 
 
-## 5 Output
+## 5. Output
 
 A PDF report can be found in the output directory. This describes the process as well as what the inputs and outputs were.
 
@@ -115,7 +117,7 @@ Note that one issue that sometimes occurs in analysis is that there may over tim
 * data and command line can be found [h3agwas-examples](https://github.com/h3abionet/h3agwas-examples)
 
 ```
-~/nextflow run h3abionet/main.nf --input_dir data/array_plk  --input_pat array --ouput_dir qc  --output kgpexample \
+~/nextflow run h3abionet/h3agwas/main.nf --qc 1 --bfile data/array_plk/array --ouput_dir qc  --output kgpexample \
  --phenotype data/pheno/pheno_test.all --pheno_col phenoqc_ql \
  --case_control data/pheno/pheno_test.all --case_control_col Sex \
  --batch data/pheno/pheno_test.all --batch_col batch \
