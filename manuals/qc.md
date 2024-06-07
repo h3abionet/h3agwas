@@ -71,13 +71,24 @@ See [https://genome.sph.umich.edu/wiki/Regions_of_high_linkage_disequilibrium_(L
 * X chromosome filters :
  * `build_genome` : build genome used to split X and XY [default : hg19]
  * `cut_maf_xfemale` [0.01]
- * `cut_maf_xmale` [o.01]
+ * `cut_maf_xmale` [0.01]
  * `cut_miss_xfemale` [0.02] 
  * `cut_miss_xmale` [0.02] 
  * `cut_diffmiss_x` [0.02]
 * Y chromosome filters :
  * `cut_maf_y` : [0.01]
  * `cut_miss_y` : [0.02]
+
+## filtering on frequency :
+* we used michigan pipeline appraoche to fitler on frequency, parameters are 
+* `input_dir` :
+* `input_pat` : 
+* `bfile`
+* `michigan_qc` : apply migigan qc [default 0]
+ * see : [prepare you data](https://imputationserver.readthedocs.io/en/latest/prepare-your-data/)
+ * `dataref_michigan` : data ref used by michigan, if empty dowload [default : ""]
+ * `ftp_dataref_michigan` : dl data from michigan [default : ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1-1/HRC.r1-1.GRCh37.wgs.mac5.sites.tab.gz]
+ * `bin_checkmich` perl script [default : "HRC-1000G-check-bim.pl"]
 
 Several of the above parameters make reference to a phenotype file. Of course, these can be to the same phenotype file, but probably using different columns.
 

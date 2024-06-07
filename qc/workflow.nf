@@ -224,6 +224,14 @@ workflow qc_michigan {
   take :
    plink
   main :
+   if(plink==null){
+     if(params.bfile!=''){                                                          
+        inpat=params.bfile                                                      
+     }else{                                                                         
+        inpat = "${params.input_dir}/${params.input_pat}"                       
+      }                                                                              
+   plink=Channel.fromPath("${inpat}.bed",checkIfExists:true).combine(Channel.fromPath("${inpat}.bim",checkIfExists:true)).combine(Channel.fromPath("${inpat}.fam",checkIfExists:true))
+   }
    if (params.qc_michigan==1) {
       bin_checkmich=Channel.fromPath(params.bin_checkmich)
      if(params.dataref_michigan==""){

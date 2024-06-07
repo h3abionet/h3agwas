@@ -21,6 +21,7 @@
 // quality control
 include { qc } from "./qc/workflow.nf"
 include { qc_michigan } from "./qc/workflow.nf"
+include { format_plink_invcf } from "./formatdata/workflow.nf"
 include { checkresume } from "./modules/fct_groovy.nf"
 //include { assoc} from "./assoc/assoc.nf"
 //nextflow.enable.moduleBinaries = true
@@ -44,5 +45,9 @@ workflow {
   }
   if (params.qc_michigan == 1 || params.qc_michigan) {
         qc_michigan(plink_qc)
+       plink_qc = qc_michigan.out.plink
+  }
+  if (params.convertinvcf==1){
+     format_plink_invcf(plink_qc, "${params.output_dir}/plk_vcf", params.output) 
   }
 }

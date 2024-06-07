@@ -5,12 +5,34 @@ def strmem(val){
 
 
 // Checks if the file exists
-def  fileexist(filec) { 
+def  fileexist(filec) {
    File fn =  new File(filec)
    if (fn.exists())
        return fn;
     else
        error("\n\n-----------------\nFile $fn does not exist\n\n---\n")
+}
+
+// Checks if the file exists
+def  fileexist_b(filec) {
+   File fn =  new File(filec)
+   return fn.exists()
+}
+
+
+
+// Checks if the file exists
+def  fileexist_param(filec, params_name) {
+//param.getClass()==Boolean
+   if(filec.getClass()==Boolean) {
+       error("\n\n-----------------\n--$params_name is boolean\n\n---\n")
+
+   }
+   File fn =  new File(filec)
+   if (fn.exists())
+       return fn;
+    else
+       error("\n\n-----------------\nFile $fn does not exist from --$params_name \n\n---\n")
 }
 
 def checkresume(){

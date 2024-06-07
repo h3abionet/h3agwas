@@ -12,3 +12,14 @@
     """
  }
 
+ process list_chro {
+  input :
+      tuple path(bed), path(bim), path(fam)                                      
+  publishDir "${outputdir}/", overwrite:true, mode:'copy'
+  output :
+     stdout
+  script :
+      """
+      awk '{print \$1}' $bim|uniq|sort|uniq                                                
+      """
+ }
