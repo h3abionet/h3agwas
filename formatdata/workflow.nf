@@ -2,7 +2,7 @@ include {bcftools_index_vcf} from '../modules/vcf.nf'
 include {list_chro} from '../modules/utils_plink.nf'
 include {updateplk_rsname;updateplk_rsname_norsinfo;deletedmultianddel;refallele;convertInVcf;checkfixref;checkVCF;mergevcf} from './process.nf'
 include {fileexist_b;fileexist_param;fileexist} from '../modules/fct_groovy.nf'
-include {df_fasta_wf} from '../modules/dl_wf.nf'
+include {dl_fasta_wf} from '../modules/dl_wf.nf'
 
 workflow getparams {
   take :
@@ -26,10 +26,10 @@ workflow getparams {
      rs_infogz=bcftools_index_vcf.out
    }
  }
- df_fasta_wf(params.fasta, params.build_genome, params.ftp_fasta)
+ dl_fasta_wf(params.fasta, params.build_genome, params.ftp_fasta, '')
  emit :
   rs_infogz= rs_infogz
-  fasta = df_fasta_wf.out.fasta_index
+  fasta = dl_fasta_wf.out.fasta_index
   plink = plink
 }
 

@@ -1,14 +1,18 @@
 include {dl_fasta} from './dl.nf'
 include {checkfasta} from './utils.nf'
+include {picard_fastaindex} from '../convertdatabuild/process.nf'
 include {fileexist_param} from './fct_groovy.nf'
 
 
-workflow df_fasta_wf {
+workflow dl_fasta_wf {
   take :
     fasta_file
     build
     link
+    index 
   main :
+   fasta_index=null
+   fasta_picard=null
    if(build=='' && link=='' && fasta_file==''){
     System.exit(2) 
    }
@@ -45,8 +49,14 @@ workflow df_fasta_wf {
    fasta=dl_fasta.out.fasta
    fasta_index = dl_fasta.out.fasta_index
  }
+ fasta_picard= null
+ if(index=='picard'){
+   picard_fastaindex(fasta, "${params.output_dir}/utils/data/")
+   fasta_picard= picard_fastaindex.out
+ }
  emit :
   fasta = fasta
   fasta_index = fasta_index
+  fasta_picard = fasta_picard
 }
 

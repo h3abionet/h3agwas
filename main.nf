@@ -23,6 +23,7 @@ include { qc } from "./qc/workflow.nf"
 include { qc_michigan } from "./qc/workflow.nf"
 include { format_plink_invcf } from "./formatdata/workflow.nf"
 include { checkresume } from "./modules/fct_groovy.nf"
+include { crossmap_vcf } from "./convertdatabuild/workflow.nf"
 //include { assoc} from "./assoc/assoc.nf"
 //nextflow.enable.moduleBinaries = true
 
@@ -53,6 +54,7 @@ workflow {
      vcf_qc= format_plink_invcf.out.vcf
   }
   if (params.vcf_convertbetwen_build==1 || params.vcf_convertbetwen_build){
-  
+   crossmap_vcf(vcf_qc) 
+   vcf_qc = crossmap_vcf.out.vcf
   }
 }

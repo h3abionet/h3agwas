@@ -143,6 +143,7 @@ process extractrsname{
 
 process convertInVcf {
    label 'py3utils'
+   cache 'lenient'
    memory params.low_memory
    cpus params.max_plink_cores
    time params.big_time
