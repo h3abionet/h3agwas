@@ -81,33 +81,6 @@ process refallele{
 }
 
 
-process checkfasta{
-  cpus params.max_plink_cores
-  label 'py3utils'
-  errorStrategy { task.exitStatus == 1 ? 'retry' : 'terminate' }
-  maxRetries 1
-  input :
-     path(fasta)
-     val(outputdir)
- publishDir "${params.output_dir}/fasta/", overwrite:true, mode:'copy'
-  output :
-     tuple path("$fasta2"), path("${fasta2}.fai")
-  script :
-    fasta2=fasta.baseName+"_clean.fa.gz"
-    """
-    if [ "${task.attempt}" -eq "1" ]
-    then
-    samtools faidx $fasta
-    cp $fasta $fasta2
-    mv $fasta".fai"  $fasta2".fai"
-    else
-    zcat $fasta | bgzip -@ ${params.max_plink_cores} -c > $fasta2
-    samtools faidx $fasta2
-    fi
-    """
-}
-
-
 
 process mergevcf{
   label 'py3utils'

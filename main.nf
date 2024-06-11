@@ -39,15 +39,20 @@ workflow {
   //  exit 1
   //}
   plink_qc=null
+  vcf_qc = null
   if (params.qc == 1 || params.qc) {
         qc()
         plink_qc=qc.out.plink
   }
   if (params.qc_michigan == 1 || params.qc_michigan) {
-        qc_michigan(plink_qc)
+       qc_michigan(plink_qc)
        plink_qc = qc_michigan.out.plink
   }
-  if (params.convertinvcf==1){
+  if (params.convertinvcf==1 || params.convertinvcf){
      format_plink_invcf(plink_qc, "${params.output_dir}/plk_vcf", params.output) 
+     vcf_qc= format_plink_invcf.out.vcf
+  }
+  if (params.vcf_convertbetwen_build==1 || params.vcf_convertbetwen_build){
+  
   }
 }

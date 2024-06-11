@@ -1,7 +1,8 @@
 include {bcftools_index_vcf} from '../modules/vcf.nf'
 include {list_chro} from '../modules/utils_plink.nf'
-include {updateplk_rsname;updateplk_rsname_norsinfo;deletedmultianddel;refallele;convertInVcf;checkfixref;checkVCF;mergevcf;checkfasta} from './process.nf'
+include {updateplk_rsname;updateplk_rsname_norsinfo;deletedmultianddel;refallele;convertInVcf;checkfixref;checkVCF;mergevcf} from './process.nf'
 include {fileexist_b;fileexist_param;fileexist} from '../modules/fct_groovy.nf'
+include {df_fasta_wf} from '../modules/dl_wf.nf'
 
 workflow getparams {
   take :
@@ -25,11 +26,10 @@ workflow getparams {
      rs_infogz=bcftools_index_vcf.out
    }
  }
- if(fileexist_param(params.fasta_ref, "fasta_ref"))fasta_ref=channel.fromPath(params.fasta_ref)
- checkfasta(fasta_ref, channel.from("${params.output_dir}/utils/"))
+ df_fasta_wf(params.fasta, params.build_genome, params.ftp_fasta)
  emit :
   rs_infogz= rs_infogz
-  fasta = checkfasta.out
+  fasta = df_fasta_wf.out.fasta_index
   plink = plink
 }
 
@@ -48,14 +48,18 @@ workflow format_plink_invcf {
      refallele(getparams.out.plink, updateplk_rsname.out.rs_info)
      if(params.convertinvcf_parralchro==0){
       //    tuple path(bed), path(bim), path(fam), path(gz_info), path(fast), path(fastaindex),val(chro)
-      convertInVcf(getparams.out.plink.combine(getparams.out.rs_infogz).combine(getparams.out.fasta).combine(channel.of("")).combine(channel.of("$outputdir/")))
+      convertInVcf(refallele.out.combine(getparams.out.rs_infogz).combine(getparams.out.fasta).combine(channel.of("")).combine(channel.of("$outputdir/")))
       checkfixref(convertInVcf.out.vcf, getparams.out.fasta, channel.of("$outputdir/fixref"))
       checkVCF(convertInVcf.out.vcf, getparams.out.fasta, channel.of("$outputdir/checkVCF"))
+      vcf = checkVCF.out
      }else{
       list_chro(getparams.out.plink)
       list_chro2=list_chro.out.flatMap { list_str -> list_str.split()}
       convertInVcf(getparams.out.plink.combine(getparams.out.rs_infogz).combine(getparams.out.fasta).combine(list_chro2).combine(channel.of("$outputdir/vcf/")))
       mergevcf(convertInVcf.out.vcf.collect(), channel.of("$outputdir/"))
+      vcf= mergevcf.out
     }
    }
+  emit : 
+      vcf= vcf
 }
