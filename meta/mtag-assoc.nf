@@ -49,16 +49,16 @@ params.each { parm ->
 /**/
 params.boltlmm=0
 /**/
-params.head_pval = "P_BOLT_LMM"
-params.head_freq = "A1FREQ"
-params.head_bp = "BP"
-params.head_chr = "CHR"
-params.head_rs = "SNP"
-params.head_beta="BETA"
-params.head_se="SE"
+params.head_pval = ""
+params.head_freq = ""
+params.head_bp = ""
+params.head_chr = ""
+params.head_rs = ""
+params.head_beta=""
+params.head_se=""
 params.head_N=""
-params.head_A1="ALLELE1"
-params.head_A2="ALLELE0"
+params.head_A1=""
+params.head_A2=""
 params.input_dir=""
 params.input_pat=""
 params.list_N=""
@@ -140,9 +140,9 @@ process doFormatFile{
  script :
      out=filegwas.toString().replace('-','_')+".format"
      headfreq=head_freq!="" ? " --freq_header  ${head_freq} " : ""
-     headN=head_freq!="" ? " --freq_N  ${head_N} " : ""
+     headN=head_N!="" ? " --n_header  ${head_N} " : ""
      """
-     gcta_format.py --inp_asso $filegwas  --rs_header ${head_rs} --pval_header ${head_pval} $headfreq --a1_header ${head_A1} --a2_header ${head_A2} --se_header ${head_se} --beta_header ${head_beta} --chro_header ${head_chr}  --out $out --threads ${params.max_plink_cores} --bp_header ${head_bp} $headN  
+     gcta_format.py --inp_asso $filegwas  --rs_header ${head_rs} --pval_header ${head_pval} $headfreq --a1_header ${head_A1} --a2_header ${head_A2} --se_header ${head_se} --beta_header ${head_beta} --chro_header ${head_chr}  --out $out --threads ${params.max_plink_cores} --bp_header ${head_bp} $headN   --print_pos 1
      """ 
 }
 Head_N="N"
@@ -173,7 +173,7 @@ process doFormatFilePlk{
  script :
      out=filegwas.toString().replace('-','_')+".format"
      headfreq=head_freq!="" ? " --freq_header  ${head_freq} " : ""
-     headN=head_N!="" ? " --n_freq  ${head_N} " : ""
+     headN=head_N!="" ? " --n_header ${head_N} " : ""
      plk=bed.baseName
      """
      gcta_format.py --inp_asso $filegwas  --rs_header ${head_rs} --pval_header ${head_pval} $headfreq --a1_header ${head_A1} --a2_header ${head_A2} --se_header ${head_se} --beta_header ${head_beta} --chro_header ${head_chr}  --out $out --threads ${params.max_plink_cores} --bp_header ${head_bp} $headN --bfile $plk  --print_pos 1
@@ -202,8 +202,10 @@ process doMTAG{
    out='res_mtag'
    Ninfo=head_N!="" ? " --n_name ${head_N} " : " --n_value ${params.list_N}" 
    ////--info_min $info_min
+   freq=(head_freq=='')? ' --maf_min 0 ' : " --eaf_name freq --maf_min ${params.cut_maf}  " 
    """
-   ${params.bin_mtag} --sumstats $fnames --out ./$out --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p  --bpos_name bp --incld_ambig_snps   ${params.opt_mtag} --force
+   ${params.bin_mtag} --sumstats $fnames --out ./$out --snp_name SNP --beta_name b --se_name se $freq --a1_name A1 --a2_name A2 --chr_name chro --p_name p  --bpos_name bp --incld_ambig_snps   ${params.opt_mtag} --force 
+
    """
 }
 
@@ -261,8 +263,10 @@ process doMTAG2by2{
         file1=listfile[poss[0]]
         file2=listfile[poss[1]]
         output=""+file1+"_"+file2
+        freq=(head_freq=='')? ' --maf_min 0 ' : " --eaf_name freq --maf_min ${params.cut_maf}  "  
+
         """
-        ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se --eaf_name freq --maf_min ${params.cut_maf} --a1_name A1 --a2_name A2 --chr_name chro --p_name p --bpos_name bp --incld_ambig_snps ${params.opt_mtag} --force --z_name z
+        ${params.bin_mtag} --sumstats $file1,$file2 --out ./$output --snp_name SNP --beta_name b --se_name se $freq --a1_name A1 --a2_name A2 --chr_name chro --p_name p --bpos_name bp --incld_ambig_snps ${params.opt_mtag} --force --z_name z $freq
         """
 }
 }

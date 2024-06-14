@@ -277,7 +277,7 @@ michigan_check_clean.into(plk_alleleref, plk_chrocount)
 }
 //}
 
-if(params.parralchro==0){
+if(params.convertinvcf_justagtc==0){
 plink_mem_req_max=params.bcftools_mem_req.replace('GB','000').replace('Gigabytes','000').replace('KB','').replace('Kilobytes','').replace(' ','')
 
 bcftools_mem_req_max=params.bcftools_mem_req.replace('GB','G').replace('Gigabytes','G').replace('KB','K').replace('Kilobytes','K').replace(' ','')
@@ -343,7 +343,7 @@ process convertInVcfChro{
      out="${params.output}"+"_"+chro
      """
      mkdir -p ${params.tmpdir}
-     plink2  --chr $chro --bfile ${base}  --recode vcf bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
+     plink2  --chr $chro --bfile ${base}  --recode vcf-idd bgz --out $out --keep-allele-order --snps-only --threads ${params.max_plink_cores}
      ${params.bin_bcftools} view ${out}.vcf.gz | bcftools sort -T ${params.tmpdir} - -O z > ${out}_tmp.vcf.gz
      rm -f ${out}.vcf.gz
      ${params.bin_bcftools} +fixref ${out}_tmp.vcf.gz -Oz -o ${out}.vcf.gz -- -f $fast -m flip -d &> $out".rep"

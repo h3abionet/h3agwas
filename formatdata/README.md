@@ -236,7 +236,6 @@ transform vcf in bimbam format after filters for quality.
  * `dataref_michigan` : data ref used by michigan, if empty dowload [default : ""]
  * `ftp_dataref_michigan` : dl data from michigan [default : ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1-1/HRC.r1-1.GRCh37.wgs.mac5.sites.tab.gz]
  * `bin_checkmich` perl script [default : "HRC-1000G-check-bim.pl"]
-```
 
 ### General requirement 
 * bcftools

@@ -58,7 +58,7 @@ def checkparams(param, namesparam, type, min=null, max=null, possibleval=null, n
   } else {
     if(!(param.getClass() in type)){
    messageerror+="error :--"+namesparam+" must be a "+ type
-     if(params.getClass()==Boolean)messageerror+=", but no parameters given"
+     if(param.getClass()==Boolean)messageerror+=", but no parameters given"
      else messageerror+=" but type is "+param.getClass()+" value "+ param
    }else{
    if(min && param<min)messageerror+="\nerror : --"+namesparam+" < min value :"+param +" < "+min
@@ -159,6 +159,7 @@ params.regenie_mem_req="10GB"
 params.regenie=0
 params.saige_imputed_data=1
 params.saige_impute_method="best_guess" //best_guess, mean or minor
+params.saige_otheroption=""
 
 
 /* Defines the path where any scripts to be executed can be found.
@@ -1957,7 +1958,7 @@ if(params.saige==1){
         --chrom=\$Chro \
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output $Loco $imputed  $moredetail
+        --SAIGEOutputFile=$output $Loco $imputed  $moredetail ${params.saige_otheroption}
      """
    }
  }else if(params.bgen!=''){
