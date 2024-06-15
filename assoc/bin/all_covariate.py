@@ -113,7 +113,6 @@ columns = datad.columns
 
 if "FID" not in columns or "IID" not in columns:
     sys.exit(EOL*3+"It is mandatory for FID IID to be columns of the file %s"%args.data+EOL*3)
-
 for (label, transform) in zip(pheno_labels+covar_labels, pheno_transform+cover_transform) :
     if label not in columns:
         sys.exit((EOL*3+"<%s> given as label, but is not a column of the file <%s>"+EOL+EOL)%(label,args.datad))
@@ -133,6 +132,8 @@ datad['FID']=datad['FID'].astype(str)
 datad['IID']=datad['IID'].astype(str)
 famd['FID']=famd['FID'].astype(str)
 famd['IID']=famd['IID'].astype(str)
+for x in datad.columns:
+     datad[x]=datad[x].astype(str)
 merge = pd.merge(famd,datad,how="left",suffixes=["_f",""],on=["FID","IID"])
 # for gemma
 if args.form_out == 1 : 
@@ -172,6 +173,7 @@ elif args.form_out == 4 :
              covqual.append(covtmp[cmt])
          else :
              print('error : type covariable different of 0 (qualitatif) and 1 (quantitatif) '+typecov)
+             sys.exit(10)
          cmt+=1
       if len(covquant)>0:
          merge.to_csv(args.cov_out,sep=TAB,columns=["FID","IID"]+covquant,header=True,index=False,na_rep=MissingOut)

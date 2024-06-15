@@ -1747,7 +1747,7 @@ if(params.fastgwa==1){
         then
         ls *.bgen > $listbgen
         fi
-	all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov
+	all_covariate.py --data  $covariates --inp_fam  $fam $covariate_option --pheno ${this_pheno} --phe_out ${phef}  --cov_out $covfilequant --form_out 4  $covqual_cov --nona 1
 	${params.gcta_bin} $genet ${params.fastgwa_type}  --pheno $phef  $covquant_fastgwa --threads ${params.fastgwa_num_cores} --out $out --grm-sparse $head $covqual_fastgwa --maf ${params.cut_maf}
 	"""
    }
@@ -1874,7 +1874,7 @@ if(params.saige==1){
       phef = "${base}_saige_n.phe"
       """
       all_covariate.py --data  $covariates --inp_fam  $fam $covoption \
-                          --pheno ${params.pheno} --phe_out ${phef}  --form_out 2
+                          --pheno ${params.pheno} --phe_out ${phef}  --form_out 2 --nona 1
       """
   }
   covariable_saige=regenieCofact(params.covariates, params.covariates_type,0)

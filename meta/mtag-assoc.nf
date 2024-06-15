@@ -126,6 +126,33 @@ if(params.list_N=="" && params.input_dir=="" && params.input_pat=="" && params.h
 
 }
 
+check_rs_ldsc=Channel.fromPath("${params.dir_ref_ld_chr}/*.ldscore.gz", checkIfExists:true).combine(list_file_pos_merge)
+                                                                                
+process extract_rs_formldsc{                                                    
+     input :                                                                    
+      tuple path(ldscore), path(posinfo) from check_rs_ldsc                     
+     output :                                                                   
+       path(out) into rsupdate_chro_ch                                          
+     script :                                                                   
+       out=ldscore+".rs"                                                        
+     """                                                                        
+     extract_rs_ldscdb.py --ldsc_input $ldscore --gwas_input $posinfo --out $out
+     """                                                                        
+ }                                                                              
+                                                                                
+rsupdate_ch_allfile=rsupdate_chro_ch.collect()                                  
+process merge_allchroscore{                                                     
+  input :                                                                       
+    path(allfile) from rsupdate_ch_allfile                                      
+  output :                                                                      
+      path(filers) into rsupdate_ch_merge                                       
+  script :                                                                      
+  filers="allrs.update"                                                         
+   """                                                                          
+   cat ${allfile.join(" ")} >>$filers                                           
+   """                                                                          
+}                                                                               
+ gwas_file_updaters=gwas_file_ldsc.combine(rsupdate_ch_merge)                   
 
 
 if(params.list_N!="" || head_N!=""){
