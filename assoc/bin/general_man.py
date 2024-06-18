@@ -122,6 +122,7 @@ colours= ['crimson','blue','green']
 xtick_pos=[]
 xtick_label = []
 result['ps_new']=result[PosEnt]
+chrom_num2=1
 for chrom_num, chrom_res in chroms:
     this_chrom = result[ChroEnt]==chrom_num
     result.loc[this_chrom,'ps_new']+=delta
@@ -130,15 +131,19 @@ for chrom_num, chrom_res in chroms:
     xtick_pos.append((delta+old_delta)/2)
     xtick_label.append(str(chrom_num))
     under_thresh = result[PvalueEnt]<0.005
+    print(ChroEnt)
+    print(this_chrom.sum())
+    print(under_thresh.sum())
     ax.scatter(result.loc[this_chrom & under_thresh, 'ps_new'],\
-               -np.log10(result.loc[this_chrom  & under_thresh,PvalueEnt]),c=colours[chrom_num%3])
-    if chrom_num == 9:
+               -np.log10(result.loc[this_chrom  & under_thresh,PvalueEnt]),c=colours[chrom_num2%3])
+    if chrom_num2 == 9:
        ax.set_xticklabels(xtick_label)
        ax.set_xticks(xtick_pos)
        xtick_pos=[]
        xtick_label=[]
        ax=ax2
        delta=0
+    chrom_num2+=1
 ax.set_xticklabels(xtick_label)
 ax.set_xticks(xtick_pos)
 
