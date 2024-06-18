@@ -57,3 +57,20 @@ process MD5_plk {
        template "md5_plk.py"
 }
 
+
+process latex_compitation{                                                                
+  label 'latex'                                                                 
+  input :                                                                       
+    path(tex)
+    path(otherfile) 
+    val(outputdir)
+  publishDir "${outputdir}/", overwrite:true, mode:'copy'               
+  output :                                                                      
+   path("${out}.pdf")                                                           
+  script :                                                                      
+     out=tex.baseName                                                           
+    """                                                                        
+    pdflatex $out >& /dev/null                                                  
+    pdflatex $out                                                               
+    """                                                                         
+}

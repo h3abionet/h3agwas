@@ -4,7 +4,7 @@ include {updateplk_rsname;updateplk_rsname_norsinfo;deletedmultianddel;refallele
 include {fileexist_b;fileexist_param;fileexist} from '../modules/fct_groovy.nf'
 include {dl_fasta_wf} from '../modules/dl_wf.nf'
 
-workflow getparams {
+workflow getparams_plink_invcf {
   take :
    plink
   main :
@@ -39,7 +39,7 @@ workflow format_plink_invcf {
    outputdir
    outputpat
   main :
-   getparams(plink)
+   getparams_plink_invcf(plink)
    if(getparams.out.rs_infogz==null) {
    updateplk_rsname_norsinfo(getparams.out.plink,  channel.of("$outputdir/rs_update"))
    }else{
@@ -63,3 +63,4 @@ workflow format_plink_invcf {
   emit : 
       vcf= vcf
 }
+

@@ -37,3 +37,13 @@ see [h3agwas-example github](https://github.com/h3abionet/h3agwas-examples)
  nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf utils/listvcf --output_pat  kgp_imputed --output_dir plink_imputed/   --reffasta utils_data/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz  -profile singularity
 ```
 
+# format vcf
+## input 
+* format vcf in various output :
+ * plink
+ * bgen
+ * bimbam
+* if any input vcf from previous 
+ * `vcf_folder_zip` : zip folder contained all folder as same pipeline if password used `vcf_folder_zip_password`
+ * `vcf` : one vcf file 
+ * `vcf_list`:file contained list of vcf
