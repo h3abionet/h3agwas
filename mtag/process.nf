@@ -1,4 +1,22 @@
 #!/usr/bin/env nextflow
+include {strmem}  from '../modules/fct_groovy.nf'                     
+def getConfig = {
+  all_files = workflow.configFiles.unique()
+  text = ""
+  all_files.each { fname ->
+      base = fname.baseName
+      curr = "\n\n*-subsection{*-protect*-url{$base}}@.@@.@*-footnotesize@.@*-begin{verbatim}"
+      file(fname).eachLine { String line ->
+        if (line.contains("secretKey")) { line = "secretKey='*******'" }
+        if (line.contains("accessKey")) { line = "accessKey='*******'" }
+        curr = curr + "@.@"+line
+      }
+      curr = curr +"@.@*-end{verbatim}\n"
+      text = text+curr
+  }
+  return text
+}
+
 
 process GetSnpList{                                                           
    time params.big_time                                                         
@@ -82,11 +100,14 @@ process perform_mtag{
  input :
    path(listfile)
    tuple val(headn), val(listn), path(dirwld)
+   val(outputdir)
+ publishDir "${outputdir}", mode:'copy', pattern: "*_hat.txt"
  output :
-   tuple val(fnames),path("${out}_trait*")
+   tuple val(fnames),path("${out}_trait*"), emit :sumstat
+   path("*_hat.txt"), emit: stat
  script :
+   out=params.output
    fnames = listfile.join(",")
-   out=''
    Ninfo=headn!="" ? " --n_name N " : " --n_value listn" 
    ////--info_min $info_min
    """
@@ -99,7 +120,7 @@ process renames_mtag{
      tuple val(listi), path(listf), val(outputdir)
    publishDir "${outputdir}", mode:'copy'
    output :
-      file("mtag_res/*") 
+      path("mtag_res/*") 
    script :
       listf2=listf.join(',')
       """
@@ -111,13 +132,13 @@ process renames_mtag{
 //mtag_format_ch_fm=mtag_format_ch.flatMap()
 ////SNP     CHR     BP      A1      A2      Z       N       FRQ     mtag_beta       mtag_se mtag_z  mtag_pval
 //
-process showMtag{
+process show_mtag{
     memory params.high_memory
-    publishDir params.output_dir, overwrite:true, mode:'copy'
     input:
-      file(filegwas) 
+      tuple path(filegwas), val(outputdir)
+    publishDir "$outputdir", mode:'copy'
     output:
-      file("${out}*") 
+      path("${out}*") 
     script:
       out = filegwas.baseName.replaceAll(/_/,'-').replaceAll(/\./,'-')
       """
@@ -154,40 +175,39 @@ process showMtag{
 //}
 //}
 //
-//def getres(x) {
-//  def  command1 = "$x"
-//  def  command2 = "head -n 1"
-//  def proc1 = command1.execute()
-//  def proc2 = command2.execute()
-//  def proc = proc1 | proc2
-//  proc.waitFor()
-//  res ="${proc.in.text}"
-//  return res.trim()
-//}
-//
-//nextflowversion =getres("nextflow -v")
-//if (workflow.repository)
-//  wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
-//else
-//  wflowversion="A local copy of the workflow was used"
-//
-//report_ch = report_mtag.flatten().toList()
-//
-//process doReport {
-//  label 'latex'
-//  input:
-//    file(reports) from report_ch
-//  publishDir params.output_dir, overwrite:true, mode:'copy'
-//  output:
-//    file("${out}.pdf")
-//  script:
-//    out = params.output+"-report"
-//    these_phenos     = "mtag"
-//    these_covariates = ""
-//    config = getConfig()
-//    images = workflow.container
-//    texf   = "${out}.tex"
-//    template "make_assoc_report.py"
-//
-//}
-//
+def getres(x) {
+  def  command1 = "$x"
+  def  command2 = "head -n 1"
+  def proc1 = command1.execute()
+  def proc2 = command2.execute()
+  def proc = proc1 | proc2
+  proc.waitFor()
+  res ="${proc.in.text}"
+  return res.trim()
+}
+
+
+
+process doReport {
+  label 'latex'
+  input:
+    path(reports)
+    val(outputdir)
+   val(outputpat)
+  publishDir "$outputdir", overwrite:true, mode:'copy'
+  output:
+    path("${out}.pdf")
+  script:
+   nextflowversion =getres("nextflow -v")
+   if (workflow.repository)      wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
+   else wflowversion="A local copy of the workflow was used"
+    out = outputpat+"-report"
+    these_phenos     = params.phenotype
+    these_covariates = ""
+    config = getConfig()
+    images = workflow.container
+    texf   = "${out}.tex"
+    template "make_assoc_report.py"
+
+}
+

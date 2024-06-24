@@ -25,6 +25,7 @@ include { format_plink_invcf } from "./formatdata/workflow.nf"
 include { checkresume } from "./modules/fct_groovy.nf"
 include { crossmap_vcf } from "./convertdatabuild/workflow.nf"
 include { mtag } from "./mtag/workflow.nf"
+include { ldsc } from "./heritability/workflow.nf"
 //include { assoc} from "./assoc/assoc.nf"
 //nextflow.enable.moduleBinaries = true
 
@@ -58,7 +59,12 @@ workflow {
    crossmap_vcf(vcf_qc) 
    vcf_qc = crossmap_vcf.out.vcf
   }
+  sumstat=null
   if (params.mtag==1){
-    mtag("$params.output_dir/")
+    mtag("$params.output_dir/mtag")
+    sumstat = mtag.out.sumstat_clean
+  }
+  if(params.ldsc == 1 ){
+   ldsc(sumstat, "$params.output_dir/heritability/ldsc")
   }
 }
