@@ -19,7 +19,7 @@ process update_rsgwas{
    memory params.high_memory
    input :
       tuple path(gwas), val(Nind),path(file_mergeallele), val(outputdir)
-   publishDir "${outputdir}/ldsc",mode:'copy'
+   publishDir "${outputdir}/",mode:'copy'
    output :
     path("$out"+".sumstats.gz"), emit:sumstat
     path("$out"+".log"), emit: log
@@ -30,7 +30,7 @@ process update_rsgwas{
      mergeallele=""
      if(params.munge_keep!='')mergeallele="--merge-alleles $file_mergeallele"
      """
-     ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp SNP --p p --frq freq --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 A1 --a2 A2 --ignore z $mergeallele #--a1-inc true
+     ${params.munge_sumstats_bin} --sumstats $gwas $NInfo --out $out --snp SNP --p p --frq freq --info-min ${params.cut_info} --maf-min ${params.cut_maf} --a1 A1 --a2 A2 --ignore z $mergeallele  --chunksize 500000  #--a1-inc true
      """
 }
 
@@ -40,35 +40,30 @@ process doLDSC{
       tuple path(gwasf), path(dir_ld), val(outputdir)
    publishDir "${outputdir}/", mode:'copy'
    output :
-     tuple path(gwasf), val(out), path("${out}.log")
+     tuple val(out), path("${out}.log")
    script :
      out=gwasf.baseName+"_ldsc"
      """
-     ${params.ldsc_bin} --h2 $gwasf --ref-ld-chr $dir_ld/ --w-ld-chr $dir_ld/ --out $out ${params.ldsc_h2opt}
+     ${params.bin_ldsc} --h2 $gwasf --ref-ld-chr $dir_ld/ --w-ld-chr $dir_ld/ --out $out ${params.ldsc_h2opt}
      """
 }
 
  process DoCorrLDSC{
-   label 'py2ldsc'
+  label 'py2ldsc'
   time params.big_time
-  memory ldsc_mem_req
+  memory params.high_memory
   input :
-    file(listfilegwas)
-    file(dirredld)
-  publishDir "${params.output_dir}/ldsc", overwrite:true, mode:'copy'
+    path(listfilegwas)
+    path(dirredld)
+    val(outputdir)
+    val(outpat)
+  publishDir "${outputdir}/", mode:'copy'
   output :
-    file("$out"+".log")
-  script :
-    filegwas=listfilegwas[pos-1]
-    listfilegwas.remove((pos-1))
-    listfil=filegwas+","+listfilegwas.join(',')
-    out = filegwas.baseName.replace('_','-')+"_ldsc_mc"
-    println listfil
-    println filegwas
+    file("$outpat"+".log")
+  script : 
+    listfil=listfilegwas.join(',')
+    outpat = "${outpat}_ldsc_mc"
     """
-    ${params.ldsc_bin} --rg $listfil
-    --ref-ld-chr $dirredld/
-    --w-ld-chr  $dirredld/
-    --out  $out
+    ${params.bin_ldsc} --rg $listfil --ref-ld-chr $dirredld/ --w-ld-chr  $dirredld/ --out  $outpat ${params.ldsc_h2opt}
     """
   }

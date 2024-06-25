@@ -58,7 +58,7 @@ process MD5_plk {
 }
 
 
-process latex_compitation{                                                                
+process latex_compilation{                                                                
   label 'latex'                                                                 
   input :                                                                       
     path(tex)

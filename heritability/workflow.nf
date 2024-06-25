@@ -1,5 +1,6 @@
 include {merge_allchroscore;GetSnpList;mergelistsnp;extract_rs_formldsc;format_summary} from '../mtag/process.nf'
-include {munge_sumstat;doLDSC} from './process.nf'
+include {munge_sumstat;doLDSC;DoCorrLDSC} from './process.nf'
+
 
 workflow ldsc {
  take :
@@ -22,12 +23,12 @@ workflow ldsc {
       summary=format_summary.out
    }
 //   summary.view()
-   listn=summary.combine(channel.of(""))
+  listn=summary.combine(channel.of(""))
   if(params.sumstat_list_n!='')listn=summary.merge(channel.from(params.sumstat_list_n.split(',')))
   listn.view() 
   if(params.munge_keep=="")mungekeep=channel.fromPath("0")  else mungekeep=channel.fromPath(params.munge_keep,checkIfExists:true)
   listnmunge=listn.combine(mungekeep)
   munge_sumstat(listnmunge.combine(channel.of("$outputdir/sumstat_mumge/")))
   doLDSC(munge_sumstat.out.sumstat.combine(Channel.fromPath("${params.dir_ref_ld_chr}/")).combine(channel.of("$outputdir/ldsc_h2/")))
-   
+  DoCorrLDSC(munge_sumstat.out.sumstat.collect(), Channel.fromPath("${params.dir_ref_ld_chr}/"), channel.of("$outputdir/ldsc_h2/"),channel.of("${params.output}_h2r2"))
 }
