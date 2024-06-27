@@ -1,5 +1,23 @@
 #!/usr/bin/env nextflow
 
+process check_names_plkconvert{                                                 
+   label 'R'                                                                    
+   input :                                                                      
+       tuple path(bed), path(bim), path(fam)                                    
+       path(data)                                                               
+   publishDir "${params.output_dir}/format/plink/",  mode:'copy'                
+   output :                                                                     
+       tuple path("${newplk}.bed"), path("${newplk}.bim"), path("${newplk}.fam")
+   script :                                                                     
+     plk=bed.baseName                                                           
+     newplk=plk+'_idupdate'                                                     
+     """                                                                        
+     cp $bed $newplk".bed"                                                      
+     cp $bim $newplk".bim"                                                      
+     change_names_plkconvert.r $fam $data $newplk".fam"                         
+     """                                                                        
+}      
+
 process unzip_folder{
   input :
      path(vcfzip), path(outputdir)
@@ -78,24 +96,83 @@ process clean_vcf {
 }
 
 process convert_inplink {
-   cpus params.max_cpu 
-   input : 
-     path(vcf)
-     val(Ent)
-     val("outputdir")
+   cpus params.max_cpus
+   input :
+     tuple path(vcf),val(Ent),val("outputdir")
   publishDir "${outputdir}", mode:'copy'
   output :
-      tuple path("${Ent}.bed"), path("${Ent}.bim"), path("${Ent}.fam") 
+      tuple path("${Ent}.bed"), path("${Ent}.bim"), path("${Ent}.fam"), emit: bed
+      tuple path("${Ent}.bim"), emit: bim
   script :
     """
      plink --vcf $vcf   --vcf-idspace-to _ --double-id --allow-extra-chr --make-bed --out ${Ent} --keep-allele-order
     """
 }
+
+process GetRsDup{
+    input :
+      path(bim)
+    output :
+      tuple path(outdel),path(out)
+    script :
+      lbim=bim.join(",")
+      out="snpfile_red.rs"
+      outdel="snpfile_del.rs"
+      """
+      search_dup_bim.py $lbim $out $outdel
+      """
+}
+
+process TransformRsDup{
+    input :
+     tuple path(delrange),path(rstochange), path(bed),path(bim),path(fam)
+    output :
+       tuple path("${newheader}.bed"),path("${newheader}.bim"),path("${newheader}.fam"), emit : plk
+       val("$newheader"), emit : plkHead
+    script :
+       header=bed.baseName
+       newheader=header+"_rsqc"
+       """
+       cp $fam ${header}_save.fam
+       cp $bed ${header}_save.bed
+       replacers_forbim.py ${bim} $rstochange $header"_save.bim"
+       plink -bfile ${header}_save --keep-allele-order --make-bed -out $newheader --exclude range $delrange
+       rm ${header}_save*
+       """
+}
+
+
+process AddedCM{                                                                
+    cpus params.max_plink_cores                                                 
+    memory params.plink_mem_req                                                 
+    time   params.big_time                                                      
+    input :                                                                     
+       tuple path(map),path(bedi),path(bimi),path(fami)                         
+    output :                                                                    
+       tuple path(bedf),path(bimf),path(famf), emit : plk                       
+       val("$headerout"),  emit :plkHead                                               
+    script :                                                                    
+       headerouti=bedi.baseName                                                    
+       headerout=headerouti+"_map"                                                    
+       bedf=headerout+".bed"                                                       
+       bimf=headerout+".bim"                                                       
+       famf=headerout+".fam"                                                       
+       cm_shap=headerout+".shape"                                                  
+       """                                                                      
+       chro=`head $bimi|awk '{print \$1}'|uniq`                                 
+       sed '1d' $map|awk -v chro=\$chro '{if(chro==\$1)print \$2"\\t"\$3"\\t"\$4}' >> $cm_shap
+       awk '{print \$2}' $headerouti".bim" | sort | uniq -d > duplicated_snps.snplist
+       plink --bfile $headerouti --exclude duplicated_snps.snplist --make-bed --keep-allele-order --out $headerouti"_tmp"
+       plink --bfile $headerouti"_tmp" --list-duplicate-vars ids-only suppress-first
+       plink --bfile $headerouti"_tmp" --keep-allele-order --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $headerout  --exclude plink.dupvar
+       """                                                                      
+                                                                                
+} 
 /*
 hgrefi=Channel.fromPath(params.reffasta, checkIfExists:true)
 
 process checkfasta{
-  cpus params.max_plink_cores
+  cpus params.max_cpus
   label 'py3utils'
   errorStrategy { task.exitStatus == 1 ? 'retry' : 'terminate' }
   maxRetries 1
@@ -113,16 +190,15 @@ process checkfasta{
     cp $fasta $fasta2
     mv $fasta".fai"  $fasta2".fai"
     else
-    zcat $fasta | awk '{print \$1}' | bgzip -@ ${params.max_plink_cores} -c > $fasta2
+    zcat $fasta | awk '{print \$1}' | bgzip -@ ${params.max_cpus} -c > $fasta2
     samtools faidx $fasta2
     fi
     """
 }
 
-
 /*
 process checkfasta {
-  cpus params.max_plink_cores
+  cpus params.max_cpus
   label 'py3utils'
   publishDir "${params.output_dir}/fastaclean", overwrite:true, mode:'copy'
   input :
@@ -269,27 +345,27 @@ process checkfasta {
 //if(params.file_ref_gzip!=""){
 // rs_infogz=Channel.fromPath(params.file_ref_gzip,checkIfExists:true)
 //listchroplink_init_ch2=listchroplink_init.combine(rs_infogz)
-// process extractrsname{
-//  memory params.plink_mem_req
-//  cpus params.max_plink_cores
-//  input :
-//    set file(bed), file(bim), file(fam), file(rsinfo) from listchroplink_init_ch2
-//  publishDir "${params.output_dir}/rs/extractrsname", overwrite:true, mode:'copy', pattern: "*_pos"
-//  output :
-//    set path("${out}.bed"), path("${out}.bim"), path("${out}.fam") into listchroplink
-//    path("${out}.bim") into listbimplink
-//    path("$outrs*")
-//  script :
-//    plk=bed.baseName
-//    out=plk+'_rsupdate'
-//    outrs=bed.baseName+'_pos'
-//    extract=params.deleted_notref=='F' ? "" : " --extract range keep"
-//    """
-//   zcat $rsinfo | extractrsid_bypos.py --bim $bim --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
-//   awk '{print \$1"\t"\$2"\t"\$2"\t"\$5}' $outrs > keep
-//   plink --keep-allele-order --noweb $extract --bfile $plk --make-bed --out $out --update-name $outrs".rs" -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
-//    """
-// }
+process extractrsname{
+  memory params.high_memory
+  cpus params.cpus_
+  input :
+    tuple path(bed), path(bim), path(fam), path(rsinfo), val(outputdir)
+  publishDir "$outputdir",  mode:'copy', pattern: "*_pos"
+  output :
+    tuple path("${out}.bed"), path("${out}.bim"), path("${out}.fam"), emit: plk
+    path("${out}.bim"), emit:  bim
+    path("$outrs*"), emit : log
+  script :
+    plk=bed.baseName
+    out=plk+'_rsupdate'
+    outrs=bed.baseName+'_pos'
+    extract=params.deleted_notref=='F' ? "" : " --extract range keep"
+    """
+   zcat $rsinfo | extractrsid_bypos.py --bim $bim --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
+   awk '{print \$1"\t"\$2"\t"\$2"\t"\$5}' $outrs > keep
+   plink --keep-allele-order --noweb $extract --bfile $plk --make-bed --out $out --update-name $outrs".rs" -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
+    """
+}
 //
 //
 //}else{
@@ -297,45 +373,6 @@ process checkfasta {
 //listchroplink=listchroplink_init
 //}
 //
-//
-//
-//bimmerg=listbimplink.collect()
-//process GetRsDup{
-//    memory params.other_mem_req
-//    input :
-//      file(bim) from bimmerg
-//    publishDir "${params.output_dir}/rs/getrsdup", overwrite:true, mode:'copy'
-//    output :
-//      set file(outdel),file(out) into duplicat
-//    script :
-//      lbim=bim.join(",")
-//      out="snpfile_red.rs"
-//      outdel="snpfile_del.rs"
-//      """
-//      search_dup_bim.py $lbim $out $outdel
-//      """
-//}
-//listchroplinkinf=duplicat.combine(listchroplink)
-//process TransformRsDup{
-//    input :
-//     set file(delrange),file(rstochange), file(bed),file(bim),file(fam) from listchroplinkinf
-//    publishDir "${params.output_dir}/rs/transformrsdup", overwrite:true, mode:'copy'
-//    output :
-//       set file("${newheader}.bed"),file("${newheader}.bim"),file("${newheader}.fam") into listchroplinkrs
-//       val(newheader) into plinkhead
-//    script :
-//       header=bed.baseName
-//       newheader=header+"_rsqc"
-//       """
-//       cp $bed ${header}.save.bed
-//       cp $bim ${header}.save.bim
-//       cp $fam ${header}.save.fam
-//       cp ${header}.save.bim  ${bim}.save
-//       replacers_forbim.py ${bim}.save $rstochange ${header}.save.bim
-//       plink -bfile ${header}.save $plink_kao --make-bed -out $newheader --exclude range $delrange
-//       rm  ${header}.save.*
-//       """
-//}
 //
 //
 //if(params.genetic_maps!=""){
@@ -376,25 +413,25 @@ process checkfasta {
 //listplinkinf=listchroplinkrsf.collect()
 //headplinkf=plinkheadf.collect()
 //
-//process MergePlink{
-//  cpus max_plink_cores_merge
-//  memory plink_mem_req_merge
-//  time   params.big_time
-//  input :
-//       path(lplk) from listplinkinf
-//       val(hplk) from headplinkf
-//  publishDir "${params.output_dir}/nofilter", overwrite:true, mode:'copy'
-//  output :
-//     set path("${output}.bed"), file("${output}.bim"),file("${output}.fam") into plinkformatf_merge
-//  script :
-//       output=params.output_pat+"_beforefilter"
-//       hplk2=lplk.join(',')
-//       """
-//       echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |sed '1d'> fileplk
-//       hplkFirst=`echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |head -1`
-//       plink --bfile \$hplkFirst --keep-allele-order --threads ${max_plink_cores_merge} --merge-list fileplk --make-bed --out $output
-//       """
-//}
+process MergePlink{
+  cpus params.cpus_max
+  memory params.high_memory
+  time   params.big_time
+  input :
+       path(lplk)
+       val(outputdir)
+       val(outputpat)
+  publishDir "${outputdir}/", mode:'copy'
+  output :
+     set path("${outputpat}.bed"), file("${outputpat}.bim"),file("${outputpat}.fam") into plinkformatf_merge
+  script :
+       hplk2=lplk.join(',')
+       """
+       echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |sed '1d'> fileplk
+       hplkFirst=`echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |head -1`
+       plink --bfile \$hplkFirst --keep-allele-order --threads ${params.cpus_max} --merge-list fileplk --make-bed --out $outputpat
+       """
+}
 //
 // process clean_plink {
 //  cpus params.max_plink_cores
@@ -455,24 +492,26 @@ process checkfasta {
 //if(params.data!=''){
 //
 //data_ch=channel.fromPath(params.data, checkIfExists:true)
-//process update_name{
-//  label 'R'
-//  cpus params.max_plink_cores
-//  memory params.plink_mem_req
-// input :
-//   tuple path(bed), path(bim), path(fam) from plinkformatf
-//   path(data) from data_ch
-//  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
-// output :
-//     tuple path("${params.output_pat}_idupdate.bed"), path("${params.output_pat}_idupdate.bim"),path("${params.output_pat}_idupdate.fam") into plinkformatf_chgid
-//     path("${out}.log")
-// script :
-//     out=params.output_pat+"_idupdate"
-//     bfile=bed.baseName
-//     """
-//     change_updateidplink.r $fam $data update_id
-//     plink -bfile $bfile -make-bed $plink_kao --update-ids update_id -out $out
-//     """
-//}
+process plink_update_name{
+  label 'R'
+  cpus params.max_cpus
+  memory params.high_memory
+ input :
+   tuple path(bed), path(bim), path(fam)
+   path(data)
+   val(outputdir)
+   val(outputpat)
+  publishDir "${outputdir}/", mode:'copy'
+ output :
+     tuple path("${outputpat}.bed"), path("${outputpat}.bim"),path("${outputpat}.fam")
+     path("${out}.log")
+ script :
+     out=params.output_pat+"_idupdate"
+     bfile=bed.baseName
+     """
+     change_updateidplink.r $fam $data update_id
+     plink -bfile $bfile -make-bed $plink_kao --update-ids update_id -out $out --threads ${params.max_cpus}
+     """
+}
 //
 //}
