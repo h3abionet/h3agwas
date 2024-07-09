@@ -41,7 +41,6 @@ workflow convertvcfinplk {
       AddedCM(plink)
       plink=AddedCM.out.plk
      }
-     convert_inplink.out.bim.view()
      /*if(convert_inplink.out.bim.count().toInteger()>1) {
         MergePlink(plink.collect(), channel.of("${outputdir}/plink"), channel.of("${outputpat}_clean"))
         plink = MergePlink.out
@@ -63,9 +62,11 @@ workflow convertvcfin{
      outputpat
   main :
     getparams(vcf, build)
-    computedstat(getparams.out.vcf)
-    dostat(computedstat.out.collect(), channel.of(outputdir+'/stats/'), channel.of(outputpat))
-    latex_compilation(dostat.out.tex, dostat.out.support_file, channel.of(outputdir+'/report/'))
+    if(params.convertvcf_stat){
+     computedstat(getparams.out.vcf)
+     dostat(computedstat.out.collect(), channel.of(outputdir+'/stats/'), channel.of(outputpat))
+     latex_compilation(dostat.out.tex, dostat.out.support_file, channel.of(outputdir+'/report/'))
+     }
     clean_vcf(getparams.out.vcf.combine(getparams.out.fasta).combine(channel.of(params.cut_maf)).combine(channel.of(params.cut_hwe)).combine(channel.of(params.vcf_minscoreimp)).combine(channel.of(params.vcf_cut_miss)).combine(channel.of("$outputdir/cleanvcf")))
     if(params.convertvcfinplink==1) {
      convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat)

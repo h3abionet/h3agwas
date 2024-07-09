@@ -228,8 +228,11 @@ process countChr{
  output :
    stdout
  script :
+ print chro
+ print bim
  """
- awk '{if(\$1==${chro})print \$1}' $bim |wc -l
+ awk '{if(\$1==${chro})print \$1}' $bim |wc -l > tmp
+ cat tmp
  """
 }
 
@@ -244,20 +247,24 @@ process clean_x {
 
   input :   
     tuple path(bed), path(bim), path(fam)  
-    val(cxy) 
     val(cxx) 
+    val(cxy) 
   output :
-    tuple path("${baseout}.bed"), path("${baseout}.bim"), path("${baseout}.fam") 
+    tuple path("${baseout}.bed"), path("${baseout}.bim"), path("${baseout}.fam"), emit : plink
   script :
+   buildgenome="hg"+params.build_genome
+   buildgenome=(params.build_genome=="37") ?  "b37" : ""
    base=bed.baseName
    cxy=cxy.toInteger()
    cxx=cxx.toInteger()
     if(cxy==0 && cxx>0){
-        baseout=base+'_splx'
+        baseout=base+'_cleanx'
+        println("splitx")
         """
-        plink -bfile $base   --make-bed --out $baseout --split-x $params.build_genome 'no-fail' --keep-allele-order
+        plink -bfile $base   --make-bed --out $baseout --split-x $buildgenome 'no-fail' --keep-allele-order
         """
     }else{
+       println("splitx")
        baseout=base
        """
        echo $baseout
@@ -388,13 +395,14 @@ process generateIndivMissingnessPlot {
     input  = imissf
     base   = imissf.baseName
     label  = "samples"
-    output = "${base}-indmiss_plot".replace(".","_")+".pdf"
+    output= "${base}-indmiss_plot".replace(".","_")+".pdf"
     template "missPlot.py"
 }
  
 process getInitMAF {
   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+  cache 'lenient'
   maxRetries 3
 
   input:
@@ -451,11 +459,11 @@ process removeQCPhase1 {
     val(sexinfo)
   publishDir "${params.output_dir}/phase1/", overwrite:true, mode:'copy'
   output:
-    path("${output}*.{bed,bim,fam}"), emit : plink
-    tuple path("qc1.out"), path("${output}.irem"), emit : log
+    path("${outputmiss}*.{bed,bim,fam}"), emit : plink
+    tuple path("qc1.out"), path("${outputmiss}.irem"), emit : log
   script:
      base=bed.baseName
-     output = "${base}-c".replace(".","_")
+     outputmiss = "${base}-c".replace(".","_")
      K = "--keep-allele-order"
      """
      # remove really realy bad SNPs and really bad individuals
@@ -466,12 +474,12 @@ process removeQCPhase1 {
      /bin/rm temp2.{bim,fam,bed}
      plink $K --bfile temp3  $sexinfo --maf $params.cut_maf --make-bed --out temp4
      /bin/rm temp3.{bim,fam,bed}
-     plink $K --bfile temp4  $sexinfo --hwe $params.cut_hwe --make-bed  --out $output
+     plink $K --bfile temp4  $sexinfo --hwe $params.cut_hwe --make-bed  --out $outputmiss
      /bin/rm temp4.{bim,fam,bed}
      cat *log > logfile
      touch tmp.irem
-     cat *.irem > ${output}.irem
-     qc1logextract.py logfile ${output}.irem > qc1.out     
+     cat *.irem > ${outputmiss}.irem
+     qc1logextract.py logfile ${outputmiss}.irem > qc1.out     
   """
 }
 
@@ -742,12 +750,11 @@ process removeSkewSnps {
     path(plinks) 
     path(failed) 
     val(sexinfo)
-  //publishDir "${params.output_dir}/", overwrite:true, mode:'copy'  
   output:
     tuple path("${output}.bed"), path("${output}.bim"), path("${output}.fam"), path("${output}.log") 
   script:
   base = plinks[0].baseName
-  output = params.output.replace(".","_")
+  output = params.output.replace(".","_")+'_skew'
   K = "--keep-allele-order"
   """
   plink $K --bfile $base $sexinfo --exclude $failed --make-bed --out $output
@@ -767,7 +774,7 @@ process splitX {
    tuple  path("${outputx}.bed"),path("${outputx}.bim"),path("${outputx}.fam") 
   script :
    base = bed.baseName
-   outputx="${params.output}_x"
+   outputx="${params.output}_splx"
    """
    plink -bfile $base --chr ${params.chrxx_plink} --make-bed --out $outputx --keep-allele-order --keep $listind
    """
@@ -801,7 +808,6 @@ process computed_stat_female_x {
   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
-
   input :
    tuple path(bed), path(bim), path(fam) 
   publishDir "${params.output_dir}/qcX/female", overwrite:true, mode:'copy'
@@ -854,12 +860,13 @@ process report_export_x {
  process cleanandmerge_x {
   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+  cache 'lenient'
   maxRetries 3
  input :
    tuple path(bed), path(bim), path(fam), path(log) 
    tuple path(bedx), path(bimx), path(famx) 
    path(snpsx) 
-  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/cleanandmergex/", overwrite:true, mode:'copy'
   output :
    tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") 
   script :  
@@ -867,8 +874,8 @@ process report_export_x {
     base=bed.baseName
     output="${params.output}_withx"
     """
-    plink -bfile $basex --extract $snpsx --keep-allele-order  -out cleanx --make-bed
-    plink -bfile $base --bmerge cleanx  --keep-allele-order  -out $output --make-bed
+    plink -bfile $basex --extract $snpsx --keep-allele-order  -out cleanx --make-bed --set-hh-missing --keep $fam
+    plink -bfile $base --bmerge cleanx  --keep-allele-order  -out $output --make-bed 
     """
 }
 
@@ -886,6 +893,7 @@ process clean_y {
   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
+  cache 'lenient'
   input :
 	   tuple path(bed), path(bim), path(fam)
            path(listind) 
@@ -922,18 +930,18 @@ process cleanandmerge_y {
            tuple path(bed), path(bim), path(fam), path(log) 
            tuple path(bedy), path(bimy), path(famy) 
            val(county)
-          publishDir "${params.output_dir}/qcY/", overwrite:true, mode:'copy'
+          publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
           output :
            tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log"), emit : plk_log
            tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), emit : plk
           script :
             basey=bedy.baseName
             base=bed.baseName
-            output=params.output
+            output=params.output+"_cleany"
             county = county.toInteger()
             if(county>0)
               """
-              plink -bfile $base --bmerge $basey --keep-allele-order  -out $output --make-bed
+              plink -bfile $base --bmerge $basey --keep-allele-order  -out $output --make-bed --keep $fam
               """
             else 
               """
@@ -990,9 +998,10 @@ process calculateMaf {
 
   script:
     base = bed.baseName
-    out  = base.replace(".","_")
+    out  = base.replace(".","_")+"_freq"
     """
       plink --bfile $base $sexinfo  --freq --out $out
+      cp $out".frq" $base".frq"
     """
 }
 

@@ -26,6 +26,7 @@ include { checkresume } from "./modules/fct_groovy.nf"
 include { crossmap_vcf } from "./convertdatabuild/workflow.nf"
 include { mtag } from "./mtag/workflow.nf"
 include { ldsc } from "./heritability/workflow.nf"
+include { split_vcf} from "./modules/vcf.nf"
 include { convertvcfin } from "./formatdata/format_vcf.nf"
 //include { assoc} from "./assoc/assoc.nf"
 //include { assoc} from "./assoc/assoc.nf"
@@ -55,14 +56,18 @@ workflow {
        plink_qc = qc_michigan.out.plink
   }
   if (params.convertinvcf==1 || params.convertinvcf){
-     format_plink_invcf(plink_qc, "${params.output_dir}/plk_vcf", params.output) 
+     format_plink_invcf(plink_qc, "${params.output_dir}/vcf/", params.output) 
      vcf_qc= format_plink_invcf.out.vcf
   }
+  if(params.vcf_split_chro){
+    split_vcf(vcf_qc,"${params.output_dir}/vcf/split", params.output)
+  }
   if (params.vcf_convertbetwen_build==1 || params.vcf_convertbetwen_build){
-   crossmap_vcf(vcf_qc) 
+  crossmap_vcf(vcf_qc) 
   build_cur=params.build_genome_convert
    vcf_qc = crossmap_vcf.out.vcf
   }
+
  balise_convertvcf=(params.convertvcfinplink==1 || params.convertvcfinbimbam==1)
  if(balise_convertvcf){
    convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output)

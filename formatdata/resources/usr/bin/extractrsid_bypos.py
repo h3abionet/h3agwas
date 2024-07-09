@@ -26,6 +26,8 @@ def  read_bim(bim) :
       chro=spl[0]
       if chro == '23' :
         chro=definechr+'X'
+      if chro == '24' :
+        chro=definechr+'Y'
       listchro.add(chro+" "+spl[3])
       if spl[1]=='.' :
          rs=None

@@ -1,5 +1,5 @@
 process checkfasta{
-  cpus params.max_cpu
+  cpus params.max_cpus
   label 'py3utils'
   errorStrategy { task.exitStatus == 1 ? 'retry' : 'terminate' }
   maxRetries 1
@@ -27,7 +27,7 @@ process checkfasta{
 
 
 process checkfasta_2{
-  cpus params.max_cpu
+  cpus params.max_cpus
   label 'py3utils'
   input :
      path(fasta)

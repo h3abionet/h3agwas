@@ -1,4 +1,36 @@
-## Prepare data for imputation : `plk_in_vcf_imp.nf`
+# Format and prepared genetics data for imputation or association
+
+## general use 
+* input :
+ * directly from used or from previous job as [qc] or [qc_michigan]  for plink convert in vcf
+
+* output : 
+ *  vcf for imputation
+ * plink, bimbam, bgen for association 
+
+* genetics data between  different formats for instance to :
+ * prepared data for imputation in vcf files tested with imputation 
+ * convert vcf file in various format for associaton studies.
+
+## Prepare data for imputation : plink in vcf
+
+### Parameters
+* `convertinvcf` : **run conversion** [default : 0]
+* **input plink** :
+ * from previous step as `qc` or `qc_michigan`
+ * `input_dir` and `input_pat` [default : ""]
+ * `bfile` [default : ""]
+* **output**
+ * `output_dir` : output  direction
+ * `output` : output pattern
+* 
+
+### output 
+by default used last plink file created by pipeline to format in vcf file, mostly used to convert 
+
+
+
+
 
 ### argument :
 * `input_dir`

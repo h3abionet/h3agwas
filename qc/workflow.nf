@@ -10,17 +10,20 @@ include {countChr as countY} from './process.nf'
 
 workflow check_params{
  allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","low_memory","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10", "build_genome", "autosome_plink", "cut_maf_xfemale", "cut_maf_xmale", "cut_miss_xfemale", "cut_miss_xmale", "cut_diffmiss_x", "chrxx_plink", "chrxy_plink", "chry_plink", "chrm_plink" ,"cut_maf_y", "cut_miss_y", "action", "bfile"]
-
+/*
  params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
         println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
    }
   }
-
+*/
   /* check id*/
  fileexist(params.batch)
- fileexist(params.phenotype)
- idfiles = [params.batch,params.phenotype]
+ if(params.phenotype!="")phenotype=params.phenotype
+ else if (params.data)phenotype=params.data
+ 
+ fileexist(phenotype)
+ idfiles = [params.batch,phenotype]
  idfiles.each { checkColumnHeader(it,['FID','IID']) }
 
   if (workflow.repository)
@@ -28,7 +31,7 @@ workflow check_params{
   else
     wflowversion="A local copy of the workflow was used"
 
-  phenotype_ch = fileheader_create_ch(params.phenotype,"pheno",params.pheno_col)
+  phenotype_ch = fileheader_create_ch(phenotype,"pheno",params.pheno_col)
   batch_ch     = fileheader_create_ch(params.batch,"batch",params.batch_col)
 
  if (params.case_control) {
@@ -56,7 +59,7 @@ workflow check_params{
  }
 
 
- if (is_nullfile(params.sexinfo_available) ) {
+ if (params.sexinfo_available) {
    sexinfo = "--allow-no-sex"
    bal_sexinfo=false
    extrasexinfo = ""
@@ -130,8 +133,13 @@ workflow qc {
  // count xy number
  countxy=countXY(removeDuplicateSNPs.out.plink, channel.of(params.chrxy_plink))
  // count x number
- countY(removeDuplicateSNPs.out.plink, channel.of(params.chry_plink))
- clean_x(removeDuplicateSNPs.out.plink, countxy, countxx)
+ removeDuplicateSNPs.out.plink.view()
+ county=countY(removeDuplicateSNPs.out.plink, channel.of(params.chry_plink))
+ countxx.map{" xx "+it}.view()
+ countxy.map{"xy "+it}.view()
+ county.map{"y "+it}.view()  
+ // split x in 25 or 23  
+ clean_x(removeDuplicateSNPs.out.plink, countX.out, countXY.out)
  cleanx=false
  if(check_params.out.bal_sexinfo){
   getX(clean_x.out)
@@ -142,16 +150,16 @@ workflow qc {
    //need to update
    x_analy_res_ch = Channel.fromPath("0")
  }
- identifyIndivDiscSexinfo(removeDuplicateSNPs.out.plink)
+ identifyIndivDiscSexinfo(clean_x.out.plink)
  // update should be before or after removeDuplicateSNPs?
  generateSnpMissingnessPlot(removeDuplicateSNPs.out.lmiss)
  // update should be before or after removeDuplicateSNPs?
  generateIndivMissingnessPlot(removeDuplicateSNPs.out.imiss)
  //
- getInitMAF(removeDuplicateSNPs.out.plink)
+ getInitMAF(clean_x.out.plink)
  showInitMAF(getInitMAF.out)
  showHWEStats(identifyIndivDiscSexinfo.out.hwe)
- removeQCPhase1(removeDuplicateSNPs.out.plink, check_params.out.sexinfo)
+ removeQCPhase1(clean_x.out.plink, check_params.out.sexinfo)
  //
  compPCA(removeQCPhase1.out.plink)
  drawPCA(compPCA.out.eigen, check_params.out.cc_ch, check_params.out.col, check_params.out.diffpheno)
@@ -181,10 +189,9 @@ workflow qc {
   report_x = report_export_x_tmp.out
   dataf_withx_ch = removeSkewSnps.out
  }
-
- clean_y(splitX.out,removeQCIndivs.out.fam, countY.out)
- cleanandmerge_y(dataf_withx_ch ,clean_y.out.plky_qc, countY.out)
- build_reporty(clean_y.out.stat_qc, countY.out)
+ clean_y(clean_x.out,removeQCIndivs.out.fam, county)
+ cleanandmerge_y(dataf_withx_ch ,clean_y.out.plky_qc, county)
+ build_reporty(clean_y.out.stat_qc, county)
  calculateMaf(removeSkewSnps.out, check_params.out.sexinfo) | generateMafPlot
  calculateSnpSkewStatus.out.hwe | findHWEofSNPs | generateHwePlot
  MD5_out(cleanandmerge_y.out.plk_log)

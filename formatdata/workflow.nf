@@ -1,6 +1,6 @@
-include {bcftools_index_vcf} from '../modules/vcf.nf'
+include {bcftools_index_vcf} from '../modules/process_vcf.nf'
 include {list_chro} from '../modules/utils_plink.nf'
-include {updateplk_rsname;updateplk_rsname_norsinfo;deletedmultianddel;refallele;convertInVcf;checkfixref;checkVCF;mergevcf} from './process.nf'
+include {updateplk_rsname;updateplk_rsname_norsinfo;deletedmultianddel;refallele;convertInVcf;checkfixref;checkVCF;mergevcf;get_sex_forsanger} from './process.nf'
 include {fileexist_b;fileexist_param;fileexist} from '../modules/fct_groovy.nf'
 include {dl_fasta_wf} from '../modules/dl_wf.nf'
 
@@ -8,7 +8,7 @@ workflow getparams{
   take :
    plink
   main :
-   if(plink==null){
+   if(!plink){
      if(params.bfile!=''){
         inpat=params.bfile
      }else{
@@ -40,12 +40,13 @@ workflow format_plink_invcf {
    outputpat
   main :
    getparams(plink)
-   if(getparams.out.rs_infogz==null) {
+   getparams.out.rs_infogz
+   if(!(getparams.out.rs_infogz!=null)) {
    updateplk_rsname_norsinfo(getparams.out.plink,  channel.of("$outputdir/rs_update"))
    }else{
      updateplk_rsname(getparams.out.rs_infogz, getparams.out.plink, channel.of("$outputdir/rs_update"))
      deletedmultianddel(updateplk_rsname.out.plink)
-     refallele(getparams.out.plink, updateplk_rsname.out.rs_info)
+     refallele(deletedmultianddel.out, updateplk_rsname.out.rs_info)
      if(params.convertinvcf_parralchro==0){
       //    tuple path(bed), path(bim), path(fam), path(gz_info), path(fast), path(fastaindex),val(chro)
       convertInVcf(refallele.out.combine(getparams.out.rs_infogz).combine(getparams.out.fasta).combine(channel.of("")).combine(channel.of("$outputdir/")))
@@ -53,13 +54,14 @@ workflow format_plink_invcf {
       checkVCF(convertInVcf.out.vcf, getparams.out.fasta, channel.of("$outputdir/checkVCF"))
       vcf = checkVCF.out
      }else{
-      list_chro(getparams.out.plink)
+      list_chro(refallele.out)
       list_chro2=list_chro.out.flatMap { list_str -> list_str.split()}
-      convertInVcf(getparams.out.plink.combine(getparams.out.rs_infogz).combine(getparams.out.fasta).combine(list_chro2).combine(channel.of("$outputdir/vcf/")))
+      convertInVcf(refallele.out.combine(getparams.out.rs_infogz).combine(getparams.out.fasta).combine(list_chro2).combine(channel.of("$outputdir/vcf/")))
       mergevcf(convertInVcf.out.vcf.collect(), channel.of("$outputdir/"))
       vcf= mergevcf.out
     }
    }
+   get_sex_forsanger(getparams.out.plink, vcf, "$outputdir/") 
   emit : 
       vcf= vcf
 }
