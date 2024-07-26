@@ -70,17 +70,17 @@ The key options are:
     * bgen priotise on plink
 
       
-| Software | plink | vcf | bgen | impute 2 | allele effect | GxE 
-| --- | --- | --- | --- | --- | --- |
-| gemma | yes |  no | no | no | allele1 | yes |
-| plink | yes |  no | no | no | A1 | yes |
-| gcta/fastGWA | yes |  no | yes | no | - | no |
-| saige | yes |  yes | yes | no | allele2 | no |
-| bolt-LMM | yes |  no | yes | yes | ALLELE1 | no |
-| fast-lmm | yes |  no | no | no | - | no |
-| regenie | yes |  no | yes | - | - | yes |
-| description | genotype |  dosage | dosage | dosage | - | - |
-| Option | `--input_dir`/`--input_pat` | `--list_vcf` | `--bgen`/`--bgen_sample` | `bolt_impute2filelist`/`bolt_impute2fidiid` | - | `--gxe` / `--plink_gxe` / `--gemma_gxe` / `--regenie_gxe` |
+| Software | plink | vcf | bgen | impute 2 | allele effect | GxE  | X |
+| --- | --- | --- | --- | --- | --- | 
+| gemma | yes |  no | no | no | allele1 | yes | not tested |
+| plink | yes |  no | no | no | A1 | yes | not tested  |
+| gcta/fastGWA | yes |  no | yes | no | - | no | not tested |
+| saige | yes |  yes | yes | no | allele2 | no | yes |
+| bolt-LMM | yes |  no | yes | yes | ALLELE1 | no | not tested |
+| fast-lmm | yes |  no | no | no | - | no | not tested |
+| regenie | yes |  no | yes | - | - | yes | not tested |
+| description | genotype |  dosage | dosage | dosage | - | - | -  |
+| Option | `--input_dir`/`--input_pat` | `--list_vcf` | `--bgen`/`--bgen_sample` | `bolt_impute2filelist`/`bolt_impute2fidiid` | - | `--gxe` / `--plink_gxe` / `--gemma_gxe` / `--regenie_gxe` |  ` no option`|
 
 
 ## 3. Association software  option 
@@ -180,6 +180,11 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
 * ressource :
  * `saige_mem_req` : memory required for saige [default : 10GB] 
  * `saige_num_cores` : memory required for saige [default : 10], just used for step1 of SAIGE
+* add other option :
+ * `saige_otheropt` : other option for saige
+ * `saige_otheropt_step1` : other option in command line of step 1
+ * `saige_otheropt_step2` : other option in command line of step 2
+ * `cut_geno` : missingness, [default : 0.9]
 
 ### 7. Regnie option
 * [more information relative to regenie](https://rgcgithub.github.io/regenie/options/)

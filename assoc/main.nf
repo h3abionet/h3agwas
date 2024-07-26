@@ -92,7 +92,7 @@ def checkmultiparam(params, listparams, type, min=null, max=null, possibleval=nu
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col",  "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method", "gcta_grmfile","fastgwa_type", "snps_include_rel", "sample_snps_rel_paramplkl", "shared-storage-mount", "queue", 'output_testing', "chrom","regenie_bin" , "saige_bin_fitmodel", "saige_bin_spatest", "snp_rel_param_plk"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","data","plink_mem_req","covariates", "work_dir", "scripts",  "high_ld_regions_fname", "accessKey", "access-key", "secretKey", "secret-key", "region",  "pheno","big_time", "gemma_mat_rel", "file_rs_buildrelat","genetic_map_file", "rs_list",   "gemma_bin", "bgen", "bgen_sample",   "list_bgen", "exclude_snps", "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", "bolt_ld_scores_col" , "bolt_ld_scores_col",  "bolt_impute2filelist", "bolt_impute2fidiid", "bolt_otheropt","bolt_bin", 'gxe','fastlmmc_bin','list_vcf', 'vcf_field', "regenie_otheropt_step1","regenie_otheropt_step2", "gcta_bin", "AMI", "instance-type", "boot-storage-size", "sharedStorageMount", "instanceType", "bolt_ld_score_file" , "saige_impute_method", "gcta_grmfile","fastgwa_type", "snps_include_rel", "sample_snps_rel_paramplkl", "shared-storage-mount", "queue", 'output_testing', "chrom","regenie_bin" , "saige_bin_fitmodel", "saige_bin_spatest", "snp_rel_param_plk", "saige_otheropt", "saige_otheropt_step1", "saige_otheropt_step2"]
 
 allowed_params_input_mp = ["bolt_covariates_type", 'covariates_type']
 allowed_params=allowed_params_input
@@ -103,7 +103,7 @@ allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_b
 allowed_params+=allowed_params_intother
 allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_cov", 'gemma_multi', 'pheno_bin', 'fastlmm_multi', "regenie_loco", "sexinfo_available", "print_pca", "saige_loco","saige_imputed_data"]
 allowed_params+=allowed_params_bolother
-allowed_params_float=["cut_maf", "bgen_mininfo",  "grm_cutoff", "grm_maf","vcf_minmac"]
+allowed_params_float=["cut_maf", "bgen_mininfo",  "grm_cutoff", "grm_maf","vcf_minmac", "cut_geno"]
 allowed_params+=allowed_params_float
 allowed_params_memory=["gemma_mem_req" , "plink_mem_req", "other_mem_req", "bolt_mem_req", 'fastlmm_mem_req', 'saige_mem_req', "regenie_mem_req", "fastgwa_mem_req", "bootStorageSize", "bootStorageSize", "boot-storage-size", "sharedStorageMount", "other_process_mem_req"]
 allowed_params+=allowed_params_memory
@@ -159,7 +159,10 @@ params.regenie_mem_req="10GB"
 params.regenie=0
 params.saige_imputed_data=1
 params.saige_impute_method="best_guess" //best_guess, mean or minor
-params.saige_otheroption=""
+params.saige_otheropt_step1=""
+params.saige_otheropt=""
+params.saige_otheropt_step2=""
+params.cut_geno = 0.9
 
 
 /* Defines the path where any scripts to be executed can be found.
@@ -440,7 +443,7 @@ if (thin+chrom) {
     script:
        base = bed.baseName
        out  = base+"_t"
-       "plink --keep-allele-order --bfile $base $thin $chrom --make-bed --out $out"
+       "plink --keep-allele-order --bfile $base $thin $chrom --make-bed --out $out --allow-extra-chr --geno ${params.cut_geno} "
   }
 
   println "\nData has been thinned or only some chromosomes used  (is the run for test purposes only?)\n"
@@ -472,9 +475,9 @@ if(params.print_pca!=0){
 	 base = "cleaned"
 	 prune= "${base}-prune"
 	"""
-	plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check --maf 0.01
-	plink --keep-allele-order --bfile ${base} --extract check.prune.in --make-bed --out $prune
-	plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname} 
+	plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check --maf 0.01  --autosome --allow-extra-chr
+	plink --keep-allele-order --bfile ${base} --extract check.prune.in --make-bed --out $prune  --autosome --allow-extra-chr
+	plink --threads $max_plink_cores --bfile $prune --pca --out ${outfname}   --autosome --allow-extra-chr
 	"""
    }
 
@@ -534,7 +537,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params
         prune= "${base}-prune"
         extract=(params.snps_include_rel=='')? "" : " -extract range $snp_inclrel "
         """
-        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} $extract --autosome --keep $data  ${params.snp_rel_param_plk}
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} $extract  --keep $data  ${params.snp_rel_param_plk} --allow-extra-chr
         """
    }
    //BoltNbMaxSnps=filers_count_line.countLines()
@@ -1799,8 +1802,9 @@ if(params.saige==1){
     script :
        bfile=plk[1].baseName
        out=bfile+'_subrs'
+ //--extract $rs
        """
-       plink -bfile $bfile --extract $rs --make-bed -out $out --keep-allele-order ${params.snp_rel_param_plk}
+       plink -bfile $bfile --extract $rs --make-bed -out $out --keep-allele-order ${params.snp_rel_param_plk} --allow-extra-chr 
        """
     }
    }else{
@@ -1837,8 +1841,10 @@ if(params.saige==1){
       bfileupdate=bfile+'_idsaige'
       """
       zcat $vcf |head -1000 |grep "#"| tail -1|awk '{for(Cmt=10;Cmt<=NF;Cmt++)print \$Cmt}' > fileind
+      awk '{print \$1"\t"\$1}' fileind > keep
       format_saige_pheno.r --data $covariates --ind_vcf fileind --out ${covariates_form} --pheno ${params.pheno}  --pheno_bin ${params.pheno_bin}
-      plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid"
+      awk '{if( \$1 ~ /^[0-9+]\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
+      plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid" --keep keep --allow-extra-chr --extract range keep.range
       """
    }
   }else{
@@ -1858,7 +1864,8 @@ if(params.saige==1){
       indnbgen=(params.bgen!='') ? "--ind_bgen $bgensample" : ""
       """
       format_saige_pheno.r --data $covariates $indnbgen --out ${covariates_form}  --pheno ${params.pheno}  --pheno_bin ${params.pheno_bin}
-      plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid"
+      awk '{if( \$0 ~ /^[0-9+]\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
+      plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid" --extract range keep.range
       """
    }
  }
@@ -1893,26 +1900,28 @@ if(params.saige==1){
    publishDir "${params.output_dir}/saige/varexp/", overwrite:true, mode:'copy'
    each this_pheno from pheno_ch_saige
    output :
-     set val(our_pheno) ,file("${output}.rda"), file("${output}.varianceRatio.txt"), val(plkf) into file_varexp 
+     set val(our_pheno) ,file("${output}.rda"), file("${output}.varianceRatio.txt"), val(plk) into file_varexp 
+     path("run_step_1.sh") 
    script :
      //covoption = (params.covariates=="") ? "" : " --covarColList=${params.covariates}"
-     binpheno = (params.pheno_bin==1) ? " --traitType=binary " : " --traitType=quantitative --invNormalize=TRUE"
+     binpheno = (params.pheno_bin==1) ? " --traitType=binary " : " --traitType=quantitative"
      Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
-     plkf=bed.baseName
+     plk=bed.baseName
      our_pheno    = this_pheno.replaceAll(/|\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
      output=our_pheno+"_var"
      covoption= (params.covariates=="") ? "" : "  ${covariable_saige} "
      """
      ${params.saige_bin_fitmodel} \
-        --plinkFile=$plkf \
+        --plinkFile=$plk \
         --phenoFile=$pheno \
         --phenoCol=$our_pheno $covoption \
         --sampleIDColinphenoFile=IID \
         --outputPrefix=./$output \
         --nThreads=${params.saige_num_cores} $Loco \
-        --minMAFforGRM=${params.grm_maf} $binpheno
+        --minMAFforGRM=${params.grm_maf} $binpheno \
+        ${params.saige_otheropt_step1} ${params.saige_otheropt}  --maxMissing ${params.cut_geno}
+     cp .command.sh run_step_1.sh
      """
-   
   }
   if(params.list_vcf!=''){
    listvcf_ch=Channel.fromPath(file(params.list_vcf).readLines(), checkIfExists:true)
@@ -1939,13 +1948,16 @@ if(params.saige==1){
     label 'saige'
     input :
        set file(vcf), file(vcfindex), val(our_pheno) , file(rda), file(varRatio), val(base) from vcf_andvariance_ch 
+   publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.sh"
+   publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.log"
     output :
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
+      tuple path("${output}.sh"), path("${output}.log")
     script :
      output=vcf.baseName+".res"
      //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
      Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
-     imputed=(params.saige_imputed_data==1) ? "--is_imputed_data=TRUE --impute_method=${params.saige_impute_method}  " : '--is_imputed_data=FALSE' 
+     imputed=(params.saige_imputed_data==1) ? "--is_imputed_data=TRUE " : '--is_imputed_data=FALSE' 
      moredetail=(params.pheno_bin==1) ? " --is_output_moreDetails=TRUE " : ""
      """
       Chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
@@ -1958,7 +1970,9 @@ if(params.saige==1){
         --chrom=\$Chro \
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output $Loco $imputed  $moredetail ${params.saige_otheroption}
+        --SAIGEOutputFile=$output $Loco $imputed  $moredetail ${params.saige_otheropt_step2}  ${params.saige_otheropt}    --maxMissing ${params.cut_geno}
+     cp .command.sh $output".sh"
+     cp .command.out $output".log"
      """
    }
  }else if(params.bgen!=''){
@@ -1970,8 +1984,11 @@ if(params.saige==1){
     input :
        tuple path(bgen), path(bgenindex), path(bgensample),val(our_pheno),path(rda), path(varRatio), val(base) from bgen_andvariance_ch
     each Chro from chrolist_saige_ch
+   publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.sh"
+   publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.log"
     output :
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
+      tuple path("${output}.sh"), path("${output}.log")
     script :
      output=bgen.baseName+"_"+Chro+".saige"
      //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
@@ -1990,7 +2007,9 @@ if(params.saige==1){
         --minMAF=${params.cut_maf}\
         --minMAC=${params.vcf_minmac} \
         --GMMATmodelFile=$rda \
-	--SAIGEOutputFile=$output $imputed $Loco $moredetail
+	--SAIGEOutputFile=$output $imputed $Loco $moredetail  ${params.saige_otheropt_step2}   ${params.saige_otheropt}  --maxMissing ${params.cut_geno}
+        cp .command.sh run_step_2.sh
+     cp .command.out $output".log"
      """
    }
 
@@ -2014,8 +2033,11 @@ if(params.saige==1){
     label 'saige'
     input :
        tuple val(Chro),path(bgen), path(bgenindex), path(bgensample),val(our_pheno),path(rda), path(varRatio), val(base) from bgen_andvariance_ch
+   publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.sh"
+   publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.log"
     output :
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
+      tuple path("${output}.sh"), path("${output}.log")
     script :
      output=bgen.baseName+"_"+Chro+".saige"
      //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
@@ -2033,7 +2055,9 @@ if(params.saige==1){
         --minMAC=${params.vcf_minmac} \
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output ${Loco} $imputed  $moredetail
+        --SAIGEOutputFile=$output ${Loco} $imputed  $moredetail ${params.saige_otheropt_step2} ${params.saige_otheropt}
+        cp .command.sh run_step_2.sh
+     cp .command.out $output".log"
      """
    }
 
@@ -2052,6 +2076,9 @@ if(params.saige==1){
     each Chro from chrolist_saige_ch
     output :
       tuple val(our_pheno),file("$output"), val(base) into ch_saige_bychro
+      tuple path("${output}.sh"), path("${output}.log")
+   publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.sh"
+   publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.log"
     script :
      output=bed.baseName+'_'+Chro+".saige"
      Loco = (params.saige_loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
@@ -2070,7 +2097,9 @@ if(params.saige==1){
         --minMAC=${params.vcf_minmac} \
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
-        --SAIGEOutputFile=$output $Loco $imputed  $moredetail
+        --SAIGEOutputFile=$output $Loco $imputed  $moredetail ${params.saige_otheropt_step2}  ${params.saige_otheropt}
+        cp .command.sh run_step_2.sh
+     cp .command.out $output".log"
      """
    }
 
@@ -2262,7 +2291,7 @@ if(params.regenie==1){
     out=(params.list_bgen=="")? out: bgen.baseName
     gxe=(params.regenie_gxe==0) ? "" : " --interaction ${params.gxe} "
     """
-     ${params.regenie_bin} --step 2  $genet   --phenoFile $data --phenoCol $pheno ${covoption_regenie} --bsize $bsize   --pred $list  $loco   --out $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step2} $gxe
+     ${params.regenie_bin} --step 2  $genet   --phenoFile $data --phenoCol $pheno ${covoption_regenie} --bsize $bsize   --pred $list  $loco   --out $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step2} $gxe  
      cp .command.sh "${pheno}"_regenie_step2.cmd
   """
  }
