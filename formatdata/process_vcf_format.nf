@@ -98,14 +98,17 @@ process clean_vcf {
 process convert_inplink {
    cpus params.max_cpus
    input :
-     tuple path(vcf),val(Ent),val("outputdir")
+     tuple path(vcf),val(Ent),val(outputdir), val(nbfile) 
   publishDir "${outputdir}", mode:'copy'
   output :
       tuple path("${Ent}.bed"), path("${Ent}.bim"), path("${Ent}.fam"), emit: bed
-      tuple path("${Ent}.bim"), emit: bim
+      path("${Ent}.bim"), emit: bim
   script :
+    if(nbfile>1){
+      Ent=vcf.baseName
+    }
     """
-     plink --vcf $vcf   --vcf-idspace-to _ --double-id --allow-extra-chr --make-bed --out ${Ent} --keep-allele-order
+     plink --vcf $vcf   --vcf-idspace-to _ --double-id --allow-extra-chr --make-bed --out ${Ent} --keep-allele-order 
     """
 }
 
@@ -136,14 +139,14 @@ process TransformRsDup{
        cp $fam ${header}_save.fam
        cp $bed ${header}_save.bed
        replacers_forbim.py ${bim} $rstochange $header"_save.bim"
-       plink -bfile ${header}_save --keep-allele-order --make-bed -out $newheader --exclude range $delrange
+       plink -bfile ${header}_save --keep-allele-order --make-bed -out $newheader --exclude range $delrange --allow-extra-chr
        rm ${header}_save*
        """
 }
 
 
 process AddedCM{                                                                
-    cpus params.max_plink_cores                                                 
+    cpus params.max_cpus
     memory params.plink_mem_req                                                 
     time   params.big_time                                                      
     input :                                                                     
@@ -162,9 +165,9 @@ process AddedCM{
        chro=`head $bimi|awk '{print \$1}'|uniq`                                 
        sed '1d' $map|awk -v chro=\$chro '{if(chro==\$1)print \$2"\\t"\$3"\\t"\$4}' >> $cm_shap
        awk '{print \$2}' $headerouti".bim" | sort | uniq -d > duplicated_snps.snplist
-       plink --bfile $headerouti --exclude duplicated_snps.snplist --make-bed --keep-allele-order --out $headerouti"_tmp"
-       plink --bfile $headerouti"_tmp" --list-duplicate-vars ids-only suppress-first
-       plink --bfile $headerouti"_tmp" --keep-allele-order --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $headerout  --exclude plink.dupvar
+       plink --bfile $headerouti --exclude duplicated_snps.snplist --make-bed --keep-allele-order --out $headerouti"_tmp" --allow-extra-chr
+       plink --bfile $headerouti"_tmp" --list-duplicate-vars ids-only suppress-first --allow-extra-chr
+       plink --bfile $headerouti"_tmp" --keep-allele-order --cm-map $cm_shap \$chro   --threads ${params.max_cpus} --make-bed --out $headerout  --exclude plink.dupvar --allow-extra-chr
        """                                                                      
                                                                                 
 } 
@@ -208,7 +211,7 @@ process checkfasta {
   script :
     fasta2=fasta.baseName+'_clean.fa.gz'
   """
-    zcat $fasta | awk '{print \$1}' | bgzip -@ ${params.max_plink_cores} -c > $fasta2
+    zcat $fasta | awk '{print \$1}' | bgzip -@ ${params.max_cpus} -c > $fasta2
     samtools faidx $fasta2
   """
 }
@@ -414,7 +417,7 @@ process extractrsname{
 //headplinkf=plinkheadf.collect()
 //
 process MergePlink{
-  cpus params.cpus_max
+  cpus params.max_cpus
   memory params.high_memory
   time   params.big_time
   input :
@@ -423,13 +426,13 @@ process MergePlink{
        val(outputpat)
   publishDir "${outputdir}/", mode:'copy'
   output :
-     set path("${outputpat}.bed"), file("${outputpat}.bim"),file("${outputpat}.fam") into plinkformatf_merge
+    tuple path("${outputpat}.bed"), file("${outputpat}.bim"),file("${outputpat}.fam") 
   script :
        hplk2=lplk.join(',')
        """
        echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |sed '1d'> fileplk
        hplkFirst=`echo $hplk2 | awk -F',' '{for(Cmt=1;Cmt<=NF;Cmt++)print \$Cmt}' | sed 's/\\.[^.]*\$//'  | sort |uniq |head -1`
-       plink --bfile \$hplkFirst --keep-allele-order --threads ${params.cpus_max} --merge-list fileplk --make-bed --out $outputpat
+       plink --bfile \$hplkFirst --keep-allele-order --threads ${params.max_cpus} --merge-list fileplk --make-bed --out $outputpat --allow-extra-chr
        """
 }
 //
@@ -510,7 +513,7 @@ process plink_update_name{
      bfile=bed.baseName
      """
      change_updateidplink.r $fam $data update_id
-     plink -bfile $bfile -make-bed $plink_kao --update-ids update_id -out $out --threads ${params.max_cpus}
+     plink -bfile $bfile -make-bed $plink_kao --update-ids update_id -out $out --threads ${params.max_cpus} --allow-extra-chr
      """
 }
 //

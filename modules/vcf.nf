@@ -1,10 +1,10 @@
-include {list_chro;splitvcf} from './process_vcf.nf'
+include {list_chro;splitvcf;splitvcf2} from './process_vcf.nf'
 workflow getparams {
  take :
   vcf 
   main :
   if(!vcf){
-    vcf=channel.fromPath(params.vcf)
+    vcf=channel.fromPath(params.vcf, checkIfExists:true)
   }
  emit : 
    vcf = vcf
@@ -18,7 +18,8 @@ workflow split_vcf{
   main :
    getparams(vcf)
    list_chro(getparams.out.vcf) 
-   splitvcf(getparams.out.vcf, channel.of(outputdir),channel.of(outputpat))
+   list_chro2=list_chro.out.flatMap { list_str -> list_str.split()}
+   splitvcf2(getparams.out.vcf.combine(list_chro2).combine(channel.of(outputdir)).combine(channel.of(outputpat)))
   emit :
-   vcf=splitvcf.out
+   vcf=splitvcf2.out
 }

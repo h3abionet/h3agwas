@@ -1,5 +1,7 @@
 <img src="../helperfiles/H3ABioNetlogo2.jpg"/>
 
+
+
 # Arguments for Quality Controls `
 
 This section describes the various ways in which the pipeline can be run and various options. Usually options are specified in the _nextflow.config_ file (or which ever file you use). However, you can also pass parameters to the Nextflow script on the command-line. Parameters on the command line over-ride any parameters specified in the config file. If you are a first time user of the pipeline you should read the discussion of the `nextflow.config` file in the parent README.
@@ -138,3 +140,13 @@ Note that one issue that sometimes occurs in analysis is that there may over tim
 ## 7. Overview
 <img src="utils/qc_overview.png" title="overview of qc pipeline">
 
+
+# 2. Deletion and managment of duplicate
+specific part of pipeline to analyse, clean and rename duplicated
+## 1. overview
+using column `col_newfidid`, you define duplicated individual using same names.
+## 2. argument 
+ * `--clean_dup` : [default 1] 
+ * `data` : phenotype file
+  * `col_fidid` : col contained FID and IID, one or two separated by comma [FID,IID]
+  * `col_newfidid` : to defined duplicated col contained FID and IID, one or two separated by comma, ** defined duplicate ** [ID_update]

@@ -28,6 +28,7 @@ include { mtag } from "./mtag/workflow.nf"
 include { ldsc } from "./heritability/workflow.nf"
 include { split_vcf} from "./modules/vcf.nf"
 include { convertvcfin } from "./formatdata/format_vcf.nf"
+include {qc_dup} from './qc/workflow.nf'
 //include { assoc} from "./assoc/assoc.nf"
 //include { assoc} from "./assoc/assoc.nf"
 //nextflow.enable.moduleBinaries = true
@@ -45,10 +46,16 @@ workflow {
   //  exit 1
   //}
   plink_qc=null
+  data=null
   vcf_qc = null
   build_cur=params.build_genome
+  if (params.qc_dup == 1 || params.qc_dup) {
+        qc_dup(plink_qc, data, "${params.output_dir}/dup/")
+        plink_qc=qc_dup.out.plink
+        data=qc_dup.out.data
+  }
   if (params.qc == 1 || params.qc) {
-        qc()
+        qc(plink_qc,data)
         plink_qc=qc.out.plink
   }
   if (params.qc_michigan == 1 || params.qc_michigan) {
@@ -61,13 +68,13 @@ workflow {
   }
   if(params.vcf_split_chro){
     split_vcf(vcf_qc,"${params.output_dir}/vcf/split", params.output)
+    vcf_qc=split_vcf.out.vcf
   }
   if (params.vcf_convertbetwen_build==1 || params.vcf_convertbetwen_build){
-  crossmap_vcf(vcf_qc) 
-  build_cur=params.build_genome_convert
-   vcf_qc = crossmap_vcf.out.vcf
-  }
-
+    crossmap_vcf(vcf_qc) 
+    build_cur=params.build_genome_convert
+    vcf_qc = crossmap_vcf.out.vcf
+ }
  balise_convertvcf=(params.convertvcfinplink==1 || params.convertvcfinbimbam==1)
  if(balise_convertvcf){
    convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output)

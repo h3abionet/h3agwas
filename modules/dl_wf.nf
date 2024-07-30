@@ -14,6 +14,7 @@ workflow dl_fasta_wf {
    fasta_index=null
    fasta_picard=null
    if(build=='' && link=='' && fasta_file==''){
+    println('no build link or fasta in option')
     System.exit(2) 
    }
   if(fasta_file!=''){

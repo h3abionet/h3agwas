@@ -94,12 +94,12 @@ for performing a genome-wide association study
        * discordant sex information
        * SNP QC tasks checking:
    * batch reports
-
        * remove duplicates
        * minor allele frequencies
        * SNP missingness
        * differential missingness
        * Hardy Weinberg Equilibrium deviations
+3. `qc`
 ## Design principles
 
 The goal of the H3ABionet GWAS pipeline is to provide a portable and robust pipeline for reproducble genome-wide association studies.

@@ -9,30 +9,32 @@ include {countChr as countY} from './process.nf'
 
 
 workflow check_params{
- allowed_params= ["AMI","accessKey","batch","batch_col","bootStorageSize","case_control","case_control_col", "chipdescription", "cut_het_high","cut_get_low","cut_maf","cut_mind","cut_geno","cut_hwe","f_hi_female","f_lo_male","cut_diff_miss","cut_het_low", "help","input_dir","input_pat","instanceType","manifest", "maxInstances", "max_plink_cores","high_ld_regions_fname","low_memory","output", "output_align", "output_dir","phenotype","pheno_col","pi_hat", "plink_mem_req","region","reference","samplesheet", "scripts","secretKey","sexinfo_available", "sharedStorageMount","strandreport","work_dir","max_forks","big_time","super_pi_hat","samplesize","idpat","newpat","access-key","secret-key","instance-type","boot-storage-size","max-instances","shared-storage-mount","gemma_num_cores","remove_on_bp","queue","data","pheno","gc10", "build_genome", "autosome_plink", "cut_maf_xfemale", "cut_maf_xmale", "cut_miss_xfemale", "cut_miss_xmale", "cut_diffmiss_x", "chrxx_plink", "chrxy_plink", "chry_plink", "chrm_plink" ,"cut_maf_y", "cut_miss_y", "action", "bfile"]
-/*
- params.each { parm ->
-  if (! allowed_params.contains(parm.key)) {
-        println "Check $parm  ************** is it a valid parameter -- are you using one rather than two - signs or vice-versa";
-   }
-  }
-*/
-  /* check id*/
- fileexist(params.batch)
- if(params.phenotype!="")phenotype=params.phenotype
- else if (params.data)phenotype=params.data
- 
- fileexist(phenotype)
- idfiles = [params.batch,phenotype]
- idfiles.each { checkColumnHeader(it,['FID','IID']) }
-
+ take :
+  data
+  bfile 
+ main : 
+ /* check id*/
   if (workflow.repository)
     wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
   else
     wflowversion="A local copy of the workflow was used"
-
-  phenotype_ch = fileheader_create_ch(phenotype,"pheno",params.pheno_col)
-  batch_ch     = fileheader_create_ch(params.batch,"batch",params.batch_col)
+ if(data){
+  phenotype_ch = data
+ }else {
+   if(params.phenotype!="")phenotype=params.phenotype
+   else if (params.data)phenotype=params.data
+   fileexist(phenotype)
+   idfiles = [params.batch,phenotype]
+   idfiles.each { checkColumnHeader(it,['FID','IID']) }
+   phenotype_ch = fileheader_create_ch(phenotype,"pheno",params.pheno_col)
+ }
+ 
+ if(params.batch!='' || params.batch!='0')batch_ch     = fileheader_create_ch(params.batch,"batch",params.batch_col)
+ else if(params.batch_col!=''){
+   batch_ch=data
+ }else{
+  batch_ch = null
+ }
 
  if (params.case_control) {
   ccfile = params.case_control
@@ -71,14 +73,20 @@ workflow check_params{
    bal_sexinfo=true
  }
 
+if(bfile){
+plink_ch=bfile
+bim_ch=bfile.flatMap{it -> it[2]}
+bim_ch.view()
+
+}else {
  if(params.bfile!=''){
 	inpat=params.bfile
  }else{
 	inpat = "${params.input_dir}/${params.input_pat}"
-
  }
 plink_ch=Channel.fromPath("${inpat}.bed",checkIfExists:true).combine(Channel.fromPath("${inpat}.bim",checkIfExists:true)).combine(Channel.fromPath("${inpat}.fam",checkIfExists:true))
 bim_ch=Channel.fromPath("${inpat}.bim",checkIfExists:true)
+}
 
 
 if (params.idpat ==  "0")
@@ -109,7 +117,6 @@ drawPCA     checkSampleSheet(samplesheet)
   col = col
   sexinfo = sexinfo
   extrasexinfo = extrasexinfo
-  inpat = inpat
   plink_ch = plink_ch
   bim_ch = bim_ch
   sample_sheet_ch= sample_sheet_ch
@@ -119,8 +126,12 @@ drawPCA     checkSampleSheet(samplesheet)
 }
 
 workflow qc {
+ take :                                                                         
+  data                                                                          
+  bfile                                                                         
+ main :
  // check params and take param
- check_params()
+ check_params(data,bfile)
  // compute mdmt
  MD5_in(check_params.out.plink_ch)
  sampleSheet(check_params.out.sample_sheet_ch)
@@ -135,9 +146,6 @@ workflow qc {
  // count x number
  removeDuplicateSNPs.out.plink.view()
  county=countY(removeDuplicateSNPs.out.plink, channel.of(params.chry_plink))
- countxx.map{" xx "+it}.view()
- countxy.map{"xy "+it}.view()
- county.map{"y "+it}.view()  
  // split x in 25 or 23  
  clean_x(removeDuplicateSNPs.out.plink, countX.out, countXY.out)
  cleanx=false
@@ -256,4 +264,41 @@ workflow qc_michigan {
   }
   emit :
     plink = plinkf
+}
+include {clean_phenofile;extract_ind_plink;computed_relatdness;plink_indep;check_rel} from './process_checkduplicate.nf'
+include {computed_relatdness as computed_relatdness_dup} from './process_checkduplicate.nf'
+include {computed_relatdness as computed_relatdness_all} from './process_checkduplicate.nf'
+include {compute_missing as compute_missing_dup} from './process_checkduplicate.nf'
+include {plink_updatename} from './process_checkduplicate.nf'
+
+workflow qc_dup{
+  take :
+     data
+     plink
+     outputdir
+  main :
+   if(plink==null){
+     if(params.bfile!=''){
+        inpat=params.bfile
+     }else{
+        inpat = "${params.input_dir}/${params.input_pat}"
+      }
+     plink=Channel.fromPath("${inpat}.bed",checkIfExists:true).combine(Channel.fromPath("${inpat}.bim",checkIfExists:true)).combine(Channel.fromPath("${inpat}.fam",checkIfExists:true))
+   } 
+     
+  if(data==null){
+    data=channel.fromPath(params.data)
+  }
+  clean_phenofile(data, plink) 
+  extract_ind_plink(plink,clean_phenofile.out.correspond)
+  plink_indep(extract_ind_plink.out.combine(channel.of("${outputdir}/ind/")).combine(channel.of("${params.output}_indeprel")))
+  computed_relatdness_dup(plink_indep.out.plk, channel.of(1).combine(clean_phenofile.out.dup), channel.of(0), channel.of(-1),channel.of("${params.output}_duplicate"))
+  computed_relatdness_all(plink_indep.out.plk, channel.of(1).combine(clean_phenofile.out.dup), channel.of(0), channel.of(0.7), channel.of("${params.output}_full"))
+  compute_missing_dup(plink_indep.out.plk, channel.of(1).combine(clean_phenofile.out.dup),channel.of("${params.output}_duplicate"))
+  check_rel(clean_phenofile.out.correspond, clean_phenofile.out.pheno_i, computed_relatdness_all.out, computed_relatdness_dup.out, compute_missing_dup.out.ind, channel.of(0.7), channel.of("${params.output}_duplicate"), channel.of("$outputdir/checkrel"))
+  plink_updatename(plink, check_rel.out.update_id, channel.of("${params.output}_qcdup"), channel.of("${outputdir}"))
+  emit :
+   data=check_rel.out.pheno
+   plink=plink_updatename.out
+
 }

@@ -68,13 +68,27 @@ process checkfixref{
 process splitvcf {
   input :
     path(vcf)
+    val(outputval)
     val(outputdir)
-    val(output)
   publishDir "${outputdir}/", mode:'copy'
   output :
-   path("output*.vcf.gz")
+   path("outputval*.vcf.gz")
   script :
     """
-    zcat $vcf | split_chrovcf.py $output
+    zcat $vcf | split_chrovcf.py $outputval
     """
+}
+
+process splitvcf2 {
+  input :
+    tuple path(vcf), val(chro),val(outputval) , val(outputdir)                                                              
+  publishDir "${outputdir}/", mode:'copy'                                       
+  output :                                                                      
+   path(outf)                                                    
+  script :                                                                      
+    outf=outputval+"_"+chro+".vcf.gz"
+    """                                                                         
+    zcat $vcf|head -1000| grep "#"|gzip -c > $outf
+    zcat $vcf | awk -v chr=$chro '{if(\$1==chr) print \$0}'|gzip -c >> $outf
+    """                                                                         
 }

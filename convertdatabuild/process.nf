@@ -24,12 +24,16 @@ process  picard_liftover {
  maxRetries 3   
  label 'picard'
  input :
-   tuple path(vcf),path(chain), path(fasta),path(fasta2),val(vcfout), val(outputreject), val(outputdir)
+   tuple path(vcf),path(chain), path(fasta),path(fasta2), val(outputdir)
 publishDir "${outputdir}/",  mode:'copy'
  output :
    path("$vcfout"), emit: vcf
    path("$outputreject"), emit: vcf_error
  script :
+   vcftmp=vcf.baseName
+   vcftmp=vcftmp.replaceAll(/.vcf$/,'')
+   vcfout=vcftmp+'.'+params.build_genome_convert+'.vcf.gz'
+   outputreject=vcfout+'.reject.vcf.gz'
    """
    java -jar ${params.bin_picard} LiftoverVcf  -I $vcf -O $vcfout -CHAIN $chain -REJECT $outputreject -R $fasta --MAX_RECORDS_IN_RAM ${params.picard_max_record}
    """

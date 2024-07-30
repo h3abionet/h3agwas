@@ -10,20 +10,26 @@ workflow getparams{
    vcf
    build
   main :
-   if(vcf==null){
+   if(vcf){
+     println('using vcf from previous process')
+     vcf=vcf
+   }else {
+     println('using vcf from vcf '+params.vcf+' or list_vcf '+params.list_vcf)
+      if(params.vcf!='')vcf=channel.fromPath(params.vcf, checkIfExists:true)
+      if(params.vcf_list!='')vcf=Channel.fromPath(file(params.vcf_list).readLines(), checkIfExists:true)
       if(params.vcf_folder_zip!=''){
          unzip_folder(channel.fromPath(params.vcf_folder_zip,checkIfExists:true))
          vcf=unzip_folder.out.vcf
-     }else {
-        if(params.vcf!='')vcf=channel.fromPath(params.vcf)
-        if(params.vcf_list!='')vcf=Channel.fromPath(file(params.vcf_list).readLines(), checkIfExists:true)
      }
   }
-  dl_fasta_wf(params.fasta, build, params.ftp_fasta, '')
+   fasta=params.fasta
+   if(params.fasta_convert!='')fasta=params.fasta_convert
+  dl_fasta_wf(fasta, build, params.ftp_fasta, '')
  emit :
    vcf=vcf
    fasta_index = dl_fasta_wf.out.fasta_index
    fasta = dl_fasta_wf.out.fasta
+  
 
 }
 workflow convertvcfinplk {
@@ -33,7 +39,7 @@ workflow convertvcfinplk {
      outputdir
      outputpat
   main :
-      convert_inplink(vcf.combine(channel.of("${outputpat}")).combine(channel.of("${outputdir}/plink")))
+      convert_inplink(vcf.combine(channel.of("$outputpat")).combine(channel.of("${outputdir}/plink")).combine(vcf.count()))
       GetRsDup(convert_inplink.out.bim.collect())
       TransformRsDup(GetRsDup.out.combine(convert_inplink.out.bed))
       plink=TransformRsDup.out.plk
@@ -41,10 +47,9 @@ workflow convertvcfinplk {
       AddedCM(plink)
       plink=AddedCM.out.plk
      }
-     /*if(convert_inplink.out.bim.count().toInteger()>1) {
-        MergePlink(plink.collect(), channel.of("${outputdir}/plink"), channel.of("${outputpat}_clean"))
-        plink = MergePlink.out
-     }*/
+    /**/
+    MergePlink(plink.collect(), channel.of("${outputdir}/plink"), channel.of("${outputpat}_clean"))
+    plink = MergePlink.out
      if(params.data!=""){
         check_names_plkconvert(plink, channel.fromPath(params.data, checkIfExists:true))
        plink = check_names_plkconvert.out
@@ -61,6 +66,7 @@ workflow convertvcfin{
      outputdir
      outputpat
   main :
+    vcf.view()
     getparams(vcf, build)
     if(params.convertvcf_stat){
      computedstat(getparams.out.vcf)
@@ -69,7 +75,7 @@ workflow convertvcfin{
      }
     clean_vcf(getparams.out.vcf.combine(getparams.out.fasta).combine(channel.of(params.cut_maf)).combine(channel.of(params.cut_hwe)).combine(channel.of(params.vcf_minscoreimp)).combine(channel.of(params.vcf_cut_miss)).combine(channel.of("$outputdir/cleanvcf")))
     if(params.convertvcfinplink==1) {
-     convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat)
+    convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat)
     }
  }
 
