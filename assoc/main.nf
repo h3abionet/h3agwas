@@ -1843,7 +1843,7 @@ if(params.saige==1){
       zcat $vcf |head -1000 |grep "#"| tail -1|awk '{for(Cmt=10;Cmt<=NF;Cmt++)print \$Cmt}' > fileind
       awk '{print \$1"\t"\$1}' fileind > keep
       format_saige_pheno.r --data $covariates --ind_vcf fileind --out ${covariates_form} --pheno ${params.pheno}  --pheno_bin ${params.pheno_bin}
-      awk '{if( \$1 ~ /^[0-9+]\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
+      awk '{if( \$1 ~ /^[0-9]+\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
       plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid" --keep keep --allow-extra-chr --extract range keep.range
       """
    }
@@ -1864,7 +1864,7 @@ if(params.saige==1){
       indnbgen=(params.bgen!='') ? "--ind_bgen $bgensample" : ""
       """
       format_saige_pheno.r --data $covariates $indnbgen --out ${covariates_form}  --pheno ${params.pheno}  --pheno_bin ${params.pheno_bin}
-      awk '{if( \$0 ~ /^[0-9+]\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
+      awk '{if( \$0 ~ /^[0-9]+\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
       plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid" --extract range keep.range
       """
    }
