@@ -23,9 +23,12 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 out=opt[['out']]
+#opt=list(data="allcancer.changename.tsv",bfile="allind_tmp",out="clean_dup",col_fidid="FID,IID",col_newfidid="IID_update")
 
-Data<-read.table(opt[['data']],header=T)
+Data<-unique(read.table(opt[['data']],header=T))
 fam<-read.table(paste(opt[['bfile']], '.fam',sep=''))
+fam$V1<-as.character(fam$V1)
+fam$V2<-as.character(fam$V2)
 
 splfid=strsplit(opt[['col_fidid']],split=',')[[1]]
 checkhead(splfid, names(Data), opt[['data']])
@@ -51,8 +54,9 @@ exit(4)
 }
 error<-NewData[!good,]
 write.csv(error, file=paste(out,'_phenoind_notfound.csv',sep=''),row.names=F)
-good<- paste(fam$V1,fam$V2) %in% paste(NewData$FID,NewData$IID) 
-errorfam<-fam[!good,]
+
+good_fam<- paste(fam$V1,fam$V2) %in% paste(NewData$FID,NewData$IID) 
+errorfam<-fam[!good_fam,]
 write.csv(errorfam, file=paste(out,'_fam_notfound.csv',sep=''), row.names=F)
 
 NewData<-NewData[good,]
@@ -63,4 +67,8 @@ iddup<-names(tbiidupdate[tbiidupdate>1])
 NewData_dup<-NewData[iidupdate %in% iddup,c('FID','IID', 'FID_update','IID_update')]
 write.table(NewData[,c('FID','IID', 'FID_update','IID_update')], file=paste(out,'.corname',sep=''), row.names=F, col.names=F, sep='\t', quote=F)
 write.table(NewData, file=paste(out,'.update',sep=''), row.names=F, col.names=T, sep='\t', quote=F)
+if(nrow(NewData[iidupdate %in% iddup,])==0){
+cat('no individuals duplicate exit\n')
+quit(save = "no", status = 1, runLast = FALSE)
+}
 write.table(NewData[iidupdate %in% iddup,c('FID','IID', 'FID_update','IID_update')], file=paste(out,'.dup',sep=''), row.names=F, col.names=F, sep='\t',quote=F)

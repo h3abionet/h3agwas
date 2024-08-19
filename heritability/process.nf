@@ -57,13 +57,16 @@ process doLDSC{
     path(dirredld)
     val(outputdir)
     val(outpat)
+    each pos 
   publishDir "${outputdir}/", mode:'copy'
   output :
     file("$outpat"+".log")
   script : 
-    listfil=listfilegwas.join(',')
-    outpat = "${outpat}_ldsc_mc"
+    file1=listfilegwas[pos[0]]                                                 
+    file2=listfilegwas[pos[1]]      
+    listfile=file1+','+file2
+    outpat = "${file2}_${file1}.cor"
     """
-    ${params.bin_ldsc} --rg $listfil --ref-ld-chr $dirredld/ --w-ld-chr  $dirredld/ --out  $outpat ${params.ldsc_h2opt}
+    ${params.bin_ldsc} --rg $listfile --ref-ld-chr $dirredld/ --w-ld-chr  $dirredld/ --out  $outpat ${params.ldsc_h2opt}
     """
   }

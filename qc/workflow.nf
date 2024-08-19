@@ -13,32 +13,37 @@ workflow check_params{
   data
   bfile 
  main : 
+  filescript=file(workflow.scriptFile)                                            
+  projectdir="${filescript.getParent()}" 
  /* check id*/
   if (workflow.repository)
     wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
   else
     wflowversion="A local copy of the workflow was used"
+ if(params.pheno_col!='')pheno_col=params.pheno_col
+ if(params.pheno!='')pheno_col=params.pheno
  if(data){
   phenotype_ch = data
  }else {
    if(params.phenotype!="")phenotype=params.phenotype
-   else if (params.data)phenotype=params.data
+   else if (params.data!='')phenotype=params.data
    fileexist(phenotype)
    idfiles = [params.batch,phenotype]
    idfiles.each { checkColumnHeader(it,['FID','IID']) }
-   phenotype_ch = fileheader_create_ch(phenotype,"pheno",params.pheno_col)
+   phenotype_ch = fileheader_create_ch(phenotype,"pheno",pheno_col)
  }
  
- if(params.batch!='' || params.batch!='0')batch_ch     = fileheader_create_ch(params.batch,"batch",params.batch_col)
+ if(params.batch!='' && params.batch!='0')batch_ch     = fileheader_create_ch(params.batch,"batch",params.batch_col)
  else if(params.batch_col!=''){
-   batch_ch=data
+   batch_ch=phenotype_ch
  }else{
-  batch_ch = null
+  batch_ch = Channel.fromPath("$projectdir/assets/NO_FILE_4")
  }
-
+ println(params.batch)
+ diffpheno = ""
  if (params.case_control) {
   ccfile = params.case_control
-  cc_ch = Channel.fromPath(ccfile)
+  cc_ch = Channel.fromPath(ccfile,checkIfExists:true)
   col    = params.case_control_col
   diffpheno = "--pheno cc.phe --pheno-name $col"
   if (params.case_control.toString().contains("s3://") || params.case_control.toString().contains("az://")) {
@@ -52,13 +57,18 @@ workflow check_params{
       fields = line.split()
       if (! fields.contains(params.case_control_col))
           error("\n\nThe file <${params.case_control}> given for <params.case_control> does not have a column <${params.case_control_col}>\n")
+     }
+   } else {
+     if(params.case_control_col!=''){
+       col    = params.case_control_col
+       diffpheno = "--pheno cc.phe --pheno-name $col"
+       cc_ch=phenotype_ch
+     }else{
+       col = ""
+       cc_ch  = Channel.fromPath("$projectdir/assets/NO_FILE",checkIfExists:true)
     }
-
- } else {
-  diffpheno = ""
-  col = ""
-  cc_ch  = Channel.fromPath('00')
  }
+
 
 
  if (params.sexinfo_available) {
@@ -74,10 +84,8 @@ workflow check_params{
  }
 
 if(bfile){
-plink_ch=bfile
-bim_ch=bfile.flatMap{it -> it[2]}
-bim_ch.view()
-
+  plink_ch=bfile
+  bim_ch=bfile.flatMap{it -> it[1]}
 }else {
  if(params.bfile!=''){
 	inpat=params.bfile
@@ -95,15 +103,15 @@ else
     idpat   = params.idpat
 
  if (is_nullfile(params.samplesheet)){
-     samplesheet = "0"
-     sample_sheet_ch = channel.fromPath(samplesheet).combine(channel.of(0)).combine(channel.of(idpat))
+     samplesheet = "$projectdir/assets/NO_FILE_3"
+     sample_sheet_ch = channel.fromPath(samplesheet,checkIfExists:true).combine(channel.of(0)).combine(channel.of(idpat))
  }else {
       samplesheet = params.samplesheet
-drawPCA     checkSampleSheet(samplesheet)
-     sample_sheet_ch = channel.fromPath(samplesheet).combine(channel.of(1)).combine(channel.of(idpat))
+   checkSampleSheet(samplesheet)
+     sample_sheet_ch = channel.fromPath(samplesheet,checkIfExists:true).combine(channel.of(1)).combine(channel.of(idpat))
  }
 
-
+ if(params.high_ld_regions_fname != "")   ldreg_ch=Channel.fromPath(params.high_ld_regions_fname,  checkIfExists:true) else ldreg_ch = Channel.fromPath("$projectDir/assets/NO_FILE",   checkIfExists:true)
 
   remove_on_bp    = channel.of(params.remove_on_bp)
   // todo check value
@@ -111,7 +119,8 @@ drawPCA     checkSampleSheet(samplesheet)
  emit :
   wflowversion = wflowversion
   phenotype_ch = phenotype_ch
-  diffpheno = diffpheno
+  pheno_col = pheno_col
+  diffpheno = channel.of(diffpheno)
   batch_ch = batch_ch
   cc_ch = cc_ch
   col = col
@@ -123,12 +132,14 @@ drawPCA     checkSampleSheet(samplesheet)
   remove_on_bp = remove_on_bp
   bal_sexinfo = bal_sexinfo
   pi_hat = pi_hat
+ldreg_ch = ldreg_ch
 }
 
 workflow qc {
  take :                                                                         
   data                                                                          
   bfile                                                                         
+  outputdir
  main :
  // check params and take param
  check_params(data,bfile)
@@ -144,7 +155,6 @@ workflow qc {
  // count xy number
  countxy=countXY(removeDuplicateSNPs.out.plink, channel.of(params.chrxy_plink))
  // count x number
- removeDuplicateSNPs.out.plink.view()
  county=countY(removeDuplicateSNPs.out.plink, channel.of(params.chry_plink))
  // split x in 25 or 23  
  clean_x(removeDuplicateSNPs.out.plink, countX.out, countXY.out)
@@ -171,8 +181,7 @@ workflow qc {
  //
  compPCA(removeQCPhase1.out.plink)
  drawPCA(compPCA.out.eigen, check_params.out.cc_ch, check_params.out.col, check_params.out.diffpheno)
- if(params.high_ld_regions_fname != "")   ldreg_ch=Channel.fromPath(params.high_ld_regions_fname,  checkIfExists:true) else ldreg_ch = Channel.fromPath("$projectDir/assets/NO_FILE",   checkIfExists:true)
- pruneForIBDLD(removeQCPhase1.out.plink, ldreg_ch, check_params.out.sexinfo, check_params.out.pi_hat)
+ pruneForIBDLD(removeQCPhase1.out.plink, check_params.out.ldreg_ch, check_params.out.sexinfo, check_params.out.pi_hat)
  // why function used  previous  remove duplicate miss?
  findRelatedIndiv(removeDuplicateSNPs.out.imiss,pruneForIBDLD.out)
  calculateSampleHeterozygosity(removeQCPhase1.out.plink, check_params.out.sexinfo)
@@ -203,7 +212,7 @@ workflow qc {
  calculateMaf(removeSkewSnps.out, check_params.out.sexinfo) | generateMafPlot
  calculateSnpSkewStatus.out.hwe | findHWEofSNPs | generateHwePlot
  MD5_out(cleanandmerge_y.out.plk_log)
- batchProc(compPCA.out.eigen, identifyIndivDiscSexinfo.out.stat, check_params.out.phenotype_ch, check_params.out.batch_ch,pruneForIBDLD.out, x_analy_res_ch,findRelatedIndiv.out, check_params.out.extrasexinfo)
+ batchProc(compPCA.out.eigen, identifyIndivDiscSexinfo.out.stat, check_params.out.phenotype_ch, check_params.out.batch_ch,pruneForIBDLD.out, x_analy_res_ch,findRelatedIndiv.out, check_params.out.extrasexinfo, check_params.out.pheno_col)
  produceReports(
       removeDuplicateSNPs.out.dups,
       cleanandmerge_y.out.plk_log,

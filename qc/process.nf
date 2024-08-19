@@ -169,7 +169,7 @@ process getDuplicateMarkers {
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
 
-  publishDir "${params.output_dir}/snps/duplicate_marker", pattern: "*dups", \
+  publishDir "${params.output_dir}/qc/snps/duplicate_marker", pattern: "*dups", \
              overwrite:true, mode:'copy'
   input:
     path(inpfname) 
@@ -333,7 +333,7 @@ process identifyIndivDiscSexinfo {
   input:
      path(plinks) 
 
-  publishDir "${params.output_dir}/samples/sexinfo", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/qc/samples/sexinfo", overwrite:true, mode:'copy'
   output:
      path(logfile), emit : log
      tuple path(imiss), path(lmiss),path(sexcheck_report), emit : stat
@@ -369,7 +369,7 @@ process generateSnpMissingnessPlot {
 
   input:
       path(lmissf)
-  publishDir "${params.output_dir}/snps/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/qc/snps/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
      path(output) 
   script:
@@ -388,7 +388,7 @@ process generateIndivMissingnessPlot {
 
   input:
       path(imissf) 
-  publishDir "${params.output_dir}/samples/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/qc/samples/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     path(output) 
   script:
@@ -457,7 +457,7 @@ process removeQCPhase1 {
   input:
     tuple path(bed), path(bim), path(fam) 
     val(sexinfo)
-  publishDir "${params.output_dir}/phase1/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/qc/phase1/", overwrite:true, mode:'copy'
   output:
     path("${outputmiss}*.{bed,bim,fam}"), emit : plink
     tuple path("qc1.out"), path("${outputmiss}.irem"), emit : log
@@ -496,7 +496,7 @@ process compPCA {
    output:
       tuple path("${prune}.eigenval"), path("${prune}.eigenvec"), emit:eigen
       tuple path ("${prune}.bed"), path("${prune}.bim"), path("${prune}.fam"), emit : plink_prune
-   publishDir "${params.output_dir}/pca", overwrite:true, mode:'copy',pattern: "${prune}*"
+   publishDir "${params.output_dir}/qc/pca", overwrite:true, mode:'copy',pattern: "${prune}*"
    script:
       base = plinks[0].baseName
       prune= "${base}-prune".replace(".","_")
@@ -512,21 +512,19 @@ process drawPCA {
    memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 3
-
-    input:
+   input:
       tuple path(eigvals), path(eigvecs) 
       path(cc) 
       val(col) 
       val(diffpheno) 
-
-    output:
-      tuple  path ("eigenvalue.pdf"), path(output) 
-    publishDir "${params.output_dir}/pca/", overwrite:true, mode:'copy',pattern: "*.pdf"
-    script:
+   output:
+      tuple  path ("eigenvalue.pdf"), path(outputval) 
+   publishDir "${params.output_dir}/qc/pca/", overwrite:true, mode:'copy',pattern: "*.pdf"
+   script:
       base=eigvals.baseName
-      cc_fname = params.case_control
+      cc_fname = params.case_control_col
       // also relies on "col" defined above
-      output="${base}-pca".replace(".","_")+".pdf"
+      outputval="${base}-pca".replace(".","_")+".pdf"
       template "drawPCA.py"
 
 }
@@ -545,7 +543,7 @@ process drawPCA {
       path(ldreg)  
       val(sexinfo)
       val(pi_hat)
-    publishDir "${params.output_dir}/samples/ibd", overwrite:true, mode:'copy'
+    publishDir "${params.output_dir}/qc/samples/ibd", overwrite:true, mode:'copy'
     output:
       path("${outf}.genome") 
     script:
@@ -571,7 +569,7 @@ process findRelatedIndiv {
      path(ibd_genome) 
   output:
      path(outfname) 
-  publishDir "${params.output_dir}/samples/relatdness", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/qc/samples/relatdness", overwrite:true, mode:'copy'
   script:
      super_pi_hat = params.super_pi_hat
      pi_hat = params.pi_hat
@@ -591,7 +589,7 @@ process calculateSampleHeterozygosity {
       path(nodups) 
       val(sexinfo)
 
-   publishDir "${params.output_dir}/samples/heterozygoty", overwrite:true, mode:'copy'
+   publishDir "${params.output_dir}/qc/samples/heterozygoty", overwrite:true, mode:'copy'
    output:
       tuple path("${hetf}.het"), path("${hetf}.imiss"), emit: hetmiss
       path("${hetf}.imiss"), emit: imiss
@@ -611,7 +609,7 @@ process generateMissHetPlot {
    maxRetries 3
   input:
     tuple path(het), path(imiss) 
-  publishDir "${params.output_dir}/samples/heterozygoty", overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/qc/samples/heterozygoty", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     path(output)
   script:
@@ -632,7 +630,7 @@ process getBadIndivsMissingHet {
     tuple path(het), path(imiss) 
   output:
     path(outfname) 
-  publishDir "${params.output_dir}/samples/heterozygoty", overwrite:true, mode:'copy', pattern: "*.txt"
+  publishDir "${params.output_dir}/qc/samples/heterozygoty", overwrite:true, mode:'copy', pattern: "*.txt"
   script:
     base = het.baseName
     outfname = "${base}-fail_het".replace(".","_")+".txt"
@@ -697,6 +695,9 @@ process calculateSnpSkewStatus {
     if ! [ -e $mperm ]; then
        echo "$mperm_header" > $mperm
     fi
+    if ! [ -e ${base}.missing ]; then
+       echo "CHR        CHR F_MISS_A    F_MISS_U    P" > ${base}.missing 
+    fi
 
    """
 }
@@ -709,7 +710,7 @@ process generateDifferentialMissingnessPlot {
 
    input:
      path(clean_missing) 
-   publishDir "${params.output_dir}/snps/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
+   publishDir "${params.output_dir}/qc/snps/missingness", overwrite:true, mode:'copy', pattern: "*.pdf"
    output:
       path(output) 
    script:
@@ -810,7 +811,7 @@ process computed_stat_female_x {
   maxRetries 3
   input :
    tuple path(bed), path(bim), path(fam) 
-  publishDir "${params.output_dir}/qcX/female", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/qc/qcX/female", overwrite:true, mode:'copy'
   output :
     tuple path("${output}.frq"), path("${output}.hwe"), path("${output}.imiss"),  path("${output}.lmiss") 
   script :
@@ -828,7 +829,7 @@ process computed_stat_male_x {
 
   input :
    tuple path(bed), path(bim), path(fam) 
-  publishDir "${params.output_dir}/qcX/male", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/qc/qcX/male", overwrite:true, mode:'copy'
   output :
     tuple path("${output}.frq"), path("${output}.imiss"),  path("${output}.lmiss")
   script :
@@ -843,7 +844,7 @@ process report_export_x {
     input :
       tuple path(frqmale),  path(maleimiss),  path(malelmiss) 
       tuple path(frqfem), path(femhwe), path(femimiss),  path(femlmiss) 
-      publishDir "${params.output_dir}/qcX/"
+      publishDir "${params.output_dir}/qc/qcX/"
       output :
 	     path("${output}.tex"), emit : report
 	     path("${output}.in"), emit : listsnps
@@ -866,7 +867,7 @@ process report_export_x {
    tuple path(bed), path(bim), path(fam), path(log) 
    tuple path(bedx), path(bimx), path(famx) 
    path(snpsx) 
-  publishDir "${params.output_dir}/cleanandmergex/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/qc/cleanandmergex/", overwrite:true, mode:'copy'
   output :
    tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log") 
   script :  
@@ -898,7 +899,7 @@ process clean_y {
 	   tuple path(bed), path(bim), path(fam)
            path(listind) 
            val(county)
-  publishDir "${params.output_dir}/qcY/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/qc/qcY/", overwrite:true, mode:'copy'
   output :
             tuple path("${outputy}.bed"), path("${outputy}.bim"), path("${outputy}.fam"), emit : plky_qc
             tuple path("${outputy}.lmiss"),  path("${outputy}.imiss"), path("${outputy}.frq"), emit : stat_qc
@@ -930,7 +931,7 @@ process cleanandmerge_y {
            tuple path(bed), path(bim), path(fam), path(log) 
            tuple path(bedy), path(bimy), path(famy) 
            val(county)
-          publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
+          publishDir "${params.output_dir}/qc/", overwrite:true, mode:'copy'
           output :
            tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), path("${output}.log"), emit : plk_log
            tuple  path("${output}.bed"),path("${output}.bim"),path("${output}.fam"), emit : plk
@@ -956,7 +957,7 @@ process build_reporty{
            input :
             tuple path(lmiss),  path(imiss), path(frq)
             val(county)
-          publishDir "${params.output_dir}/qcY/", overwrite:true, mode:'copy'
+          publishDir "${params.output_dir}/qc/qcY/", overwrite:true, mode:'copy'
           output :
              path("${output}.tex") , emit : report
              path("${output}.in"), emit : listsnps
@@ -991,7 +992,7 @@ process calculateMaf {
     tuple  path(bed), path(bim), path(fam), path(log) 
     val(sexinfo)
 
-  publishDir "${params.output_dir}/snps/maf", overwrite:true, mode:'copy', pattern: "*.frq"
+  publishDir "${params.output_dir}/qc/snps/maf", overwrite:true, mode:'copy', pattern: "*.frq"
 
   output:
     path("${base}.frq") 
@@ -1013,7 +1014,7 @@ process generateMafPlot {
 
   input:
     path(input) 
-  publishDir "${params.output_dir}/snps/maf", overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/qc/snps/maf", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     path(output) 
   script:
@@ -1050,7 +1051,7 @@ process generateHwePlot {
   maxRetries 3
   input:
     path(unaff) 
-  publishDir "${params.output_dir}/snps/hwe", overwrite:true, mode:'copy', pattern: "*.pdf"
+  publishDir "${params.output_dir}/qc/snps/hwe", overwrite:true, mode:'copy', pattern: "*.pdf"
   output:
     path(output) 
   script:
@@ -1077,7 +1078,8 @@ process batchProc {
     path(pkl)   
     path(rem_indivs) 
     val(extrasexinfo)
-  publishDir "${params.output_dir}/batch", pattern: "*{csv,pdf}", \
+    val(pheno_col)
+  publishDir "${params.output_dir}/qc/batch", pattern: "*{csv,pdf}", \
              overwrite:true, mode:'copy'
   output:
       path("${base}-batch.tex"),      emit : report_batch_report_ch
@@ -1089,7 +1091,7 @@ process batchProc {
     batch_col = params.batch_col
     f_hi_female = params.f_hi_female                                        
     f_lo_male = params.f_lo_male           
-    pheno_col = params.pheno_col
+    pheno_col = pheno_col
     pi_hat = params.pi_hat
     super_pi_hat=params.super_pi_hat
     template "batchReport.py"
@@ -1127,7 +1129,7 @@ process produceReports {
     tuple path(bpdfs), path(bcsvs)
     path(qcx)
     path(qcy) 
-  publishDir params.output_dir, overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/qc", overwrite:true, mode:'copy'
   output:
     path("${base}.pdf") 
    script:

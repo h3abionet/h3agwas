@@ -102,7 +102,9 @@ allpheno$FID_previous<-allpheno$FID
 allpheno$IID_previous<-allpheno$IID
 allpheno$FID<-allpheno$FID_update
 allpheno$IID<-allpheno$IID_update
-write.table(allpheno, file=paste(opt[['out']],'.pheno',sep=''),  row.names=F, col.names=T, quote=F,sep='\t')
+tmporder<-names(allpheno)
+lishead=c('FID','IID',tmporder[!(tmporder %in% c('FID','IID'))])
+write.table(allpheno[,lishead], file=paste(opt[['out']],'.pheno',sep=''),  row.names=F, col.names=T, quote=F,sep='\t')
 }
 
 ##

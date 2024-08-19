@@ -3,7 +3,7 @@ process clean_phenofile {
   label 'R'
   input :
     path(data)
-    tuple path(bed), path(fam), path(bim)
+    tuple path(bed), path(bim), path(fam)
   output :
     path("${out}.dup"), emit : dup
     path("${out}.corname"), emit : correspond
@@ -19,7 +19,7 @@ process clean_phenofile {
 
 process extract_ind_plink{
   input :
-    tuple path(bed), path(fam), path(bim)
+    tuple path(bed), path(bim), path(fam)
     path(keep)
   output :
     tuple path("${out}.bed"), path("${out}.bim"), path("${out}.fam")
@@ -33,7 +33,7 @@ process extract_ind_plink{
 
 process plink_indep{
   input :
-    tuple path(bed), path(fam), path(bim), val(outputdir), val(out)
+    tuple path(bed), path(bim), path(fam), val(outputdir), val(out)
   output :
    tuple path("${out}.prune.in"), emit : list_pos
    tuple path("${out}.bed"), path("${out}.bim"), path("${out}.fam"), emit : plk
@@ -47,7 +47,7 @@ process plink_indep{
 
 process computed_relatdness {
    input :
-     tuple path(bed), path(fam), path(bim)
+     tuple path(bed), path(bim), path(fam)
      tuple val(isfileind),path(fileind)
      val(full)
      val(minrel)
@@ -67,7 +67,7 @@ process computed_relatdness {
 
 process compute_missing{
   input :
-     tuple path(bed), path(fam), path(bim)
+     tuple path(bed), path(bim), path(fam)
      tuple val(isfileind),path(fileind)
      val(out)
   output :
@@ -107,7 +107,7 @@ process check_rel {
 
 process plink_updatename {
  input :
-   tuple path(bed), path(fam), path(bim)                                      
+   tuple path(bed), path(bim), path(fam)                                      
    path(fileupdate)
    val(out)
    val(outputdir)

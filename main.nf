@@ -50,12 +50,12 @@ workflow {
   vcf_qc = null
   build_cur=params.build_genome
   if (params.qc_dup == 1 || params.qc_dup) {
-        qc_dup(plink_qc, data, "${params.output_dir}/dup/")
+        qc_dup(data, plink_qc, "${params.output_dir}/dup/")
         plink_qc=qc_dup.out.plink
         data=qc_dup.out.data
   }
   if (params.qc == 1 || params.qc) {
-        qc(plink_qc,data)
+        qc(data, plink_qc, "${params.output_dir}/qc/")
         plink_qc=qc.out.plink
   }
   if (params.qc_michigan == 1 || params.qc_michigan) {

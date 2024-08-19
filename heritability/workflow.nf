@@ -30,5 +30,14 @@ workflow ldsc {
   listnmunge=listn.combine(mungekeep)
   munge_sumstat(listnmunge.combine(channel.of("$outputdir/sumstat_mumge/")))
   doLDSC(munge_sumstat.out.sumstat.combine(Channel.fromPath("${params.dir_ref_ld_chr}/")).combine(channel.of("$outputdir/ldsc_h2/")))
-  DoCorrLDSC(munge_sumstat.out.sumstat.collect(), Channel.fromPath("${params.dir_ref_ld_chr}/"), channel.of("$outputdir/ldsc_h2/"),channel.of("${params.output}_h2r2"))
+  /**/
+  list_file2by2=[]                                                                
+  nbfile=params.file_gwas.split(',').size()                                                      
+  for (i = 0; i <(nbfile-1); i++){                                                
+   for( j = i+1; j<nbfile; j++){                                                
+      list_file2by2.add([i, j])                                                 
+  }                                                                               
+  }
+  listfile=munge_sumstat.out.sumstat.collect()
+  DoCorrLDSC(listfile,Channel.fromPath("${params.dir_ref_ld_chr}/"),channel.of("$outputdir/ldsc_h2/"),channel.of("${params.output}_h2r2"),channel.from(list_file2by2))
 }
