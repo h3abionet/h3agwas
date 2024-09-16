@@ -111,7 +111,8 @@ outhead=gopt('out')
 version<-2
 
 datagwascat=read.csv(opt[['gwascat']])
-datagwas<-fread(opt[['gwas']], header=T);gsub('#','',names(datagwas)<-gsub('-','.',names(datagwas)))
+print(opt[['gwas']])
+datagwas<-fread(opt[['gwas']])##print(names(datagwas));gsub('#','',names(datagwas)<-gsub('-','.',names(datagwas)))
 if(!is.null(headaf))checkhead(headaf, datagwas,'af')
 if(!is.null(headbeta) & !is.null(headse)){
 checkhead(headbeta, datagwas,'beta')

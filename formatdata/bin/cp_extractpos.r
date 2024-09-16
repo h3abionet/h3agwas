@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 library("optparse")
+library(data.table)
 GetSep<-function(x){
 listsep=c(',', ' ', '\t')
 listsepnum<-c('COM', 'SPA', 'TAB')
@@ -40,11 +41,19 @@ BpHead=args[['head_bp']]
 RsHead=args[['head_rs']]
 
 #Data<-read.table('gwas_catalog.tsv', header=T, sep='\t', comment.char="",quote="")
-Data<-read.table(FileI, header=T,sep=Sep,comment.char="", quote="", stringsAsFactors=F)
-Data2<-Data[, c(ChrHead,BpHead,RsHead)];names(Data2)<-c('Chr', 'Pos', 'rsid')
-
-Tmp<-Data[ , c(ChrHead,BpHead,BpHead,RsHead)];names(Tmp)<-c('Chr', 'PosBegin', 'PosEnd', 'rsid')
-ListRs<-unlist(unlist(strsplit(Tmp[,'rsid'],split=';')))
+#Data<-read.table(FileI, header=T,sep=Sep,comment.char="", quote="", stringsAsFactors=F)
+Data<-fread(FileI, header=T,sep=Sep, quote="", stringsAsFactors=F)
+print(head(Data))
+headall<-c(ChrHead,BpHead,RsHead)
+Data2<-Data[, ..headall];names(Data2)<-c('Chr', 'Pos', 'rsid')
+print(names(Data2))
+Data$Chr<-Data[[ChrHead]]
+Data$PosBegin<-Data[[BpHead]]
+Data$PosEnd<-Data[[BpHead]]
+Data$rsid<-Data[[RsHead]]
+tmp2<-c('Chr', 'PosBegin', 'PosEnd', 'rsid')
+Tmp<-Data[ , ..tmp2]
+ListRs<-unlist(unlist(strsplit(Tmp[['rsid']],split=';')))
 writeLines(ListRs, con=FileOutRs)
 #Tmp$Chr<-as.character(Tmp$Chr)
 #bal=grep('chr',Tmp$Chr, invert=T)
@@ -60,7 +69,7 @@ PosEnd<-sapply(strsplit(as.character(Data2$Pos),split=";"),function(x){
 max(as.integer(x), na.rm=T)
 })
 Chr<-sapply(strsplit(as.character(Data2$Chr),split=";"),function(x){
-Un<-unique(x[as.integer(x)>0])
+Un<-unique(x[as.integer(gsub('chr','',x))>0])
 if(length(Un)==1)return(Un)
 else return(NA)
 }

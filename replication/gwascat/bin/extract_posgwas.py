@@ -57,6 +57,7 @@ args=parseArguments()
 read_gwas=open(args.gwas)
 gwashead=read_gwas.readline().replace('\n','')
 gwasspl=gwashead.split()
+gwashead="\t".join(gwasspl)
 
 chrgwas=gwasspl.index(args.chr_gwas)
 posgwas=gwasspl.index(args.ps_gwas)

@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 library("optparse")
+library(data.table)
 GetSep<-function(x){
 listsep=c(',', ' ', '\t')
 listsepnum<-c('COM', 'SPA', 'TAB')
@@ -44,17 +45,17 @@ BpHead=args[['head_bp']]
 RsHead=args[['head_rs']]
 
 
-Data<-read.table(FileI, header=T,sep=Sep,comment.char="", quote="", stringsAsFactors=F)
+Data<-fread(FileI, header=T,sep=Sep, quote="", stringsAsFactors=F)
 HeaderI<-strsplit(gsub('\n','',readLines(FileI, 1)),split=Sep)[[1]]
 names(Data)<-HeaderI
 
-PosBegin<-sapply(strsplit(as.character(Data[,BpHead]),split=";"),function(x){
+PosBegin<-sapply(strsplit(as.character(Data[,..BpHead]),split=";"),function(x){
 min(as.integer(x,na.rm=T))
 })
-PosEnd<-sapply(strsplit(as.character(Data[,BpHead]),split=";"),function(x){
+PosEnd<-sapply(strsplit(as.character(Data[,..BpHead]),split=";"),function(x){
 max(as.integer(x), na.rm=T)
 })
-Chr<-sapply(strsplit(as.character(Data[,ChrHead]),split=";"),function(x){
+Chr<-sapply(strsplit(gsub('chr','',as.character(Data[,..ChrHead])),split=";"),function(x){
 Un<-unique(x[as.integer(x)>0])
 if(length(Un)==1)return(Un)
 else return(NA)
@@ -83,7 +84,7 @@ DataM<-merge(merge(Data,DataRs,by.x=RsHead,by.y="Rs", all=T),DataCrossMap, by.x=
 DataNotFound<-DataM[(is.na(DataM$ChroNewCM) & is.na(DataM$ChroNewRs)),]
 write.table(DataNotFound, file=paste(args[['out']],".notfound.tsv", sep='') ,sep='\t', row.names=F, col.names=T)
 DataM<-DataM[!(is.na(DataM$ChroNewCM) & is.na(DataM$ChroNewRs)),]
-write.table(DataM, file=paste(args[['out']],".detail.tsv", sep='') ,row.names=F, sep='\t',  col.names=T)
+write.table(DataM, file=paste(args[['out']],".detail.tsv", sep='') ,row.names=F, sep='\t',  col.names=T, sep='\t')
 
 DataM$ChroNew<-as.character(DataM$ChroNewRs)
 DataM$PosBeginNew<-DataM$PosNewRs
@@ -98,9 +99,10 @@ tmpsup1<-table(DataM$Num)
 tmpsup1<-as.integer(names(tmpsup1[tmpsup1>1]))
 DataMMulti<-DataM[DataM$Num %in% tmpsup1,]
 DataM<-DataM[!(DataM$Num %in% tmpsup1),]
-DataM<-DataM[!is.na(DataM$ChroNew) ,!(names(DataM) %in% c("Num", "ChroNewCM","PosDebNewCM","PosFinNewCM","ChroNewRs","PosNewRs"))]
+headall=names(DataM)[!(names(DataM) %in% c("Num", "ChroNewCM","PosDebNewCM","PosFinNewCM","ChroNewRs","PosNewRs"))]
+DataM<-DataM[!is.na(DataM$ChroNew) ,..headall]
 
-write.table(DataM , sep="\t", row.names=F,col.names=T,file=paste(args[['out']],".tsv", sep='') )
-write.table(DataMMulti, sep="\t", row.names=F,col.names=T,file=paste(args[['out']],".multi.tsv", sep='') )
+write.table(DataM , sep="\t", row.names=F,col.names=T,file=paste(args[['out']],".tsv", sep='') ,quote=F, sep='\t')
+write.table(DataMMulti, sep="\t", row.names=F,col.names=T,file=paste(args[['out']],".multi.tsv", sep='') ,quote=F, sep='\t')
 
 

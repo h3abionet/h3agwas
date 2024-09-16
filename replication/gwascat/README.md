@@ -117,5 +117,3 @@ z values defined as beta / se
 * process computed\_clump\_stat : computed statistics using clump function from plink
 * process build\_ldwind
 * process computed\_ldwind\_stat
-
-

@@ -1884,7 +1884,8 @@ if(params.saige==1){
                           --pheno ${params.pheno} --phe_out ${phef}  --form_out 2 --nona 1
       """
   }
-  covariable_saige=regenieCofact(params.covariates, params.covariates_type,0)
+  covariable_saige=''
+ if(params.covariates!='') covariable_saige=regenieCofact(params.covariates, params.covariates_type,0)
 
   pheno_ch_saige = Channel.create()
   check = Channel.create()
@@ -2219,8 +2220,8 @@ if(params.regenie==1){
 
 
 
-
- covariable_regenie=regenieCofact(params.covariates, params.covariates_type,1)
+covariable_regenie=''
+if(params.covariates!='') covariable_regenie=regenieCofact(params.covariates, params.covariates_type,1)
    
 
  process regenie_step1{
@@ -2246,13 +2247,11 @@ if(params.regenie==1){
       bfile=bed.baseName
       bfilesub=bfile+"_sub"
       keeppos=(rsrel.toString()=='00') ? ""   : " --extract $rsrel "
-      print "keeppos $keeppos"
       covoption = (params.covariates=="") ? "" : " --cov_list ${params.covariates}"
       covoption_regenie= (params.covariates=="") ? "" : " --covarFile $phef ${covariable_regenie} "
       bsize=(params.regenie_bsize_step1==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step1}"
       regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
       out=phef+"_regenie"
-      println covoption_regenie
       gxe=(params.regenie_gxe==0) ? "" : " --gxe ${params.gxe} "
       """
       all_covariate.py --data  $data --inp_fam  $fam  $covoption \
