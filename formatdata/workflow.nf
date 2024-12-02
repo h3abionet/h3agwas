@@ -61,7 +61,7 @@ workflow format_plink_invcf {
       vcf= mergevcf.out
     }
    }
-   get_sex_forsanger(getparams.out.plink, vcf, "$outputdir/") 
+   if(params.sexinfo_available)get_sex_forsanger(getparams.out.plink, vcf, "$outputdir/") 
   emit : 
       vcf= vcf
 }

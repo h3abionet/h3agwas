@@ -41,3 +41,7 @@ workflow crossmap_vcf{
     emit :
        vcf = picard_liftover.out.vcf
 }
+
+/*workflow crossmap_sumstat{
+
+}*/

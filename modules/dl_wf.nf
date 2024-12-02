@@ -61,3 +61,39 @@ workflow dl_fasta_wf {
   fasta_picard = fasta_picard
 }
 
+
+workflow dl_gc {
+  take :
+     build
+  main :
+     if(params.gwas_cat!=''){
+       format="Other"
+       gwascat_f=Channel.fromPath(params.gwas_cat,checkIfExists:true)
+       chr=params.head_chro_gwascat
+       bp=params.head_bp_gwascat
+       info=params.head_info_gwascat
+       typeformat=params.typeformat_gwascat
+     }else {
+      if(build==''){
+          ftp=params.gwas_cat_ftp
+
+       gwascat_f=Channel.fromPath(params.gwas_cat,checkIfExists:true)
+       chr=params.head_chro_gwascat
+       bp=params.head_bp_gwascat
+       info=params.head_info_gwascat
+       typeformat=params.typeformat_gwascat
+      }
+      if(build==38){
+          ftp= params.gwas_cat_ftp_38
+      }
+      if(build==37 ){
+       ftp= params.gwas_cat_ftp_37
+       format="USCS"
+       chr="chrom"
+      bp="chromEnd"
+      infogwascat="pubMedID;author;trait;initSample"
+      typeformat="tab"
+      }
+      dl_gwascat(channel.of(params.gwas_cat_ftp), channel.of("gwascat"+hg38), channel.of("${params.output_dir}/utils/data/"))
+    }
+}

@@ -15,8 +15,9 @@ sameFID<-merge(Data,Fam, by=c(1));nsameFID<-nrow(sameFID)
 ## case 2 : same ID
 sameID<-merge(Data,Fam, by.x=1,by.y=c(2));nsameID<-nrow(sameID)
 ## case 3 : merge fid and iid
-Data3<-Data;Data3$V1<-sapply(strsplit(as.character(Data3$Ind),split='_'),function(x)x[1]);Data3$V2<-sapply(strsplit(as.character(Data3$Ind),split='_'),function(x)x[2]) 
-CompositFIDIID<-merge(Data3,Fam, by=c('V1','V2'));nCompositFIDIID<-nrow(CompositFIDIID)
+Fam$FIDIID=paste(Fam$V1,Fam$V2,sep='_')
+#Data3<-Data;Data3$V1<-sapply(strsplit(as.character(Data3$Ind),split='_'),function(x)x[1]);Data3$V2<-sapply(strsplit(as.character(Data3$Ind),split='_'),function(x)x[2]) 
+CompositFIDIID<-merge(Data,Fam, by.x=c('Ind'), by.y='FIDIID');nCompositFIDIID<-nrow(CompositFIDIID)
 
 ##case 3 =>  IID : %FID_%IID
 

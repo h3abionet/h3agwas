@@ -66,7 +66,6 @@ workflow convertvcfin{
      outputdir
      outputpat
   main :
-    vcf.view()
     getparams(vcf, build)
     if(params.convertvcf_stat){
      computedstat(getparams.out.vcf)
