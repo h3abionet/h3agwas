@@ -10,7 +10,7 @@ import sys
 
 inp     = sys.argv[1]
 pheno   = sys.argv[2]
-base    = sys.argv[3].replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
+base    = sys.argv[3].replace("/np.","-").replace("/","").replace("_","-")
 out_man = "%s-gemma-man.pdf"%base
 out_qq  = "%s-gemma-qq.pdf"%base
 out_tex = "%s.tex"%base

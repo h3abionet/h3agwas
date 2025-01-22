@@ -168,10 +168,11 @@ def showResults():
         data = clean(pheno) + ".*assoc"
     else:
         data = clean(pheno) + ".*assoc."+test
+    print(data)
     data = glob.glob(data)
     if len(data)!=1:
         print(data)
-        print((EOL*3)+"---- Expected only one assoc file found <"+",".join(result)+">"+(EOL*3))
+        print((EOL*3)+"---- Expected only one assoc file found <"+",".join(data)+">"+(EOL*3))
         sys.exit(17)
     data = data[0]
     asf   = pd.read_csv(data,delim_whitespace=True)

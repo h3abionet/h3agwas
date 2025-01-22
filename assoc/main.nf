@@ -101,7 +101,7 @@ allowed_params_cores=["gemma_num_cores", "max_plink_cores", "bolt_num_cores", 'f
 allowed_params+=allowed_params_cores
 allowed_params_intother=["max_forks", "mperm", "regenie_bsize_step1", "regenie_bsize_step2", "grm_nbpart", "thin", "regenie_bsize", "gemma_relopt", "gemma_lmmopt"]
 allowed_params+=allowed_params_intother
-allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_cov", 'gemma_multi', 'pheno_bin', 'fastlmm_multi', "regenie_loco", "sexinfo_available", "print_pca", "saige_loco","saige_imputed_data"]
+allowed_params_bolother=["adjust", "mperm", "sample_snps_rel","bolt_use_missing_cov", 'gemma_multi', 'pheno_bin', 'fastlmm_multi', "regenie_loco", "sexinfo_available", "print_pca", "saige_loco","saige_imputed_data", 'do_report']
 allowed_params+=allowed_params_bolother
 allowed_params_float=["cut_maf", "bgen_mininfo",  "grm_cutoff", "grm_maf","vcf_minmac", "cut_geno"]
 allowed_params+=allowed_params_float
@@ -144,6 +144,7 @@ params.bgen_sample=""
 params.bgen_mininfo=0.6
 params.list_bgen=""
 params.snp_rel_param_plk=" --maf 0.01 --mac 10 "
+params.do_report=1
 
 
 params.regenie_bin="regenie"
@@ -1864,7 +1865,7 @@ if(params.saige==1){
       indnbgen=(params.bgen!='') ? "--ind_bgen $bgensample" : ""
       """
       format_saige_pheno.r --data $covariates $indnbgen --out ${covariates_form}  --pheno ${params.pheno}  --pheno_bin ${params.pheno_bin}
-      awk '{if( \$0 ~ /^[0-9]+\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
+      awk '{if( \$1 ~ /^[0-9]+\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
       plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid" --extract range keep.range
       """
    }
@@ -2009,7 +2010,7 @@ if(params.saige==1){
         --minMAC=${params.vcf_minmac} \
         --GMMATmodelFile=$rda \
 	--SAIGEOutputFile=$output $imputed $Loco $moredetail  ${params.saige_otheropt_step2}   ${params.saige_otheropt}  --maxMissing ${params.cut_geno}
-        cp .command.sh run_step_2.sh
+        cp .command.sh $output".sh"
      cp .command.out $output".log"
      """
    }
@@ -2057,7 +2058,7 @@ if(params.saige==1){
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
         --SAIGEOutputFile=$output ${Loco} $imputed  $moredetail ${params.saige_otheropt_step2} ${params.saige_otheropt}
-        cp .command.sh run_step_2.sh
+        cp .command.sh $output".sh"
      cp .command.out $output".log"
      """
    }
@@ -2099,7 +2100,7 @@ if(params.saige==1){
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
         --SAIGEOutputFile=$output $Loco $imputed  $moredetail ${params.saige_otheropt_step2}  ${params.saige_otheropt}
-        cp .command.sh run_step_2.sh
+        cp .command.sh $output".sh"
      cp .command.out $output".log"
      """
    }
@@ -2156,7 +2157,7 @@ if(params.saige==1){
         return(cov)
       }
       if(splargs.size() != splinfoargs.size()){
-         System.err.println("args and args type for Boltlmm was not same size : "+args+" "+infoargs)
+         System.err.println("args and args type for regenie was not same size : "+args+" "+infoargs)
          System.exit(-11)
       }
       Cofactqual=""
@@ -2176,7 +2177,7 @@ if(params.saige==1){
               if(Cofactquant=="")Cofactquant=splargs[i]
               else Cofactquant+=","+splargs[i]
            }else{
-             System.err.println("type args for "+splargs[i]+" doesn't know "+ splinfoargs[i]+"\n 1 for quantitatif arguments\n 0 for qualitatif arguments")
+             System.err.println("type args for "+splargs[i]+" doesn't know "+ splinfoargs[i]+"\n 1 for qualitatif arguments\n 0 for quantitatif arguments")
              System.exit(-10)
           }
         }
@@ -2381,6 +2382,7 @@ report_ch = report_fastlmm_ch.flatten().mix(pheno_report_ch.flatten())
 				     .mix(report_saige_ch.flatten())
                                      .mix(report_regenie_ch.flatten())
                                      .mix(report_gemma_ch.flatten()).toList()
+if(params.do_report==1){
 
 process doReport {
   label 'latex'
@@ -2397,6 +2399,21 @@ process doReport {
     images = workflow.container
     texf   = "${out}.tex"
     template "make_assoc_report.py"
+}
+}else{
+process NoReport {                                                              
+  label 'latex'                                                                 
+  input:                                                                        
+    file(reports) from report_ch                                                
+  publishDir params.output_dir, overwrite:true, mode:'copy'                     
+  output:                                                                       
+    file("${out}.pdf")                                                          
+  script:                                                                       
+    out = params.output+"-noreport"
+    """
+    touch ${out}.pdf
+    """
+}       
 }
 
 

@@ -41,7 +41,7 @@ def getent(Head, listheader) :
 
 inp     = args.inp
 phenos= args.phenoname
-base    = args.out.replace("/np.","-").replace("/","").replace(".","-").replace("_","-")
+base    = args.out.replace("/np.","-").replace("/","").replace("_","-")
 ChroEnt=args.chro_header
 PosEnt=args.pos_header
 RsEnt=args.rs_header

@@ -109,7 +109,7 @@ The key options are:
 *  see [manual](https://data.broadinstitute.org/alkesgroup/BOLT-LMM/)
 * build relatdness model :
  * if SNPs is higher than 950,000, 950,000 SNPs are chosen randomly to build the model (see --modelSnps option in bolt)
-* `covariates_type` / `bolt_covariates_type` : for bolt need to define if covariate is binary (0) or continue (1), a comma-separated list as same order than covariates 
+* `covariates_type` / `bolt_covariates_type` : for bolt need to define if covariate is quantitatif (0) or qualitatif (1), a comma-separated list as same order than covariates 
  * `bolt_ld_score_file` : A table of reference LD scores for boltlmm is needed to calibrate the BOLT-LMM statistic (option in boltlmm --LDscoresFile),to choice a specific column in Ld file you can use `bolt_ld_scores_col` option (by default : LDSCORE) if option is not provided --LDscoresUseChip used.
  * `bolt_use_missing_cov` : option to "missing indicator method", by default no activate (0), to activate (1) (--covarUseMissingIndic option in boltlmm), which adds indicator variables demarcating missing status as additional covariates.
 * ressource usage 
@@ -153,7 +153,7 @@ and then for all the tests except _gemma_, _boltlmm_ and _fastlmm_, do you want 
 * `fastgwa_type` : [default : --fastGWA-mlm-exact]
 * `fastgwa_mem_req` : memory for fastgwa and grm [default: 10G] 
 * `fastgwa_num_cores` : cpus for fastgw and grm [default: 5]
-* `covariates_type` : similar to `bolt_covariates_type`, give for each covariable type of covariable qualitatif (0) or quantitatif (1), must be len of covariates, if nothing, consider all covariable just as quantitatif covariable  [default ""] 
+* `covariates_type` : similar to `bolt_covariates_type`, give for each covariable type of covariable qualitatif (1) or quantitatif (0), must be len of covariates, if nothing, consider all covariable just as quantitatif covariable  [default ""] 
 *  grm :
  * `gcta_grmfile` : index of file with grm with `gcta_grmfile`.grm.id and `gcta_grmfile`.grm.sp, if extension will not here, grm will build see below
  * to build grm :

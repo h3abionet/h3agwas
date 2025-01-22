@@ -22,13 +22,11 @@ listrsissue=set([])
 listchrissue=set([])
 
 for File in splfile :
-   print(File)
    Fread=open(File)
    FreadL=Fread.readline().split()
    Fread.close()
    Fread=open(File)
    if len(FreadL)==3 :
-     print(3)
      for line in Fread :
       splt=line.replace('\n', '').split()
       if splt[0] not in listRs :
@@ -40,7 +38,6 @@ for File in splfile :
               listrsissue.add(splt[0]) 
       listRs.add(splt[0])            
    elif len(FreadL)==6:
-       print(6)
        for line in Fread :
           splt=line.replace('\n', '').split() 
           NewRs=splt[5]
@@ -50,15 +47,12 @@ for File in splfile :
              RsInfo=DicByRs[splt[0]]
              balisegood= (splt[3]==RsInfo[2] and splt[4]==RsInfo[3]) or  (splt[3]==RsInfo[3] and splt[4]==RsInfo[2])
              if balisegood ==False:
-               print(splt, RsInfo)
                listrsissue.add(splt[0]) 
              # check pos and chr
              if RsInfo[0] :
                if RsInfo[0] != splt[1] and RsInfo[1] != splt[2] :
-                 print(RsInfo, splt)
                  listrsissue.add(splt[0]) 
              else :
-                print("aaa")
                 RsInfo[0]=splt[1] 
                 RsInfo[1]=splt[2] 
                 RsInfo[4]=splt[5] 
