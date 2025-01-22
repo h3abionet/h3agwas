@@ -156,8 +156,8 @@ def read_sumstat(filesumstat, clumpres, wind, chro_header, pos_header, a1_header
           n = None
         #          #['T', 'C', -0.4780229, 1.919196, -0.2490745603888295, 2010.0, 0.08209, 25000.0, '2:45922143:C:T']
         sumstat[chro][pos]=[getval(spl,a1head), getval(spl,a2head), getval(spl,betahead), getval(spl,sehead),getval(spl,zhead) , n, getval(spl,afhead, 'p'), getval(spl,phead,  'p')]
-        sumstat[chro][pos][0].upper()
-        sumstat[chro][pos][1].upper()
+        sumstat[chro][pos][0]=sumstat[chro][pos][0].upper()
+        sumstat[chro][pos][1]=sumstat[chro][pos][1].upper()
   return sumstat
 #def extractinfobim(chro, begin, end,bimfile):
 #   readbim=open(bimfile) 
