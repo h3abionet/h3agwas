@@ -52,6 +52,8 @@ The key options are:
   * `head_chr` : freq header [ default :  ""],
   * `head_bp` : freq header [ default : ""],
 * `n_pop` : number individuals for data set pop [default : 0]
+
+
 * `gwas_cat` : file of gwas catalog for plot 
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog
@@ -60,11 +62,12 @@ The key options are:
 
 * cojo parameter for Stepwise model selection procedure to select independently associated SNPs:
   * `gcta_mem_req`="6GB"
-  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than d Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ] (need to be implemented)
+  * `cojo_wind` :  Specify a distance d (in Kb unit). It is assumed that SNPs more than Kb away from each other are in complete linkage equilibrium. The default value is 10000 Kb (i.e. 10 Mb) if not specified. [ default : 10000 ] (need to be implemented)
   * `cojo_actual_geno` : If the individual-level genotype data of the discovery set are available (e.g. a single-cohort GWAS), you can use the discovery set as the reference sample. *option to avoid due to a various bug*  [default 0]
   * `cojo_slct_other` : other option for slct see [manual](https://cnsgenomics.com/software/gcta/#COJO) )(need to be implemented)
+
 * annotations parameter :
- * `paintor_fileannot)`  : file contains annotation (see paintor manual)
+ * `paintor_fileannot`  : file contains annotation (see paintor manual)
 
 * **binary** :
   * `finemap_bin` : software binary 
@@ -145,6 +148,13 @@ The key options are:
   * `paintor_mem_req` [default :"20GB"]
   * `fm_mem_req ` [default : "20G"]
   * `plink_mem_req` [default :"6GB"]
+
+* `genome_db` : contained version of genome for human : hg19 or hg38, download genes file or gwas catalog (in `main.nf`) [hg19]
+ * `genes_file_ftp_19`
+ * `genes_file_ftp_38`
+ * `gwas_cat_ftp_19`
+ * `gwas_cat_ftp_38`
+
 * annotations parameter :
   * `paintor_fileannot`  : file contains annotation (see paintor manual)
 

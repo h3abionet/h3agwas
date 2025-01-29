@@ -126,9 +126,9 @@ def checkColumnHeader(fname, columns) {
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp", "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file","genes_file_ftp", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", 'pheno', 'covariates']
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp_19",'genes_file_ftp_38', "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", 'pheno', 'covariates','genome_db','gwas_cat_ftp_19','gwas_cat_ftp_38','gwas_cat_ftp',"genes_file_ftp"]
 allowed_params=allowed_params_input
-allowed_params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin", "gwas_cat_ftp"]
+allowed_params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin"]
 allowed_params+=allowed_params_bin
 allowed_params_cores=["plink_cpus_req", "gcta_cpus_req", "fm_cpus_req",'max_plink_cores']
 allowed_params+=allowed_params_cores
@@ -159,7 +159,15 @@ params.work_dir   = "$HOME/h3agwas"
 params.input_dir  = "${params.work_dir}/input"
 params.output_dir = "${params.work_dir}/output"
 params.genes_file=""
+
+params.genome_db='hg19'
 params.genes_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
+params.genes_file_ftp_19="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
+params.genes_file_ftp_38="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_38/gencode.v38.annotation.gtf.gz"
+
+
+
+
 params.output="finemap"
 
 
@@ -220,6 +228,8 @@ params.size_wind_kb=100
 //params.paintor_annot=""
 
 params.gwas_cat_ftp="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
+params.gwas_cat_ftp_19="http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/gwasCatalog.txt.gz"
+params.gwas_cat_ftp_38="http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/gwasCatalog.txt.gz"
 params.list_chro="1-22"
 params.list_phenogc=""
 params.pheno=""
@@ -234,8 +244,22 @@ params.paintor_bin="PAINTOR"
 params.plink_bin="plink"
 
 listchro=getlistchro(params.list_chro)
+
+gene_file_ftp=params.genes_file_ftp
+gwascat_ftp=params.gwas_cat_ftp
+if(params.genome_db=='hg19'){
+genes_file_ftp=params.genes_file_ftp_19
+gwascat_ftp=params.gwas_cat_ftp_19
+}
+
+if(params.genome_db=='hg38'){
+genes_file_ftp=params.genes_file_ftp_38
+gwascat_ftp=params.gwas_cat_ftp_38
+}
+
 if(params.gwas_cat==""){
 println('gwas_cat : gwas catalog option not initialise, will be downloaded')
+
 if(params.file_phenogc=="")phenogc_ch=channel.fromPath("${dummy_dir}/01")
 else phenogc_ch=channel.fromPath(params.file_phenogc, checkIfExists:true)
 
@@ -252,8 +276,8 @@ process GwasCatDl{
       phenofile= (params.file_phenogc=="") ? "" : "  --file_pheno  $phenogc "
       out="gwascat_format"
       """
-      wget -c ${params.gwas_cat_ftp} --no-check-certificate
-      format_gwascat.r --file `basename ${params.gwas_cat_ftp}` $phenol --out $out  --chro ${listchro.join(',')} $phenofile
+      wget -c ${gwascat_ftp} --no-check-certificate
+      format_gwascat.r --file `basename ${gwascat_ftp}` $phenol --out $out  --chro ${listchro.join(',')} $phenofile
       """ 
 }
 headgc_chr="chrom"
@@ -262,7 +286,6 @@ headgc_bp="chromEnd"
 gwascat_ch=Channel.fromPath(params.gwas_cat, checkIfExists:true)
 headgc_chr=params.headgc_chr
 headgc_bp=params.headgc_bp
-
 }
 
 if(params.file_gwas==""){
@@ -725,6 +748,7 @@ process ComputedCojo{
     fi
     """
 }
+
 if(params.genes_file==""){
 process GetGenesInfo{
    memory { strmem(params.other_mem_req) + 1.GB * (task.attempt -1) }
@@ -737,8 +761,8 @@ process GetGenesInfo{
    script :
      out="gencode.v19.genes"
      """
-     wget -c ${params.genes_file_ftp} --no-check-certificate
-     zcat `basename ${params.genes_file_ftp}` > file_genes
+     wget -c ${genes_file_ftp} --no-check-certificate
+     zcat `basename ${genes_file_ftp}` > file_genes
      change_genes_gencode.py file_genes
      """
 }
