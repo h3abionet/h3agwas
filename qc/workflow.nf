@@ -20,13 +20,19 @@ workflow check_params{
     wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
   else
     wflowversion="A local copy of the workflow was used"
- if(params.pheno_col!='')pheno_col=params.pheno_col
  if(params.pheno!='')pheno_col=params.pheno
+ if(params.pheno_col!='')pheno_col=params.pheno_col
+ if(params.pheno_qc!='')pheno_col=params.pheno_qc
+
  if(data){
   phenotype_ch = data
  }else {
-   if(params.phenotype!="")phenotype=params.phenotype
-   else if (params.data!='')phenotype=params.data
+   
+   if(params.phenotype!=""){
+        phenotype=params.phenotype
+        println('warning :args phenotype will be deleted used --data or params.data')
+   }else if (params.data!='')phenotype=params.data
+   
    fileexist(phenotype)
    idfiles = [params.batch,phenotype]
    idfiles.each { checkColumnHeader(it,['FID','IID']) }
@@ -302,9 +308,9 @@ workflow qc_dup{
   extract_ind_plink(plink,clean_phenofile.out.correspond)
   plink_indep(extract_ind_plink.out.combine(channel.of("${outputdir}/ind/")).combine(channel.of("${params.output}_indeprel")))
   computed_relatdness_dup(plink_indep.out.plk, channel.of(1).combine(clean_phenofile.out.dup), channel.of(0), channel.of(-1),channel.of("${params.output}_duplicate"))
-  computed_relatdness_all(plink_indep.out.plk, channel.of(1).combine(clean_phenofile.out.dup), channel.of(0), channel.of(0.7), channel.of("${params.output}_full"))
+  computed_relatdness_all(plink_indep.out.plk, channel.of(1).combine(clean_phenofile.out.dup), channel.of(0), channel.of(params.pi_hat_dup), channel.of("${params.output}_full"))
   compute_missing_dup(plink_indep.out.plk, channel.of(1).combine(clean_phenofile.out.dup),channel.of("${params.output}_duplicate"))
-  check_rel(clean_phenofile.out.correspond, clean_phenofile.out.pheno_i, computed_relatdness_all.out, computed_relatdness_dup.out, compute_missing_dup.out.ind, channel.of(0.7), channel.of("${params.output}_duplicate"), channel.of("$outputdir/checkrel"))
+  check_rel(clean_phenofile.out.correspond, clean_phenofile.out.pheno_i, computed_relatdness_all.out, computed_relatdness_dup.out, compute_missing_dup.out.ind, channel.of(params.pi_hat_dup), channel.of("${params.output}_duplicate"), channel.of("$outputdir/checkrel"))
   plink_updatename(plink, check_rel.out.update_id, channel.of("${params.output}_qcdup"), channel.of("${outputdir}"))
   emit :
    data=check_rel.out.pheno

@@ -15,7 +15,7 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("--col_fidid"), type="character", default="FID,IID",
               help="dataset file name", metavar="character"),
-  make_option(c("--col_newfidid"), type="character", default=NULL,
+  make_option(c("--col_newfidid"), type="character", default="IID_update",
               help="dataset file name", metavar="character"),
   make_option(c("--out"), type="character", default=NULL,
               help="dataset file name", metavar="character")

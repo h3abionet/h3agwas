@@ -59,7 +59,7 @@ process computed_relatdness {
    full=""
    if(full.toString()=='T')full=" full" 
    cmdind=(isfileind==1) ?  "--keep $fileind" : ""
-   minrel=(minrel>0) ? " --min 0.7 " : ""
+   minrel=(minrel>0) ? " --min $minrel " : ""
    """
    plink -bfile $bfile -out $out $cmdind $minrel --genome $full
    """

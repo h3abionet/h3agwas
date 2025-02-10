@@ -1,17 +1,50 @@
 <img src="../helperfiles/H3ABioNetlogo2.jpg"/>
+# Part of Quality control 
+ * deleted and check duplicate `qc_dup`
+ * quality control `qc`
+ * clean frequency using an external dataset  from michigan `qc_michigan`
 
-# clean and check technical duplicate
+# Clean and check technical duplicate `qc_dup = 1` 
 
 This section describe a way to manage technical duplicate, algoritms is to check if duplicate are correct and deleted putative errors.
 
 ## Algorithms
+Algorithms :
+ * genetics file is clean using data individual and column FID,IID (see `col_fidid`)
+ * autosomal relatdness computed between all technical duplicated (see `col_fidiid` and `col_newfidid`)
+ * autosomal relatdness computed between all individual where `pi_hat` > `pi_hat_dup`
+ * computed quality of duplicate
+ * deleted duplicates where `pi_hat` between duplicate  less than `pi_hat_dup` (duplicated are not real duplicated)
+ * deleted duplicate and non individual where value `pi_hat` > `pi_hat_dup` (duplicate had been exchange during )
+ * for good duplicates where `pi_hat` > `pi_hat_dup`, select best quality of duplicate, deleted others.
+ * after cleaning, rename by `col_newfidid` genetic and data (other column in the file will be keep)
 
-Algoritms 
+## General option
+* `qc_dup` : check if duplicate [default 0]
+* input : 
+ * `data` : phenotype file
+  * `col_fidid` : column contained FID and IID same than bfile, 2 columns separated by comma [default : FID,IID]
+  * `col_newfidid` : 
+    * ID to defined duplicate 
+    * same ID in two `individuals` are technical duplicate. 
+    * After cleaning of duplicate, initial FID, IID will be replace by `col_newfidiid` in phenotype and genotype
+    * one or two heading separated by comma [default : IID_update]
+ * genetic :
+  * `bfile`
+  * `input_dir` and `input_pat`
+ * other option :
+  * `pi_hat_dup` [default : 0.7]
 
-## Input / Output 
+## Output :
+ * report (in work)
+ * bfile and data can be used by `qc`, `qc_michigan`, etc..
 
- * `data` : phenotype files : 
+## example 
 
+need to developped
+
+## need 
+* plink, R
  
 # Quality Controls : `qc = 1`
 
@@ -43,15 +76,27 @@ The QC process consists of:
 * a detailed report of the QC process is done.
 
 ## 2. Input/Output :
-Plink and phenotype file Input from a previous part pipeline `qc_dup` 
 
-### Command line
+### Input 
+
+
 Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  The key Nextflow parameters to set are:
+
+* Plink and phenotype file Input from a previous part pipeline `qc_dup` 
+
+
+or
+
 * plink input :
  * `bfile` : basename of plink file, or see `input_pat` and `input_dir`
  * `input_pat` : this typically will be the base name of the PLINK files you want to process (i.e., do not include the file suffix). But you could be put any Unix-style glob here. The workflow will match files in the relevant `input_dir` directory;
 
-## Output 
+*   `batch`: if you want to do QC at a batch level, you need to specify a file with the batch information. This should be a standard PLINK phenotype file (with labels as the first line). If you specify "false" or 0, then no batch-analysis is done. Typically batch information relates to the batches in which samples were genotyped is not intrinsic to the data (e.g. you genotype the first 2500 samples that are available).
+* `data` (previously `phenotype`) If you are doing batch analysis you may wish to show how different sub-groups perform in QC with respect to the batch. You will then specify a PLINK-style phenotype file (with labels as the first name).  For example, if you have a multi-site project, you may choose to use the site information as a phenotype. Other possibilities are sex and self-identified group. If you specify "false" or 0, no categorisation will be done. [default : '']
+ * `pheno_qc` (previously `pheno_col`) is the column label of the column in  the phenotype file which should be used.
+ *  `case_control`  
+
+### Output 
 * `output_dir`: the directory which the output should go to. The default is `output`.
 * `output`: the base name of the output files. *This cannot be the same as the input!!!*
 
@@ -60,21 +105,19 @@ Users will run the pipeline giving as input PLINK 1.9 bed, bim and fam files.  T
 The following parameters control QC
 
 *  `sexinfo_available`: `true` or `false`. If we don't have sex information then we cannot do the check for discordant genotype. Note that it does not make sense (and is an error) to have sexinfo_available set to true when there is no X-chromosme data in the file;
+
 *  `f_lo_male` and `f_hi_female`. Discordant sex genotype is done on the X-chromosome using the non-recombining parts. F, the in-breeding coefficient of the X-chromosome is computed. If F is above `f_lo_male`, the individual is predicted to be male; if F is below `f_hi_female`, the individual is predicted to be female. Anyone in between is flagged. These cut-off values are arbitrary and especially in large samples you are likely to find a range of F values. However, a large number of discrepant values probably indicates a sample mishandle error.  The PLINK default values (0.8 and 0.2) are the default parameters of the pipeline.
 *  `cut_het_high`: What is the maximum allowable heterozygosity for individualsl;
 *  `cut_het_low`: minimum
-*   `cut_maf `: the minimum minor allele frequency a SNP must have to be included
-*   `cut_diff_miss `: allowable differential missingness between cases and controls;
-*   `cut_geno`: maximum allowable per-SNP mssingness
+*  `cut_maf `: the minimum minor allele frequency a SNP must have to be included
+*  `cut_diff_miss `: allowable differential missingness between cases and controls;
+*  `cut_geno`: maximum allowable per-SNP mssingness
 *   `cut_mind`: maximum allowable per-individual missingness
 *   `cut_hwe`: minimum allowable per-SNP Hardy-Weinberg Equilibrium p-value 
 *   `pi_hat`:  maximum allowable relatedness
 *   `remove_on_bp`: the first step in the pipeline is to remove duplicate SNPs. There are two ways of detecting duplicates. First, if SNPs have duplicate names (column 1 -- numbering from 0 -- of the bim file). We always remove duplicate SNPs based on this since PLINK gets very upset otherwise. Second, if they are at the same chromosome and base position. If this variable is set to 1, then duplicates based on chromosome or base position are removed too.
-*   `batch`: if you want to do QC at a batch level, you need to specify a file with the batch information. This should be a standard PLINK phenotype file (with labels as the first line). If you specify "false" or 0, then no batch-analysis is done. Typically batch information relates to the batches in which samples were genotyped is not intrinsic to the data (e.g. you genotype the first 2500 samples that are available).
-*   `batch_col`: the column label of the file to be used.
-*   `phenotype`: default is 'false'. If you are doing batch analysis you may wish to show how different sub-groups perform in QC with respect to the batch. You will then specify a PLINK-style phenotype file (with labels as the first name).  For example, if you have a multi-site project, you may choose to use the site information as a phenotype. Other possibilities are sex and self-identified group. If you specify "false" or 0, no categorisation will be done.
-* `pheno_col` is the column label of the column in  the phenotype file which should be used.
-*  `case_control`  
+ *   `batch_col`: the column label of the file to be used.
+
  * default `--data` or `--phenotype` if `case_control_col` is intialise  
  * This is the name of a PLINK-style phenotype file with labels in the first line. This is a compulsory parameter. The QC process uses the case/control status of individuals. A principal component analysis is done. We do not expect typically overall that there will be difference between cases and controls. The PC-analysis tests that this is so. Of course, you need to apply your mind to the result as YMMV. If your study has several case/control categories, choose an appropriate one that will give insight. If you only have continuous measures (e.g., BMI), then discretise and make an artificial case-control category. Remember, this is for QC purposes not to find interesting biology. 
   * `case_control_col`: this is the label of the column.
@@ -156,12 +199,3 @@ Note that one issue that sometimes occurs in analysis is that there may over tim
 <img src="utils/qc_overview.png" title="overview of qc pipeline">
 
 
-# 2. Deletion and managment of duplicate
-specific part of pipeline to analyse, clean and rename duplicated
-## 1. overview
-using column `col_newfidid`, you define duplicated individual using same names.
-## 2. argument 
- * `--clean_dup` : [default 1] 
- * `data` : phenotype file
-  * `col_fidid` : col contained FID and IID, one or two separated by comma [FID,IID]
-  * `col_newfidid` : to defined duplicated col contained FID and IID, one or two separated by comma, ** defined duplicate ** [ID_update]
