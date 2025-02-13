@@ -1903,7 +1903,7 @@ if(params.saige==1){
    each this_pheno from pheno_ch_saige
    output :
      set val(our_pheno) ,file("${output}.rda"), file("${output}.varianceRatio.txt"), val(plk) into file_varexp 
-     path("run_step_1.sh") 
+     path("*.report")
    script :
      //covoption = (params.covariates=="") ? "" : " --covarColList=${params.covariates}"
      binpheno = (params.pheno_bin==1) ? " --traitType=binary " : " --traitType=quantitative"
@@ -1922,7 +1922,9 @@ if(params.saige==1){
         --nThreads=${params.saige_num_cores} $Loco \
         --minMAFforGRM=${params.grm_maf} $binpheno \
         ${params.saige_otheropt_step1} ${params.saige_otheropt}  --maxMissing ${params.cut_geno}
-     cp .command.sh run_step_1.sh
+      cp .command.sh "${our_pheno}"_saige_step1.cmd.report
+      cp .command.log "${our_pheno}"_saige_step1.log.report
+      cp .command.err "${our_pheno}"_saige_step1.err.report
      """
   }
   if(params.list_vcf!=''){
@@ -1954,7 +1956,7 @@ if(params.saige==1){
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.log"
     output :
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
-      tuple path("${output}.sh"), path("${output}.log")
+      path("*.report")
     script :
      output=vcf.baseName+".res"
      //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
@@ -1973,8 +1975,9 @@ if(params.saige==1){
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
         --SAIGEOutputFile=$output $Loco $imputed  $moredetail ${params.saige_otheropt_step2}  ${params.saige_otheropt}    --maxMissing ${params.cut_geno}
-     cp .command.sh $output".sh"
-     cp .command.out $output".log"
+      cp .command.sh "${our_pheno}"_saige_step2.cmd.report
+      cp .command.log "${our_pheno}"_saige_step2.log.report
+      cp .command.err "${our_pheno}"_saige_step2.err.report
      """
    }
  }else if(params.bgen!=''){
@@ -1990,7 +1993,7 @@ if(params.saige==1){
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.log"
     output :
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
-      tuple path("${output}.sh"), path("${output}.log")
+      path("*.report")
     script :
      output=bgen.baseName+"_"+Chro+".saige"
      //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
@@ -2010,8 +2013,9 @@ if(params.saige==1){
         --minMAC=${params.vcf_minmac} \
         --GMMATmodelFile=$rda \
 	--SAIGEOutputFile=$output $imputed $Loco $moredetail  ${params.saige_otheropt_step2}   ${params.saige_otheropt}  --maxMissing ${params.cut_geno}
-        cp .command.sh $output".sh"
-     cp .command.out $output".log"
+      cp .command.sh "${our_pheno}"_saige_step2.cmd.report
+      cp .command.log "${our_pheno}"_saige_step2.log.report
+      cp .command.err "${our_pheno}"_saige_step2.err.report
      """
    }
 
@@ -2039,7 +2043,7 @@ if(params.saige==1){
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.log"
     output :
       set val(our_pheno),file("$output"), val(base) into ch_saige_bychro
-      tuple path("${output}.sh"), path("${output}.log")
+      path("*.report")
     script :
      output=bgen.baseName+"_"+Chro+".saige"
      //bin_option_saige= (params.pheno_bin==1) ? " --IsOutputAFinCaseCtrl=TRUE  --IsOutputNinCaseCtrl=TRUE --IsOutputHetHomCountsinCaseCtrl=TRUE " : ""
@@ -2058,8 +2062,9 @@ if(params.saige==1){
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
         --SAIGEOutputFile=$output ${Loco} $imputed  $moredetail ${params.saige_otheropt_step2} ${params.saige_otheropt}
-        cp .command.sh $output".sh"
-     cp .command.out $output".log"
+      cp .command.sh "${our_pheno}"_saige_step2.cmd.report
+      cp .command.log "${our_pheno}"_saige_step2.log.report
+      cp .command.err "${our_pheno}"_saige_step2.err.report
      """
    }
 
@@ -2078,7 +2083,7 @@ if(params.saige==1){
     each Chro from chrolist_saige_ch
     output :
       tuple val(our_pheno),file("$output"), val(base) into ch_saige_bychro
-      tuple path("${output}.sh"), path("${output}.log")
+      path("*.report")
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.sh"
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.log"
     script :
@@ -2100,8 +2105,9 @@ if(params.saige==1){
         --GMMATmodelFile=$rda \
         --varianceRatioFile=$varRatio \
         --SAIGEOutputFile=$output $Loco $imputed  $moredetail ${params.saige_otheropt_step2}  ${params.saige_otheropt}
-        cp .command.sh $output".sh"
-     cp .command.out $output".log"
+      cp .command.sh "${our_pheno}"_saige_step2.cmd.report
+      cp .command.log "${our_pheno}"_saige_step2.log.report
+      cp .command.err "${our_pheno}"_saige_step2.err.report
      """
    }
 
@@ -2252,13 +2258,14 @@ if(params.covariates!='') covariable_regenie=regenieCofact(params.covariates, pa
       covoption_regenie= (params.covariates=="") ? "" : " --covarFile $phef ${covariable_regenie} "
       bsize=(params.regenie_bsize_step1==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step1}"
       regenie_loco=(params.regenie_loco=="") ? "" : " --loocv "
+      binpheno = (params.pheno_bin==0) ? "" : " --bt "
       out=phef+"_regenie"
       gxe=(params.regenie_gxe==0) ? "" : " --gxe ${params.gxe} "
       """
       all_covariate.py --data  $data --inp_fam  $fam  $covoption \
                           --pheno $pheno --phe_out ${phef}  --form_out 2 --nona  1 $gxe
       plink -bfile $bfile $keeppos --make-bed -out $bfilesub --keep $phef ${params.snp_rel_param_plk}
-      ${params.regenie_bin} --step 1   --bed $bfilesub    --phenoFile $phef  --phenoCol ${our_pheno} --bsize $bsize $regenie_loco --out  $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step1} $covoption_regenie
+      ${params.regenie_bin} --step 1   --bed $bfilesub    --phenoFile $phef  --phenoCol ${our_pheno} --bsize $bsize $regenie_loco --out  $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step1} $covoption_regenie ${binpheno}
       if [ ! -f $out"_1.loco" ]
       then
       touch $out"_1.loco"
@@ -2277,7 +2284,7 @@ if(params.covariates!='') covariable_regenie=regenieCofact(params.covariates, pa
    publishDir "${params.output_dir}/regenie/step2", overwrite:true, mode:'copy', pattern: "*.cmd"
    output :
      tuple val(pheno), path("${out}*${pheno}.regenie"),val(bfile) into regenie_manhatten_chi
-     path("*regenie_step2.cmd")
+     path("*.report")
    script :
     loco=(params.regenie_loco==0) ? "" : " --loocv "
     bfile=bed.baseName
@@ -2292,7 +2299,9 @@ if(params.covariates!='') covariable_regenie=regenieCofact(params.covariates, pa
     gxe=(params.regenie_gxe==0) ? "" : " --interaction ${params.gxe} "
     """
      ${params.regenie_bin} --step 2  $genet   --phenoFile $data --phenoCol $pheno ${covoption_regenie} --bsize $bsize   --pred $list  $loco   --out $out --threads ${params.regenie_num_cores} ${params.regenie_otheropt_step2} $gxe  
-     cp .command.sh "${pheno}"_regenie_step2.cmd
+      cp .command.sh "${pheno}"_regenie_step2.cmd.report
+      cp .command.log "${pheno}"_regenie_step2.log.report
+      cp .command.err "${pheno}"_regenie_step2.err.report
   """
  }
 
