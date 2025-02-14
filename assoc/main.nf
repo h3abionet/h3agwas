@@ -2158,12 +2158,12 @@ if(params.saige==1){
       infoargs=""+infoargs
       splargs=args.split(",")
       splinfoargs=infoargs.split(",")
-      if(splinfoargs.size()==0){
+      if(infoargs==''){
         cov="--covarColList "+args
         return(cov)
       }
       if(splargs.size() != splinfoargs.size()){
-         System.err.println("args and args type for regenie was not same size : "+args+" "+infoargs)
+         System.err.println("covariates and covariate type are not same size : "+args+" "+infoargs)
          System.exit(-11)
       }
       Cofactqual=""
