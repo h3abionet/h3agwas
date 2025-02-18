@@ -24,6 +24,7 @@ import sun.nio.fs.UnixPath;
 import java.security.MessageDigest;
 nextflow.enable.dsl = 1
 params.nblines_check=100
+params.file_ref_gzip=''
 
 /*definition*/
 def errormess(message,exitn=0){
@@ -212,7 +213,7 @@ if(params.head_chr!=""){
          input :
            file(gwas_res) from gwas_chrolist
          output :
-           file("filechro") into chrolist
+           file("filechro") into chrolist,  chrolist3
          script:
           sep=(params.sep!="") ?  " --sep ${params.sep}" : ""
           """
@@ -222,6 +223,9 @@ if(params.head_chr!=""){
  
  chrolist2=Channel.create()
  chrolist.flatMap { list_str -> list_str.readLines()[0].split() }.set { chrolist2 }
+ chrolist4=Channel.create()
+ chrolist3.flatMap { list_str -> list_str.readLines()[0].split() }.set { chrolist4 }
+ chrolist4.view()
  
  process ExtractChroGWAS{
      memory params.mem_req 

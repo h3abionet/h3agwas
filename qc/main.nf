@@ -1159,8 +1159,9 @@ if(cleanx){
           output :
            tuple path(bed), path(bim), path(fam), path(log)  into (final_data_ch,report_cleaned_ch)
           script :
-             println "no Y analysis, save plink file"
-
+             """
+             echo "no Y analysis, save plink file"
+             """
          }
 
           process report_export_y_tmp {
