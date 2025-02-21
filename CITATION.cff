@@ -1,4 +1,4 @@
-cff-version: 1.2.0
+cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
 authors:
 - family-names: "Brandenburg"
@@ -24,6 +24,6 @@ authors:
   orcid: https://orcid.org/0000-0002-0581-149X
 title: "H3AGWAS : A portable workflow for Genome Wide Association Studies"
 doi: https://doi.org/10.1186/s12859-022-05034-w
-version: 3.0
+version: V3.6.0
 date-released: 2019-12-18
 url: "https://github.com/h3abionet/h3agwas"
