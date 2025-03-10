@@ -29,6 +29,7 @@ include { ldsc } from "./heritability/workflow.nf"
 include { split_vcf} from "./modules/vcf.nf"
 include { convertvcfin } from "./formatdata/format_vcf.nf"
 include {qc_dup} from './qc/workflow.nf'
+include {assoc} from './assoc/workflow.nf'
 //include { assoc} from "./assoc/assoc.nf"
 //include { assoc} from "./assoc/assoc.nf"
 //nextflow.enable.moduleBinaries = true
@@ -48,7 +49,12 @@ workflow {
   plink_qc=null
   data=null
   vcf_qc = null
+  bimbam = null
+  bgen = null
+  bgen_sample = null
+  bfile=null
   build_cur=params.build_genome
+  vcf=null
   if (params.qc_dup == 1 || params.qc_dup) {
         qc_dup(data, plink_qc, "${params.output_dir}/dup/")
         plink_qc=qc_dup.out.plink
@@ -78,7 +84,12 @@ workflow {
  balise_convertvcf=(params.convertvcfinplink==1 || params.convertvcfinbimbam==1)
  if(balise_convertvcf){
    convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output)
+   bfile = convertvcfin.out.plink
+   vcf = convertvcfin.out.vcf
  }
+ if(params.assoc){
+   assoc(data,bfile, vcf, bimbam, bgen, bgen_sample)
+  }
   sumstat=null
   if (params.mtag==1){
     mtag("$params.output_dir/mtag")

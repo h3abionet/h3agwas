@@ -76,6 +76,9 @@ workflow convertvcfin{
     if(params.convertvcfinplink==1) {
     convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat)
     }
+    emit :
+     plink = convertvcfinplk.out.plink 
+     vcf = clean_vcf.out 
  }
 
 

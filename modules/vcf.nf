@@ -1,4 +1,5 @@
 include {list_chro;splitvcf;splitvcf2} from './process_vcf.nf'
+include {strmem} from './fct_groovy.nf'
 workflow getparams {
  take :
   vcf 
@@ -22,4 +23,21 @@ workflow split_vcf{
    splitvcf2(getparams.out.vcf.combine(list_chro2).combine(channel.of(outputdir)).combine(channel.of(outputpat)))
   emit :
    vcf=splitvcf2.out
+}
+
+
+process buildindex {
+   memory { strmem(params.low_memory) + 5.GB * (task.attempt -1) }
+   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+   maxRetries 3
+    label 'utils'
+    input :
+       path(vcf) 
+    output :
+        tuple path(vcf), path(vcfindex) 
+    script :
+       vcfindex=vcf+".csi"
+       """
+       tabix -C -p vcf $vcf
+       """
 }

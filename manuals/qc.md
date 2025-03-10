@@ -98,7 +98,7 @@ or
 
 ### Output 
 * `output_dir`: the directory which the output should go to. The default is `output`.
-* `output`: the base name of the output files. *This cannot be the same as the input!!!*
+* `output`: the base name of the output files. 
 
 ## 3. Additional QC Parameters
 

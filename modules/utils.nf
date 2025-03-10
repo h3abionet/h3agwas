@@ -58,19 +58,19 @@ process MD5_plk {
 }
 
 
-process latex_compilation{                                                                
-  label 'latex'                                                                 
-  input :                                                                       
+process latex_compilation{
+  label 'latex'
+  input :
     path(tex)
-    path(otherfile) 
+    path(otherfile)
     val(outputdir)
-  publishDir "${outputdir}/", overwrite:true, mode:'copy'               
-  output :                                                                      
-   path("${out}.pdf")                                                           
-  script :                                                                      
-     out=tex.baseName                                                           
-    """                                                                        
-    pdflatex $out >& /dev/null                                                  
-    pdflatex $out                                                               
-    """                                                                         
+  publishDir "${outputdir}/", overwrite:true, mode:'copy'
+  output :
+   path("${out}.pdf")
+  script :
+     out=tex.baseName
+    """
+    pdflatex $out >& /dev/null
+    pdflatex $out
+    """
 }
