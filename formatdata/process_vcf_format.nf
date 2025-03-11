@@ -223,7 +223,7 @@ process checkfasta {
 // if(params.lim_used_ram==0){
 //  process formatvcfscore{
 //   label 'py3utils'
-//   cpus params.max_plink_cores
+//   cpus params.max_cpus
 //   memory { strmem(params.bcftools_mem_req) + 5.GB * (task.attempt -1) }
 //   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
 //   maxRetries 10
@@ -237,7 +237,7 @@ process checkfasta {
 //      tuple val(Ent), path("${Ent}.bcf") into bcf_ch
 //   script :
 //     Ent=vcf.baseName.replaceAll(/.vcf$/, '')+'_filter'
-//     threadn=params.max_plink_cores/ 5
+//     threadn=params.max_cpus/ 5
 //     threadn = threadn.round()
 //     """
 //     ln -s $ref tmp.fasta.gz
@@ -257,7 +257,7 @@ process checkfasta {
 //  }else {
 //  process formatvcfscore_lowram{
 //   label 'py3utils'
-//   cpus params.max_plink_cores
+//   cpus params.max_cpus
 //   memory { strmem(params.bcftools_mem_req) + 5.GB * (task.attempt -1) }
 //   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
 //   maxRetries 10
@@ -271,8 +271,8 @@ process checkfasta {
 //     set val(Ent), file("${Ent}.bcf") into bcf_ch
 //   script :
 //    Ent=vcf.baseName.replaceAll(/.vcf$/, '')+'_filter'
-//    //threadn=params.max_plink_cores/ 5
-//    threadn = params.max_plink_cores
+//    //threadn=params.max_cpus/ 5
+//    threadn = params.max_cpus
 //    """
 //    ln -s $ref tmp.fasta.gz
 //    cp $refidx tmp.fasta.gz.fai
@@ -316,7 +316,7 @@ process checkfasta {
 //}else{
 //process formatvcf{
 //  label 'py3utils'
-//  cpus params.max_plink_cores
+//  cpus params.max_cpus
 //  memory params.bcftools_mem_req
 //  time   params.big_time
 //  input :
@@ -366,7 +366,7 @@ process extractrsname{
     """
    zcat $rsinfo | extractrsid_bypos.py --bim $bim --out_file $outrs --ref_file stdin --chro_ps ${params.poshead_chro_inforef} --bp_ps ${params.poshead_bp_inforef} --rs_ps ${params.poshead_rs_inforef} --a1_ps ${params.poshead_a1_inforef}  --a2_ps ${params.poshead_a2_inforef}
    awk '{print \$1"\t"\$2"\t"\$2"\t"\$5}' $outrs > keep
-   plink --keep-allele-order --noweb $extract --bfile $plk --make-bed --out $out --update-name $outrs".rs" -maf 0.0000000000000000001 --threads ${params.max_plink_cores}
+   plink --keep-allele-order --noweb $extract --bfile $plk --make-bed --out $out --update-name $outrs".rs" -maf 0.0000000000000000001 --threads ${params.max_cpus}
     """
 }
 //
@@ -382,7 +382,7 @@ process extractrsname{
 //GMMap=Channel.fromPath(params.genetic_maps, checkIfExists:true)
 //listchroplinkrsmap=GMMap.combine(listchroplinkrs)
 //process AddedCM{
-//    cpus params.max_plink_cores
+//    cpus params.max_cpus
 //    memory params.plink_mem_req
 //    time   params.big_time
 //    input :
@@ -403,7 +403,7 @@ process extractrsname{
 //       awk '{print \$2}' $headeri".bim" | sort | uniq -d > duplicated_snps.snplist
 //       plink --bfile $headeri --exclude duplicated_snps.snplist --make-bed $plink_kao --out $headeri"_tmp"
 //       plink --bfile $headeri"_tmp" --list-duplicate-vars ids-only suppress-first
-//       plink --bfile $headeri"_tmp" $plink_kao --cm-map $cm_shap \$chro   --threads ${params.max_plink_cores} --make-bed --out $header  --exclude plink.dupvar
+//       plink --bfile $headeri"_tmp" $plink_kao --cm-map $cm_shap \$chro   --threads ${params.max_cpus} --make-bed --out $header  --exclude plink.dupvar
 //       rm $headeri"_tmp"*
 //       """
 //
@@ -437,7 +437,7 @@ process MergePlink{
 }
 //
 // process clean_plink {
-//  cpus params.max_plink_cores
+//  cpus params.max_cpus
 //  memory params.plink_mem_req
 //  time   params.big_time
 //  input:

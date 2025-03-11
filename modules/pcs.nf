@@ -3,7 +3,7 @@ include {strmem} from '../modules/fct_groovy.nf'
 // We do PCA on qc2 data because relatively few SNPs and individuals will be removed later and
 // this is an expensive operation so we start early. Similarly for computing relatedness
 process compute_pcs {
-  cpus params.max_plink_cores
+  cpus params.max_cpus
   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
@@ -14,18 +14,40 @@ process compute_pcs {
    output:
       tuple path("${prune}.eigenval"), path("${prune}.eigenvec"), emit:eigen
       tuple path ("${prune}.bed"), path("${prune}.bim"), path("${prune}.fam"), emit : plink_prune
-   publishDir "${params.output_dir}/qc/pca", overwrite:true, mode:'copy',pattern: "${prune}*"
+   publishDir "${outputdir}", overwrite:true, mode:'copy',pattern: "${prune}*"
    script:
       base = plinks[0].baseName
       prune= "${base}-prune".replace(".","_")
       pcs = [pcsn,20].max()
      """
-     plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check
+     plink --bfile ${base} --indep-pairwise 100 20 0.2 --out check --maf 0.01
      plink --bfile ${base} --extract check.prune.in --make-bed --out $prune
      /bin/rm check*
      plink --bfile ${prune} --pca $pcs --out $prune
      """
 }
+
+process compute_pcs_small {
+  cpus params.max_cpus
+  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+  maxRetries 3
+   input:
+      tuple path(bed), path(bim), path(fam)
+      val(pcsn)
+      val(outputdir)
+   output:
+      tuple path("${prune}.eigenval"), path("${prune}.eigenvec"), emit:eigen
+   publishDir "${outputdir}", overwrite:true, mode:'copy',pattern: "${prune}*"
+   script:
+      prune= bed.baseName
+      pcs = [pcsn,20].max()
+     """
+     plink --bfile ${prune} --pca $pcs --out $prune
+     """
+}
+
+
 
 process draw_pcs{
    memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }

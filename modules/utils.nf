@@ -19,7 +19,7 @@ process checkfasta{
     cp $fasta $fasta2
     mv $fasta".fai"  $fasta2".fai"
     else
-    zcat $fasta | bgzip -@ ${params.max_plink_cores} -c > $fasta2
+    zcat $fasta | bgzip -@ ${params.max_cpus} -c > $fasta2
     samtools faidx $fasta2
     fi
     """
@@ -39,7 +39,7 @@ process checkfasta_2{
   script :
     fasta2=fasta.baseName+"_clean.fa.gz"
     """
-    zcat $fasta | bgzip -@ ${params.max_plink_cores} -c > $fasta2
+    zcat $fasta | bgzip -@ ${params.max_cpus} -c > $fasta2
     samtools faidx $fasta2
     """
 }

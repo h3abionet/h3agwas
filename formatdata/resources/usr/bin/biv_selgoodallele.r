@@ -24,7 +24,7 @@ balise<-(as.character(databim$V5) %in% c("A", "T", "C", "G")) & (as.character(da
 balise<-(databim$chrpos %in% names(tmp[tmp==1])) & (databim$V2 %in% names(tmp2[tmp2==1]))
 }
 listrstodel=as.character(databim$V2[!balise])
-#system("plink --keep-allele-order --make-bed --bfile $plk --out $out -maf 0.0000000000000000001 --exclude rstodel --threads ${params.max_plink_cores}
+#system("plink --keep-allele-order --make-bed --bfile $plk --out $out -maf 0.0000000000000000001 --exclude rstodel --threads ${params.max_cpus}
 if(length(listrstodel)>0){
 writeLines(listrstodel, con=args[2])
 }else{

@@ -174,7 +174,7 @@ There are three parameters that are important control performance. You probably 
 
 * `plink_mem_req` : specify in MB or GB how much memory your processes that use PLINK require;
 * `other_mem_req` : specify how much other processes need;
-* `max_plink_cores` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
+* `max_cpus` : specify how many cores your PLINK processes can use. (This is only for those PLINK operations that are parallelisable. Some processes can't be parallelised and our workflow is designed so that for those processes only one core is used).
 
 
 ## 5. Output

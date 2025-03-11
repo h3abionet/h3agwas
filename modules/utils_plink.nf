@@ -1,5 +1,6 @@
+include {strmem} from '../modules/fct_groovy.nf'
 process clean_plink{
- cpus params.max_plink_cores
+ cpus params.max_cpus
  input:
   tuple path(bed), path(bim), path(fam)
   path(snp_exclude)
@@ -20,7 +21,7 @@ process clean_plink{
   mafcmd=(maf==0) ? "" : " --maf ${maf}"
   cleanrsoption=(just_acgt==1) ?  " --snps-only just-acgt " : ""
   """
-  plink --bfile $bfile --threads ${params.max_plink_cores}  $range --make-bed --out $outfile $mafcmd --keep $indkeep --keep-allele-order $range2 $cleanrsoption --allow-extra-chr
+  plink --bfile $bfile --threads ${params.max_cpus}  $range --make-bed --out $outfile $mafcmd --keep $indkeep --keep-allele-order $range2 $cleanrsoption --allow-extra-chr
   """
 }
 
@@ -48,3 +49,24 @@ process getfrequency{
       awk '{print \$1}' $bim|uniq|sort|uniq
       """
  }
+
+process indep_pairwise {
+  cpus params.max_cpus
+  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+  maxRetries 3
+   input:
+      path(plinks)
+      val(indeppairwise)
+      val(outputdir)
+   output:
+      tuple path ("${prune}.bed"), path("${prune}.bim"), path("${prune}.fam")
+   publishDir "${outputdir}/", overwrite:true, mode:'copy',pattern: "${prune}*"
+   script:
+      base = plinks[0].baseName
+      prune= "${base}-prune".replace(".","_")
+     """
+     plink --bfile ${base} --indep-pairwise ${indeppairwise} --out check 
+     plink --bfile ${base} --extract check.prune.in --make-bed --out $prune 
+     """
+} 

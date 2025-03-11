@@ -88,7 +88,7 @@ process format_summary{
     plk=bed.baseName
     cmdplk=(bed ==~ /bed/ ? " --bfile $plk " : "")
      """
-     gcta_format.py --inp_asso $filegwas  --rs_header ${head_rs} --pval_header ${head_pval} $headfreq --a1_header ${head_A1} --a2_header ${head_A2} --se_header ${head_se} --beta_header ${head_beta} --chro_header ${head_chr}  --out $out --threads ${params.max_plink_cores} --bp_header ${head_bp} $headN $cmdplk --print_pos 1 --file_updaters $file_updaters 
+     gcta_format.py --inp_asso $filegwas  --rs_header ${head_rs} --pval_header ${head_pval} $headfreq --a1_header ${head_A1} --a2_header ${head_A2} --se_header ${head_se} --beta_header ${head_beta} --chro_header ${head_chr}  --out $out --threads ${params.max_cpus} --bp_header ${head_bp} $headN $cmdplk --print_pos 1 --file_updaters $file_updaters 
      """
 }
 

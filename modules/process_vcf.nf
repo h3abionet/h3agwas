@@ -31,14 +31,14 @@ process extract_rs_fromvcf{
 
 process bcftools_index_vcf{
  label 'py3utils'
- cpus params.max_plink_cores
+ cpus params.max_cpus
  input :
    path(filegz)
  output :
    tuple path(filegz), path("${filegz}.csi")
  output :
    """
-   ${params.bin_bcftools} index  $filegz --threads ${params.max_plink_cores}
+   ${params.bin_bcftools} index  $filegz --threads ${params.max_cpus}
    """
 }
 

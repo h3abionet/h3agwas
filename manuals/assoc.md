@@ -1,7 +1,7 @@
 
 # Main option
-## phenotype options
-* `data`
+## Phenotype options
+* `data` : data files [default previous workflow]
 * `phenotype` : phenotypes
 * `phenotype_type` : phenotypes type binary or continuous
 * `covariates_type` :  type of covariates
@@ -13,18 +13,30 @@
    * any R function to transform data
    * log, log10... 
    * invnorm  : inverse normal rank transformation
-## option test :
+## Genetics
+
+## option association :
 * `assoc` : performed association 
  * `saige`
  * `regenie`
 * other option
  * `gxe` : variable to performed a GXE [default : '']
-## genetics  
- * `loco`
 
-## spe
+## genetics  
+* `loco` [default 1]
+* `plink_indep_pairwise` [100 20 0.1]
+* `cut_maf_rel` [0.01]
+
+## memory and cpu association
+
+## specific option association
 ### Saige
- * `saige_otheropt_step1`
+* `saige_bin_fitmodel` ["step1_fitNULLGLMM.R"]
+* `saige_bin_spatest` ["step2_SPAtests.R"]
+* `saige_otheropt_step1` ['']
+* `saige_otheropt_step2` ['']
+* `saige_otheropt`  ['']
+* `saige_impute_method` ["best_guess"]
 
 ## 
 

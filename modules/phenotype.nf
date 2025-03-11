@@ -30,7 +30,7 @@ process showPhenoDistrib {
 
 process add_pcs{
   label 'R'
-  cpus params.max_plink_cores
+  cpus params.max_cpus
   input :
       tuple path(eigenvec), path(phenofile)
   publishDir "${params.output_dir}/pheno/pca/", mode:'copy'

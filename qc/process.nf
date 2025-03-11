@@ -194,7 +194,7 @@ process getDuplicateMarkers {
  */
 
 process removeDuplicateSNPs {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
 
@@ -240,7 +240,7 @@ process countChr{
 
 
 process clean_x {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
 
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 3
@@ -273,7 +273,7 @@ process clean_x {
 }
 
 process getX {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 3
 
@@ -326,7 +326,7 @@ process analyseX {
  * Also does HWE
  */
 process identifyIndivDiscSexinfo {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
 
@@ -400,7 +400,7 @@ process generateIndivMissingnessPlot {
 }
  
 process getInitMAF {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   cache 'lenient'
   maxRetries 3
@@ -487,8 +487,8 @@ process removeQCPhase1 {
 // We do PCA on qc2 data because relatively few SNPs and individuals will be removed later and
 // this is an expensive operation so we start early. Similarly for computing relatedness
 process compPCA {
-  cpus params.max_plink_cores
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  cpus params.max_cpus
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
    input:
@@ -533,8 +533,8 @@ process drawPCA {
 
 
   process pruneForIBDLD {
-    cpus params.max_plink_cores
-    memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+    cpus params.max_cpus
+    memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
     maxRetries 3
 
@@ -551,8 +551,8 @@ process drawPCA {
       outf   =  base.replace(".","_")
       range = ldreg.name != 'NO_FILE' ?  " --exclude range $ldreg" : ""
       """
-       plink --bfile $base --threads $params.max_plink_cores --autosome $sexinfo $range --indep-pairwise 60 5 0.2 --out ibd
-       plink --bfile $base --threads $params.max_plink_cores --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
+       plink --bfile $base --threads $params.max_cpus --autosome $sexinfo $range --indep-pairwise 60 5 0.2 --out ibd
+       plink --bfile $base --threads $params.max_cpus --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
        echo LD
        """
   }
@@ -581,7 +581,7 @@ process findRelatedIndiv {
 
 
 process calculateSampleHeterozygosity {
-   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+   memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 3
 
@@ -641,7 +641,7 @@ process getBadIndivsMissingHet {
 
 
 process removeQCIndivs {
-   memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+   memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 3
 
@@ -671,11 +671,11 @@ mperm_header=" CHR                               SNP         EMP1         EMP2 "
 
 // Find differential missingness between cases and controls; also compute HWE scores
 process calculateSnpSkewStatus {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
 
-  cpus params.max_plink_cores
+  cpus params.max_cpus
   input:
    path(plinks) 
    path(phe)
@@ -691,7 +691,7 @@ process calculateSnpSkewStatus {
    mperm = "${base}.missing.mperm"
    """
     cp $phe cc.phe
-    plink --threads ${params.max_plink_cores} ${params.autosome_plink} --bfile $base $sexinfo $diffpheno --test-missing mperm=10000 --hardy --out $out
+    plink --threads ${params.max_cpus} ${params.autosome_plink} --bfile $base $sexinfo $diffpheno --test-missing mperm=10000 --hardy --out $out
     if ! [ -e $mperm ]; then
        echo "$mperm_header" > $mperm
     fi
@@ -743,7 +743,7 @@ process findSnpExtremeDifferentialMissingness {
 }
 
 process removeSkewSnps {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
 
@@ -764,7 +764,7 @@ process removeSkewSnps {
 
 
 process splitX {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
 
@@ -782,7 +782,7 @@ process splitX {
  }
 
  process cleanPlink_x {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
   input :
@@ -806,7 +806,7 @@ process splitX {
  }
 
 process computed_stat_female_x {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
   input :
@@ -823,7 +823,7 @@ process computed_stat_female_x {
   }
  
 process computed_stat_male_x {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
 
@@ -859,7 +859,7 @@ process report_export_x {
 }
 
  process cleanandmerge_x {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   cache 'lenient'
   maxRetries 3
@@ -891,7 +891,7 @@ process report_export_x {
 
 
 process clean_y {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
   cache 'lenient'
@@ -924,7 +924,7 @@ process clean_y {
 }
 
 process cleanandmerge_y {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
           input :
@@ -984,7 +984,7 @@ process build_reporty{
 
 
 process calculateMaf {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
   maxRetries 3
 
@@ -1065,7 +1065,7 @@ process generateHwePlot {
 
 
 process batchProc {
-  memory { strmem(params.plink_mem_req) + 5.GB * (task.attempt -1) }
+  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
   errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 3
 
