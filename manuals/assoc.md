@@ -37,8 +37,14 @@
 * `saige_otheropt_step2` ['']
 * `saige_otheropt`  ['']
 * `saige_impute_method` ["best_guess"]
+* `regenie_otheropt_step1` [""]
 
-## 
+### regenie
+* `regenie_bin` : binary saige
+* `regenie_bsize` [default : 100]
+* `regenie_bsize_step1` [default : `regenie_bsize`]
+* `regenie_bsize_step2` [default : `regenie_bsize`]
+
 
 | | option effect | gxe |
 | gxe  | --gxe |  yes | 

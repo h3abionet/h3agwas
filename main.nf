@@ -51,6 +51,7 @@ workflow {
   vcf_qc = null
   bimbam = null
   bgen = null
+  bgenlist = null
   bgen_sample = null
   bfile=null
   build_cur=params.build_genome
@@ -88,7 +89,7 @@ workflow {
    vcf = convertvcfin.out.vcf
  }
  if(params.assoc){
-   assoc(data,bfile, vcf, bimbam, bgen, bgen_sample)
+   assoc(data,bfile, vcf, bimbam, bgen,bgenlist, bgen_sample)
   }
   sumstat=null
   if (params.mtag==1){

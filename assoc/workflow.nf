@@ -5,6 +5,7 @@ include {buildindex as buildindex_vcf} from '../modules/vcf.nf'
 include {list_chro} from '../modules/utils_plink.nf'
 include {compute_pcs_small} from '../modules/pcs.nf'
 include {saige} from './process/saige.nf'
+include {regenie} from './process/regenie.nf'
 include {merge_sumstat} from './process/all.nf'
 workflow check_params{
   take : 
@@ -13,6 +14,7 @@ workflow check_params{
     vcf
     bimbam
     bgen
+    bgenlist
     bgen_sample
  main :
  if(data==null){
@@ -44,13 +46,18 @@ if (bfile==null){
    vcf=buildindex_vcf(vcf)
  }
  balise_bgen=true
- if(bgen==null){
-   balise_bgen=false
+ balise_bgenlist=true
+ if(bgenlist==null){
+   balise_bgenlist=false
    if(params.bgen_list!='') {
-      balise_bgen=true
-      bgen=Channel.fromPath(file(params.bgen_list).readLines(), checkIfExists:true)
+      balise_bgenlist=true
+      bgenlist=Channel.fromPath(file(params.bgen_list).readLines(), checkIfExists:true)
       bgen_sample=channel.fromPath(params.bgen_sample, checkIfExists:true)
-    }else if(params.bgen!=''){
+    }
+ }
+if(bgen==null){
+      balise_bgen=false
+   if(params.bgen!='') {
       balise_bgen=true
       bgen=Channel.fromPath(params.bgen, checkIfExists:true)
       bgen_sample=channel.fromPath(params.bgen_sample, checkIfExists:true)
@@ -87,10 +94,13 @@ compute_pcs_small(indep_pairwise.out, channel.from(params.add_pcs), channel.from
   gxe = wf_prepare_pheno.out.gxe
   bfile = bfile
   bfile_rel = bfile_rel
-  balise_vcf=balise_vcf
+  vcf_balise=balise_vcf
   vcf=vcf
   bgen=bgen
+  bgenlist=bgenlist
   bgen_sample=bgen_sample
+  bgen_balise=balise_bgen
+  bgenlist_balise=balise_bgenlist
   listchro=listchro
 }
 
@@ -102,13 +112,17 @@ workflow assoc {
    vcf
    bimbam
    bgen
+   bgenlist
    bgen_sample
  main :
   println "In ASSOC top"
-  check_params(data,bfile, vcf, bimbam, bgen,bgen_sample)
+  check_params(data,bfile, vcf, bimbam, bgen,bgenlist,bgen_sample)
   if(params.saige){
-   saige(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf,check_params.out.bgen, check_params.out.bgen_sample,check_params.out.listchro)
+   saige(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
   }
+if(params.regenie){
+   regenie(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
+ }
  // add pcs
        println "In ASSOC middle"
 }

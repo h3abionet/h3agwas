@@ -1,105 +1,6 @@
 include { strmem } from "../../modules/fct_groovy.nf"
 include {indexbgen;bgen_formatsample;getchrobgen} from "../../modules/bgen.nf"
-include {merge_sumstat} from './all.nf'                                 
-
-process COFACTORS_TYPE {
-    executor 'local'
-    input:
-    val args_ch
-    val infoargs
-    val regenie
-
-    output:
-    val CofactStr
-
-    exec :
-    def splargs = args_ch.split(",")
-    def splinfoargs = infoargs.split(",")
-
-    if (infoargs == '') {
-        CofactStr = "--covarColList ${args_ch}"
-        return CofactStr
-    }
-
-    if (splargs.size() != splinfoargs.size()) {
-        throw new IllegalArgumentException("Covariates and covariate types are not the same size: ${args_ch} ${infoargs}")
-    }
-
-    def Cofactqual = []
-    def Cofactquant = []
-    def allcov = []
-
-    for (int i = 0; i < splargs.size(); i++) {
-        allcov << splargs[i]
-
-        if (splinfoargs[i] == '1') {
-            Cofactqual << splargs[i]
-        } else if (splinfoargs[i] == '0') {
-            Cofactquant << splargs[i]
-        } else {
-            throw new IllegalArgumentException("Unknown type for ${splargs[i]}: ${splinfoargs[i]}. Use 1 for qualitative, 0 for quantitative.")
-        }
-    }
-
-    Cofactqual = Cofactqual.join(",")
-    Cofactquant = Cofactquant.join(",")
-    allcov = allcov.join(",")
-
-    if (regenie == 1) {
-        CofactStr = ""
-        if (Cofactqual) CofactStr += " --catCovarList ${Cofactqual}"
-        if (allcov) CofactStr += " --covarColList ${allcov}"
-    } else {
-        CofactStr = ""
-        if (Cofactqual) CofactStr += " --qCovarColList ${Cofactqual}"
-        CofactStr += " --covarColList ${allcov}"
-    }
-    return CofactStr
-}
-   def cofactors_type(args_ch,infoargs, regenie) {
-      infoargs=""+infoargs
-      splargs=args.split(",")
-      splinfoargs=infoargs.split(",")
-      if(infoargs==''){
-        cov="--covarColList "+args
-        return(cov)
-      }
-      if(splargs.size() != splinfoargs.size()){
-         System.err.println("covariates and covariate type are not same size : "+args+" "+infoargs)
-         System.exit(-11)
-      }
-      Cofactqual=""
-      Cofactquant=""
-      allcov=""
-      for (i = 0; i <splargs.size(); i++) {
-          /*0 : for quantitatif */
-          /* 1 for qualitatif*/
-          if(allcov=="")allcov=splargs[i]
-          else allcov+=","+splargs[i]
-          if     (splinfoargs[i]=='1'){
-              if(Cofactqual=="")Cofactqual=splargs[i]
-              else Cofactqual+=","+splargs[i]
-
-          }else {
-           if(splinfoargs[i]=='0'){
-              if(Cofactquant=="")Cofactquant=splargs[i]
-              else Cofactquant+=","+splargs[i]
-           }else{
-             System.err.println("type args for "+splargs[i]+" doesn't know "+ splinfoargs[i]+"\n 1 for qualitatif arguments\n 0 for quantitatif arguments")
-             System.exit(-10)
-          }
-        }
-      }
-     CofactStr=""
-     if(regenie==1){
-       if(Cofactqual!="")CofactStr=" --catCovarList "+Cofactqual
-        if(Cofactquant!="") CofactStr+=" --covarColList "+allcov
-     }else{
-       if(Cofactqual!="")CofactStr=" --qCovarColList  "+Cofactqual
-        CofactStr+=" --covarColList "+allcov
-     }
-      return(CofactStr)
-}
+include {merge_sumstat;COFACTORS_TYPE;join2channel} from './all.nf'                                 
 
 
 process checkidd_saige_vcf{
@@ -148,7 +49,7 @@ process checkidd_saige{
       covariates_form=data.baseName+'_saige.ind'
       bfile=bed.baseName
       bfileupdate=bfile+'_idsaige'
-      indnbgen=(params.bgen!='') ? "--ind_bgen $bgensample" : ""
+      indnbgen=(bgensample!='00') ? "--ind_bgen $bgensample" : ""
       """
       format_saige_pheno.r --data $data $indnbgen --out ${covariates_form}  --pheno ${pheno}  --pheno_bin ${pheno_bin}
       awk '{if( \$1 ~ /^[0-9]+\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
@@ -347,17 +248,6 @@ process doSaigePlink{
    }
 
 
-process join2channel {
-  input :
-   val(a)
-   val(b)
-  output :
-    tuple val(a),val(b)
-  script :
-     """ 
-     echo 'tmp'
-     """
-}
 
 workflow saige{
   take :
@@ -369,21 +259,28 @@ workflow saige{
    plink
    plink_rel
    vcf 
+   vcf_balise
    bgen
+   bgenlist
    bgen_sample
+   bgen_balise
+   bgenlist_balise
    listchro
  main :
  COFACTORS_TYPE(covariates, covariates_type,channel.of(0))
- if(params.vcf!='' || params.vcf_list!=''){
+ if(vcf_balise.val){
+    println("saige performed using vcf")
     checkidd_saige_vcf(data, pheno,pheno_bin,vcf.first(),plink_rel)
     plkinp=checkidd_saige_vcf.out.plink
    phenoclean=checkidd_saige_saige.out.pheno
- }else if(params.bgen!='' || params.bgen_list!=''){
-   bgen_formatsample(data,bgen_sample)
+ }else if(bgen_balise.val || bgenlist_balise.val){
+    println("saige performed using bgen")
+       bgen_formatsample(data,bgen_sample)
    checkidd_saige(data, pheno, pheno_bin,bgen_sample, plink_rel)
    plkinp=checkidd_saige.out.plink
    phenoclean=checkidd_saige.out.pheno
  }else{
+    println("saige performed using plink")
    checkidd_saige(data, pheno, pheno_bin,channel.fromPath("00"), plink_rel)
    plkinp=checkidd_saige.out.plink
    phenoclean=checkidd_saige.out.pheno
@@ -395,15 +292,15 @@ workflow saige{
  phenoclean.view()
  saigeinp=phenoclean.combine(combined).combine(COFACTORS_TYPE.out).combine(plkinp)
  saige_computed_variance(saigeinp)
- if(params.vcf!='' || params.vcf_list!=''){
+ if(vcf_balise.val){
        doSaige(saige_computed_variance.out.var.combine(vcf))
         lsumstat=doSaige.out.saige
- }else if(params.bgen!=''){
+ }else if(bgen_balise.val){
         lchrobgen=listchro.combine(indexbgen(bgen))
         doSaigeBgen(saige_computed_variance.out.var.combine(lchrobgen).combine(bgen_formatsample.out.saige_gcta))
         lsumstat=doSaigeBgen.out.saige
- }else if( params.bgen_list!=''){
-        indexbgen(bgen) | getchrobgen
+ }else if( bgenlist_balise.val){
+        indexbgen(bgenlist) | getchrobgen
         doSaigeListBgen(saige_computed_variance.out.var.combine(getchrobgen.out).combine(bgen_formatsample.out.saige_gcta))
         lsumstat=doSaigeListBgen.out.saige
  }else {
