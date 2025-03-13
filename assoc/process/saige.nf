@@ -1,12 +1,13 @@
 include { strmem } from "../../modules/fct_groovy.nf"
 include {indexbgen;bgen_formatsample;getchrobgen} from "../../modules/bgen.nf"
-include {merge_sumstat;COFACTORS_TYPE;join2channel} from './all.nf'                                 
+include {check_pheno_bin;merge_sumstat;COFACTORS_TYPE;join2channel} from './all.nf'
 
 
 process checkidd_saige_vcf{
-    label 'R'
-   memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }
-     maxRetries 10                                                            
+   label 'R'
+   memory { strmem(params.low_memory) + 5.GB * (task.attempt -1) }
+   time params.big_time
+   maxRetries 10
 
    cpus params.max_cpus
     input :
@@ -33,15 +34,17 @@ process checkidd_saige_vcf{
 }
 
 process checkidd_saige{
-    label 'R'
-   memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }
+   label 'R'
+   memory { strmem(params.low_memory) + 5.GB * (task.attempt -1) }
    cpus params.max_cpus
+   maxRetries 10 
     input :
       path(data)
       val(pheno)
       val(pheno_bin)
       path(bgensample)
       tuple path(bed), path(bim), path(fam)
+      val(is_bgen)
     output :
       tuple path("${bfileupdate}.bed"), path("${bfileupdate}.bim"), path("${bfileupdate}.fam"), emit :plink
       path(covariates_form), emit : pheno
@@ -49,7 +52,7 @@ process checkidd_saige{
       covariates_form=data.baseName+'_saige.ind'
       bfile=bed.baseName
       bfileupdate=bfile+'_idsaige'
-      indnbgen=(bgensample!='00') ? "--ind_bgen $bgensample" : ""
+      indnbgen=(is_bgen==1) ? "--ind_bgen $bgensample" : ""
       """
       format_saige_pheno.r --data $data $indnbgen --out ${covariates_form}  --pheno ${pheno}  --pheno_bin ${pheno_bin}
       awk '{if( \$1 ~ /^[0-9]+\$/)print \$1"\t"\$4"\t"\$4"\t"\$4}' $bim > keep.range
@@ -74,8 +77,10 @@ process  getSaigePheno {
 
 
 process saige_computed_variance{ 
-   memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }
+   memory { strmem(params.low_memory) + 5.GB * (task.attempt -1) }
    cpus params.max_cpus
+   time params.big_time
+   maxRetries 10
    label 'saige'
    input :
       tuple path(data),val(pheno),val(pheno_bin),val(covariable_saige),path(bed), path(bim), path(fam) 
@@ -84,7 +89,7 @@ process saige_computed_variance{
      tuple val(our_pheno) ,path("${output}.rda"), path("${output}.varianceRatio.txt"), val(plk), emit : var
      path("*.report")
    script :
-     binpheno = (pheno_bin==1) ? " --traitType=binary " : " --traitType=quantitative"
+     binpheno = (pheno_bin.toInteger()==1) ? " --traitType=binary " : " --traitType=quantitative"
      Loco = (params.loco==1) ? " --LOCO=TRUE " : " --LOCO=FALSE "
      plk=bed.baseName
      our_pheno    = pheno.replaceAll(/|\/np.\w+/,"").replaceAll(/[0-9]+@@@/,"")
@@ -107,9 +112,10 @@ process saige_computed_variance{
   }
 
 process doSaige{
-    memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }
+    memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
     cpus params.max_cpus
-    maxRetries 10                                                            
+    maxRetries 10
+    time params.big_time
 
     label 'saige'
     input :
@@ -141,9 +147,10 @@ process doSaige{
      """
 }
 process doSaigeBgen{
-     memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }
-     cpus params.max_cpus
-      maxRetries 10                                                            
+    memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
+    cpus params.max_cpus
+    maxRetries 10
+    time params.big_time
 
     label 'saige'
     input :
@@ -177,8 +184,11 @@ process doSaigeBgen{
 }
 
 process doSaigeListBgen{
-    memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }
+    memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
     cpus params.max_cpus
+    maxRetries 10
+    time params.big_time 
+
     label 'saige'
     input :
        tuple val(pheno),path(rda), path(varRatio), val(base),val(Chro),path(bgen), path(bgenindex), path(bgensample)
@@ -213,8 +223,10 @@ process doSaigeListBgen{
 
 
 process doSaigePlink{
-    memory { strmem(params.low_memory) + 1.GB * (task.attempt -1) }
+    memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
     cpus params.max_cpus
+    maxRetries 10
+    time params.big_time 
     label 'saige'
     input :
        tuple val(pheno),path(rda), path(varRatio), val(base),val(Chro),path(bed), path(bim), path(fam)
@@ -276,20 +288,22 @@ workflow saige{
  }else if(bgen_balise.val || bgenlist_balise.val){
     println("saige performed using bgen")
        bgen_formatsample(data,bgen_sample)
-   checkidd_saige(data, pheno, pheno_bin,bgen_sample, plink_rel)
+   checkidd_saige(data, pheno, pheno_bin,bgen_sample, plink_rel, channel.of(1))
    plkinp=checkidd_saige.out.plink
    phenoclean=checkidd_saige.out.pheno
  }else{
     println("saige performed using plink")
-   checkidd_saige(data, pheno, pheno_bin,channel.fromPath("00"), plink_rel)
+   checkidd_saige(data, pheno, pheno_bin,channel.fromPath("00"), plink_rel, channel.of(0))
    plkinp=checkidd_saige.out.plink
    phenoclean=checkidd_saige.out.pheno
  }
+ check_pheno_bin(pheno,pheno_bin,phenoclean,channel.of('saige'))
+ phenoclean=check_pheno_bin.out.data
  npheno=params.pheno.split(',').size()
  phenol = pheno.flatMap { list -> list.split(',') }  // Groovy-style lambda for splitting
  pheno_binl = pheno_bin.map { list -> list.split(',') }.flatMap { it.size() == 1 ? it.collect { it } * npheno : it }
  combined = join2channel(phenol,pheno_binl)
- phenoclean.view()
+
  saigeinp=phenoclean.combine(combined).combine(COFACTORS_TYPE.out).combine(plkinp)
  saige_computed_variance(saigeinp)
  if(vcf_balise.val){

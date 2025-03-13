@@ -2,9 +2,12 @@
 # Main option
 ## Phenotype options
 * `data` : data files [default previous workflow]
-* `phenotype` : phenotypes
-* `phenotype_type` : phenotypes type binary or continuous
-* `covariates_type` :  type of covariates
+* `pheno` : phenotypes [default : ""]
+* `pheno_type` : phenotype as continuous or binary  
+* `covariates_type` :  type of covariates, 1 or n phenotype 
+ * 0 : continuous, 1 binary [default '0'] 
+ * comma as separator.
+ * if 1 element, considered as default for all phenotypes
 * `pheno_tr_fct` : transform phenotypes using a functions [default : '']
 * `add_pcs` : number pcs to add as covariates [default 0]
 * `pheno_residuals` : your phenotypes in residuals using covariates [default : 0]
@@ -16,9 +19,14 @@
 ## Genetics
 
 ## option association :
-* `assoc` : performed association 
+* `association` : performed association 
  * `saige`
  * `regenie`
+ * `assoc`
+ * `fisher`
+ * `logistic`
+ * `linear`              
+
 * other option
  * `gxe` : variable to performed a GXE [default : '']
 
@@ -44,6 +52,10 @@
 * `regenie_bsize` [default : 100]
 * `regenie_bsize_step1` [default : `regenie_bsize`]
 * `regenie_bsize_step2` [default : `regenie_bsize`]
+
+### plink 
+* `mperm` [0]
+* `adjust` [0]
 
 
 | | option effect | gxe |

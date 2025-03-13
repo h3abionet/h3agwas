@@ -28,8 +28,8 @@ workflow check_params{
   phenotype_ch = data
  }else {
    
-   if(params.phenotype!=""){
-        phenotype=params.phenotype
+   if(params.pheno!=""){
+        phenotype=params.pheno
         println('warning :args phenotype will be deleted used --data or params.data')
    }else if (params.data!='')phenotype=params.data
    

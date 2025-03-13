@@ -86,10 +86,9 @@ workflow wf_prepare_pheno{
         plink
         pcs
    main :
-   if(!pheno)pheno=channel.from(params.phenotypes)
+   if(!pheno)pheno=channel.from(params.pheno)
    if(!covar)covar=channel.from(params.covariates)
    println(params.covariates)
-   covar.view()
    showPhenoDistrib(phenofile,pheno)
    if(params.add_pcs>=1){
       add_pcs(pcs.combine(phenofile))

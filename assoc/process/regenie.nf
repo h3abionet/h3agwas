@@ -1,10 +1,12 @@
-include {merge_sumstat;COFACTORS_TYPE;join2channel} from './all.nf'             
+include {check_pheno_bin;merge_sumstat;COFACTORS_TYPE;join2channel} from './all.nf'             
 include {indexbgen;bgen_formatsample;getchrobgen} from "../../modules/bgen.nf"  
 include { strmem } from "../../modules/fct_groovy.nf"                           
 
 process regenie_step1{
    cpus params.max_cpus
+   time params.big_time                                                      
    memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
+  
    input :
      tuple val(pheno),val(pheno_bin),val(covariates),val(covoption_regenie),path(data),path(bed), path(bim), path(fam)
    publishDir "${params.output_dir}/assoc/regenie/step1", overwrite:true, mode:'copy', pattern: "*.loco"
@@ -19,7 +21,7 @@ process regenie_step1{
       covoption=(covariates=="") ? "" : " --cov_list ${params.covariates}"
       covoption_regenie=(covariates=="") ? "" : " --covarFile $phef ${covoption_regenie} "
       bsize=(params.regenie_bsize_step1==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step1}"
-      println(pheno_bin)
+      println(pheno_bin+" "+pheno)
       binpheno = (pheno_bin.toInteger()==0) ? "" : " --bt "
       out=phef+"_regenie"
       gxe=(params.gxe=='') ? "" : " --gxe ${params.gxe} "
@@ -38,22 +40,24 @@ process regenie_step1{
 
  process regenie_step2{
    cpus params.max_cpus
+   time params.big_time                                                      
+
    memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
    input :
-    tuple val(pheno),path(data),path(list), path(loco),path(bed), path(bim), path(fam),val(covariable_regenie),path(bgen), path(bgensample),val(balise_bgen),val(balise_bgenlist)
+    tuple val(pheno),path(data),path(list), path(loco),path(bed), path(bim), path(fam),val(covariable_regenie),path(bgen),path(bgenlist), path(bgensample),val(balise_bgen),val(balise_bgenlist)
    publishDir "${params.output_dir}/regenie/step2", overwrite:true, mode:'copy', pattern: "*.cmd"
    output :
-     tuple val(pheno), path("${out}*${pheno}.regenie")
+     tuple val(pheno), path("${out}*${pheno}.regenie"), emit: regenie
      path("*.report"),emit : report
    script :
     bfile=bed.baseName
     covoption_regenie= (covariable_regenie=="") ? "" : " --covarFile $data   ${covariable_regenie} "
     bsize=(params.regenie_bsize_step2==0) ? " ${params.regenie_bsize} " : " ${params.regenie_bsize_step2}"
-    genet=(balise_bgen)? " --bed $bfile " : " --bgen $bgen --sample $bgensample "
-    genet=(balise_bgenlist)? " $genet " : " --bgen $bgen --sample $bgensample "
+    genet=(balise_bgen.toBoolean()==false)? " --bed $bfile " : " --bgen $bgen --sample $bgensample "
+    genet=(balise_bgenlist.toBoolean()==false)? " $genet " : " --bgen $bgenlist --sample $bgensample "
     loco=(loco==0) ? "" : " --loocv "
     out=pheno+"_regenie_assoc"
-    out=(balise_bgenlist)? out: bgen.baseName
+    out=(balise_bgenlist.toBoolean())? out: bgenlist.baseName
     gxe=(params.gxe=='') ? "" : " --interaction ${params.gxe} "
     """
      ${params.regenie_bin} --step 2  $genet   --phenoFile $data --phenoCol $pheno ${covoption_regenie} --bsize $bsize   --pred $list  $loco   --out $out --threads ${params.max_cpus} ${params.regenie_otheropt_step2} $gxe
@@ -98,13 +102,21 @@ workflow regenie {
  if(bgen_balise.val || bgenlist_balise.val){
    println("regenie performed using bgen")
    bgen_formatsample(data,bgen_sample)
+   bgen_format_sample=bgen_formatsample.out.regenie
  }else {
+  bgen_sample=channel.fromPath("00")
+  bgen=channel.fromPath("01")
+  bgenlist=channel.fromPath("02")
  if(vcf_balise.val){
     println("regenie cannot performed using vcf, to convert in bgen see option")
  }
     println("regenie performed using plink ")
+    bgen_format_sample=channel.fromPath("00")
+   
  }
 //     tuple val(pheno),val(covariates),val(covoption_regenie),val(pheno_bin),path(data),path(bed), path(bim), path(fam), path(rsrel)
+ check_pheno_bin(pheno,pheno_bin,data,channel.of('regenie'))                
+ data=check_pheno_bin.out.data
  npheno=params.pheno.split(',').size()                                          
  phenol = pheno.flatMap { list -> list.split(',') }  // Groovy-style lambda for splitting
  pheno_binl = pheno_bin.map { list -> list.split(',') }.flatMap { it.size() == 1 ? it.collect { it } * npheno : it }
@@ -112,23 +124,7 @@ workflow regenie {
  //    tuple val(pheno),val(pheno_bin),val(covariates),val(covoption_regenie),path(data),path(bed), path(bim), path(fam)
  tmp=combined.combine(covariates).combine(COFACTORS_TYPE.out).combine(data).combine(plink_rel)
  regenie_step1(combined.combine(covariates).combine(COFACTORS_TYPE.out).combine(data).combine(plink_rel))
- regenie_step2(regenie_step1.out.step1.combine(COFACTORS_TYPE.out).combine(bgen).combine(bgen_formatsample.out.regenie).combine(bgen_balise).combine(bgenlist_balise))
- 
-/*
- if(vcf_balise.val){
-    println("saige performed using vcf")
-    checkidd_saige_vcf(data, pheno,pheno_bin,vcf.first(),plink_rel)
-    plkinp=checkidd_saige_vcf.out.plink
-   phenoclean=checkidd_saige_saige.out.pheno
- }else if(bgen_balise.val || bgenlist_balise.val){
-    println("saige performed using bgen")
-   bgen_formatsample(data,bgen_sample)
-   checkidd_saige(data, pheno, pheno_bin,bgen_sample, plink_rel)
-   plkinp=checkidd_saige.out.plink
-   phenoclean=checkidd_saige.out.pheno
- }else{
-   checkidd_saige(data, pheno, pheno_bin,channel.fromPath("00"), plink_rel)
-   plkinp=checkidd_saige.out.plink
-   phenoclean=checkidd_saige.out.pheno
- }*/
+ regenie_step2(regenie_step1.out.step1.combine(COFACTORS_TYPE.out).combine(bgen).combine(bgenlist).combine(bgen_format_sample).combine(bgen_balise).combine(bgenlist_balise))
+   merge_sumstat(channel.from('regenie').combine(regenie_step2.out.regenie.groupTuple()))          
+  
 }

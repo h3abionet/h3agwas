@@ -6,6 +6,7 @@ include {list_chro} from '../modules/utils_plink.nf'
 include {compute_pcs_small} from '../modules/pcs.nf'
 include {saige} from './process/saige.nf'
 include {regenie} from './process/regenie.nf'
+include {plink} from './process/plink.nf'
 include {merge_sumstat} from './process/all.nf'
 workflow check_params{
   take : 
@@ -74,7 +75,7 @@ compute_pcs_small(indep_pairwise.out, channel.from(params.add_pcs), channel.from
  /*plot pcs ?*/
  
  wf_prepare_pheno(extractPheno.out, channel.from(params.pheno), channel.from(params.covariates), channel.from(params.gxe),clean_plink.out, compute_pcs_small.out.eigen)
- pheno_type=params.phenotypes_type
+ pheno_type=params.pheno_type
  listchro=list_chro(bfile)
  listchro=listchro.flatMap{ list_str -> list_str.split() }
  bfile_rel=bfile
@@ -84,11 +85,11 @@ compute_pcs_small(indep_pairwise.out, channel.from(params.add_pcs), channel.from
  }else {
   println('full SNPs used for relatdness')
  }
-
+ 
  emit :
   data = wf_prepare_pheno.out.data
   pheno=  wf_prepare_pheno.out.pheno
-  pheno_bin=  channel.from(params.phenotypes_type)
+  pheno_bin=  channel.from(params.pheno_type)
   covar = wf_prepare_pheno.out.covar
   covariates_type =channel.from(params.covariates_type)
   gxe = wf_prepare_pheno.out.gxe
@@ -117,12 +118,18 @@ workflow assoc {
  main :
   println "In ASSOC top"
   check_params(data,bfile, vcf, bimbam, bgen,bgenlist,bgen_sample)
+  check_params.out.data.view()
+  check_params.out.pheno_bin.view()
+  check_params.out.pheno.view()
   if(params.saige){
    saige(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
   }
 if(params.regenie){
    regenie(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
  }
+ if (params.assoc+params.fisher+params.logistic+params.linear > 0) {             
+   plink(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
+}
  // add pcs
        println "In ASSOC middle"
 }
