@@ -30,8 +30,7 @@ include { split_vcf} from "./modules/vcf.nf"
 include { convertvcfin } from "./formatdata/format_vcf.nf"
 include {qc_dup} from './qc/workflow.nf'
 include {assoc} from './assoc/workflow.nf'
-//include { assoc} from "./assoc/assoc.nf"
-//include { assoc} from "./assoc/assoc.nf"
+include {imputation} from './imputation/workflow.nf'
 //nextflow.enable.moduleBinaries = true
 
 workflow.onComplete = {
@@ -72,6 +71,10 @@ workflow {
   if (params.convertinvcf==1 || params.convertinvcf){
      format_plink_invcf(plink_qc, "${params.output_dir}/vcf/", params.output) 
      vcf_qc= format_plink_invcf.out.vcf
+  }
+  if (params.impute==1 || params.impute){
+     imputation(vcf_qc)    
+
   }
   if(params.vcf_split_chro){
     split_vcf(vcf_qc,"${params.output_dir}/vcf/split", params.output)

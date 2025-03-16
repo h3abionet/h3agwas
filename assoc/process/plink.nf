@@ -32,11 +32,11 @@ process computeTest {
       cp .command.err "${pheno}"_"$test".err.report  
        """
 }   
-process  format_sumstat_plink{
+/*process  format_sumstat_plink{
   input :
   
 
-}
+}*/
 workflow plink {
   take :                                                                        
    data                                                                         

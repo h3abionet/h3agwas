@@ -41,3 +41,15 @@ process buildindex {
        tabix -C -p vcf $vcf
        """
 }
+
+process getlistchro{
+ label 'utils'
+ input :
+    path(vcf)
+ output :
+   stdout
+ script :
+   """
+   zcat $vcf|grep -v "#"|awk '{print \$1}' |uniq|sort|uniq
+   """
+}
