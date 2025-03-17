@@ -28,13 +28,14 @@ workflow getparams{
   dl_fasta_wf(fasta, build, params.ftp_fasta, '')
  vcf_patscoreimp =""
  vcf_patstatfreq =""
- 
- if(vcf_imputeformat.toLowerCase()==="pbwt"){
-  vcf_patscoreimp= "INFO/R2"
+ if(vcf_imputeformat.val.toLowerCase()=="pbwt"){
+  println("[FORMATVCFINPLINK] using pbwt")
+  vcf_patscoreimp= "%INFO/R2"
   vcf_patstatfreq="%AN %AC"
  }
- else if(vcf_imputeformat.toLowerCase()==="minmac4"){
-  vcf_patscoreimp= "INFO/R2"
+ else if(vcf_imputeformat.val.toLowerCase()=="minmac4"){
+  println("[FORMATVCFINPLINK] using minmac4")
+  vcf_patscoreimp= "%INFO/R2"
   vcf_patstatfreq="%MAF"
  } 
 
@@ -44,14 +45,18 @@ workflow getparams{
  if(params.vcf_patstatfreq!=''){
    vcf_patstatfreq = params.vcf_patstatfreq
  }
-
+ do_stat=0
+ if(vcf_patscoreimp!='' && vcf_patstatfreq!='' && params.convertvcf_stat==1){
+    println('performing statistics using vcf') 
+   do_stat=1
+ }
  emit :
    vcf=vcf
    fasta_index = dl_fasta_wf.out.fasta_index
    fasta = dl_fasta_wf.out.fasta
    vcf_patscoreimp = vcf_patscoreimp
    vcf_patstatfreq = vcf_patstatfreq
-  
+   do_stat = do_stat
 
 }
 workflow convertvcfinplk {
@@ -91,7 +96,7 @@ workflow convertvcfin{
   main :
    vcf_imputeformat.view()
     getparams(vcf, build,vcf_imputeformat)
-    if(params.convertvcf_stat){
+    if(getparams.out.do_stat.val==1){
      computedstat(getparams.out.vcf, getparams.out.vcf_patstatfreq, getparams.out.vcf_patscoreimp)
      dostat(computedstat.out.collect(), channel.of(outputdir+'/stats/'), channel.of(outputpat))
      latex_compilation(dostat.out.tex, dostat.out.support_file, channel.of(outputdir+'/report/'))

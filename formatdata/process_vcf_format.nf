@@ -46,7 +46,7 @@ process computedstat{
   script :
     Ent=vcf.baseName+".stat"
     """
-    bcftools query -f '%CHROM %REF %ALT %POS %INFO/$vcf_pat %INFO/${vcf_patscoreimp} ${vcf_patstatfreq}\\n' $vcf > $Ent
+    bcftools query -f '%CHROM %REF %ALT %POS %INFO/$params.vcf_geno_type ${vcf_patscoreimp} ${vcf_patstatfreq}\\n' $vcf > $Ent
     """
 }
 
@@ -74,7 +74,8 @@ process clean_vcf {
  cache 'lenient'
  cpus 5
  input :
-   tuple path(vcf), path(fasta),val(maf), val(hwe), val(r2), val(missing), val(outputdir)
+   tuple path(vcf), path(fasta),val(maf), val(hwe), val(r2), val(missing), val(outputdir),    val(vcf_patscoreimp)
+
  publishDir "${outputdir}", mode:'copy'
  output :
     path(outputfile)
@@ -84,11 +85,11 @@ process clean_vcf {
    outputfile=vcf.toString().replaceAll(/.vcf.gz/,'_clean.vcf.gz')
    if((cuthwe> 0 || cutmaf>0) & r2>0) {
      """
-     vcftools --gzvcf $vcf $cuthwe  $cutmaf --recode --recode-INFO-all --stdout  | ${params.bin_bcftools} view -i '${params.vcf_patscoreimp}>$r2'   | bcftools norm -Ou -m -any  | bcftools norm -Oz -f $fasta  -o $outputfile
+     vcftools --gzvcf $vcf $cuthwe  $cutmaf --recode --recode-INFO-all --stdout  | bcftools view -i '${vcf_patscoreimp}>$r2'   | bcftools norm -Ou -m -any  | bcftools norm -Oz -f $fasta  -o $outputfile
      """
    }else if (r2>0){
      """
-     ${params.bin_bcftools} view -i '${params.vcf_patscoreimp}>$r2' $vcf  | bcftools norm -Ou -m -any  | bcftools norm -Oz -f $fasta -o $outputfile
+     ${params.bin_bcftools} view -i '${vcf_patscoreimp}>$r2' $vcf  | bcftools norm -Ou -m -any  | bcftools norm -Oz -f $fasta -o $outputfile
      """
    }else {
      """
