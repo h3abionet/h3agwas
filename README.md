@@ -22,17 +22,17 @@
 The major change from Version 3 to Version 4 :
 * dsl 2 supported 
 * X, Y chromosomes supported for quality control, format dataset and will be integred
-
+* imputation had been aded
 
 ## Brief introduction
 
 In addition to this README we have a detailed tutorial and videos
-* These can be found at http://www.bioinf.wits.ac.za/gwas
 * found example data-set and example in  [h3agwas-examples github](https://github.com/h3abionet/h3agwas-examples)
 
-
 pipeline do different step of GWAS :
- * [Quality control of array input illuminat in plink format](qc/README.md)
+ * [Deleted technical duplicated](qc_dup/README.md)
+ * [Quality control of array plink format](qc/README.md)
+ *
 
 ## What's new :
 
@@ -40,7 +40,7 @@ pipeline do different step of GWAS :
  * to see conversion in [V4](v4.md)
 
 ##  Outline of documentation
-H3Agwas is a simple human GWAS analysis workflow for data quality control (QC), association and post association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). H3Agwas uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
+H3Agwas is a fully human GWAS analysis workflow for data quality control (QC), association and post association testing developed by [H3ABioNet](https://www.h3abionet.org/). It is an extension of the [witsGWAS pipeline](http://magosil86.github.io/witsGWAS/) for human genome-wide association studies built at the [Sydney Brenner Institute for Molecular Bioscience](https://www.wits.ac.za/research/sbimb/). H3Agwas uses Nextflow as the basis for workflow managment and has been dockerised to facilitate portability.
 
 
 The original version of the H3Agwas was published in June 2017 with minor updates and bug fixes through the rest of the year. Based on experience with large data sets, the pipelines were considerably revised with additional features, reporting and a slightly different workflow.

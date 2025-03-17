@@ -10,7 +10,6 @@
 
 ----------------------------------------------------------------------------------------
  @Homepage / @Documentation
-  https://github.com/h3abionet/chipimputation
 ----------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------
@@ -19,7 +18,11 @@
 
 // check if files exist [name, file1, file2, ...]
 def check_files(file_list) {
-    file_list.each { myfile ->
+    if(file_list.size()==0){
+        println('size list == 0')
+        exit 1
+    }
+    file_list.each { myfile -> 
         if (!file(myfile).exists() && !file(myfile).isFile()) exit 1, "|-- ERROR: File ${myfile} not found. Please check your config file."
     }
 }

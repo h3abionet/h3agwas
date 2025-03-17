@@ -57,15 +57,15 @@ workflow preprocess {
     main:
         //// check if study genotype files exist
         if(vcf==null){
-          println('[IMPUTATION] imputation using vcf from --vcf'+ params.vcf)
+          println('[IMPUTATION] imputation using vcf from --vcf '+ params.vcf)
           check_files([params.vcf])
           vcf=channel.fromPath(params.vcf)
         }else{
-           printl("[IMPUTATION] file using vcf from previous process") 
+           println("[IMPUTATION] file using vcf from previous process") 
            vcf.view()
          }
         //// check if eagle map file exists
-        if(params.eagle_genetic_map) {
+        if(params.eagle_genetic_map!='') {
             println('[IMPUTATION ]using file eagle_genetic_map --eagle_genetic_map'+ params.eagle_genetic_map)
             check_files([params.eagle_genetic_map])
             eagle_genetic_map=channel.fromPath(params.eagle_genetic_map)
@@ -97,7 +97,7 @@ workflow preprocess {
         
         imp_ref_panels = [[params.imp_ref_name,params.imp_ref_m3vcf, params.imp_ref_vcf]]
         //// check if reference panel files exist
-        list_chro.each{ chrm ->
+        list_chro.map{ chrm ->
             imp_ref_panels.each{ ref_name, ref_m3vcf, ref_vcf ->
                 vcf1 = sprintf(ref_vcf, chrm)
                 m3vcf1 = sprintf(ref_m3vcf, chrm)

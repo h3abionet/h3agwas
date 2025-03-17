@@ -1,8 +1,8 @@
 <img src="../helperfiles/H3ABioNetlogo2.jpg"/>
-# Part of Quality control 
- * deleted and check duplicate `qc_dup`
- * quality control `qc`
- * clean frequency using an external dataset  from michigan `qc_michigan`
+# Quality control  : 3 mains options
+ * deleted and check tecnical duplicate `qc_dup`
+ * Quality Control `qc`
+ * Clean frequency using an external dataset from  michigan `qc_michigan`
 
 # Clean and check technical duplicate `qc_dup = 1` 
 
@@ -41,7 +41,6 @@ Algorithms :
 
 ## example 
 
-need to developped
 
 ## need 
 * plink, R
