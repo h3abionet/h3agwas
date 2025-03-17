@@ -53,6 +53,7 @@ h3achipimputation v${params.version}"
 workflow preprocess {
     take: 
       vcf
+      build_genome
     main:
         //// check if study genotype files exist
         if(vcf==null){
@@ -71,8 +72,8 @@ workflow preprocess {
         }else {
             if(params.ftp_eagle_genetic_map!='')ftp_link=params.ftp_eagle_genetic_map
             else {
-                 if(params.build_genome=='37') ftp_link=params.ftp_eagle_genetic_map_19 
-                 else if(params.build_genome=='38') ftp_link=params.ftp_eagle_genetic_map_38
+                 if(build_genome=='37') ftp_link=params.ftp_eagle_genetic_map_19 
+                 else if(build_genome=='38') ftp_link=params.ftp_eagle_genetic_map_38
                  else {
                          println("--build_genome must be 37 and 38 for ftp_eagle_genetic_map otherwise used `--ftp_eagle_genetic_map` or `eagle_genetic_map`")
                  }
@@ -84,7 +85,7 @@ workflow preprocess {
 
         //// check if fasta reference genome and index
         /*replace refence_genome*/
-        dl_fasta_wf(params.fasta, params.build_genome, params.ftp_fasta, '')
+        dl_fasta_wf(params.fasta, build_genome, params.ftp_fasta, '')
         /*get list chro from vcf*/
         getlistchro(vcf)
         list_chro_vcf=getlistchro.out.flatMap{ list_str -> list_str.split() }
@@ -240,13 +241,15 @@ workflow report_by_dataset{
 workflow imputation {
     take :
       vcf 
-
+      build_genome
+      //ignore for the momnet
+      type_imputation
     main :
 
     //intro()
 
     //// Data preparation
-    preprocess(vcf)
+    preprocess(vcf, build_genome)
     
     // //// Data chunking
     subset(preprocess.out.dataset_qc)
@@ -271,12 +274,9 @@ workflow imputation {
     phasing(phasing_data)
 
     //// Imputation
-     phasing.out.chunks_phased.view()
     impute(phasing.out.chunks_phased)
     
     // Reporting
-     println('imputed : chuncks')
-     impute.out.chunks_imputed.view()
     impute_data = impute.out.chunks_imputed
                 .map{chr, fwd, rev, test_data, ref, imputed_vcf, 
                 imputed_info, tst_data -> [test_data, ref, imputed_vcf, imputed_info]}
@@ -312,4 +312,12 @@ workflow imputation {
     // // compute for average rsquared values
     rsquared_input = impute_data.map{ target_name, ref_name, vcf, impute_vcf, info ->[ target_name, ref_name, info]}
     average_r2(rsquared_input)
+    imputed_vcf=impute.out.chunks_imputed.map{chr, fwd, rev, test_data, ref, imputed_vcf,
+                imputed_info, tst_data -> [imputed_vcf] }
+    imputed_info=impute.out.chunks_imputed.map{chr, fwd, rev, test_data, ref, imputed_vcf,
+                imputed_info, tst_data -> [imputed_info] }
+  emit : 
+     vcf=imputed_vcf
+     info=imputed_info
+     type_impute = 'minmac4'
 }

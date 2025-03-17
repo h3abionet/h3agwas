@@ -79,3 +79,4 @@ see [h3agwas-example github](https://github.com/h3abionet/h3agwas-examples)
  * `vcf_folder_zip` : zip folder contained all folder as same pipeline if password used `vcf_folder_zip_password`
  * `vcf` : one vcf file 
  * `vcf_list`:file contained list of vcf
+* `impute_info_cutoff` : cut off for info

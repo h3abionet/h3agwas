@@ -6,6 +6,7 @@ workflow getparams {
     vcf_qc
     ref_in
     ref_out
+    
   main :
   if(vcf_qc){
   }else {
@@ -28,6 +29,7 @@ workflow getparams {
    fasta = dl_fasta_wf.out.fasta_index
    fasta_picard = dl_fasta_wf.out.fasta_picard
    crossmap = crossmap
+   vcf_patscoreimp = vcf_patscoreimp
 }
 
 workflow crossmap_vcf{

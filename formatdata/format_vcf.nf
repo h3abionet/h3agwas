@@ -9,6 +9,7 @@ workflow getparams{
   take :
    vcf
    build
+   vcf_imputeformat
   main :
    if(vcf){
      println('using vcf from previous process')
@@ -25,10 +26,31 @@ workflow getparams{
    fasta=params.fasta
    if(params.fasta_convert!='')fasta=params.fasta_convert
   dl_fasta_wf(fasta, build, params.ftp_fasta, '')
+ vcf_patscoreimp =""
+ vcf_patstatfreq =""
+ 
+ if(vcf_imputeformat.toLowerCase()==="pbwt"){
+  vcf_patscoreimp= "INFO/R2"
+  vcf_patstatfreq="%AN %AC"
+ }
+ else if(vcf_imputeformat.toLowerCase()==="minmac4"){
+  vcf_patscoreimp= "INFO/R2"
+  vcf_patstatfreq="%MAF"
+ } 
+
+ if(params.vcf_patscoreimp!=''){
+   vcf_patscoreimp = params.vcf_patscoreimp
+ }
+ if(params.vcf_patstatfreq!=''){
+   vcf_patstatfreq = params.vcf_patstatfreq
+ }
+
  emit :
    vcf=vcf
    fasta_index = dl_fasta_wf.out.fasta_index
    fasta = dl_fasta_wf.out.fasta
+   vcf_patscoreimp = vcf_patscoreimp
+   vcf_patstatfreq = vcf_patstatfreq
   
 
 }
@@ -65,14 +87,16 @@ workflow convertvcfin{
      build
      outputdir
      outputpat
+     vcf_imputeformat
   main :
-    getparams(vcf, build)
+   vcf_imputeformat.view()
+    getparams(vcf, build,vcf_imputeformat)
     if(params.convertvcf_stat){
-     computedstat(getparams.out.vcf)
+     computedstat(getparams.out.vcf, getparams.out.vcf_patstatfreq, getparams.out.vcf_patscoreimp)
      dostat(computedstat.out.collect(), channel.of(outputdir+'/stats/'), channel.of(outputpat))
      latex_compilation(dostat.out.tex, dostat.out.support_file, channel.of(outputdir+'/report/'))
      }
-    clean_vcf(getparams.out.vcf.combine(getparams.out.fasta).combine(channel.of(params.cut_maf)).combine(channel.of(params.cut_hwe)).combine(channel.of(params.vcf_minscoreimp)).combine(channel.of(params.vcf_cut_miss)).combine(channel.of("$outputdir/cleanvcf")))
+    clean_vcf(getparams.out.vcf.combine(getparams.out.fasta).combine(channel.of(params.cut_maf)).combine(channel.of(params.cut_hwe)).combine(channel.of(params.impute_info_cutoff)).combine(channel.of(params.vcf_cut_miss)).combine(channel.of("$outputdir/cleanvcf")))
     if(params.convertvcfinplink==1) {
     convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat)
     }

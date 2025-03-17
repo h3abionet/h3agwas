@@ -7,6 +7,7 @@ include {dl_fasta_wf} from '../modules/dl_wf.nf'
 workflow getparams{
   take :
    plink
+   fasta
   main :
    if(!plink){
      if(params.bfile!=''){
@@ -27,6 +28,7 @@ workflow getparams{
    }
  }
  dl_fasta_wf(params.fasta, params.build_genome, params.ftp_fasta, '')
+
  emit :
   rs_infogz= rs_infogz
   fasta = dl_fasta_wf.out.fasta_index
@@ -38,9 +40,9 @@ workflow format_plink_invcf {
    plink
    outputdir
    outputpat
+   fasta
   main :
-   getparams(plink)
-   getparams.out.rs_infogz
+   getparams(plink, fasta, vcf_imputeformat)
    if(!(getparams.out.rs_infogz!=null)) {
    updateplk_rsname_norsinfo(getparams.out.plink,  channel.of("$outputdir/rs_update"))
    }else{

@@ -55,6 +55,7 @@ workflow {
   bfile=null
   build_cur=params.build_genome
   vcf=null
+  type_impute=params.vcf_imputeformat
   if (params.qc_dup == 1 || params.qc_dup) {
         qc_dup(data, plink_qc, "${params.output_dir}/dup/")
         plink_qc=qc_dup.out.plink
@@ -72,10 +73,6 @@ workflow {
      format_plink_invcf(plink_qc, "${params.output_dir}/vcf/", params.output) 
      vcf_qc= format_plink_invcf.out.vcf
   }
-  if (params.impute==1 || params.impute){
-     imputation(vcf_qc)    
-
-  }
   if(params.vcf_split_chro){
     split_vcf(vcf_qc,"${params.output_dir}/vcf/split", params.output)
     vcf_qc=split_vcf.out.vcf
@@ -85,9 +82,14 @@ workflow {
     build_cur=params.build_genome_convert
     vcf_qc = crossmap_vcf.out.vcf
  }
+  if (params.impute==1 || params.impute){
+     imputation(vcf_qc,build_cur, type_impute)
+     vcf_qc = imputation.out.vcf
+     type_impute= imputation.out.type_impute 
+  }
  balise_convertvcf=(params.convertvcfinplink==1 || params.convertvcfinbimbam==1)
  if(balise_convertvcf){
-   convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output)
+   convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output, type_impute)
    bfile = convertvcfin.out.plink
    vcf = convertvcfin.out.vcf
  }

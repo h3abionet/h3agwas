@@ -1,5 +1,5 @@
 # Imputation modules
-
+module had been adapted with authors from : ph3abionet/chipimputation](https://github.com/h3abionet/chipimputation)
 ## Input
 * `vcf` : from previous process
 * `build_genome` : ["37"]

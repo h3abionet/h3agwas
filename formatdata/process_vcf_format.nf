@@ -39,12 +39,14 @@ process computedstat{
   time   params.big_time
   input :
      path(vcf)
+     val(vcf_patstatfreq)
+     val(vcf_patscoreimp)
   output :
      path("${Ent}")
   script :
     Ent=vcf.baseName+".stat"
     """
-    bcftools query -f '%CHROM %REF %ALT %POS %INFO/$params.vcf_pat %INFO/${params.vcf_patscoreimp} ${params.vcf_patstatfreq}\\n' $vcf > $Ent
+    bcftools query -f '%CHROM %REF %ALT %POS %INFO/$vcf_pat %INFO/${vcf_patscoreimp} ${vcf_patstatfreq}\\n' $vcf > $Ent
     """
 }
 
@@ -63,7 +65,7 @@ process dostat{
   fileout=outputpat+"_report"
   allfile=all_file.join(',')
   """
-  stat_vcf_v2.py  --out $fileout --min_score ${params.vcf_minscoreimp} --list_files $allfile
+  stat_vcf_v2.py  --out $fileout --min_score ${params.impute_info_cutoff} --list_files $allfile
   """
 }
 
