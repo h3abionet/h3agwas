@@ -55,7 +55,7 @@ workflow {
   bfile=null
   build_cur=params.build_genome
   vcf=null
-  type_impute=params.vcf_imputeformat
+  type_impute=null
   if (params.qc_dup == 1 || params.qc_dup) {
         qc_dup(data, plink_qc, "${params.output_dir}/dup/")
         plink_qc=qc_dup.out.plink

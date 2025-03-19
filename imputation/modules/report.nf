@@ -143,9 +143,9 @@ process generate_frequency {
     label "medium"
     label 'imputation'                                                          
     input:
-        tuple val(target_name), val(ref_name), file(impute_vcf),  file(ref_vcf)
+        tuple val(target_name), val(ref_name),val(chr) ,file(impute_vcf),  file(ref_vcf)
     output:
-        tuple val(target_name), val(ref_name), file(dataset_frq), file(ref_frq)
+        tuple val(target_name), val(ref_name), val(chr),file(dataset_frq), file(ref_frq)
     script:
         dataset_frq = "${file(impute_vcf.baseName).baseName}.frq"
         ref_frq = "${file(ref_vcf.baseName).baseName}.frq"

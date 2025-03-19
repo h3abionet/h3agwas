@@ -42,6 +42,7 @@ workflow format_plink_invcf {
    outputpat
    fasta
   main :
+  //spaces/jeantristan/agora/imputeddata/all/job-20241209-124900-327/local/chr11.dose.vcf.gz, /spaces/jeantristan/agora/imputeddata/convert_and_merge/all/work/ba/d6e6622f6774531f1f806096afa73a/hg38.fa_clean.fa.gz, 0.01, 0.008, 0, -1, .//convertvcf/cleanvcf]
    getparams(plink, fasta, vcf_imputeformat)
    if(!(getparams.out.rs_infogz!=null)) {
    updateplk_rsname_norsinfo(getparams.out.plink,  channel.of("$outputdir/rs_update"))

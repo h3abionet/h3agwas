@@ -31,7 +31,8 @@ process impute_minimac4 {
     input:
         tuple val(chrm), val(chunk_start), val(chunk_end), val(target_name), file(target_phased_vcf), file(target_phased_vcf_tbi), val(ref_name), file(ref_vcf), file(ref_m3vcf), val(tagName)
     output:
-        tuple val(chrm), val(chunk_start), val(chunk_end), val(target_name), val(ref_name), file("${base}_imputed.dose.vcf.gz"), file("${base}_imputed.info"), val(tagName)
+        tuple val(chrm), val(chunk_start), val(chunk_end), val(target_name), val(ref_name), file("${base}_imputed.dose.vcf.gz"), file("${base}_imputed.info"), val(tagName), emit : out
+        tuple val(chrm), val(chunk_start), val(chunk_end), val(target_name), val(ref_name), file("${base}_imputed.dose.vcf.gz"), file("${base}_imputed.info"), val(tagName), file(ref_vcf), emit : outwithref
     shell:
         base = "${file(target_phased_vcf.baseName).baseName}_${tagName}_${chrm}_${chunk_start}-${chunk_end}"
         """

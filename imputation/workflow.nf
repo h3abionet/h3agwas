@@ -110,7 +110,18 @@ workflow preprocess {
                 check_files([ m3vcf1, vcf1, vcf1_idx ])
             }
         }
-
+       /*list_chro.map{ chrm ->
+            imp_ref_panels.each{ ref_name, ref_m3vcf, ref_vcf ->
+                vcf1 = sprintf(ref_vcf, chrm)
+                m3vcf1 = sprintf(ref_m3vcf, chrm)
+                if(vcf1.endsWith("vcf.gz")){
+                    vcf1_idx = "${vcf1}.tbi"
+                }
+                else if(vcf1.endsWith("bcf")){
+                    vcf1_idx = "${vcf1}.csi"
+                }
+            }
+        }*/
         ////// QC
         //        tuple val(target), val(chrm), val(start), val(end), file(target_vcf), file(reference_genome)
         check_mismatch(channel.of("all").combine(channel.of('')).combine(channel.of('')).combine(channel.of('')).combine(vcf).combine(dl_fasta_wf.out.fasta))
@@ -124,6 +135,7 @@ workflow preprocess {
         dataset_qc = filter_min_ac.out
         eagle_genetic_map= eagle_genetic_map
         vcf = vcf
+        list_chro = list_chro
 }
 
 workflow subset{
@@ -172,7 +184,8 @@ workflow impute{
 
     emit: 
         data = data
-        chunks_imputed = impute_minimac4.out
+        chunks_imputed = impute_minimac4.out.out
+        chunks_imputed_withref = impute_minimac4.out.outwithref
 }
 
 workflow report_by_ref{
@@ -279,38 +292,38 @@ workflow imputation {
     // Reporting
     impute_data = impute.out.chunks_imputed
                 .map{chr, fwd, rev, test_data, ref, imputed_vcf, 
-                imputed_info, tst_data -> [test_data, ref, imputed_vcf, imputed_info]}
+                imputed_info, tst_data -> [test_data, ref,chr, imputed_vcf, imputed_info]}
                .combine(channel.of('all').combine(preprocess.out.vcf), by:0)
-               .map {test_data, ref, imputed_vcf, imputed_info, orig_vcf 
-               -> [test_data, ref, orig_vcf, imputed_vcf, imputed_info]}
+               .map {test_data, ref, chr,imputed_vcf, imputed_info, orig_vcf 
+               -> [test_data, ref, chr,orig_vcf, imputed_vcf, imputed_info]}
+     
 
     // //// Report by Reference
-    report_by_ref( impute_data )
+    //report_by_ref( impute_data )
 
     // //// Report by datasets
-   report_by_dataset( impute_data )
+   //report_by_dataset( impute_data )
 
     // // Generate dataset frequencies
-    inp = Channel.fromList(imp_ref_panels).map{ref, m3vcf, vcf -> [ref, vcf]}
-    input = impute_data
-    .map{ target_name, ref_name, vcf, impute_vcf, info ->[  ref_name, target_name, file(impute_vcf)]}
-    .combine(inp, by:0)
-    .map{ ref_name, target_name, impute_vcf, ref_vcf -> [target_name, ref_name, file(impute_vcf), file(ref_vcf)]}
+    input = impute.out.chunks_imputed_withref
+                .map{chr, fwd, rev, test_data, ref, imputed_vcf,
+                imputed_info, tst_data, ref_vcf-> ['all', ref, chr,imputed_vcf,  ref_vcf]}
+    
     generate_frequency(input)
 
     // // Plot frequency Comparison
-    freq_comp = impute_data.map {target_name, ref_name, vcf, impute_vcf, info -> 
-    [target_name, ref_name, info]}
-    .combine(generate_frequency.out, by:[0,1])
+    freq_comp = impute_data.map {target_name, ref_name, chr,vcf, impute_vcf, info -> 
+    [target_name, ref_name, chr,info]}
+    .combine(generate_frequency.out, by:[0,1,2])
     plot_freq_comparison(freq_comp)
      // Plot number of imputed SNPs over the mean r2 for all reference panels
-    combineInfo_frq = impute_data.map{ target_name, ref_name, vcf, impute_vcf, info ->[ target_name, ref_name, info, params.cut_maf_postimp]}
-    .combine(generate_frequency.out, by:[0,1])
-    .map { target_name, ref_name, info, maf_thresh, target_frq, ref_frq -> 
-    [target_name, ref_name, info, maf_thresh, target_frq]}
+    combineInfo_frq = impute_data.map{ target_name, ref_name, chr,vcf, impute_vcf, info ->[ target_name, ref_name, info, params.cut_maf_postimp]}
+    .combine(generate_frequency.out, by:[0,1,2])
+    .map { target_name, ref_name, chr,info, maf_thresh, target_frq, ref_frq -> 
+    [target_name, ref_name, chr,info, maf_thresh, target_frq]}
     plot_r2_SNPpos(combineInfo_frq)
     // // compute for average rsquared values
-    rsquared_input = impute_data.map{ target_name, ref_name, vcf, impute_vcf, info ->[ target_name, ref_name, info]}
+    rsquared_input = impute_data.map{ target_name, ref_name, chr,vcf, impute_vcf, info ->[ target_name, ref_name, info]}
     average_r2(rsquared_input)
     imputed_vcf=impute.out.chunks_imputed.map{chr, fwd, rev, test_data, ref, imputed_vcf,
                 imputed_info, tst_data -> [imputed_vcf] }

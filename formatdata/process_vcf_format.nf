@@ -58,7 +58,7 @@ process dostat{
     val(outputpat)
  publishDir "${outputdir}/", overwrite:true, mode:'copy'
  output :
-   tuple path("${fileout}.tex"), emit : tex
+   path("${fileout}.tex"), emit : tex
    tuple path('*report_freq.pdf'), path("*_report_score.pdf"), emit : support_file
    path("${fileout}*"), emit : all
  script :
@@ -68,18 +68,24 @@ process dostat{
   stat_vcf_v2.py  --out $fileout --min_score ${params.impute_info_cutoff} --list_files $allfile
   """
 }
-
+/**clean_vcf**/
 process clean_vcf {
  label 'py3utils'
  cache 'lenient'
  cpus 5
  input :
-   tuple path(vcf), path(fasta),val(maf), val(hwe), val(r2), val(missing), val(outputdir),    val(vcf_patscoreimp)
-
+   val(dic)
+   tuple path(vcf), path(fasta)
  publishDir "${outputdir}", mode:'copy'
  output :
     path(outputfile)
  script :
+   hwe=dic['hwe']
+   maf=dic['maf']
+   missing=dic['missing']
+   outputdir=dic['outputdir']
+   vcf_patscoreimp=dic['patscoreimp']
+   r2=dic['r2lim']
    cuthwe=hwe > 0 ? " --hwe ${hwe}" : ""
    cutmaf=maf > 0 ? " --maf ${maf}" : ""
    outputfile=vcf.toString().replaceAll(/.vcf.gz/,'_clean.vcf.gz')
