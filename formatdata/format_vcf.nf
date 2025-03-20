@@ -99,6 +99,9 @@ workflow convertvcfin{
      outputpat
      vcf_imputeformat
   main :
+    if(outputdir==null){
+       outputdir=params.output_dir
+    }
     getparams(vcf, build,vcf_imputeformat)
     if(getparams.out.do_stat.val==1){
      computedstat(getparams.out.vcf, getparams.out.vcf_patstatfreq, getparams.out.vcf_patscoreimp)
@@ -107,8 +110,7 @@ workflow convertvcfin{
      }
     // [/spaces/jeantristan/agora/imputeddata/all/job-20241209-124900-327/local/chr10.dose.vcf.gz, /spaces/jeantristan/agora/imputeddata/convert_and_merge/all/work/ba/d6e6622f6774531f1f806096afa73a/hg38.fa_clean.fa.gz, 0.01, 0.008, 0, -1, .//convertvcf/cleanvcf])
     // 
-    //clean_vcf(getparams.out.vcf.combine(getparams.out.fasta).combine(channel.of(params.cut_maf)).combine(channel.of(params.cut_hwe)).combine(channel.of(params.impute_info_cutoff)).combine(channel.of(params.vcf_cut_miss)).combine(channel.of("$outputdir/cleanvcf")))
-    clean_vcf(getparams.out.vcf.combine(getparams.out.fasta),maf:params.cut_maf, hwe:params.cut_hwe, r2lim:params.impute_info_cutoff,miss:params.vcf_cut_miss,output_dir:"$outputdir/cleanvcf",patscoreimp:vcf_imputeformat)
+    clean_vcf(getparams.out.vcf.combine(getparams.out.fasta),maf:params.cut_maf, hwe:params.cut_hwe, r2lim:params.impute_info_cutoff,miss:params.vcf_cut_miss,outputdir:"$outputdir/cleanvcf",patscoreimp:vcf_imputeformat)
     if(params.convertvcfinplink==1) {
     convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat, getparams.out.vcf_patscoreimp)
     }

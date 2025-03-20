@@ -89,7 +89,7 @@ workflow {
   }
  balise_convertvcf=(params.convertvcfinplink==1 || params.convertvcfinbimbam==1)
  if(balise_convertvcf){
-   convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output, type_impute)
+   convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output_dir, type_impute)
    bfile = convertvcfin.out.plink
    vcf = convertvcfin.out.vcf
  }
