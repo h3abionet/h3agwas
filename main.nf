@@ -56,6 +56,9 @@ workflow {
   build_cur=params.build_genome
   vcf=null
   type_impute=null
+  if(params.qc_topbottom==1 || params.qc_topbottom){
+
+  }
   if (params.qc_dup == 1 || params.qc_dup) {
         qc_dup(data, plink_qc, "${params.output_dir}/dup/")
         plink_qc=qc_dup.out.plink
@@ -89,7 +92,7 @@ workflow {
   }
  balise_convertvcf=(params.convertvcfinplink==1 || params.convertvcfinbimbam==1)
  if(balise_convertvcf){
-   convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output_dir, type_impute)
+   convertvcfin(vcf_qc, build_cur,"${params.output_dir}/convertvcf", params.output, type_impute)
    bfile = convertvcfin.out.plink
    vcf = convertvcfin.out.vcf
  }

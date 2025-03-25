@@ -34,7 +34,7 @@ workflow getparams{
  else vcf_imputeformat=vcf_imputeformat.val
  if(vcf_imputeformat.toLowerCase()=="pbwt"){
   println("[FORMATVCFINPLINK] using pbwt")
-  vcf_patscoreimp= "%INFO/R2"
+  vcf_patscoreimp= "%INFO/INFO"
   vcf_patstatfreq="%AN %AC"
  }
  else if(vcf_imputeformat.toLowerCase()=="minmac4"){
@@ -71,7 +71,8 @@ workflow convertvcfinplk {
      outputpat
     vcf_patscoreimp
   main :
-      convert_inplink(vcf.combine(channel.of("$outputpat")).combine(channel.of("${outputdir}/plink")).combine(vcf.count()).combine(vcf_patscoreimp))
+      convert_inplink(vcf.combine(vcf.count()) ,output_pat:outputpat, output_dir:"${outputdir}/plink")
+//.combine(channel.of("$outputpat")).combine(channel.of("${outputdir}/plink")).combine(vcf.count()).combine(vcf_patscoreimp))
       GetRsDup(convert_inplink.out.bim.collect())
       TransformRsDup(GetRsDup.out.combine(convert_inplink.out.bed))
       plink=TransformRsDup.out.plk
@@ -99,18 +100,21 @@ workflow convertvcfin{
      outputpat
      vcf_imputeformat
   main :
+    println('[FORMATVCFINPLINK]' Begin worflow)
     if(outputdir==null){
        outputdir=params.output_dir
     }
+    if(outputpat==null){
+       outputpat = params.output
+    }
     getparams(vcf, build,vcf_imputeformat)
     if(getparams.out.do_stat.val==1){
+     println('[FORMATVCFINPLINK]' perform stqatistics)
      computedstat(getparams.out.vcf, getparams.out.vcf_patstatfreq, getparams.out.vcf_patscoreimp)
-     dostat(computedstat.out.collect(), channel.of(outputdir+'/stats/'), channel.of(outputpat))
+     dostat(computedstat.out.collect(), output_dir:"$outputdir/stats/", output_pat:outputpat)
      latex_compilation(dostat.out.tex, dostat.out.support_file, channel.of(outputdir+'/report/'))
      }
-    // [/spaces/jeantristan/agora/imputeddata/all/job-20241209-124900-327/local/chr10.dose.vcf.gz, /spaces/jeantristan/agora/imputeddata/convert_and_merge/all/work/ba/d6e6622f6774531f1f806096afa73a/hg38.fa_clean.fa.gz, 0.01, 0.008, 0, -1, .//convertvcf/cleanvcf])
-    // 
-    clean_vcf(getparams.out.vcf.combine(getparams.out.fasta),maf:params.cut_maf, hwe:params.cut_hwe, r2lim:params.impute_info_cutoff,miss:params.vcf_cut_miss,outputdir:"$outputdir/cleanvcf",patscoreimp:vcf_imputeformat)
+    clean_vcf(getparams.out.vcf.combine(getparams.out.fasta),maf:params.cut_maf_postimp, hwe:params.cut_hwe, r2lim:params.impute_info_cutoff,miss:params.vcf_cut_miss,output_dir:"$outputdir/cleanvcf",patscoreimp:vcf_imputeformat)
     if(params.convertvcfinplink==1) {
     convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat, getparams.out.vcf_patscoreimp)
     }

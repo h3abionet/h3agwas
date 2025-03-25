@@ -53,22 +53,60 @@ process computedstat{
 process dostat{
  memory params.low_memory
  input :
+    val(dic)
     path(all_file)
-    val(outputdir)
-    val(outputpat)
  publishDir "${outputdir}/", overwrite:true, mode:'copy'
  output :
    path("${fileout}.tex"), emit : tex
    tuple path('*report_freq.pdf'), path("*_report_score.pdf"), emit : support_file
    path("${fileout}*"), emit : all
  script :
+  outputdir = dic['output_dir']
+  outputpat = dic['output_pat']
   fileout=outputpat+"_report"
   allfile=all_file.join(',')
+  outputdir=dic['output_dir']
   """
   stat_vcf_v2.py  --out $fileout --min_score ${params.impute_info_cutoff} --list_files $allfile
   """
 }
 /**clean_vcf**/
+process clean_vcf_hwe_maf {
+ label 'py3utils'
+ cpus 2 
+ input :
+   val(dic)
+   tuple path(vcf), path(fasta)
+ publishDir "${outputdir}", mode:'copy'
+ output :
+    path(outputfile"*"), val(fasta)
+ script :
+   hwe=dic['hwe']
+   maf=dic['maf']
+   cuthwe=hwe > 0 ? " --hwe ${hwe}" : ""
+   cutmaf=maf > 0 ? " --maf ${maf}" : ""
+   outputfile=vcf.toString().replaceAll(/.vcf.gz/)
+   outputfile=outputfile+"_cl1"
+ """
+ vcftools --gzvcf $vcf $cuthwe  $cutmaf --recode --recode-INFO-all   --recode-bcf  --out $outputfile
+ """
+}
+
+process clean_vcf_bcfr2 {
+ label 'py3utils'
+ cache 'lenient'
+ cpus 5
+ input :
+   val(dic)
+   tuple path(vcf), path(fasta)
+ script :
+   vcf_patscoreimp=dic['patscoreimp']
+   """
+   """
+  
+
+
+}
 process clean_vcf {
  label 'py3utils'
  cache 'lenient'
@@ -82,17 +120,28 @@ process clean_vcf {
  script :
    hwe=dic['hwe']
    maf=dic['maf']
+   threadn=5
    missing=dic['missing']
-   outputdir=dic['outputdir']
+   outputdir=dic['output_dir']
    vcf_patscoreimp=dic['patscoreimp']
    r2=dic['r2lim']
    cuthwe=hwe > 0 ? " --hwe ${hwe}" : ""
    cutmaf=maf > 0 ? " --maf ${maf}" : ""
    outputfile=vcf.toString().replaceAll(/.vcf.gz/,'_clean.vcf.gz')
    if((cuthwe> 0 || cutmaf>0) & r2>0) {
+    if(params.low_mem_vcf==1){
+     """
+     vcftools --gzvcf $vcf $cuthwe  $cutmaf --recode --recode-INFO-all   --recode-bcf  --out tmp
+     bcftools view -Ou -i '${vcf_patscoreimp}>$r2' $vcf --threads $threadn "tmp.recode.bcf" > vcftmp1
+     rm -f $outputfile".recode.bcf"
+     cat vcftmp1 | bcftools norm -Oz -m -any -f tmp.fasta.gz --threads $threadn > $outputfile
+     rm -f vcftmp2
+     """
+     }else {
      """
      vcftools --gzvcf $vcf $cuthwe  $cutmaf --recode --recode-INFO-all --stdout  | bcftools view -i '${vcf_patscoreimp}>$r2'   | bcftools norm -Ou -m -any  | bcftools norm -Oz -f $fasta  -o $outputfile
      """
+    }
    }else if (r2>0){
      """
      ${params.bin_bcftools} view -i '${vcf_patscoreimp}>$r2' $vcf  | bcftools norm -Ou -m -any  | bcftools norm -Oz -f $fasta -o $outputfile
@@ -107,12 +156,15 @@ process clean_vcf {
 process convert_inplink {
    cpus params.max_cpus
    input :
-     tuple path(vcf),val(Ent),val(outputdir), val(nbfile) 
+     val dic
+     tuple path(vcf), val(nbfile)
   publishDir "${outputdir}", mode:'copy'
   output :
       tuple path("${Ent}.bed"), path("${Ent}.bim"), path("${Ent}.fam"), emit: bed
       path("${Ent}.bim"), emit: bim
   script :
+    outputdir=dic['output_dir']
+    Ent=dic['output_pat']
     if(nbfile>1){
       Ent=vcf.baseName
     }

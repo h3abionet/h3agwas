@@ -43,7 +43,7 @@ by default used last plink file created by pipeline to format in vcf file, mostl
     * `poshead_rs_inforef` : position of column where rs in file  [default : 2]
 * `deleted_notref` : deleted position s not found in `file_ref_gzip`
 * `reffasta` : fasta reference, if present do control of vcf file :
-* checkVCF.py
+
 * bcftools : used plugin of +fixref see `BCFTOOLS_PLUGINS=bcftools/plugins/`
 * `michigan_qc` : apply migigan qc [default 0]
  * see : [prepare you data](https://imputationserver.readthedocs.io/en/latest/prepare-your-data/)
@@ -69,7 +69,7 @@ see [h3agwas-example github](https://github.com/h3abionet/h3agwas-examples)
  nextflow run h3abionet/h3agwas/formatdata/vcf_in_plink.nf --file_listvcf utils/listvcf --output_pat  kgp_imputed --output_dir plink_imputed/   --reffasta utils_data/Homo_sapiens.GRCh37.dna.primary_assembly.fa.gz  -profile singularity
 ```
 
-# format vcf
+# format vcf in plink
 ## input 
 * format vcf in various output :
  * plink
@@ -80,3 +80,5 @@ see [h3agwas-example github](https://github.com/h3abionet/h3agwas-examples)
  * `vcf` : one vcf file 
  * `vcf_list`:file contained list of vcf
 * `impute_info_cutoff` : cut off for info
+* `low_mem_vcf`
+* `cut_maf_postimp`
