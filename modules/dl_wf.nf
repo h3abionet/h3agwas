@@ -13,6 +13,7 @@ workflow dl_fasta_wf {
   main :
    fasta_index=null
    fasta_picard=null
+   fasta_samtools = null
    if(build=='' && link=='' && fasta_file==''){
     println('no build link or fasta in option')
     System.exit(2) 
@@ -59,6 +60,7 @@ workflow dl_fasta_wf {
   fasta = fasta
   fasta_index = fasta_index
   fasta_picard = fasta_picard
+  fasta_samtools = fasta_samtools
 }
 
 

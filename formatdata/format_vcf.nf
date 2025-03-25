@@ -1,4 +1,5 @@
 include {unzip_folder;computedstat;dostat;MergePlink} from './process_vcf_format.nf'
+include {bcftools_index_vcf} from '../modules/process_vcf.nf'
 include {dl_fasta_wf} from '../modules/dl_wf.nf'
 include {latex_compilation} from '../modules/utils.nf'
 include {AddedCM;GetRsDup;TransformRsDup;check_names_plkconvert} from './process_vcf_format.nf'
@@ -29,17 +30,16 @@ workflow getparams{
   dl_fasta_wf(fasta, build, params.ftp_fasta, '')
  vcf_patscoreimp =""
  vcf_patstatfreq =""
- println(vcf_imputeformat)
  if(vcf_imputeformat==null)vcf_imputeformat=params.vcf_imputeformat
  else vcf_imputeformat=vcf_imputeformat.val
  if(vcf_imputeformat.toLowerCase()=="pbwt"){
   println("[FORMATVCFINPLINK] using pbwt")
-  vcf_patscoreimp= "%INFO/INFO"
+  vcf_patscoreimp= "INFO"
   vcf_patstatfreq="%AN %AC"
  }
  else if(vcf_imputeformat.toLowerCase()=="minmac4"){
   println("[FORMATVCFINPLINK] using minmac4")
-  vcf_patscoreimp= "%INFO/R2"
+  vcf_patscoreimp= "R2"
   vcf_patstatfreq="%MAF"
  } 
 
@@ -54,8 +54,10 @@ workflow getparams{
     println('performing statistics using vcf') 
    do_stat=1
  }
+ bcftools_index_vcf(vcf)
  emit :
-   vcf=vcf
+   vcf= vcf
+   vcf_index=bcftools_index_vcf.out
    fasta_index = dl_fasta_wf.out.fasta_index
    fasta = dl_fasta_wf.out.fasta
    vcf_patscoreimp = vcf_patscoreimp
@@ -71,8 +73,7 @@ workflow convertvcfinplk {
      outputpat
     vcf_patscoreimp
   main :
-      convert_inplink(vcf.combine(vcf.count()) ,output_pat:outputpat, output_dir:"${outputdir}/plink")
-//.combine(channel.of("$outputpat")).combine(channel.of("${outputdir}/plink")).combine(vcf.count()).combine(vcf_patscoreimp))
+      convert_inplink(vcf ,output_pat:"", output_dir:"${outputdir}/plink", patscoreimp:vcf_patscoreimp)
       GetRsDup(convert_inplink.out.bim.collect())
       TransformRsDup(GetRsDup.out.combine(convert_inplink.out.bed))
       plink=TransformRsDup.out.plk
@@ -100,7 +101,7 @@ workflow convertvcfin{
      outputpat
      vcf_imputeformat
   main :
-    println('[FORMATVCFINPLINK]' Begin worflow)
+    println('[FORMATVCFINPLINK] convert vcf in ')
     if(outputdir==null){
        outputdir=params.output_dir
     }
@@ -109,14 +110,14 @@ workflow convertvcfin{
     }
     getparams(vcf, build,vcf_imputeformat)
     if(getparams.out.do_stat.val==1){
-     println('[FORMATVCFINPLINK]' perform stqatistics)
+     println('[FORMATVCFINPLINK] perform stqatistics')
      computedstat(getparams.out.vcf, getparams.out.vcf_patstatfreq, getparams.out.vcf_patscoreimp)
      dostat(computedstat.out.collect(), output_dir:"$outputdir/stats/", output_pat:outputpat)
      latex_compilation(dostat.out.tex, dostat.out.support_file, channel.of(outputdir+'/report/'))
      }
-    clean_vcf(getparams.out.vcf.combine(getparams.out.fasta),maf:params.cut_maf_postimp, hwe:params.cut_hwe, r2lim:params.impute_info_cutoff,miss:params.vcf_cut_miss,output_dir:"$outputdir/cleanvcf",patscoreimp:vcf_imputeformat)
+    clean_vcf(getparams.out.vcf_index.combine(getparams.out.fasta_index),maf:params.cut_maf_postimp, hwe:params.cut_hwe, r2lim:params.impute_info_cutoff,miss:params.vcf_cut_miss,output_dir:"$outputdir/cleanvcf",patscoreimp:getparams.out.vcf_patscoreimp.val)
     if(params.convertvcfinplink==1) {
-    convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat, getparams.out.vcf_patscoreimp)
+    convertvcfinplk(clean_vcf.out,build,"$outputdir/plink/",outputpat, getparams.out.vcf_patscoreimp.val)
     }
     emit :
      plink = convertvcfinplk.out.plink 

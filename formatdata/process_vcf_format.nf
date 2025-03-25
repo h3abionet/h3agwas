@@ -46,7 +46,7 @@ process computedstat{
   script :
     Ent=vcf.baseName+".stat"
     """
-    bcftools query -f '%CHROM %REF %ALT %POS %INFO/$params.vcf_geno_type ${vcf_patscoreimp} ${vcf_patstatfreq}\\n' $vcf > $Ent
+    bcftools query -f '%CHROM %REF %ALT %POS %INFO/$params.vcf_geno_type %INFO/${vcf_patscoreimp} ${vcf_patstatfreq}\\n' $vcf > $Ent
     """
 }
 
@@ -113,7 +113,7 @@ process clean_vcf {
  cpus 5
  input :
    val(dic)
-   tuple path(vcf), path(fasta)
+   tuple path(vcf), path(vcfindex),path(fasta),path(fastaindex)
  publishDir "${outputdir}", mode:'copy'
  output :
     path(outputfile)
@@ -128,13 +128,13 @@ process clean_vcf {
    cuthwe=hwe > 0 ? " --hwe ${hwe}" : ""
    cutmaf=maf > 0 ? " --maf ${maf}" : ""
    outputfile=vcf.toString().replaceAll(/.vcf.gz/,'_clean.vcf.gz')
-   if((cuthwe> 0 || cutmaf>0) & r2>0) {
+   if((cuthwe!='' || cutmaf!='') & r2>0) {
     if(params.low_mem_vcf==1){
      """
-     vcftools --gzvcf $vcf $cuthwe  $cutmaf --recode --recode-INFO-all   --recode-bcf  --out tmp
-     bcftools view -Ou -i '${vcf_patscoreimp}>$r2' $vcf --threads $threadn "tmp.recode.bcf" > vcftmp1
+     vcftools --gzvcf $vcf $cuthwe  $cutmaf  --recode-INFO-all   --recode-bcf  --out tmp
+     bcftools view -Ou -i '${vcf_patscoreimp}>$r2' "tmp.recode.bcf" --threads $threadn > vcftmp1
      rm -f $outputfile".recode.bcf"
-     cat vcftmp1 | bcftools norm -Oz -m -any -f tmp.fasta.gz --threads $threadn > $outputfile
+     cat vcftmp1 | bcftools norm -Oz -m -any -f $fasta --threads $threadn > $outputfile
      rm -f vcftmp2
      """
      }else {
@@ -157,7 +157,7 @@ process convert_inplink {
    cpus params.max_cpus
    input :
      val dic
-     tuple path(vcf), val(nbfile)
+     tuple path(vcf)
   publishDir "${outputdir}", mode:'copy'
   output :
       tuple path("${Ent}.bed"), path("${Ent}.bim"), path("${Ent}.fam"), emit: bed
@@ -165,7 +165,7 @@ process convert_inplink {
   script :
     outputdir=dic['output_dir']
     Ent=dic['output_pat']
-    if(nbfile>1){
+    if(Ent==''){
       Ent=vcf.baseName
     }
     """
