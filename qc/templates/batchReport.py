@@ -194,7 +194,7 @@ def miss_vals(ifrm,pfrm,pheno_col,sexcheck_report):
     num_samples = g['N_MISS'].count()
     ave_miss    = 100*g['N_MISS'].sum()/g['N_GENO'].sum()
     num_poor_i  = g[['F_MISS']].agg(poorFn)
-    if "$extrasexinfo" == "--must-have-sex":
+    if "$extra_sex_info" == "--must-have-sex":
         sxfrm       = getCsvI(sexcheck_report)
         g = pd.merge(pfrm,sxfrm,left_index=True,right_index=True,how='inner').groupby(pheno_col)
         problems = g[['STATUS']].agg(sexCheckProblem)
@@ -593,13 +593,12 @@ def getBatchAnalysis():
 def getPhenoAnalysis():
     pfrm = got_frame = False
     res_text = ""
-    if  "${params.phenotype}" in no_response:
-        if "${params.batch}" not in no_response:
-            debug("Making fake phenotype file") #DBG
-            args.pheno_col = 'all'
-            pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
-            got_frame = True
-            res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the *-textbf{overall} error rate."
+    if  "${params.data}" in no_response:
+       debug("Making fake phenotype file") #DBG
+       args.pheno_col = 'all'
+       pfrm = DataFrame(["1"]*len(ifrm),index=ifrm.index,columns=['all'])
+       got_frame = True
+       res_text = "Table *-ref{table:batchrep:all} on page *-pageref{table:batchrep:all} shows the *-textbf{overall} error rate."
     else:
         pfrm = getCsvI(args.phenotype)
         got_frame = True

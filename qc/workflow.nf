@@ -1,250 +1,318 @@
-include {sampleSheet; getDuplicateMarkers; checkSampleSheet;clean_x;getX;identifyIndivDiscSexinfo;analyseX;;getInitMAF;showInitMAF;generateSnpMissingnessPlot;generateIndivMissingnessPlot; showHWEStats;removeQCPhase1;compPCA;drawPCA;pruneForIBDLD;findRelatedIndiv;calculateSampleHeterozygosity;generateMissHetPlot;getBadIndivsMissingHet;removeQCIndivs;calculateSnpSkewStatus;generateDifferentialMissingnessPlot;findSnpExtremeDifferentialMissingness;removeSkewSnps;computed_stat_female_x;computed_stat_male_x;report_export_x;cleanandmerge_x;report_export_x_tmp;clean_y;splitX;cleanPlink_x;cleanandmerge_y;build_reporty;calculateMaf;generateMafPlot;findHWEofSNPs;generateHwePlot;removeDuplicateSNPs;batchProc;produceReports} from './process.nf'
-include {checkColumnHeader;fileheader_create_ch; strmem}  from '../modules/fct_groovy.nf'
-include {is_nullfile; fileexist} from '../modules/fct_groovy.nf'
-include {MD5_plk as MD5_in} from '../modules/utils.nf'
-include {MD5_plk as MD5_out} from '../modules/utils.nf'
-include {countChr as countX} from './process.nf'
-include {countChr as countXY} from './process.nf'
-include {countChr as countY} from './process.nf'
+params.diff_pheno=""
+params.case_control_col=""
+params.pheno="" // deprecated
+
+pp = [:]
 
 
-workflow check_params{
- take :
-  data
-  bfile 
- main : 
-  filescript=file(workflow.scriptFile)                                            
-  projectdir="${filescript.getParent()}" 
- /* check id*/
-  if (workflow.repository)
-    wflowversion="${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
-  else
-    wflowversion="A local copy of the workflow was used"
- if(params.pheno!='')pheno_col=params.pheno
- if(params.pheno_col!='')pheno_col=params.pheno_col
- if(params.pheno_qc!='')pheno_col=params.pheno_qc
 
- if(data){
-  phenotype_ch = data
- }else {
-   
-   if(params.pheno!=""){
-        phenotype=params.pheno
-        println('warning :args phenotype will be deleted used --data or params.data')
-   }else if (params.data!='')phenotype=params.data
-   
-   fileexist(phenotype)
-   idfiles = [params.batch,phenotype]
-   idfiles.each { checkColumnHeader(it,['FID','IID']) }
-   phenotype_ch = fileheader_create_ch(phenotype,"pheno",pheno_col)
- }
- 
- if(params.batch!='' && params.batch!='0')batch_ch     = fileheader_create_ch(params.batch,"batch",params.batch_col)
- else if(params.batch_col!=''){
-   batch_ch=phenotype_ch
- }else{
-  batch_ch = Channel.fromPath("$projectdir/assets/NO_FILE_4")
- }
- println(params.batch)
- diffpheno = ""
- if (params.case_control) {
-  ccfile = params.case_control
-  cc_ch = Channel.fromPath(ccfile,checkIfExists:true)
-  col    = params.case_control_col
-  diffpheno = "--pheno cc.phe --pheno-name $col"
-  if (params.case_control.toString().contains("s3://") || params.case_control.toString().contains("az://")) {
-       println "Case control file is in the cloud so we can't check it"
-  } else
-  if (! fileexist(params.case_control)) {
-     error("\n\nThe file <${params.case_control}> given for <params.case_control> does not exist")
-    } else {
-      def line
-      new File(params.case_control).withReader { line = it.readLine() }
-      fields = line.split()
-      if (! fields.contains(params.case_control_col))
-          error("\n\nThe file <${params.case_control}> given for <params.case_control> does not have a column <${params.case_control_col}>\n")
-     }
-   } else {
-     if(params.case_control_col!=''){
-       col    = params.case_control_col
-       diffpheno = "--pheno cc.phe --pheno-name $col"
-       cc_ch=phenotype_ch
-     }else{
-       col = ""
-       cc_ch  = Channel.fromPath("$projectdir/assets/NO_FILE",checkIfExists:true)
+include {
+   analyseX;
+   batchProc;
+   build_reporty;
+   calculateMaf;
+   calculateSampleHeterozygosity;
+   calculateSnpSkewStatus;
+   checkSampleSheet;
+   cleanPlink_x;
+   clean_y;
+   cleanandmerge_x;
+   cleanandmerge_y;
+   compPCA;
+   computed_stat_female_x;
+   computed_stat_male_x;
+   countChr as countX;
+   countChr as countXY;
+   countChr as countY
+   drawPCA;
+   findHWEofSNPs;
+   findRelatedIndiv;
+   findSnpExtremeDifferentialMissingness;
+   generateDifferentialMissingnessPlot;
+   generateHwePlot;
+   generateIndivMissingnessPlot;
+   generateMafPlot;
+   generateMissHetPlot;
+   generateSnpMissingnessPlot;
+   getBadIndivsMissingHet;
+   getDuplicateMarkers;
+   getInitMAF;
+   getX;
+   identifyIndivDiscSexinfo;
+   produceReports
+   pruneForIBDLD;
+   relabel_par;
+   removeDuplicateSNPs;
+   removeQCIndivs;
+   removeQCPhase1;
+   removeSkewSnps;
+   report_export_x;
+   report_export_x_tmp;
+   sampleSheet;
+   showInitMAF;
+   showHWEStats;
+   splitX;
+} from './qc-processes.nf'
+
+
+include {
+    check_rel;
+    clean_phenofile;
+    compute_missing as compute_missing_dup;
+    computed_relatdness as computed_relatdness_dup;
+    computed_relatdness as computed_relatdness_all;
+    extract_ind_plink;computed_relatdness;
+    plink_indep;
+    plink_updatename;
+} from './check-duplicate-processes.nf'
+
+
+include {checkColumnHeader;
+	 fileheader_create_ch;
+	 fileexist;
+	 is_nullfile;
+	 strmem}  from '../modules/fct_groovy.nf'
+
+
+include {MD5_plk as MD5_in; MD5_plk as MD5_out} from '../modules/utils.nf'
+
+
+// Code to check parameters
+
+
+def try_cc_file(ccfile,cc_col) {
+    cc_ch = Channel.fromPath(ccfile,checkIfExists:true)
+    if (params.case_control.toString().contains("s3://") ||
+        params.case_control.toString().contains("az://")) {
+          println "Case control file is in the cloud so we can't check it"
+	  return true
     }
- }
+    def line
+    new File(ccfile).withReader { line = it.readLine() }
+    fields = line.split()
+    if (! fields.contains(cc_col)) {
+	error("\n\nThe file <$ccfile}> given for <params.case_control>"+
+	      "does not have a column"+"<${cc_col}>\n")
+	return false
+    } else {
+	return true
+    }
+}
+              
 
+def check_case_control_params(pp) {
+    diff_pheno = ""
+    col        = params.case_control_col
+    if (col == '') return  [diff_pheno, Channel.fromPath("$projectdir/assets/NO_FILE",checkIfExists:true)]
+    diff_pheno = "--pheno cc.phe --pheno-name $col"
+    cc = params.data
+    if (col && try_cc_file(cc, col)) {
+	pp['diff_pheno']=diff_pheno
+	pp['cc_ch']=Channel.fromPath(cc)
+       return;
+    }
+    error "Case control col <$col> is given but not found in <$cc> or $cc does not exist"
+    System.exit(10)
+}
 
+def check_phenotype_file(data,pheno_col) {
+    if (data){  // if so, then this is called as sub-sub-worfklow
+        return data
+    }
+    if(params.pheno!="") {
+	phenotype=params.pheno
+	error('warning :args phenotype has  been deleted used --data or params.data')
+	System.exit(12)
+    } 
+    if (params.data='') {
+	error "No phenotype file specified"
+	System.exit(13)
+    }
+    phenotype=params.data
+    fileexist(phenotype)
+    idfiles = [params.batch,phenotype]
+    idfiles.each { checkColumnHeader(it,['FID','IID']) }
+    return fileheader_create_ch(phenotype,"pheno",pheno_col)
+}
 
- if (params.sexinfo_available) {
-   sexinfo = "--allow-no-sex"
-   bal_sexinfo=false
-   extrasexinfo = ""
-   println "Sexinfo not available, command --allow-no-sex\n"
- } else {
-   sexinfo = ""
-   extrasexinfo = "--must-have-sex"
-   println "Sexinfo available command"
-   bal_sexinfo=true
- }
+def check_sex_params (pp) {
+   if (!params.sex_info_available) {
+	pp['sex_info'] = "--allow-no-sex"
+        pp['bal_sex_info']=false
+        pp['extra_sex_info'] = ""
+        println "Sex_Info not available, command --allow-no-sex\n"
+   } else {
+        pp['sex_info'] = ""
+        pp['extra_sex_info'] = "--must-have-sex"
+        println "Sex_Info available command"
+        pp['bal_sex_info']=true
+   }
+}
 
-if(bfile){
-  plink_ch=bfile
-  bim_ch=bfile.flatMap{it -> it[1]}
-}else {
- if(params.bfile!=''){
-	inpat=params.bfile
- }else{
-	inpat = "${params.input_dir}/${params.input_pat}"
- }
-plink_ch=Channel.fromPath("${inpat}.bed",checkIfExists:true).combine(Channel.fromPath("${inpat}.bim",checkIfExists:true)).combine(Channel.fromPath("${inpat}.fam",checkIfExists:true))
-bim_ch=Channel.fromPath("${inpat}.bim",checkIfExists:true)
+def check_plink_params(bfile,pp) {
+   if(bfile){
+	pp['plink_ch'] = bfile
+        pp['bim_ch']   = bfile.flatMap{it -> it[1]}
+   } else {
+        if(params.bfile!=''){
+	   inpat=params.bfile
+        } else {
+	   inpat = "${params.input_dir}/${params.input_pat}"
+        }
+	println inpat
+        pp['plink_ch'] =  Channel.fromFilePairs("${inpat}.{bed,bim,fam}",size:3) { file -> file.baseName }\
+                .ifEmpty { error "No matching ${inpat} bed,bim,fam file" }\
+	        .map { it -> it[1] }
+        pp['bim_ch']   =  Channel.fromPath("${inpat}.bim",checkIfExists:true)
+    }
+    
 }
 
 
-if (params.idpat ==  "0")
-    idpat   = "(.*)"
-else
-    idpat   = params.idpat
 
- if (is_nullfile(params.samplesheet)){
-     samplesheet = "$projectdir/assets/NO_FILE_3"
-     sample_sheet_ch = channel.fromPath(samplesheet,checkIfExists:true).combine(channel.of(0)).combine(channel.of(idpat))
- }else {
-      samplesheet = params.samplesheet
-   checkSampleSheet(samplesheet)
-     sample_sheet_ch = channel.fromPath(samplesheet,checkIfExists:true).combine(channel.of(1)).combine(channel.of(idpat))
- }
+def check_params(data, bfile) {
+    pp['filescript']=file(workflow.scriptFile)                                            
+    pp['projectdir']="${pp['filescript'].getParent()}"
+    pp['wflowversion']=  (workflow.repository) ? "${workflow.repository} --- ${workflow.revision} [${workflow.commitId}]"
+                                                     : "A local copy of the workflow was used"
+    pp['pheno']     = params.pheno ?: null
+    pp['pheno_col'] = params.pheno_col ?: null
+    pp['pheno_qc']  = params.pheno_qc ?: null
 
- if(params.high_ld_regions_fname != "")   ldreg_ch=Channel.fromPath(params.high_ld_regions_fname,  checkIfExists:true) else ldreg_ch = Channel.fromPath("$projectDir/assets/NO_FILE",   checkIfExists:true)
-
-  remove_on_bp    = channel.of(params.remove_on_bp)
-  // todo check value
-  pi_hat=channel.of(params.pi_hat)
- emit :
-  wflowversion = wflowversion
-  phenotype_ch = phenotype_ch
-  pheno_col = pheno_col
-  diffpheno = channel.of(diffpheno)
-  batch_ch = batch_ch
-  cc_ch = cc_ch
-  col = col
-  sexinfo = sexinfo
-  extrasexinfo = extrasexinfo
-  plink_ch = plink_ch
-  bim_ch = bim_ch
-  sample_sheet_ch= sample_sheet_ch
-  remove_on_bp = remove_on_bp
-  bal_sexinfo = bal_sexinfo
-  pi_hat = pi_hat
-ldreg_ch = ldreg_ch
+    pp['phenotype_ch']=check_phenotype_file(data, pp['pheno_col'])
+ 
+   if(params.data!='' && params.data!='0' && params.batch_col)
+     batch_ch = fileheader_create_ch(params.data,"batch",params.batch_col)
+    else
+     batch_ch = Channel.fromPath("$projectdir/assets/NO_FILE_4")
+   check_case_control_params(pp) 
+   check_sex_params(pp)
+   check_plink_params(bfile,pp)
+   pp['id_pat'] = (params.idpat ==  "0") ? "(.*)" : params.idpat
+   if  (is_nullfile(params.samplesheet)){
+	samplesheet = "${pp['projectdir']}/assets/NO_FILE_3"
+	pp['sample_sheet_ch'] = channel.fromPath(samplesheet,checkIfExists:true)
+   } else  {
+	samplesheet = params.samplesheet
+	checkSampleSheet(samplesheet)
+	pp['sample_sheet_ch'] = channel.fromPath(samplesheet,checkIfExists:true)
+   }
+   if(params.high_ld_regions_fname != "")
+	pp['ldreg_ch']=Channel.fromPath(params.high_ld_regions_fname,  checkIfExists:true)
+   else
+	pp['ldreg_ch'] = Channel.fromPath("$projectDir/assets/NO_FILE",   checkIfExists:true)
+   pp['diff_pheno'] = diff_pheno
 }
 
 workflow qc {
- take :                                                                         
-  data                                                                          
-  bfile                                                                         
-  outputdir
- main :
- // check params and take param
- check_params(data,bfile)
- // compute mdmt
- MD5_in(check_params.out.plink_ch)
- sampleSheet(check_params.out.sample_sheet_ch)
- // defined using bim file duplicate marker
- getDuplicateMarkers(check_params.out.bim_ch, check_params.out.remove_on_bp)
- // remove duplicate marker
- removeDuplicateSNPs(check_params.out.plink_ch, getDuplicateMarkers.out, check_params.out.extrasexinfo, check_params.out.sexinfo)
- // count x number
- countxx=countX(removeDuplicateSNPs.out.plink, channel.of(params.chrxx_plink))
- // count xy number
- countxy=countXY(removeDuplicateSNPs.out.plink, channel.of(params.chrxy_plink))
- // count x number
- county=countY(removeDuplicateSNPs.out.plink, channel.of(params.chry_plink))
- // split x in 25 or 23  
- clean_x(removeDuplicateSNPs.out.plink, countX.out, countXY.out)
- cleanx=false
- if(check_params.out.bal_sexinfo){
-  getX(clean_x.out)
-  analyseX(clean_x.out)
-  cleanx=true
-   x_analy_res_ch=analyseX.out
- }else {
-   //need to update
-   x_analy_res_ch = Channel.fromPath("0")
- }
- identifyIndivDiscSexinfo(clean_x.out.plink)
- // update should be before or after removeDuplicateSNPs?
- generateSnpMissingnessPlot(removeDuplicateSNPs.out.lmiss)
- // update should be before or after removeDuplicateSNPs?
- generateIndivMissingnessPlot(removeDuplicateSNPs.out.imiss)
- //
- getInitMAF(clean_x.out.plink)
- showInitMAF(getInitMAF.out)
- showHWEStats(identifyIndivDiscSexinfo.out.hwe)
- removeQCPhase1(clean_x.out.plink, check_params.out.sexinfo)
- //
- compPCA(removeQCPhase1.out.plink)
- drawPCA(compPCA.out.eigen, check_params.out.cc_ch, check_params.out.col, check_params.out.diffpheno)
- pruneForIBDLD(removeQCPhase1.out.plink, check_params.out.ldreg_ch, check_params.out.sexinfo, check_params.out.pi_hat)
- // why function used  previous  remove duplicate miss?
- findRelatedIndiv(removeDuplicateSNPs.out.imiss,pruneForIBDLD.out)
- calculateSampleHeterozygosity(removeQCPhase1.out.plink, check_params.out.sexinfo)
- generateMissHetPlot(calculateSampleHeterozygosity.out.hetmiss)
- getBadIndivsMissingHet(calculateSampleHeterozygosity.out.hetmiss)
- removeQCIndivs(getBadIndivsMissingHet.out, findRelatedIndiv.out, identifyIndivDiscSexinfo.out.log,sampleSheet.out.poorsgc10,removeQCPhase1.out.plink, check_params.out.sexinfo)
- calculateSnpSkewStatus(removeQCIndivs.out.plink,check_params.out.cc_ch, check_params.out.sexinfo, check_params.out.diffpheno)
- generateDifferentialMissingnessPlot(calculateSnpSkewStatus.out.missing)
- findSnpExtremeDifferentialMissingness(calculateSnpSkewStatus.out.perm)
- removeSkewSnps(removeQCIndivs.out.plink, findSnpExtremeDifferentialMissingness.out.failed, check_params.out.sexinfo)
- if(cleanx){
-  splitX(clean_x.out,removeQCIndivs.out.fam)
-  cleanPlink_x(splitX.out)
-  computed_stat_female_x(cleanPlink_x.out.female_x)
-  computed_stat_male_x(cleanPlink_x.out.male_x)
-  report_export_x(computed_stat_male_x.out, computed_stat_female_x.out)
-  cleanandmerge_x(removeSkewSnps.out, splitX.out,report_export_x.out.listsnps)
-  report_x = report_export_x.out.report
-  dataf_withx_ch = cleanandmerge_x.out
- }else{
-  report_export_x_tmp()
-  report_x = report_export_x_tmp.out
-  dataf_withx_ch = removeSkewSnps.out
- }
- clean_y(clean_x.out,removeQCIndivs.out.fam, county)
- cleanandmerge_y(dataf_withx_ch ,clean_y.out.plky_qc, county)
- build_reporty(clean_y.out.stat_qc, county)
- calculateMaf(removeSkewSnps.out, check_params.out.sexinfo) | generateMafPlot
- calculateSnpSkewStatus.out.hwe | findHWEofSNPs | generateHwePlot
- MD5_out(cleanandmerge_y.out.plk_log)
- batchProc(compPCA.out.eigen, identifyIndivDiscSexinfo.out.stat, check_params.out.phenotype_ch, check_params.out.batch_ch,pruneForIBDLD.out, x_analy_res_ch,findRelatedIndiv.out, check_params.out.extrasexinfo, check_params.out.pheno_col)
- produceReports(
-      removeDuplicateSNPs.out.dups,
-      cleanandmerge_y.out.plk_log,
-      generateMissHetPlot.out,
-      generateMafPlot.out,
-      generateSnpMissingnessPlot.out,
-      generateIndivMissingnessPlot.out,
-      identifyIndivDiscSexinfo.out.log,
-      getBadIndivsMissingHet.out,
-      generateDifferentialMissingnessPlot.out,
-      findSnpExtremeDifferentialMissingness.out.failed,
-      drawPCA.out,
-      generateHwePlot.out,
-      findRelatedIndiv.out,
-      MD5_in.out,
-      MD5_out.out,
-      showInitMAF.out,
-      showHWEStats.out,
-      removeQCPhase1.out.log,
-      batchProc.out.report_batch_report_ch,
-      sampleSheet.out.plates,
-      batchProc.out.report_batch_aux_ch,
-      report_x,
-      build_reporty.out.report)
- emit :
-  plink=cleanandmerge_y.out.plk
+   take :                                                                         
+    data                                                                          
+    bfile                                                                         
+    outputdir
+   main :
+    check_params(data,bfile) // sets pp
+    // compute mdmt
+    MD5_in(pp['plink_ch'])
+
+    sampleSheet(pp['id_pat'],pp['sample_sheet_ch'])
+   // defined using bim file duplicate marker
+    getDuplicateMarkers(pp['bim_ch'])
+    // remove duplicate marker
+    removeDuplicateSNPs(pp['plink_ch'], getDuplicateMarkers.out,extra_sex_info:pp['extra_sex_info'],sex_info:pp['sex_info'])
+
+
+   // count x number
+    countxx=countX(params.chrxx_plink,removeDuplicateSNPs.out.plink)
+    // count xy number
+    countxy=countXY(params.chrxy_plink,removeDuplicateSNPs.out.plink)
+    // count x number
+    county=countY(params.chry_plink,removeDuplicateSNPs.out.plink)
+    // split x in 25 or 23  
+
+    
+    relabelled = relabel_par(removeDuplicateSNPs.out.plink, countX.out, countXY.out)
+
+    relabelled | identifyIndivDiscSexinfo
+    relabelled | getInitMAF | showInitMAF
+    relabelled | combine([pp['sex_info']]) |  removeQCPhase1 
+    removeQCPhase1.out.plink | compPCA
+    drawPCA(compPCA.out.eigen,  pp['cc_ch'], params.case_control_col)    
+
+    x_analyse_res_ch = (params.sex_info_available) ? relabelled | (analyseX & getX) : Channel.fromPath("0")
+
+    x_analyse_res_ch = analyseX.out
+
+    generateSnpMissingnessPlot(removeDuplicateSNPs.out.lmiss)
+    generateIndivMissingnessPlot(removeDuplicateSNPs.out.imiss)
+    showHWEStats(identifyIndivDiscSexinfo.out.hwe)
+
+
+    pruneForIBDLD(removeQCPhase1.out.plink, pp['ldreg_ch'], pp['sex_info'], params.pi_hat)
+
+    related_indivs = findRelatedIndiv(removeDuplicateSNPs.out.imiss,pruneForIBDLD.out)
+
+    calculateSampleHeterozygosity(removeQCPhase1.out.plink, pp["sex_info"]).hetmiss |  (generateMissHetPlot & getBadIndivsMissingHet)
+
+    removeQCIndivs(getBadIndivsMissingHet.out, related_indivs, identifyIndivDiscSexinfo.out.log,
+		   sampleSheet.out.poorsgc10, removeQCPhase1.out.plink, pp["sex_info"])
+
+    calculateSnpSkewStatus(removeQCIndivs.out.plink,pp['cc_ch'], pp['sex_info'], pp['diff_pheno'])
+    generateDifferentialMissingnessPlot(calculateSnpSkewStatus.out.missing)
+    findSnpExtremeDifferentialMissingness(calculateSnpSkewStatus.out.perm)
+    removeSkewSnps(removeQCIndivs.out.plink, findSnpExtremeDifferentialMissingness.out.failed, pp['sex_info'])
+    if(params.sex_info_available){
+	splitX(relabel_par.out,removeQCIndivs.out.fam)
+	cleanPlink_x(splitX.out)
+	computed_stat_female_x(cleanPlink_x.out.female_x)
+	computed_stat_male_x(cleanPlink_x.out.male_x)
+	report_export_x(computed_stat_male_x.out, computed_stat_female_x.out)
+	cleanandmerge_x(removeSkewSnps.out, splitX.out,report_export_x.out.listsnps)
+	report_x = report_export_x.out.report
+	dataf_withx_ch = cleanandmerge_x.out
+   }else{
+	report_export_x_tmp()
+	report_x = report_export_x_tmp.out
+	dataf_withx_ch = removeSkewSnps.out
+    }
+   clean_y(relabel_par.out,removeQCIndivs.out.fam, county)
+   cleanandmerge_y(dataf_withx_ch ,clean_y.out.plky_qc, county)
+   build_reporty(clean_y.out.stat_qc, county)
+   calculateMaf(removeSkewSnps.out, pp['sex_info'])| generateMafPlot
+   calculateSnpSkewStatus.out.hwe | findHWEofSNPs | generateHwePlot
+   MD5_out(cleanandmerge_y.out.plk_log)
+
+   batchProc(compPCA.out.eigen, identifyIndivDiscSexinfo.out.stat, pp['phenotype_ch'], batch_ch,\
+	     pruneForIBDLD.out, x_analyse_res_ch, findRelatedIndiv.out, pp['extra_sex_info'],pp['pheno_col'])
+
+   produceReports(
+	removeDuplicateSNPs.out.dups,
+	cleanandmerge_y.out.plk_log,
+	generateMissHetPlot.out,
+	generateMafPlot.out,
+	generateSnpMissingnessPlot.out,
+	generateIndivMissingnessPlot.out,
+	identifyIndivDiscSexinfo.out.log,
+	getBadIndivsMissingHet.out,
+	generateDifferentialMissingnessPlot.out,
+	findSnpExtremeDifferentialMissingness.out.failed,
+	drawPCA.out,
+	generateHwePlot.out,
+	findRelatedIndiv.out,
+	MD5_in.out,
+	MD5_out.out,
+	showInitMAF.out,
+	showHWEStats.out,
+	removeQCPhase1.out.log,
+	batchProc.out.report_batch_report_ch,
+	sampleSheet.out.plates,
+	batchProc.out.report_batch_aux_ch,
+	report_x,
+	build_reporty.out.report)
+
+   emit :
+	plink=cleanandmerge_y.out.plk
+
+
 }
 
 
@@ -280,11 +348,8 @@ workflow qc_michigan {
   emit :
     plink = plinkf
 }
-include {clean_phenofile;extract_ind_plink;computed_relatdness;plink_indep;check_rel} from './process_checkduplicate.nf'
-include {computed_relatdness as computed_relatdness_dup} from './process_checkduplicate.nf'
-include {computed_relatdness as computed_relatdness_all} from './process_checkduplicate.nf'
-include {compute_missing as compute_missing_dup} from './process_checkduplicate.nf'
-include {plink_updatename} from './process_checkduplicate.nf'
+
+
 
 workflow qc_dup{
   take :

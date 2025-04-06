@@ -127,27 +127,27 @@ process MD5 {
 
 
 
-  process sampleSheet {
+process sampleSheet {
     input:
-       tuple path(sheet), val(balise), val(idpat)
+	val(idpat)
+        path(sheet)
     output:
-     path("poorgc10.lst"), emit: poorsgc10
-     path("plates") , emit: plates
+       path("poorgc10.lst"), emit: poorsgc10
+       path("plates") , emit: plates
     script:
-     println balise
-     if(balise.toString()=="1"){
-     """
-       mkdir -p plates
-       sampleqc.py $sheet ${params.gc10} "${idpat}"  poorgc10.lst plates/crgc10.tex
-      """
-     }else {
-     """
-       mkdir -p plates
-       sampleqc.py 0 0 0 poorgc10.lst plates/crgc10.tex
-      """
+	if(sheet.simpleName != "NO_FILE_3") {
+	"""
+	  mkdir -p plates
+	  sampleqc.py $sheet ${params.gc10} "${idpat}"  poorgc10.lst plates/crgc10.tex
+	 """
+	} else {
+	"""
+	  mkdir -p plates
+	  sampleqc.py 0 0 0 poorgc10.lst plates/crgc10.tex
+        """
     }
 
- }
+}
 
   
 
@@ -173,10 +173,10 @@ process getDuplicateMarkers {
              overwrite:true, mode:'copy'
   input:
     path(inpfname) 
-    val(remove_on_bp)
   output:
     path("${base}.dups") 
   script:
+     remove_on_bp = params.remove_on_bp	
      base     = inpfname.baseName
      outfname = "${base}.dups"
      template "dups.py"
@@ -199,21 +199,20 @@ process removeDuplicateSNPs {
   maxRetries 3
 
   input:
-   tuple path(bed), path(bim), path(fam) 
-   path(dups) 
-   val(extrasexinfo)
-   val(sexinfo)
+     val(flags)
+     tuple path(bed), path(bim), path(fam) 
+     path(dups) 
   output:
-    tuple path("${nodup}.bed"),path("${nodup}.bim"),path("${nodup}.fam"), emit : plink
-    tuple path("${base}.orig"), path(dups), emit : dups 
-    path ("${nodup}.lmiss"), emit : lmiss
-    path ("${nodup}.imiss"), emit : imiss
+     tuple path("${nodup}.bed"),path("${nodup}.bim"),path("${nodup}.fam"), emit : plink
+     tuple path("${base}.orig"), path(dups), emit : dups 
+     path ("${nodup}.lmiss"), emit : lmiss
+     path ("${nodup}.imiss"), emit : imiss
   script:
    base    = bed.baseName
    nodup   = "${base}-nd"
    K = "--keep-allele-order"
    """
-    plink $K --bfile $base $sexinfo $extrasexinfo --exclude $dups --missing --make-bed --out $nodup
+    plink $K --bfile $base ${flags['sex_info']} ${flags['extra_sex_info']}  --exclude $dups --missing --make-bed --out $nodup
     wc -l ${base}.bim > ${base}.orig
     wc -l ${base}.fam >> ${base}.orig
    """
@@ -223,13 +222,11 @@ process removeDuplicateSNPs {
 /*process to check if X */
 process countChr{
  input :
-  tuple path(bed), path(bim), path(fam)
   val(chro)
+  tuple path(bed), path(bim), path(fam)
  output :
    stdout
  script :
- print chro
- print bim
  """
  awk '{if(\$1==${chro})print \$1}' $bim |wc -l > tmp
  cat tmp
@@ -239,7 +236,7 @@ process countChr{
 
 
 
-process clean_x {
+process relabel_par {
   memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
 
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
@@ -250,20 +247,20 @@ process clean_x {
     val(cxx) 
     val(cxy) 
   output :
-    tuple path("${baseout}.bed"), path("${baseout}.bim"), path("${baseout}.fam"), emit : plink
+    tuple path("${baseout}.bed"), path("${baseout}.bim"), path("${baseout}.fam")
   script :
    buildgenome="hg"+params.build_genome
    buildgenome=(params.build_genome=="37") ?  "b37" : ""
    base=bed.baseName
    cxy=cxy.toInteger()
    cxx=cxx.toInteger()
-    if(cxy==0 && cxx>0){
+   if(cxy==0 && cxx>0){
         baseout=base+'_cleanx'
         println("splitx")
         """
         plink -bfile $base   --make-bed --out $baseout --split-x $buildgenome 'no-fail' --keep-allele-order
         """
-    }else{
+   }else{
        println("splitx")
        baseout=base
        """
@@ -273,7 +270,7 @@ process clean_x {
 }
 
 process getX {
-  memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
+   memory { strmem(params.high_memory) + 5.GB * (task.attempt -1) }
    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
    maxRetries 3
 
@@ -291,7 +288,7 @@ process getX {
 	   echo "----------------------------------------"
 	   echo "There are no X-chromosome SNPs in this data "
 	   echo "it does not make sense to check for sex"
-	   echo "set sexinfo_available to false"
+	   echo "set sex_info_available to false"
 	   echo "----------------------------------------"
 	   echo ""
 	   exit 23 
@@ -336,6 +333,7 @@ process identifyIndivDiscSexinfo {
   publishDir "${params.output_dir}/qc/samples/sexinfo", overwrite:true, mode:'copy'
   output:
      path(logfile), emit : log
+     path(logfile), topic : 'report'
      tuple path(imiss), path(lmiss),path(sexcheck_report), emit : stat
      path("${base}.hwe"), emit : hwe 
   errorStrategy { task.exitStatus in [0,1] ? 'ignore' : 'terminate' }
@@ -346,7 +344,7 @@ process identifyIndivDiscSexinfo {
     imiss  = "${base}.imiss"
     lmiss  = "${base}.lmiss"
     K = "--keep-allele-order"
-    if (params.sexinfo_available == true)
+    if (params.sex_info_available == true)
     """
        plink $K --bfile $base --hardy --check-sex $params.f_hi_female $params.f_lo_male --missing  --out $base
        head -n 1 ${base}.sexcheck > $logfile
@@ -455,8 +453,7 @@ process removeQCPhase1 {
   maxRetries 3
 
   input:
-    tuple path(bed), path(bim), path(fam) 
-    val(sexinfo)
+    tuple path(bed), path(bim), path(fam), val( sex_info);	
   publishDir "${params.output_dir}/qc/phase1/", overwrite:true, mode:'copy'
   output:
     path("${outputmiss}*.{bed,bim,fam}"), emit : plink
@@ -467,14 +464,14 @@ process removeQCPhase1 {
      K = "--keep-allele-order"
      """
      # remove really realy bad SNPs and really bad individuals
-     plink $K ${params.autosome_plink} --bfile $base $sexinfo --mind 0.1 --geno 0.1 --make-bed --out temp1
-     plink $K --bfile temp1  $sexinfo --mind $params.cut_mind --make-bed --out temp2
+     plink $K ${params.autosome_plink} --bfile $base $sex_info --mind 0.1 --geno 0.1 --make-bed --out temp1
+     plink $K --bfile temp1  $sex_info --mind $params.cut_mind --make-bed --out temp2
      /bin/rm temp1.{bim,fam,bed}
-     plink $K --bfile temp2  $sexinfo --geno $params.cut_geno --make-bed --out temp3
+     plink $K --bfile temp2  $sex_info --geno $params.cut_geno --make-bed --out temp3
      /bin/rm temp2.{bim,fam,bed}
-     plink $K --bfile temp3  $sexinfo --maf $params.cut_maf --make-bed --out temp4
+     plink $K --bfile temp3  $sex_info --maf $params.cut_maf --make-bed --out temp4
      /bin/rm temp3.{bim,fam,bed}
-     plink $K --bfile temp4  $sexinfo --hwe $params.cut_hwe --make-bed  --out $outputmiss
+     plink $K --bfile temp4  $sex_info --hwe $params.cut_hwe --make-bed  --out $outputmiss
      /bin/rm temp4.{bim,fam,bed}
      cat *log > logfile
      touch tmp.irem
@@ -514,16 +511,15 @@ process drawPCA {
    maxRetries 3
    input:
       tuple path(eigvals), path(eigvecs) 
-      path(cc) 
-      val(col) 
-      val(diffpheno) 
+      path(cc)
+      val(col)
    output:
       tuple  path ("eigenvalue.pdf"), path(outputval) 
    publishDir "${params.output_dir}/qc/pca/", overwrite:true, mode:'copy',pattern: "*.pdf"
    script:
       base=eigvals.baseName
-      cc_fname = params.case_control_col
-      // also relies on "col" defined above
+      //$base $cc  $col $eigvals $eigvecs $outputval
+      // also relies on "cc, col" defined above
       outputval="${base}-pca".replace(".","_")+".pdf"
       template "drawPCA.py"
 
@@ -541,7 +537,7 @@ process drawPCA {
     input:
       path(plinks)
       path(ldreg)  
-      val(sexinfo)
+      val(sex_info)
       val(pi_hat)
     publishDir "${params.output_dir}/qc/samples/ibd", overwrite:true, mode:'copy'
     output:
@@ -551,8 +547,8 @@ process drawPCA {
       outf   =  base.replace(".","_")
       range = ldreg.name != 'NO_FILE' ?  " --exclude range $ldreg" : ""
       """
-       plink --bfile $base --threads $params.max_cpus --autosome $sexinfo $range --indep-pairwise 60 5 0.2 --out ibd
-       plink --bfile $base --threads $params.max_cpus --autosome $sexinfo --extract ibd.prune.in --genome --min $pi_hat --out $outf
+       plink --bfile $base --threads $params.max_cpus --autosome $sex_info $range --indep-pairwise 60 5 0.2 --out ibd
+       plink --bfile $base --threads $params.max_cpus --autosome $sex_info --extract ibd.prune.in --genome --min $pi_hat --out $outf
        echo LD
        """
   }
@@ -587,7 +583,7 @@ process calculateSampleHeterozygosity {
 
    input:
       path(nodups) 
-      val(sexinfo)
+      val(sex_info)
 
    publishDir "${params.output_dir}/qc/samples/heterozygoty", overwrite:true, mode:'copy'
    output:
@@ -597,7 +593,7 @@ process calculateSampleHeterozygosity {
       base = nodups[0].baseName
       hetf = "${base}".replace(".","_")
    """
-     plink --bfile $base  $sexinfo --het --missing  --out $hetf
+     plink --bfile $base  $sex_info --het --missing  --out $hetf
    """
 }
 
@@ -651,7 +647,7 @@ process removeQCIndivs {
     path (f_sex_check_f) 
     path (poorgc)       
     tuple path(bed), path(bim), path(fam) 
-    val(sexinfo)
+    val(sex_info)
   output:
      path("${out}.{bed,bim,fam}"), emit: plink
      path("${out}.fam"), emit: fam
@@ -661,7 +657,7 @@ process removeQCIndivs {
     K = "--keep-allele-order"
     """
      cat $f_sex_check_f $rel_indivs $f_miss_het $poorgc | sort -k1 | uniq > failed_inds
-     plink $K --bfile $base $sexinfo --remove failed_inds --make-bed --out $out
+     plink $K --bfile $base $sex_info --remove failed_inds --make-bed --out $out
      mv failed_inds ${out}.irem
   """
 }
@@ -679,7 +675,7 @@ process calculateSnpSkewStatus {
   input:
    path(plinks) 
    path(phe)
-   val(sexinfo)
+   val(sex_info)
    val(diffpheno)
   output:
     path("${base}.missing"), emit: missing 
@@ -691,7 +687,7 @@ process calculateSnpSkewStatus {
    mperm = "${base}.missing.mperm"
    """
     cp $phe cc.phe
-    plink --threads ${params.max_cpus} ${params.autosome_plink} --bfile $base $sexinfo $diffpheno --test-missing mperm=10000 --hardy --out $out
+    plink --threads ${params.max_cpus} ${params.autosome_plink} --bfile $base $sex_info $diffpheno --test-missing mperm=10000 --hardy --out $out
     if ! [ -e $mperm ]; then
        echo "$mperm_header" > $mperm
     fi
@@ -750,7 +746,7 @@ process removeSkewSnps {
   input:
     path(plinks) 
     path(failed) 
-    val(sexinfo)
+    val(sex_info)
   output:
     tuple path("${output}.bed"), path("${output}.bim"), path("${output}.fam"), path("${output}.log") 
   script:
@@ -758,7 +754,7 @@ process removeSkewSnps {
   output = params.output.replace(".","_")+'_skew'
   K = "--keep-allele-order"
   """
-  plink $K --bfile $base $sexinfo --exclude $failed --make-bed --out $output
+  plink $K --bfile $base $sex_info --exclude $failed --make-bed --out $output
   """
 }
 
@@ -990,7 +986,7 @@ process calculateMaf {
 
   input:
     tuple  path(bed), path(bim), path(fam), path(log) 
-    val(sexinfo)
+    val(sex_info)
 
   publishDir "${params.output_dir}/qc/snps/maf", overwrite:true, mode:'copy', pattern: "*.frq"
 
@@ -1001,7 +997,7 @@ process calculateMaf {
     base = bed.baseName
     out  = base.replace(".","_")+"_freq"
     """
-      plink --bfile $base $sexinfo  --freq --out $out
+      plink --bfile $base $sex_info  --freq --out $out
       cp $out".frq" $base".frq"
     """
 }
@@ -1077,7 +1073,7 @@ process batchProc {
     path(genome) 
     path(pkl)   
     path(rem_indivs) 
-    val(extrasexinfo)
+    val(extra_sex_info)
     val(pheno_col)
   publishDir "${params.output_dir}/qc/batch", pattern: "*{csv,pdf}", \
              overwrite:true, mode:'copy'

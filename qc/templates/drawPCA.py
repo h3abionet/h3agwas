@@ -19,11 +19,10 @@ colour_choices=["black","magenta","darkcyan","red","blue","orange","aqua","beige
 def parseArguments():
    if len(sys.argv)<=1:
       sys.argv=\
-      "drawPCA.py $base $cc $cc_fname $col $eigvals $eigvecs $outputval".split()
+      "drawPCA.py $base $cc  $col $eigvals $eigvecs $outputval".split()
    parser=argparse.ArgumentParser()
    parser.add_argument('input', type=str, metavar='input'),
    parser.add_argument('cc', type=str, metavar='label'),
-   parser.add_argument('cc_fname', type=str, metavar='label'),
    parser.add_argument('column', type=str, metavar='label'),
    parser.add_argument('eigvals', type=str, metavar='label'),
    parser.add_argument('eigvecs', type=str, metavar='output'),
@@ -34,7 +33,7 @@ def parseArguments():
 
 
 def getColours():
-    if len(args.cc_fname)==0 or args.cc_fname=="0":
+    if len(args.cc)==0 or args.cc=="0":
         return [], "_None_"
     phe = pd.read_csv(args.cc,delim_whitespace=True)
     all_labels = phe[args.column].unique()
