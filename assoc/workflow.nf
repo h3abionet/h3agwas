@@ -37,14 +37,26 @@ if (bfile==null){
    balise_vcf=false
    if(params.vcf_list!='') {
    balise_vcf=true
-      vcf=Channel.fromPath(file(params.vcf_list).readLines(), checkIfExists:true)
-    }    else if(params.vcf!=''){
+      balise_isindex=true
+      listvcf=file(params.vcf_list).readLines()
+      for (String elem : listvcf) {
+         balise_isindex = balise_isindex && (file(elem+'.csi').exists())
+      }
+
+      if(balise_isindex == false)vcf=buildindex_vcf(Channel.fromPath(file(params.vcf_list).readLines(), checkIfExists:true))
+       else  vcf = Channel.fromPath(params.vcf_list).flatMap { file(it).readLines().collect { path -> [file(path), file("${path}.csi")] } }
+
+
+      //vcf= channel.of(Channel.fromPath(file(params.vcf_list).readLines()).flatMap{it -> [file(it),file[it+'.csi'].comcatenate()}
+    } else if(params.vcf!=''){
      balise_vcf=true
      vcf=channel.fromPath(params.vcf, checkIfExists:true) 
+     if(file(vcf+'.csi').exist()){
+        vcf=vcf.combine(channel.fromPath(vcf+'.csi')) 
+     }else{
+       vcf=buildindex_vcf(vcf)
+    }
    }
- }
- if(balise_vcf){
-   vcf=buildindex_vcf(vcf)
  }
  balise_bgen=true
  balise_bgenlist=true
@@ -74,8 +86,7 @@ if(bgen==null){
 compute_pcs_small(indep_pairwise.out, channel.from(params.add_pcs), channel.from("${params.output_dir}/assoc/pcs/"))
  /*plot pcs ?*/
  
- wf_prepare_pheno(extractPheno.out, channel.from(params.pheno), channel.from(params.covariates), channel.from(params.gxe),clean_plink.out, compute_pcs_small.out.eigen)
- pheno_type=params.pheno_type
+ wf_prepare_pheno(extractPheno.out, channel.of(params.pheno), channel.of(params.pheno_type),channel.of(params.covariates), channel.of(params.covariates_type), channel.from(params.gxe),clean_plink.out, compute_pcs_small.out.eigen)
  listchro=list_chro(bfile)
  listchro=listchro.flatMap{ list_str -> list_str.split() }
  bfile_rel=bfile
@@ -91,7 +102,7 @@ compute_pcs_small(indep_pairwise.out, channel.from(params.add_pcs), channel.from
   pheno=  wf_prepare_pheno.out.pheno
   pheno_bin=  channel.from(params.pheno_type)
   covar = wf_prepare_pheno.out.covar
-  covariates_type =channel.from(params.covariates_type)
+  covar_type = wf_prepare_pheno.out.covar_type
   gxe = wf_prepare_pheno.out.gxe
   bfile = bfile
   bfile_rel = bfile_rel
@@ -118,17 +129,14 @@ workflow assoc {
  main :
   println "In ASSOC top"
   check_params(data,bfile, vcf, bimbam, bgen,bgenlist,bgen_sample)
-  check_params.out.data.view()
-  check_params.out.pheno_bin.view()
-  check_params.out.pheno.view()
   if(params.saige){
-   saige(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
+   saige(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covar_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
   }
 if(params.regenie){
-   regenie(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
+   regenie(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covar_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
  }
  if (params.assoc+params.fisher+params.logistic+params.linear > 0) {             
-   plink(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covariates_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
+   plink(check_params.out.data,   check_params.out.pheno,check_params.out.pheno_bin,check_params.out.covar, check_params.out.covar_type, check_params.out.bfile,check_params.out.bfile_rel,check_params.out.vcf, check_params.out.vcf_balise,check_params.out.bgen, check_params.out.bgenlist,check_params.out.bgen_sample,check_params.out.bgen_balise, check_params.out.bgenlist_balise, check_params.out.listchro)
 }
  // add pcs
        println "In ASSOC middle"

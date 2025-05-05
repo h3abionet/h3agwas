@@ -58,9 +58,14 @@ workflow plink {
    check_pheno_bin(pheno,pheno_bin,data,'plink')
    supported_tests = ["assoc","fisher","model","cmh","linear","logistic"]          
    requested_tests = channel.from(supported_tests.findAll { entry -> params.get(entry) }       )
-   println(requested_tests)
+   println("requested test : "+requested_tests)
    phenol = pheno.flatMap { list -> list.split(',') }  // Groovy-style lambda for splitting
-   pheno_binl = pheno_bin.map { list -> list.split(',') }.flatMap { it.size() == 1 ? it.collect { it } * npheno : it }
+   println("pheno : $phenol")
+   phenol.map(it -> println "pheno $it")
+   //npheno=pheno.map(list -> list.split(',').size())
+
+
+pheno_binl = pheno_bin.map { list -> list.split(',') }.combine(phenol.count()).flatMap { it, s -> it.size() == 1 ? [it]*s : it }.flatten()
    join2channel(phenol,pheno_binl) 
    alltest=requested_tests.combine(join2channel.out).combine(covariates).combine(plink).combine(check_pheno_bin.out.data)
    alltest=alltest.filter{t-> ((t[2]=='1' && (t[0] in ['fisher','logistic'])) || (t[2]=='0' && (t[0] in ['linear','assoc'])))}

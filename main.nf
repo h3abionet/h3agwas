@@ -96,7 +96,7 @@ workflow {
    bfile = convertvcfin.out.plink
    vcf = convertvcfin.out.vcf
  }
- if(params.association==1 | params.assoc==1){
+ if(params.association==1){
    assoc(data,bfile, vcf, bimbam, bgen,bgenlist, bgen_sample)
   }
   sumstat=null

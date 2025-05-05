@@ -27,8 +27,9 @@ process COFACTORS_TYPE {
 
     exec :
     def splargs = args_ch.split(",")
-    def splinfoargs = infoargs.split(",")
+    def splinfoargs = infoargs.replaceAll(/ /,'').split(",")
 
+    println(infoargs)
     if (infoargs == '') {
         CofactStr = "--covarColList ${args_ch}"
         return CofactStr

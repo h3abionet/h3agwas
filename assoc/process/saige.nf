@@ -130,6 +130,7 @@ process doSaige{
      imputed=(params.imputed_data==1) ? "--is_imputed_data=TRUE " : '--is_imputed_data=FALSE' 
      moredetail=" --is_output_moreDetails=TRUE " 
      """
+      /bin/hostname
       Chro=`zcat $vcf|grep -v "#"|head -1|awk '{print \$1}'`
       ${params.saige_bin_spatest} \
         --vcfFile=$vcf\
@@ -188,7 +189,6 @@ process doSaigeListBgen{
     cpus params.max_cpus
     maxRetries 10
     time params.big_time 
-
     label 'saige'
     input :
        tuple val(pheno),path(rda), path(varRatio), val(base),val(Chro),path(bgen), path(bgenindex), path(bgensample)
@@ -284,7 +284,7 @@ workflow saige{
     println("saige performed using vcf")
     checkidd_saige_vcf(data, pheno,pheno_bin,vcf.first(),plink_rel)
     plkinp=checkidd_saige_vcf.out.plink
-   phenoclean=checkidd_saige_saige.out.pheno
+   phenoclean=checkidd_saige_vcf.out.pheno
  }else if(bgen_balise.val || bgenlist_balise.val){
     println("saige performed using bgen")
        bgen_formatsample(data,bgen_sample)
@@ -297,11 +297,11 @@ workflow saige{
    plkinp=checkidd_saige.out.plink
    phenoclean=checkidd_saige.out.pheno
  }
+  /*we adapt pheno in function of type*/ 
  check_pheno_bin(pheno,pheno_bin,phenoclean,channel.of('saige'))
  phenoclean=check_pheno_bin.out.data
- npheno=params.pheno.split(',').size()
  phenol = pheno.flatMap { list -> list.split(',') }  // Groovy-style lambda for splitting
- pheno_binl = pheno_bin.map { list -> list.split(',') }.flatMap { it.size() == 1 ? it.collect { it } * npheno : it }
+ pheno_binl = pheno_bin.map { list -> list.toString().replaceAll(/'/,'').split(',') }.combine(phenol.count()).flatMap { it, s -> it.size() == 1 ? [it]*s : it }.flatten()
  combined = join2channel(phenol,pheno_binl)
 
  saigeinp=phenoclean.combine(combined).combine(COFACTORS_TYPE.out).combine(plkinp)

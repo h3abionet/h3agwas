@@ -32,20 +32,21 @@ process add_pcs{
   label 'R'
   cpus params.max_cpus
   input :
-      tuple path(eigenvec), path(phenofile)
+      tuple path(eigenval), path(eigenvec), path(phenofile), val(npcs), val(covariates), val(covariates_bin)
   publishDir "${params.output_dir}/pheno/pca/", mode:'copy'
   output :
     path(newfilepheno), emit :data
     env pcs, emit : pcs_covar
+    env cov_type, emit :covar_type
   script :
-     plkf=bed.baseName
      head=phenofile.baseName
-     newfilepheno=head+"_"+params.add_pcs+".newpheno"
-     covar2=(params.covariates=="")? "" : " --covar $params.covariates "
+     newfilepheno=head+"_"+npcs.toString()+".newpheno"
+     covar2=(covariates=="")? "" : " --covar $covariates "
 
      """
-     addpheno_pcs.r --data $phenofile --pcs $head".eigenvec" --out $newfilepheno $covar2
+     addpheno_pcs.r --data $phenofile --pcs $eigenvec --out $newfilepheno $covar2 --npcs $npcs --covar_type $covariates_bin
      pcs=`cat ${newfilepheno}.covar`
+     cov_type=`cat ${newfilepheno}.covartype`
      """
 }
 
@@ -56,12 +57,14 @@ process format_pheno {
        tuple path(bed), path (bim), path(fam)
        val(pheno)
        val(covar)
+       val(covar_type)
        val(gxe)
   publishDir "${params.output_dir}/pheno/", mode:'copy'
   output :
        path("${newdatafile}.pheno"), emit :data
        env newpheno, emit : pheno
        val(newcovar), emit : covar
+       val(covar_type),emit : covar_type
        val(gxe), emit : gxe
        path("${newdatafile}*")
   script :
@@ -70,6 +73,7 @@ process format_pheno {
       phenores_tr_fct= (params.phenores_tr_fct=="") ? "none"  : "$params.phenores_tr_fct"
       pheno_tr_fct= (params.pheno_tr_fct=="") ? "none"  : "$params.pheno_tr_fct"
       newcovar=(params.pheno_residuals==1) ? "" : " $covar"
+      covar_type=(params.pheno_residuals==1) ? "" : " $covar_type"
       gxecmd=(gxe=='') ? "" : "--gxe gxe"  
   """
   format_pheno.r --pheno ${pheno} --data $phenofile $covar2 --out $newdatafile --fam $fam --transform_i ${pheno_tr_fct} --transform_r ${phenores_tr_fct} --residuals ${params.pheno_residuals} $gxecmd
@@ -81,30 +85,33 @@ workflow wf_prepare_pheno{
    take :
         phenofile
         pheno
+        pheno_type
         covar
+        covar_type
         gxe
         plink
         pcs
    main :
    if(!pheno)pheno=channel.from(params.pheno)
    if(!covar)covar=channel.from(params.covariates)
-   println(params.covariates)
    showPhenoDistrib(phenofile,pheno)
+   covar_type=covar_type
    if(params.add_pcs>=1){
-      add_pcs(pcs.combine(phenofile))
+      add_pcs(pcs.combine(phenofile).combine(channel.from(params.add_pcs)).combine(covar).combine(covar_type))
       new_data=add_pcs.out.data
       newcovar=add_pcs.out.pcs_covar
-      //if(params.covar!='')newcovar=params.covar+","+newcovar
       data_ch=add_pcs.out.data
+      covar_type = add_pcs.out.covar_type
     }else {
-    newcovar=params.covariates
+    newcovar=covar
     data_ch=phenofile
    }
-  format_pheno(data_ch, plink,pheno,newcovar, gxe)
+  format_pheno(data_ch, plink,pheno,newcovar, covar_type, gxe)
   emit :
      data=format_pheno.out.data
      pheno=format_pheno.out.pheno
      covar=format_pheno.out.covar
+     covar_type=format_pheno.out.covar_type
      gxe= format_pheno.out.gxe
      plotpheno=showPhenoDistrib.out
 }
