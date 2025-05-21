@@ -538,7 +538,7 @@ if(params.boltlmm+params.gemma+params.fastlmm+params.fastgwa+params.saige+params
         prune= "${base}-prune"
         extract=(params.snps_include_rel=='')? "" : " -extract range $snp_inclrel "
         """
-        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} $extract  --keep $data  ${params.snp_rel_param_plk} --allow-extra-chr
+        plink --bfile ${base} --indep-pairwise ${params.sample_snps_rel_paramplkl} --out $prune   --threads ${params.max_plink_cores} $extract  --keep $data  ${params.snp_rel_param_plk} --allow-extra-chr 
         """
    }
    //BoltNbMaxSnps=filers_count_line.countLines()

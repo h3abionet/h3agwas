@@ -116,7 +116,7 @@ def checkColumnHeader(fname, columns) {
       problem=true;
     }
     if (problem)
-      System.exit(-1)
+      System.exit(2)
   }
 }
 

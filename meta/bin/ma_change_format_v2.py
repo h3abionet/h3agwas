@@ -281,7 +281,8 @@ for head in headlist:
        indexlhead=l_newhead.index(head)
        l_newheadplk[indexlhead]=headplk[cmthead]
        newhead=l_oldhead[indexlhead]
-       listposfloat.append(head_inp.index(newhead))
+       if head != 'Chro' :
+          listposfloat.append(head_inp.index(newhead))
    cmthead+=1
 
 

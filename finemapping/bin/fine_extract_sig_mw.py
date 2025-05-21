@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 import os
 import scipy.stats as stats
+ignore_allele=True
 
 def readbim(bimfile, sumstat) :
    readbim=open(bimfile)
@@ -26,7 +27,7 @@ def readbim(bimfile, sumstat) :
          del sumstat[chro][pos]
          continue
        listsave.add(key)
-       if (A1==  sumstat[chro][pos][0] and A2==sumstat[chro][pos][1]) or (A1==  sumstat[chro][pos][1] and A2==sumstat[chro][pos][0]) :
+       if ignore_allele or (A1==  sumstat[chro][pos][0] and A2==sumstat[chro][pos][1]) or (A1==  sumstat[chro][pos][1] and A2==sumstat[chro][pos][0]) :
         sumstat[chro][pos].append(rs)
         if chro not in dicchro_rs :
            dicchro_rs[chro]={}
@@ -149,7 +150,10 @@ def read_sumstat(filesumstat, clumpres, wind, chro_header, pos_header, a1_header
         if chro not in sumstat :
           sumstat[chro]={}
         if nhead :
-          n=getval(spl,nhead)
+          try :
+            n=getval(spl,nhead)
+          except :
+            n=nval
         elif nval:
           n = nval 
         else :
@@ -245,6 +249,7 @@ def appendfreq(bfile, result,biminfo, freq_header,rs_header, n_header, nval, bin
 
 def checksumstat(sumstat,maf) :
    listchro=sumstat.keys()
+   nmax=0
    for chro in listchro: 
       listbp_chro=list(sumstat[chro].keys())
       for bp in listbp_chro:
@@ -253,7 +258,11 @@ def checksumstat(sumstat,maf) :
          if not p :
            del sumstat[chro][bp]
            continue 
-         n = float(n)
+         try :
+           n = float(n)
+           nmax=max(nmax, n)
+         except :
+          n = None
          p = float(p)
          if args.z_pval==1 :
           z=stats.norm.ppf(1-p/2)
@@ -282,7 +291,7 @@ def checksumstat(sumstat,maf) :
          else :
            print("maf del :"+chro+' '+str(bp))
            del sumstat[chro][bp]
-   return sumstat 
+   return (sumstat,nmax)
 EOL=chr(10)
 
 def parseArguments():
@@ -323,7 +332,7 @@ print('sumstat',' '.join([x+':'+str(len(sumstat[x])) for x in sumstat]))
 print('afterbim',' '.join([x+':'+str(len(sumstat[x])) for x in sumstat]))
 sumstat=appendfreq(args.bfile, sumstat,diccbim_rs, args.freq_header,args.rs_header, args.n_header, args.n,args.bin_plk, args.keep, args.threads)
 clumpres=defined_wind(clumpres,diccbim_rs, args.around)
-sumstat=checksumstat(sumstat, args.maf)
+(sumstat,nmax)=checksumstat(sumstat, args.maf)
 
 ## writing      
 #0 1 2 3 4 
@@ -338,7 +347,7 @@ headall=["rsid","chromosome","position","allele1","allele2","maf", "beta", "se",
 #out_all=args.out_head+".all"
 #small.to_csv(out_all, sep=TAB, header=True, index=False,na_rep="NA")
 posfinemap=[7,]
-maxn=0
+
 for chro in clumpres :
    for bp in clumpres[chro] :
       key=chro+'_'+str(bp)
@@ -371,7 +380,8 @@ for chro in clumpres :
         writepos.write("chromosome position\n")
         for bpsumstat in listsumstat :
           [a1,a2,beta , se , z , n , af , p, rsbim ]=sumstat[chro][bpsumstat]
-          maxn=max(n,maxn)
+          if not n :
+              n=nmax
           writegcta.write(' '.join([str(x) for x in [rsbim, a1,a2,af,beta,se,p,n]])+'\n')
           writefm.write(' '.join([str(x) for x in [rsbim,chro,bpsumstat, a1,a2,af,beta,se]])+'\n')
           writecaviar.write(" ".join([str(x) for x in [rsbim,z]])+'\n')
@@ -390,7 +400,7 @@ for chro in clumpres :
         writers.close()
       
 writen=open('n.out', 'w')
-writen.write(str(maxn))
+writen.write(str(nmax))
 writen.close()
         
 
