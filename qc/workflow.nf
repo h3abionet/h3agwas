@@ -219,8 +219,6 @@ workflow qc {
     getDuplicateMarkers(pp['bim_ch'])
     // remove duplicate marker
     removeDuplicateSNPs(pp['plink_ch'], getDuplicateMarkers.out,extra_sex_info:pp['extra_sex_info'],sex_info:pp['sex_info'])
-
-
    // count x number
     countxx=countX(params.chrxx_plink,removeDuplicateSNPs.out.plink)
     // count xy number

@@ -30,7 +30,7 @@ process showPhenoDistrib {
 
 process add_pcs{
   label 'R'
-  cpus params.max_cpus
+  cpus 1
   input :
       tuple path(eigenval), path(eigenvec), path(phenofile), val(npcs), val(covariates), val(covariates_bin)
   publishDir "${params.output_dir}/pheno/pca/", mode:'copy'
@@ -41,10 +41,9 @@ process add_pcs{
   script :
      head=phenofile.baseName
      newfilepheno=head+"_"+npcs.toString()+".newpheno"
-     covar2=(covariates=="")? "" : " --covar $covariates "
-
+     covar2=(covariates=="")? "" : " --covar $covariates --covar_type $covariates_bin "
      """
-     addpheno_pcs.r --data $phenofile --pcs $eigenvec --out $newfilepheno $covar2 --npcs $npcs --covar_type $covariates_bin
+     addpheno_pcs.r --data $phenofile --pcs $eigenvec --out $newfilepheno $covar2 --npcs $npcs 
      pcs=`cat ${newfilepheno}.covar`
      cov_type=`cat ${newfilepheno}.covartype`
      """

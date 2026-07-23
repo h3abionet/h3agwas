@@ -4,7 +4,7 @@ include {updateplk_rsname;updateplk_rsname_norsinfo;deletedmultianddel;refallele
 include {fileexist_b;fileexist_param;fileexist} from '../modules/fct_groovy.nf'
 include {dl_fasta_wf} from '../modules/dl_wf.nf'
 
-workflow getparams{
+/*workflow getparams{
   take :
    plink
    fasta
@@ -34,6 +34,37 @@ workflow getparams{
   fasta = dl_fasta_wf.out.fasta_index
   plink = plink
 }
+*/
+pp=[:]
+def check_params(bfile, fasta) {
+ pp['bfile'] = bfile
+ if (bfile==null){
+     if(params.bfile!=''){
+        inpat=params.bfile
+     }else{
+        inpat = "${params.input_dir}/${params.input_pat}"
+      }
+   pp['bfile'] = Channel.fromPath(fileexist("${inpat}.bed"),checkIfExists:true).combine(Channel.fromPath(fileexist("${inpat}.bim"),checkIfExists:true)).combine(Channel.fromPath(fileexist("${inpat}.fam"),checkIfExists:true))
+ }
+ pp['fasta'] = fasta
+ if(fasta == null){
+   dl_fasta_wf(params.fasta, params.build_genome, params.ftp_fasta, '')
+  pp['fasta'] =  dl_fasta_wf.out.fasta_index
+ }
+ pp['rs_info'] = null
+ if(fileexist_b(params.file_ref_gzip)){
+   if(fileexist_param(params.file_ref_gzip, "file_ref_gzip"))file_ref_gzip=channel.fromPath(params.file_ref_gzip)
+     if(fileexist_b("${params.file_ref_gzip}.csi")){
+     rs_infogz=file_ref_gzip.combine(channel.fromPath(params.file_ref_gzip+'.csi',checkIfExists:true))
+   }else {
+     bcftools_index_vcf(file_ref_gzip)
+     rs_infogz=bcftools_index_vcf.out
+   }
+   pp['rs_info']  = rs_infogz
+ }
+ return(pp) 
+
+}
 
 workflow format_plink_invcf {
  take:
@@ -42,12 +73,11 @@ workflow format_plink_invcf {
    outputpat
    fasta
   main :
-  //spaces/jeantristan/agora/imputeddata/all/job-20241209-124900-327/local/chr11.dose.vcf.gz, /spaces/jeantristan/agora/imputeddata/convert_and_merge/all/work/ba/d6e6622f6774531f1f806096afa73a/hg38.fa_clean.fa.gz, 0.01, 0.008, 0, -1, .//convertvcf/cleanvcf]
-   getparams(plink, fasta, vcf_imputeformat)
-   if(!(getparams.out.rs_infogz!=null)) {
-   updateplk_rsname_norsinfo(getparams.out.plink,  channel.of("$outputdir/rs_update"))
+   pp=check_params(plink, fasta)
+   if(!(pp['rs_info']!=null)) {
+   updateplk_rsname_norsinfo(pp['bfile'],  channel.of("$outputdir/rs_update"))
    }else{
-     updateplk_rsname(getparams.out.rs_infogz, getparams.out.plink, channel.of("$outputdir/rs_update"))
+     updateplk_rsname(pp['rs_info'], pp['bfile'], channel.of("$outputdir/rs_update"))
      deletedmultianddel(updateplk_rsname.out.plink)
      refallele(deletedmultianddel.out, updateplk_rsname.out.rs_info)
      if(params.convertinvcf_parralchro==0){
@@ -64,7 +94,7 @@ workflow format_plink_invcf {
       vcf= mergevcf.out
     }
    }
-   if(params.sexinfo_available)get_sex_forsanger(getparams.out.plink, vcf, "$outputdir/") 
+   if(pp[['rs_info']]!=null)get_sex_forsanger(getparams.out.plink, vcf, "$outputdir/") 
   emit : 
       vcf= vcf
 }

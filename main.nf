@@ -45,6 +45,7 @@ workflow {
   //  println "This workflow requires Nextflow version 21.04 or greater -- You are running version $nextflow.version"
   //  exit 1
   //}
+  fasta=null
   plink_qc=null
   data=null
   vcf_qc = null
@@ -73,7 +74,7 @@ workflow {
        plink_qc = qc_michigan.out.plink
   }
   if (params.convertinvcf==1 || params.convertinvcf){
-     format_plink_invcf(plink_qc, "${params.output_dir}/vcf/", params.output) 
+     format_plink_invcf(plink_qc, "${params.output_dir}/vcf/", params.output ,fasta) 
      vcf_qc= format_plink_invcf.out.vcf
   }
   if(params.vcf_split_chro){

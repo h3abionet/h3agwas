@@ -214,7 +214,6 @@ workflow report_by_ref{
 
 workflow report_by_dataset{
     take: data
-
     main:
         /// /// By Dataset
         // combine by chrom, dataset, refpanel
@@ -312,15 +311,17 @@ workflow imputation {
     generate_frequency(input)
 
     // // Plot frequency Comparison
-    freq_comp = impute_data.map {target_name, ref_name, chr,vcf, impute_vcf, info -> 
-    [target_name, ref_name, chr,info]}
-    .combine(generate_frequency.out, by:[0,1,2])
+    freq_comp = impute_data.map {target_name, ref_name, chr,vcf, impute_vcf, info -> [target_name, ref_name, chr,info]}.combine(generate_frequency.out, by:[0,1,2])
     plot_freq_comparison(freq_comp)
      // Plot number of imputed SNPs over the mean r2 for all reference panels
-    combineInfo_frq = impute_data.map{ target_name, ref_name, chr,vcf, impute_vcf, info ->[ target_name, ref_name, info, params.cut_maf_postimp]}
-    .combine(generate_frequency.out, by:[0,1,2])
-    .map { target_name, ref_name, chr,info, maf_thresh, target_frq, ref_frq -> 
+//    tuple val(target_name), val(ref_name), val(chrm), file(target_info), val(maf_thresh), file(target_frq)
+
+    combineInfo_frq = impute_data.map{ target_name, ref_name, chr,vcf, impute_vcf, info ->[ target_name, ref_name, chr,info, params.cut_maf_postimp]}
+    .combine(generate_frequency.out, by:[0,1,2]).map { target_name, ref_name, chr,info, maf_thresh, target_frq, ref_frq -> 
     [target_name, ref_name, chr,info, maf_thresh, target_frq]}
+    impute_data.view()
+    generate_frequency.out.view()
+    combineInfo_frq.view()
     plot_r2_SNPpos(combineInfo_frq)
     // // compute for average rsquared values
     rsquared_input = impute_data.map{ target_name, ref_name, chr,vcf, impute_vcf, info ->[ target_name, ref_name, info]}

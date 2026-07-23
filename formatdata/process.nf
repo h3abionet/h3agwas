@@ -124,7 +124,7 @@ process convertInVcf {
    cpus params.max_cpus
    time params.big_time
    input :
-    tuple path(bed), path(bim), path(fam), path(gz_info), path(gz_info_csi), path(fast), path(fastaindex),val(chro), val(outputdir)
+    tuple pp,path(bed), path(bim), path(fam)//, path(gz_info), path(gz_info_csi), path(fast), path(fastaindex),val(chro), val(outputdir)
    publishDir "$outputdir/", overwrite:true, mode:'copy'
    output :
     path("${out}.vcf.gz"), emit : vcf

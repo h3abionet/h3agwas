@@ -172,7 +172,7 @@ process plot_r2_SNPpos {
     label 'imputation'                                                          
     label "medium"
     input:
-    tuple val(target_name), val(ref_name), file(target_info), val(maf_thresh), file(target_frq)
+    tuple val(target_name), val(ref_name), val(chrm), file(target_info), val(maf_thresh), file(target_frq)
     output:
     tuple val(target_name), val(ref_name), file(output)
     script:
@@ -192,7 +192,7 @@ process plot_freq_comparison {
     label 'imputation'                                                          
     label "medium"
     input:
-        tuple val(target_name), val(ref_name), file(target_info), file(target_frq), file(ref_frq) 
+        tuple val(target_name), val(ref_name),val(chrm), file(target_info), file(target_frq), file(ref_frq) 
     output:
         tuple val(target_name), val(ref_name), file(outputcolor)
     script:

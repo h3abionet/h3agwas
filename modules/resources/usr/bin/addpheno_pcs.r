@@ -29,9 +29,11 @@ if(!is.null(opt[['covar']]))listcovar=paste(opt[['covar']],",",sep='')
 listpcs<-paste(paste('Pcs_',1:(ncol(Pcs)-2),sep=''), collapse=',')
 
 writeLines(paste(listcovar,listpcs,sep=''), con=paste(opt[['out']], '.covar', sep=''))
-
+covar_n=0
+if(!is.null(opt[['covar']])){
 covar_n<-strsplit(opt[['covar']],split=',')[[1]]
 covar_n<-length(covar_n[nchar(covar_n)>0])
+}
 
 listcovar_pcs<-rep(0,opt[['npcs']])
 listcovar_type<-c()

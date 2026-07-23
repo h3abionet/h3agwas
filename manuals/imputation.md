@@ -1,18 +1,16 @@
 # Imputation modules
 module had been adapted with authors from : ph3abionet/chipimputation](https://github.com/h3abionet/chipimputation)
+module to imputed a 
 ## Input
-* `vcf` : from previous process
+* `vcf` : vcf to impute or from previous process.
 * `build_genome` : ["37"]
-
 * `eagle_genetic_map` :  
  * `ftp_eagle_genetic_map` : ""
  * `ftp_eagle_genetic_map` = [""]
  * `ftp_eagle_genetic_map_38` = ["https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg38_withX.txt.gz"]
  * `ftp_eagle_genetic_map_19` = ["https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/tables/genetic_map_hg19_withX.txt.gz"]
 * `fasta`
-
 * `imp_listchro` :   list of Chro to impute  [default ALL]
-
 * `reference panel` : 
   * `params.imp_ref_name`
   * `params.ref_m3vcf`
@@ -30,4 +28,7 @@ module had been adapted with authors from : ph3abionet/chipimputation](https://g
 *  
  * `cut_maf_postimp`
  * `impute_info_cutoff`
+
+
+## example 
 
