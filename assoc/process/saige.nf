@@ -17,8 +17,8 @@ process checkidd_saige_vcf{
       path(vcf) 
       tuple path(bed), path(bim), path(fam) 
     output :
-      tuple path("${bfileupdate}.bed"), path("${bfileupdate}.bim"), path("${bfileupdate}.fam"), emit : plink
-      path(out), emit : pheno
+      tuple path("${bfileupdate}.bed"), path("${bfileupdate}.bim"), path("${bfileupdate}.fam"), emit: plink
+      path(out), emit: pheno
     script :
       out=data.baseName+'_saige.ind'
       bfile=bed.baseName
@@ -46,8 +46,8 @@ process checkidd_saige{
       tuple path(bed), path(bim), path(fam)
       val(is_bgen)
     output :
-      tuple path("${bfileupdate}.bed"), path("${bfileupdate}.bim"), path("${bfileupdate}.fam"), emit :plink
-      path(covariates_form), emit : pheno
+      tuple path("${bfileupdate}.bed"), path("${bfileupdate}.bim"), path("${bfileupdate}.fam"), emit:plink
+      path(covariates_form), emit: pheno
     script :
       covariates_form=data.baseName+'_saige.ind'
       bfile=bed.baseName
@@ -59,12 +59,13 @@ process checkidd_saige{
       plink -bfile  $bfile --keep-allele-order -out $bfileupdate --make-bed --update-ids  ${covariates_form}"_updateid" --extract range keep.range --threads ${params.max_cpus}
       """
 }
+
 process  getSaigePheno {
     input:
-      tuple path(covariates), path(fam) from data_ch_saige_form
+      tuple path(covariates), path(fam) 
     output:
-      file(phef) into saige_data_format_ch
-      stdout into pheno_cols_ch_saige
+      path(phef), emit: saige_data_format_ch
+      val(stdout), emit: pheno_cols_ch_saige
     script:
       covoption = (params.covariates=="") ? "" : " --cov_list ${params.covariates}"
       base = fam.baseName
@@ -86,7 +87,7 @@ process saige_computed_variance{
       tuple path(data),val(pheno),val(pheno_bin),val(covariable_saige),path(bed), path(bim), path(fam) 
    publishDir "${params.output_dir}/saige/varexp/", overwrite:true, mode:'copy'
    output :
-     tuple val(our_pheno) ,path("${output}.rda"), path("${output}.varianceRatio.txt"), val(plk), emit : var
+     tuple val(our_pheno) ,path("${output}.rda"), path("${output}.varianceRatio.txt"), val(plk), emit: var
      path("*.report")
    script :
      binpheno = (pheno_bin.toInteger()==1) ? " --traitType=binary " : " --traitType=quantitative"
@@ -122,7 +123,7 @@ process doSaige{
        tuple val(our_pheno), path(rda), path(varRatio), val(base), path(vcf),path(vcfindex)
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.report"
     output :
-      tuple val(our_pheno),path("$output"),emit : saige
+      tuple val(our_pheno),path("$output"),emit: saige
       path("*.report")
     script :
      output=vcf.baseName+".res"
@@ -158,7 +159,7 @@ process doSaigeBgen{
        tuple val(pheno),path(rda), path(varRatio), val(base),val(Chro),path(bgen), path(bgenindex), path(bgensample)
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.report"
     output :
-      tuple val(pheno), path("$output"),emit :saige
+      tuple val(pheno), path("$output"),emit:saige
       path("*.report")
     script :
      output=bgen.baseName+"_"+Chro+".saige"
@@ -194,7 +195,7 @@ process doSaigeListBgen{
        tuple val(pheno),path(rda), path(varRatio), val(base),val(Chro),path(bgen), path(bgenindex), path(bgensample)
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.report"
     output :
-      tuple val(pheno), path("$output"), emit :saige
+      tuple val(pheno), path("$output"), emit:saige
       path("*.report")
     script :
      output=bgen.baseName+"_"+Chro+".saige"
@@ -231,7 +232,7 @@ process doSaigePlink{
     input :
        tuple val(pheno),path(rda), path(varRatio), val(base),val(Chro),path(bed), path(bim), path(fam)
     output :
-      tuple val(pheno),file("$output"),emit : saige
+      tuple val(pheno), path("$output"),emit: saige
       path("*.report")
    publishDir "${params.output_dir}/saige/log/", overwrite:false, mode:'copy', pattern: "*.report"
     script :

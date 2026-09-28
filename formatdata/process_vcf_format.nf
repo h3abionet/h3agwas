@@ -20,7 +20,7 @@ process check_names_plkconvert{
 
 process unzip_folder{
   input :
-     path(vcfzip), path(outputdir)
+     tuple path(vcfzip), path(outputdir)
   publishDir "$outputdir", mode:'copy'
   output :
    path("*.vcf.gz"), emit : vcf_gz
@@ -79,7 +79,7 @@ process clean_vcf_hwe_maf {
    tuple path(vcf), path(fasta)
  publishDir "${outputdir}", mode:'copy'
  output :
-    path(outputfile"*"), val(fasta)
+    tuple path("$outputfile*"), val(fasta)
  script :
    hwe=dic['hwe']
    maf=dic['maf']

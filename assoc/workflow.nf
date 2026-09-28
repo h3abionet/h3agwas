@@ -8,6 +8,7 @@ include {saige} from './process/saige.nf'
 include {regenie} from './process/regenie.nf'
 include {plink} from './process/plink.nf'
 include {merge_sumstat} from './process/all.nf'
+
 workflow check_params{
   take : 
     data

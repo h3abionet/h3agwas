@@ -32,7 +32,7 @@ process updateplk_rsname_norsinfo{
     val(outputdir)
   publishDir "${outputdir}", overwrite:true, mode:'copy'
   output :
-    path("${out}.bed"),path("${out}.bim"),path("${out}.fam"), emit : plink
+    tuple path("${out}.bed"),path("${out}.bim"),path("${out}.fam"), emit : plink
   script :
     plk=bed.baseName
     outrs=plk+"_updaters"
@@ -124,7 +124,7 @@ process convertInVcf {
    cpus params.max_cpus
    time params.big_time
    input :
-    tuple pp,path(bed), path(bim), path(fam)//, path(gz_info), path(gz_info_csi), path(fast), path(fastaindex),val(chro), val(outputdir)
+    tuple path(bed), path(bim), path(fam)//, path(gz_info), path(gz_info_csi), path(fast), path(fastaindex),val(chro), val(outputdir)
    publishDir "$outputdir/", overwrite:true, mode:'copy'
    output :
     path("${out}.vcf.gz"), emit : vcf
