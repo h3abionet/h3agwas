@@ -83,7 +83,7 @@ if n_head :
 
 ## first step : if
 result = pd.read_csv(inp,delim_whitespace=True)
-result[chro_head] = result[chro_head].astype(str)
+result[chro_head] = result[chro_head].astype(str).str.replace("chr", "", regex=False)
 if freq_head :
   IsFreq=True
   if args.maf :

@@ -85,6 +85,7 @@ if(length(grep('.csv$', filegc))>0)Data<-read.csv(opt[['file']], header=T) else 
 chrohead=opt[['chro_head']];phenhead=opt[['pheno_head']];poshead=opt[['bp_head']];OrBetaHead=opt[['beta_head']];headCi95=opt[['ci_head']];pValueHead=opt[['p_head']];nvalueHead=opt[['n_head']];freqHead=opt[['freq_head']];rsHead=opt[['rs_head']];riskall=opt[['riskall_head']]
 }
 Data[,chrohead]<-gsub('chr', '',as.character(Data[,chrohead]))
+Data[Data[,chrohead]=='X',chrohead]<-'23'
 if(!is.null(opt[['chro']]))baliselistc<-Data[,chrohead] %in% lisc else baliselistc=T
 if(balisepheno)balisepheno<-tolower(as.character(Data[,phenhead])) %in% tolower(lisp) else balisepheno=T
 Data2<-Data[baliselistc & balisepheno,]
@@ -129,6 +130,7 @@ write.csv(Data2Sub, file=paste(opt[['out']], '_all.csv',sep=''), row.names=F)
 
 Data2Sub<-Data2Sub[, c(chrohead,poshead,rsHead,riskall,'nsample.cat', 'beta.cat', 'sd.cat', 'z.cat', 'h2.cat', 'pvalue', 'risk.allele.af', 'risk.allele.cat')]
 names(Data2Sub)[c(1,2, 3,4)]<-c("chro", "bp", 'rs', "risk_allele")
+
 Data2Sub<-Data2Sub[order(Data2Sub$chro, Data2Sub$bp),]
 
 Data2SubBed<-Data2Sub[,c("chro", "bp", "rs")]

@@ -153,7 +153,8 @@ headnew_info=params.headnew_info
 headnew_bp = params.headnew_bp
 headnew_chr = params.headnew_chr
 headnew_rs = params.headnew_rs
-sepout=params.sep
+sepout=params.sepout
+if(params.sepout=='')sepout=params.sep
 
 
 if(params.out_gc==1){

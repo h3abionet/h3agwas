@@ -77,6 +77,7 @@ if args.genomic_control[0]=="T" :
 
 param_Metal=[]
 nbfreq=0
+infoind+=1
 for line in read_listfile :
     line=line.replace('\n', '')
     read_file=open(line)
@@ -90,6 +91,8 @@ for line in read_listfile :
        param_Metal.append("USESTRAND ON")
     else :
          param_Metal.append("USESTRAND OFF")
+    if "N" in head_spl :
+        infoind+=1
     if "A1" in head_spl and "A2" in head_spl:
          param_Metal.append("ALLELELABELS A1 A2")
     if "FREQA1" in head_spl :
@@ -99,6 +102,10 @@ for line in read_listfile :
     param_Metal.append("PROCESS "+line)
     param_Metal.append("")
     param_Metal.append("")
+
+if infoind> 1:
+ param_MetalI.append("CUSTOMVARIABLE TotalSampleSize")
+ param_MetalI.append("LABEL TotalSampleSize as N")
 
 
 if nbfreq > 0 :
