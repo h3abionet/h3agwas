@@ -126,7 +126,7 @@ def checkColumnHeader(fname, columns) {
 
 def helps = [ 'help' : 'help' ]
 
-allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp_19",'genes_file_ftp_38', "list_phenogc", "file_phenogc", "headgc_chr", "headgc_bp", "headgc_bp", "genes_file", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", 'pheno', 'covariates','genome_db','gwas_cat_ftp_19','gwas_cat_ftp_38','gwas_cat_ftp',"genes_file_ftp"]
+allowed_params_input = ["input_dir","input_pat","output","output_dir","plink_mem_req", "work_dir", "scripts",  "accessKey", "access-key", "secretKey", "secret-key", "region",  "big_time",  "rs_list", 'list_phenogc', 'cojo_slct_other', "paintor_fileannot", "paintor_listfileannot", "caviarbf_avalue", "gwas_cat", "genes_file", "genes_file_ftp_19",'genes_file_ftp_38', "list_phenogc", "file_phenogc", "headgc_chr", "headgc_trait", "headgc_bp", "headgc_bp", "genes_file", "list_chro",  'modelsearch_caviarbf_bin', "AMI", "instanceType", "instance-type", "bootStorageSize","maxInstances", "max-instances", "sharedStorageMount", "shared-storage-mount",'queue', "data", 'pheno', 'covariates','genome_db','gwas_cat_ftp_19','gwas_cat_ftp_38','gwas_cat_ftp',"genes_file_ftp"]
 allowed_params=allowed_params_input
 allowed_params_bin=["finemap_bin", "paintor_bin","plink_bin", "caviarbf_bin", "gcta_bin"]
 allowed_params+=allowed_params_bin
@@ -807,8 +807,8 @@ process MergeResult{
        echo "sss $fmssscred" > infofinemapcred
        echo "cond $fmcond" >> infofinemap 
        echo "cond $fmcondcred" >> infofinemapcred
-       merge_finemapping_v2.r --out $out $paintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred
-       echo "merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred" > run.bash
+       merge_finemapping_v2.r --out $out $paintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred  --headtrait_gc ${params.headgc_trait}
+       echo "merge_finemapping_v2.r --out $out --listpaintor  infopaintor  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred --headtrait_gc ${params.headgc_trait}" > run.bash
       """
 }
 

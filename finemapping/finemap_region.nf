@@ -402,10 +402,12 @@ process GwasCatDl{
 }
 headgc_chr="chrom"
 headgc_bp="chromEnd"
+headgc_trait="trait"
 }else{
 gwascat_ch=Channel.fromPath(params.gwas_cat, checkIfExists:true)
 headgc_chr=params.headgc_chr
 headgc_bp=params.headgc_bp
+headgc_traits=params.headgc_trait
 //checkColumnHeader(params.gwas_cat, [headgc_chr,headgc_bp])
 
 }
@@ -712,7 +714,7 @@ process MergeResult{
        echo "cond $fmcond" >> infofinemap 
        echo "cond $fmcondcred" > infofinemapcred
        echo "sss $fmssscred" >> infofinemapcred
-       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred
+       merge_finemapping_v2.r --out $out --listpaintor  infopaint  --cojo  $cojo --datai  $datai --caviarbf $caviarbf --list_genes $genes  --gwascat $gwascat --headbp_gc ${headgc_bp} --headchr_gc ${headgc_chr}  --listfinemap infofinemap  $pfileannot --listfinemap_cred infofinemapcred --headtrait_gc $headgc_traits
       """
 }
 

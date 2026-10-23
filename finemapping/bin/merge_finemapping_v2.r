@@ -94,6 +94,7 @@ PlotRes<-function(datainwork,DataGenes2 , datagwascatchro,FilePdf,paintfile=NULL
   text(1.1,lnum-10.5, "- distribution of post probability : ", pos=postxt)
   text(1.1,lnum-11.5, "  - dstribution of post probability for finemapinf caviar, paintor and finemap, color variabtion gave higher of probabilites", pos=postxt)
   text(1.1,lnum-12.5, "  - distribution of annotation : in % for each positions, red correspond to lead position, or credible interval ", pos=postxt)
+  gwascat<-gwascat[!is.na(gwascat$trait),]
   if(!is.null(gwascat) & nrow(gwascat)>0){
     gwascat2<-merge(datainworkplot, gwascat,by.x=c("position"), by.y=c(headbpgc), all=T)
     gwascat2<-gwascat2[!is.na(gwascat2$trait),]
@@ -222,8 +223,10 @@ option_list = list(
               help="dataset file name", metavar="character"),
   make_option(c("-y", "--headbp_gc"), type="character",  
               help="dataset file name", metavar="character"),
-  make_option(c("-w", "--headchr_gc"), type="character", 
+  make_option(c("--headchr_gc"), type="character", 
               help="dataset file name", metavar="character"),
+  make_option(c("-w", "--headtrait_gc"), type="character", 
+              help="dataset file name", metavar="character", default='trait'),
   make_option(c("-o", "--out"), type="character", default="out.txt", 
               help="out prefix", metavar="character"),
   make_option(c("-l", "--list_genes"), type="character",
@@ -242,7 +245,12 @@ opt=parse_args(opt_parser,args=commandArgsI)
 
 }
 headbpgc<-opt[['headbp_gc']];headchrgc<-opt[['headchr_gc']]
-if(grep('\\.csv$', opt[['gwascat']])==1)datagwascat<-read.csv(opt[['gwascat']]) else datagwascat<-read.table(opt[['gwascat']],sep='\t', header=T)
+if(length(grep('\\.csv$', opt[['gwascat']]))==1)datagwascat<-read.csv(opt[['gwascat']]) else datagwascat<-as.data.frame(fread(opt[['gwascat']],sep='\t', header=T, quote=""))
+cat('nb input gwas cat cata',nrow(datagwascat))
+
+datagwascat[, headbpgc]<-as.integer(datagwascat[, headbpgc])
+datagwascat<-datagwascat[!is.na(datagwascat[, headbpgc]) & !is.na(datagwascat[, headchrgc]), ]
+datagwascat$trait<-datagwascat[,opt[['headtrait_gc']]]
  
 datagwascat$chropos<-paste(datagwascat[,headchrgc],datagwascat[,headbpgc])
 datagwascat$bp_cm<-datagwascat[,headbpgc]/1000000

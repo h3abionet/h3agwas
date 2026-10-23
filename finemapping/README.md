@@ -57,6 +57,7 @@ The key options are:
 * `gwas_cat` : file of gwas catalog for plot 
   * `headgc_chr` : chromosome header of gwas catalog
   * `headgc_bp` : position head of gwas catalog
+  * `headgc_trait` : trait header of gwas catalog
   * `list_phenogc` :  from gwas catalog what pheno used (separated by a comma)
   * `file_phenogc` :  from gwas catalog what pheno used inside a file (separated by a comma)
 
