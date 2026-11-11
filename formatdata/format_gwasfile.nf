@@ -303,7 +303,13 @@ if(params.head_chr!=""){
       fileout=params.output
       """
       head -1 $file1 > $fileout
-      ls $listefiles  | xargs -n 1 tail -n +2 >> $fileout
+
+    for file in ${listefiles}; do
+      tail -n +2 "\$file"
+    done | awk 'BEGIN {FS=OFS="\t"} {
+    sub(/^chr/, "", \$1)
+    print
+    }' >> ${fileout}
       """
  
  }
@@ -387,7 +393,7 @@ process gzipsumstat {
  script :
    gzsumstat=sumstat.baseName+'.tsv.gz'
    """
-   cat $sumstat |gzip -9 > $gzsumstat
+   awk 'BEGIN {FS=OFS="\t"} \$1 == "X" {\$1=23} 1' $sumstat | gzip -9 > $gzsumstat
    """
 }
 

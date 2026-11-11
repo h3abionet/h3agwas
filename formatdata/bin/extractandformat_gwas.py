@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 import math
+import re
 
 def GetSep(Sep):
    ListOfSep=["\t"," ",","]
@@ -156,7 +157,10 @@ if ChroSel :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
        if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
-       write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
+       if (not re.fullmatch(r'[ACGT]+', spl[ps_A2_inp])) or (not re.fullmatch(r'[ACGT]+', spl[ps_A1_inp])):
+           writediscarded.write('NOTGODAllele\t'+line)
+       else : 
+         write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
 else :
    for line in read :
      spl=line.replace('\n','').split(sep)
@@ -172,7 +176,10 @@ else :
           spl[ps_A1_inp]=spl[ps_A1_inp].upper()
      if balchangA2 :
           spl[ps_A2_inp]=spl[ps_A2_inp].upper()
-     write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
+     if (not re.fullmatch(r'[ACGT]+', spl[ps_A2_inp])) or (not re.fullmatch(r'[ACGT]+', spl[ps_A1_inp])):
+         writediscarded.write('NOTGODAllele\t'+line)
+     else : 
+         write.write(sep_out.join([checknull(spl[x]) for x in ps_head])+"\n")
 
 write.close()
 writediscarded.close()
